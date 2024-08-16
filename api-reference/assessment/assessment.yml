@@ -1,0 +1,364 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  description: >-
+    # Getting Started
+
+
+    This API documentation contains the Eka Care Assessment platform APIs for
+    developers.
+
+
+    There are mainly 3 types of API.
+
+
+    1. Initialize the assessment.
+        
+    2. Continue the assessment.
+        
+    3. Submit the assessment.
+        
+
+    # Error Response Format:
+
+
+    The Assessment APIs returns custom error messages for invalid requests in
+    addition to HTTPS codes.
+
+
+    The failed response contains some properties. These properties and their
+    values are more indicative of the underlying error.
+
+
+    - Error response Syntax:
+        
+
+    ``` json
+
+    {
+        "error": [
+            {
+                "error_code": "unique_error_code",
+                "message":  "Actual error message from the server"
+            },
+            {
+                "error_code": "unique_error_code_2",
+                "message":  "Actual error message from the server for error 2"
+            }
+        ]
+    }
+
+     ```
+
+    ### Error Fields:
+
+
+    Here is the description of the error fields present in the error body
+
+
+    | **Field** | **Description** | **Example** |
+
+    | --- | --- | --- |
+
+    | `error` | This field represent an error occurred while processing the
+    request. It contains a list of errors.  <br>Developers can identify the
+    request is not succeeded based on this field. | `{"error": [{ "error_code":
+    "missing_field", "message": {"user_info": {"gender": ["This field may not be
+    null." ] }}}]}` |
+
+    | `error_code` | This field represent a custom error code to distinguish
+    between different kind of errors.  <br>These error codes are custom and are
+    our platform specific. You can see more about `error_code` in next section.
+    | `{"error_code": "missing_field"}` |
+
+    | `message` | The actual error message from the server. |
+    `"message":{"user_info": {"gender": ["This field may not be null."]}}` |
+
+
+    ### Error Codes
+
+
+    These are the custom error code field present in failure response body.
+    There can be various factor that can cause the request to fail. Sometimes
+    this kind of errors needs to be grouped according the the reason of failure.
+    This allows developers to diagnose the errors faster.
+
+
+    Here are some of the errors:
+
+
+    | **Error Code** | **Description** |
+
+    | --- | --- |
+
+    | `missing_field` | One or more fields is missing in the request body. |
+
+    | `invalid_value` | Invalid value provided for one or more fields in request
+    body.  <br>Ex. User sends "01_Jan_2001" in `dob` field. |
+
+    | `unsupported_value` | Unsupported value provided in a field in request
+    body.  <br>Ex. When user sends "other" in `gender` field. |
+
+    | `missing_header` | One or more fields in header are missing |
+
+    | `invalid_header_value` | One or more values in header is invalid.  <br>Ex.
+    User sends 123 in `locale` field. |
+
+    | `unsupported_header_value` | One or more values in header is unsupported. 
+    <br>Ex. User sends "Farsi" in `locale` field. |
+
+    | `auth_error` | Invalid or expired auth token provided. |
+
+    | `auth_missing` | Auth token is missing in the request. |
+
+    | `permission_not_granted` | User does not have permission to request. |
+
+    | `method_not_allowed` | The request method is not allowed in the given API
+    |
+
+    | `rate_limit_exceeded` | User has reached the rate limit of the API. |
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+tags:
+  - name: Assessments
+    description: >-
+      This folder contains the assessment API suite required to take health
+      assessment.
+
+
+      - It is broken down into 3 parts:
+          
+
+      1. Initialization
+          
+      2. Take Assessment
+          
+      3. Submission
+  - name: Assessments > Initialization
+    description: >-
+      This folder contains the API required for initialization of the
+      assessment. This step is must performed before making assessment requests.
+  - name: Assessments > Take Assessment
+  - name: Assessments > Submission
+  - name: Component Info
+    description: >-
+      This folder contains all the important information about the components
+      that are being used throughout the assessment. This API is intended to
+      provide knowledge about the Components that developers can use to display
+      in their UI.
+paths:
+  /assessments/init/:
+    post:
+      tags:
+        - Assessments > Initialization
+      summary: Initialize the assessment
+      description: >-
+        ### Variables:
+
+
+        | **Name** | **Description** | **Example** |
+
+        | --- | --- | --- |
+
+        | `user_info` | The json field for user's information for whom the
+        assessment is taken. It contains two fields: "dob", "gender" |
+        `{"user_info":{"dob":"01-01-2001","gender":"M"}}` |
+
+        | `dob` | Date of birth of the user in "YYYY-MM-DD" format | `{"dob" :
+        "2001-01-01"}` |
+
+        | `gender` | Gender of user in the format of inital letter.  <br>The
+        gender should be either from `M` or `m` for Male and `F` or `f` for
+        Female. Currently only male and female genders are supported in
+        assessment platform. | `{"gender": "M"}` |
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                user_info:
+                  dob: '2001-01-01'
+                  gender: M
+      parameters:
+        - name: locale
+          in: header
+          schema:
+            type: string
+          example: en
+        - name: auth
+          in: header
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 12 Aug 2024 07:41:05 GMT
+            Server:
+              schema:
+                type: number
+                example: WSGIServer/0.2 CPython/3.9.17
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+            Vary:
+              schema:
+                type: string
+                example: Accept, Cookie, origin
+            Allow:
+              schema:
+                type: string
+                example: POST, OPTIONS
+            X-Frame-Options:
+              schema:
+                type: string
+                example: DENY
+            Content-Length:
+              schema:
+                type: integer
+                example: '51'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                example: nosniff
+            Referrer-Policy:
+              schema:
+                type: string
+                example: same-origin
+            Cross-Origin-Opener-Policy:
+              schema:
+                type: string
+                example: same-origin
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                data:
+                  init_hash: sa_24081213110521903
+        '400':
+          description: Bad Request
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 12 Aug 2024 07:41:05 GMT
+            Server:
+              schema:
+                type: number
+                example: WSGIServer/0.2 CPython/3.9.17
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+            Vary:
+              schema:
+                type: string
+                example: Accept, Cookie, origin
+            Allow:
+              schema:
+                type: string
+                example: POST, OPTIONS
+            X-Frame-Options:
+              schema:
+                type: string
+                example: DENY
+            Content-Length:
+              schema:
+                type: integer
+                example: '51'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                example: nosniff
+            Referrer-Policy:
+              schema:
+                type: string
+                example: same-origin
+            Cross-Origin-Opener-Policy:
+              schema:
+                type: string
+                example: same-origin
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error:
+                  - error_code: missing_field
+                    message:
+                      user_info:
+                        gender:
+                          - This field may not be null.
+  /assessments/components:
+    get:
+      tags:
+        - Component Info
+      summary: List All Components
+      description: >-
+        This API is used to list all the components used in assessment APIs with
+        description and examples for developers to refer to.
+      responses:
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: text/html; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '207'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Date:
+              schema:
+                type: string
+                example: Wed, 14 Aug 2024 09:40:57 GMT
+            apigw-requestid:
+              schema:
+                type: string
+                example: cfhCiiIXBcwEM4A=
+            server:
+              schema:
+                type: number
+                example: Werkzeug/3.0.3 Python/3.9.17
+            X-Cache:
+              schema:
+                type: string
+                example: Error from cloudfront
+            Via:
+              schema:
+                type: number
+                example: >-
+                  1.1 05133180bbd1649d4b8f97441bf305e8.cloudfront.net
+                  (CloudFront)
+            X-Amz-Cf-Pop:
+              schema:
+                type: string
+                example: IAD12-P3
+            X-Amz-Cf-Id:
+              schema:
+                type: string
+                example: hS3n40_ve0Y4wjWh7dtr36HiVtuCgyJUIGhSECTB39S06hmNmRCGQA==
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: ''
