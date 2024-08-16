@@ -1,0 +1,1704 @@
+openapi: 3.0.0
+info:
+  title: ABDM Connect
+  description: |-
+    | **Pipeline** | **Release Date** |
+    | --- | --- |
+    | Registration API | 12th Aug, 2024 |
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+  - url: https://api.dev.eka.care
+components:
+  securitySchemes:
+    noauthAuth:
+      type: http
+      scheme: apikey
+    apikeyAuth:
+      type: http
+      scheme: apikey
+security:
+  - apikeyAuth: []
+tags:
+  - name: Authorization + JWT
+  - name: Registration
+    description: |-
+      ## ABHA Address
+
+      ABHA Address is an easy to remember username that enables a user to access their health records digitally and share their records with various healthcare providers. An ABHA address may look like `name@abdm`. It is required to sign up on ABHA Application
+
+      ## ABHA Number
+
+      ABHA number is a 14 digit number that is unique (only one per person) issued only after a strong KYC. ABHA number is a core building block of the ABDM ecosystem that is designed to ensure that people can have a unique ID (identifier) for healthcare.
+
+      ABHA numbers are extremely important for helping those who use feature phones or do not use a phone to manage their personal health records. ABHA numbers are issued in assisted mode extensively by all Government health programs.
+
+      ## Creating ABHA Number using Aadhar
+
+      ABHA Number can be created by authenticating with Aadhaar. Those who have their Aadhaar number linked with their mobile number can use this method to generate their ABHA number.
+
+      | State | Suggested Screen | Suggested Screen |
+      | --- | --- | --- |
+      | abha_create | We show user an option to create new ABHA, where user would enter the profile details |  |
+      | abha_end | We show user the list of available ABHA Address with Name. (Login) |  |
+      | abha_select | We show user the available ABHA Address where user would select one. |  |
+  - name: Registration > Aadhaar
+    description: |-
+      ### Aadhaar Registration and ABHA Profile Creation :  
+
+      In the Aadhaar registration process, we begin by providing our Aadhaar number, which generates a unique Transaction ID to track the registration. Next, an OTP (One-Time Password) is sent to the Aadhaar-linked mobile number, which we need to verify by entering both the OTP and the Transaction ID. This step ensures that our Aadhaar is securely linked to our mobile number.
+
+      After verifying the OTP, our mobile details are further confirmed using the Transaction ID. Once the mobile number is verified, we can proceed to create a new ABHA profile by providing the Aadhaar-linked address and the Transaction ID from the previous steps. The system will then generate a new Transaction ID, confirming that our ABHA profile has been successfully created.
+  - name: Registration > Mobile
+    description: |-
+      ### **Mobile Registration and ABHA Profile Creation :**
+
+      The process begins with initiating the registration by providing our mobile number. Once we submit our number, a unique Transaction ID is generated, which helps track the registration. If we encounter any issues, we can resend the registration request using this Transaction ID.
+
+      After initiating or resending the registration, we will receive a One-Time Password (OTP) on our mobile. We’ll need to verify this OTP using the Transaction ID. Upon successful verification, the system may show our ABHA profiles, including our name and ABHA address.
+
+      Finally, once everything is verified, we can create our ABHA profile. The system will confirm the successful creation by providing details like our ABHA number, name, birth date, gender, address, mobile number, and whether our KYC (Know Your Customer) is verified.
+  - name: Registration > Commons
+  - name: Notifications
+    description: |-
+      Endpoints
+
+      | **Endpoint** |  |
+      | --- | --- |
+      | [https://messenger.eka.care](https://messenger.eka.care) | Production |
+      | [https://messenger.dev.eka.care](https://messenger.dev.eka.care) | Stage |
+
+      ## Register device
+
+      | **Parameter** | **Description** | **Mandatory** |
+      | --- | --- | --- |
+      | app-id |  | Optional |
+      | app-platform | Would be a enum describing the platform in use.  <br>  <br>Allowed Enums - `android`, `ios` | Optional |
+      | app-version | App version.  <br>  <br>This helps us in Notifications to trigger based on App Version compatibility. | Optional |
+      | did | Device ID any unique id where we can identify a device. | Required |
+      | fcm-id | FCM Token for the user | Required |
+      | fid | [https://firebase.google.com/docs/projects/manage-installations](https://firebase.google.com/docs/projects/manage-installations)  <br>  <br>Firebase Installation ID | Optional |
+      | lang | Users Language. i18n | Optional |
+      | os-version | Android Version. | Optional |
+      | user-hash |  | Optional |
+
+      # Unregister a device
+
+      | **Parameter** | **Description** | **Mandatory** |
+      | --- | --- | --- |
+      | device-id (header) |  | Required |
+      | To be called when the device is logged out or uninstalled. |  |  |
+paths:
+  /connect-auth/v1/account/login:
+    post:
+      tags:
+        - Authorization + JWT
+      summary: Client Token API
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                client_id: '{{client_id}}'
+                client_secret: '{{client_secret}}'
+      security:
+        - noauthAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Wed, 07 Aug 2024 07:03:45 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '170'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            apigw-requestid:
+              schema:
+                type: string
+                example: cIFc0ibOhcwEJbQ=
+            access-control-allow-credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            access-control-allow-headers:
+              schema:
+                type: string
+                example: Targetpod, X-Forwarded-Proto, Content-Length, Accept, Postman-Token, X-Amzn-Trace-Id, Accept-Encoding, Forwarded, X-Forwarded-For, Via, X-Forwarded-Port, User-Agent, Content-Type, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, utm_source, utm_campaign, utm_medium
+            access-control-allow-methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjMwMTYwMjUsImlhdCI6MTcyMzAxNDIyNSwiYy1pZCI6InRlc3RpbmcifQ.BN4Q9b8QGvbsqS7DXESsSLcdbHNnny1r304eR87QbBs
+        '500':
+          description: Internal Server Error
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Wed, 07 Aug 2024 07:04:15 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '44'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            apigw-requestid:
+              schema:
+                type: string
+                example: cIFhgh1WBcwEJOw=
+            access-control-allow-credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            access-control-allow-headers:
+              schema:
+                type: string
+                example: Content-Length, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, Accept, Content-Type, Accept-Encoding, Forwarded, X-Forwarded-Proto, User-Agent, Postman-Token, Targetpod, Via, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, utm_source, utm_campaign, utm_medium
+            access-control-allow-methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: invalid credentials
+                code: 400
+  /abdm/v1/registration/aadhaar/init:
+    post:
+      tags:
+        - Registration > Aadhaar
+      summary: Initiate Registration
+      description: |-
+        ### Initiate Aadhaar Registration
+
+        This endpoint is used to initiate the Aadhaar registration process.
+
+        #### Request Body
+
+        - `aadhaar_number` (string, required): The Aadhaar number for the registration process.
+            
+
+        #### Response
+
+        - `txn_id` (string): The transaction ID generated for the initiated Aadhaar registration.
+            
+        - `hint` (string): A hint for the registration process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                aadhaar_number: '254779954042'
+      parameters:
+        - name: Accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Fri, 02 Aug 2024 10:34:27 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '135'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: X-Forwarded-Port, Content-Type, Postman-Token, X-Forwarded-Proto, X-Amzn-Trace-Id, Content-Length, Accept, User-Agent, Accept-Encoding, X-Forwarded-For, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: f748e008-70d4-46f2-98e2-5c7a93acc1d7
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                txn_id: 4f3d8532-7237-444b-bbe5-a920fe43940d
+                hint: OTP sent to Aadhaar registered mobile number ending with ******5299
+        '500':
+          description: Internal Server Error
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 05 Aug 2024 07:52:45 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '69'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: Content-Type, Cache-Control, X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Port, Postman-Token, Accept-Encoding, Content-Length, Accept, User-Agent, X-Amzn-Trace-Id, Auth, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: 156042a1-2e69-417b-9def-ce39df615343
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'failed: invalid aadhar'
+                  value:
+                    error: Invalid Aadhaar Number
+                    code: 500
+                example-1:
+                  summary: failed-max attempt-reached
+                  value:
+                    error: You have requested multiple OTPs Or Exceeded maximum number of attempts for OTP match in this transaction. Please try again in 30 minutes.
+                    code: 500
+  /abdm/v1/registration/aadhaar/verify:
+    post:
+      tags:
+        - Registration > Aadhaar
+      summary: Verify Otp
+      description: |-
+        ### Verify Otp
+
+        This endpoint is used to verify otp generated for registration using Aadhar.
+
+        #### Request Body
+
+        - `mobile` (string, required): The mobile number for linking with abha id.
+            
+        - `otp` (string, required): Otp generated for aadhar number in registration initiated
+            
+        - `txn_id` (string, required): Transaction Id generated in registration initiated
+            
+
+        #### Response
+
+        - `txn_id` (string): The transaction ID generated for the initiated Aadhaar registration.
+            
+        - `hint` (string): A hint for the registration process.
+            
+        - `skip_state` (string): Skip screen
+            
+        - `profile` (json): User abha profile detauls if user details is already present
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                mobile: '7610737378'
+                otp: '497587'
+                txn_id: '{{txn_id}}'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Fri, 02 Aug 2024 10:34:53 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '358'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: X-Forwarded-Proto, X-Amzn-Trace-Id, Postman-Token, Content-Length, Accept, Content-Type, User-Agent, Accept-Encoding, X-Forwarded-For, X-Forwarded-Port, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: 4cf2ee79-edba-4847-b949-e06787b1c190
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: existing abha - same mobile
+                  value:
+                    txn_id: 4f3d8532-7237-444b-bbe5-a920fe43940d
+                    hint: This account already exist
+                    skip_state: abha_end
+                    profile:
+                      abha_address: shyam.ekacc@abdm
+                      abha_number: 91-3882-3233-3673
+                      first_name: SHYAMJITH
+                      middle_name: ''
+                      last_name: PALAKKANDY
+                      year_of_birth: '1998'
+                      month_of_birth: '08'
+                      day_of_birth: '14'
+                      gender: M
+                      pincode: '670703'
+                      address: Palakkandy House, Vilamana, Iritty P O, Payam, Thalassery, Kannur, Kerala
+                      mobile: '9400305299'
+                      kyc_verified: true
+                example-1:
+                  summary: existing abha - different mobile
+                  value:
+                    txn_id: 68c27592-030d-4ab5-8229-1833acffe265
+                    hint: OTP sent to mobile number ending with ******0079
+                    skip_state: confirm_mobile_otp
+  /abdm/v1/registration/aadhaar/mobile/verify:
+    post:
+      tags:
+        - Registration > Aadhaar
+      summary: Mobile Verify
+      description: |-
+        ### Verify Mobile Details
+
+        This endpoint is used to verify mobile details used for creating abha profile
+
+        #### Request Body
+
+        - `otp` (string, required): Otp generated for aadhar number in registration initiated
+            
+        - `txn_id` (string, required): Transaction Id generated in registration verify aadhar details
+            
+
+        #### Response
+
+        - `txn_id` (string): The transaction ID generated for the mobile details verification.
+            
+        - `hint` (string): A hint for the registration process.
+            
+        - `skip_state` (string): Skip screen
+            
+        - `profile` (json): User abha profile detauls if user details is already present
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                otp: '723823'
+                txn_id: '{{txn_id}}'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Fri, 02 Aug 2024 10:42:06 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '391'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: X-Forwarded-For, X-Amzn-Trace-Id, Content-Type, Postman-Token, Accept-Encoding, X-Forwarded-Proto, X-Forwarded-Port, Content-Length, Accept, User-Agent, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: 0a53e937-c324-47db-a82a-40d5b10ad5d1
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                txn_id: 670e98dc-55cf-4c8f-aec1-8130a4183dd7
+                hint: Mobile number has been saved and will be used for all your ABHA communications.
+                skip_state: abha_end
+                profile:
+                  abha_address: shyam.ekacc@abdm
+                  abha_number: 91-3882-3233-3673
+                  first_name: SHYAMJITH
+                  middle_name: ''
+                  last_name: PALAKKANDY
+                  year_of_birth: '1998'
+                  month_of_birth: '08'
+                  day_of_birth: '14'
+                  gender: M
+                  pincode: '670703'
+                  address: Palakkandy House, Vilamana, Iritty P O, Payam, Thalassery, Kannur, Kerala
+                  mobile: '9400305299'
+                  kyc_verified: true
+  /abdm/v1/registration/aadhaar/create:
+    post:
+      tags:
+        - Registration > Aadhaar
+      summary: Create ABHA
+      description: |-
+        This endpoint allows you to create a new abha user using Aadhaar details.
+
+        ### Request Body
+
+        - `abha_address` (string, required): The address associated with the Aadhaar details.
+            
+        - `txn_id` (string, required): The transaction ID for the registration.
+            
+
+        ### Response
+
+        - `txn_id` (string): The transaction ID generated for the initiated Aadhaar registration.
+            
+        - `hint` (string): A hint for the registration process.
+            
+        - `skip_state` (string): Skip screen
+            
+        - `profile` (json): User abha profile detauls if user details is already present
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                abha_address: shyam.eka@abdm
+                txn_id: '{{txn_id}}'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /abdm/v1/registration/mobile/init:
+    post:
+      tags:
+        - Registration > Mobile
+      summary: Init
+      description: |-
+        This endpoint is used to initiate the registration process for a mobile number. The request should be sent as an HTTP POST to {{APIEndpoint}}/abdm/v1/registration/mobile/init with the mobile number provided in the request body.
+
+        ### Request Body
+
+        - `mobile_number` (string, required): The mobile number for which the registration process is being initiated.
+            
+
+        ### Response
+
+        Upon successful initiation, the response will include:
+
+        - `txn_id` (string): The transaction ID generated for the initiated registration.
+            
+        - `hint` (string): A hint, if available, for the initiated registration process. This may be null if no hint is available.
+            
+
+        In case of any errors or failures, appropriate error responses will be returned.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                mobile_number: '8590680079'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: Postman-Token, Accept-Encoding, Connection, Content-Length, Accept, Content-Type, User-Agent, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: ba35b820-78a5-4856-92d9-5d10a85b7102
+            Date:
+              schema:
+                type: string
+                example: Fri, 02 Aug 2024 11:02:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '85'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                txn_id: 67c73ffd-697d-4dd8-982f-ca9b162bca3b
+                hint: null
+  /abdm/v1/registration/mobile/resend:
+    post:
+      tags:
+        - Registration > Mobile
+      summary: Resend
+      description: |-
+        ### Registration Mobile Resend
+
+        This endpoint is used to resend a mobile registration request.
+
+        #### Request Body
+
+        - `txn_id` (string, required): The transaction ID.
+            
+
+        #### Response
+
+        Upon a successful request, the response will include:
+
+        - `txn_id` (string): The transaction ID.
+            
+        - `hint` (string): A hint for the response.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                txn_id: '{{txn_id}}'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: Content-Length, Accept, Content-Type, User-Agent, Postman-Token, Accept-Encoding, Connection, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: cabde22a-7597-4fac-b83d-b5d33d3a1d6f
+            Date:
+              schema:
+                type: string
+                example: Fri, 02 Aug 2024 07:36:02 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '83'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                txn_id: 9809a137-d071-4f74-aec2-19eeead926f1
+                hint: ''
+  /abdm/v1/registration/mobile/verify:
+    post:
+      tags:
+        - Registration > Mobile
+      summary: Verify
+      description: |-
+        This endpoint allows you to verify a mobile registration by sending an HTTP POST request to {{APIEndpoint}}/abdm/v1/registration/mobile/verify. The request should include a JSON payload in the raw request body type with the "otp" and "txn_id" fields.
+
+        ### Request Body
+
+        - `otp` (string, required): The one-time password for verification.
+            
+        - `txn_id` (string, required): The transaction ID associated with the verification process.
+            
+
+        ### Response
+
+        The response will include the following fields:
+
+        - `txn_id`: The transaction ID associated with the verification.
+            
+        - `skip_state`: The state of the skip process.
+            
+        - `abha_profiles`: An array of profiles with "name" and "abha_address" fields.
+            
+
+        Example Response:
+
+        ``` json
+        {
+            "txn_id": "",
+            "skip_state": "",
+            "abha_profiles": [
+                {
+                    "name": "",
+                    "abha_address": ""
+                }
+            ]
+        }
+
+         ```
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                otp: '945999'
+                txn_id: '{{txn_id}}'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: User-Agent, Postman-Token, Accept-Encoding, Connection, Content-Length, Accept, Content-Type, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: 66e2b329-06c4-4e69-8e29-0c2e22626f0b
+            Date:
+              schema:
+                type: string
+                example: Fri, 02 Aug 2024 11:29:18 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '1117'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                txn_id: f71584d4-7155-40e5-9a39-9f85f32fed60
+                skip_state: abha_select
+                abha_profiles:
+                  - name: Some abha
+                    abha_address: someabha@abdm
+                  - name: Abha S User
+                    abha_address: abhas4180079@abdm
+                  - name: Systems Working
+                    abha_address: syste6780079@abdm
+                  - name: Shyamjith P
+                    abha_address: shyam5299@abdm
+                  - name: Shyamjith P
+                    abha_address: shyamjithp1998@abdm
+                  - name: REd Cliffe
+                    abha_address: redcl1080079@abdm
+                  - name: Kuch kuch
+                    abha_address: kuchk2980079@abdm
+                  - name: Kuch kuch
+                    abha_address: kuchk6980079@abdm
+                  - name: Fynn Top
+                    abha_address: fynnt9980079@abdm
+                  - name: Creative
+                    abha_address: supercreate@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: shyamjith6542@abdm
+                  - name: Sh
+                    abha_address: shyamjith7539@abdm
+                  - name: Pkml User
+                    abha_address: pkmluser4603@abdm
+                  - name: Pkml User
+                    abha_address: pkmlu3580079@abdm
+                  - name: Tesypl
+                    abha_address: tesypl1998@abdm
+                  - name: Tt
+                    abha_address: daily.abha@abdm
+                  - name: shyam
+                    abha_address: shyam2332023@abdm
+                  - name: Shyam
+                    abha_address: paytm.test@abdm
+                  - name: Shyam
+                    abha_address: test.paytm@abdm
+                  - name: ghghfh
+                    abha_address: rrreerty@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: shyamjith9402@abdm
+                  - name: Suupra Dude
+                    abha_address: suupr6880079@abdm
+                  - name: Shyam
+                    abha_address: shyam1903@abdm
+                  - name: Test Prof
+                    abha_address: test7755@abdm
+                  - name: ShyamPk
+                    abha_address: shyampk1998@abdm
+                  - name: Shyamjith P
+                    abha_address: shyamjith_p21@abdm
+                  - name: Super dude
+                    abha_address: dude1998@abdm
+                  - name: ShyamjithP
+                    abha_address: shyamjithp8@abdm
+                  - name: Shyam Jith
+                    abha_address: s_jithpk@abdm
+                  - name: Shyamjithpk
+                    abha_address: shyamjithpk8@abdm
+                  - name: Shyamjith P
+                    abha_address: shyam.ptest@abdm
+                  - name: Shyam Test
+                    abha_address: stest1998@abdm
+                  - name: Pk shyam
+                    abha_address: pk_s1581998@abdm
+                  - name: Shyamjith PK
+                    abha_address: test.abhauser@abdm
+                  - name: Shyam T P K
+                    abha_address: shyamt.k148@abdm
+                  - name: Phr user
+                    abha_address: phrus780079@abdm
+                  - name: Alex Koshy
+                    abha_address: alexk6480079@abdm
+                  - name: Test Abha
+                    abha_address: testa3280079@abdm
+                  - name: NH User
+                    abha_address: nhuse2280079@abdm
+                  - name: Fcuk User
+                    abha_address: fcuk_u12@abdm
+                  - name: UsetTest Abha
+                    abha_address: usettestabha@abdm
+                  - name: Funny People
+                    abha_address: funnyp13@abdm
+                  - name: Fetch Xhr
+                    abha_address: supra.xhr@abdm
+                  - name: John wick
+                    abha_address: johnwick13@abdm
+                  - name: Anjakkallakkokkan
+                    abha_address: anjak1380079@abdm
+                  - name: Select Patient
+                    abha_address: selec5180079@abdm
+                  - name: Skip Abha
+                    abha_address: skipa1780079@abdm
+                  - name: Select Abha
+                    abha_address: selec1080079@abdm
+                  - name: Exist abha
+                    abha_address: exist3480079@abdm
+                  - name: Super Power
+                    abha_address: super6580079@abdm
+                  - name: Archived Uesr
+                    abha_address: archi3980079@abdm
+                  - name: Upldf Yup
+                    abha_address: upldfyup@abdm
+                  - name: Pkml User
+                    abha_address: pkmlu6380079@abdm
+                  - name: Upldf Yup
+                    abha_address: upldfyup6556@abdm
+                  - name: Pkml User
+                    abha_address: pkmluser1993@abdm
+                  - name: Vee three
+                    abha_address: veeth8680079@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: 91361166186086@abdm
+                  - name: Ayushman Bharath
+                    abha_address: ayush6480079@abdm
+                  - name: Fhir Cc
+                    abha_address: fhirc580079@abdm
+                  - name: Fhiruser Test
+                    abha_address: fhiruser6353@abdm
+                  - name: Fhiruser Test
+                    abha_address: fhiru780079@abdm
+                  - name: Fhir For Abha
+                    abha_address: fhirf2280079@abdm
+                  - name: Varathan Pp
+                    abha_address: varat7480079@abdm
+                  - name: Health Profile
+                    abha_address: health8893@abdm
+                  - name: Abha Vp
+                    abha_address: abha3694@abdm
+                  - name: Create New
+                    abha_address: create1998@abdm
+                  - name: Abha Sub
+                    abha_address: abhasub6241@abdm
+                  - name: Arci User
+                    abha_address: arciu6780079@abdm
+                  - name: Turbo Jose
+                    abha_address: turbo3380079@abdm
+                  - name: Eka Linker
+                    abha_address: ekali3080079@abdm
+                  - name: Linker User Test
+                    abha_address: linke8580079@abdm
+                  - name: Testppk
+                    abha_address: testppk1996@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: shyamjith.1998@abdm
+                  - name: New Profile
+                    abha_address: newprofile@abdm
+                  - name: Found Abha
+                    abha_address: found580079@abdm
+                  - name: SuperU ser
+                    abha_address: super4580079@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: shyam.ekacpl@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: shyam.ekacpla@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: shyam.ekacplak@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: 91766522222534@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: palakkandy_148@abdm
+                  - name: SHYAMJITH PALAKKANDY
+                    abha_address: 91165084787671@abdm
+                  - name: PKf llm
+                    abha_address: pkfll3680079@abdm
+        '500':
+          description: Internal Server Error
+          headers:
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: User-Agent, Postman-Token, Accept-Encoding, Connection, Content-Length, Accept, Content-Type, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: 8fbbec50-7b89-45d8-9e90-33b0a71ab3ed
+            Date:
+              schema:
+                type: string
+                example: Fri, 02 Aug 2024 11:04:43 GMT
+            Content-Length:
+              schema:
+                type: integer
+                example: '90'
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: The OTP that you have entered is incorrect.
+                code: 400
+  /abdm/v1/registration/mobile/create:
+    post:
+      tags:
+        - Registration > Mobile
+      summary: Create
+      description: |-
+        This API endpoint allows you to create a new mobile registration. The HTTP POST request should be sent to {{APIEndpoint}}/abdm/v1/registration/mobile/create with the following payload in the raw request body:
+
+        ``` json
+        {
+          "abha_address": "",
+          "profile": {
+            "address": "",
+            "first_name": "",
+            "last_name": "",
+            "gender": "",
+            "day_of_birth": 0,
+            "month_of_birth": 0,
+            "pincode": "",
+            "year_of_birth": 0
+          },
+          "txn_id": ""
+        }
+
+         ```
+
+        Upon successful execution, the API will respond with a JSON object containing the "success" status and the "profile" details including "abha_address", "abha_number", "first_name", "middle_name", "last_name", "year_of_birth", "month_of_birth", "day_of_birth", "gender", "pincode", "address", "mobile", and "kyc_verified" fields.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                abha_address: sam.sung2
+                profile:
+                  address: BENGALURU, KARNATAKA
+                  first_name: Samsu
+                  last_name: Sung
+                  gender: M
+                  day_of_birth: 9
+                  month_of_birth: 9
+                  pincode: '560043'
+                  year_of_birth: 1996
+                txn_id: '{{txn_id}}'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 05 Aug 2024 14:45:49 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '242'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            apigw-requestid:
+              schema:
+                type: string
+                example: cCjQeiTqhcwEJ-A=
+            access-control-allow-credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            access-control-allow-headers:
+              schema:
+                type: string
+                example: Via, Content-Length, Postman-Token, Jwt-Payload, Forwarded, Accept-Encoding, X-Forwarded-For, User-Agent, Content-Type, X-Amzn-Trace-Id, Accept, Auth, X-Forwarded-Proto, X-Forwarded-Port, Targetpod, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            access-control-allow-methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            content-encoding:
+              schema:
+                type: string
+                example: gzip
+            vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: Success
+                  value:
+                    success: true
+                    profile:
+                      abha_address: superhuman820871@sbx
+                      abha_number: ''
+                      first_name: Superfaster
+                      middle_name: midd
+                      last_name: las
+                      year_of_birth: 1989
+                      month_of_birth: 8
+                      day_of_birth: 18
+                      gender: M
+                      pincode: '560043'
+                      address: BENGALURU, KARNATAKA
+                      mobile: '9400305299'
+                      kyc_verified: false
+                example-1:
+                  summary: Create
+                  value:
+                    success: true
+                    profile:
+                      abha_address: sam.sung@sbx
+                      abha_number: ''
+                      first_name: Sam
+                      middle_name: ''
+                      last_name: Sung
+                      year_of_birth: 1998
+                      month_of_birth: 8
+                      day_of_birth: 18
+                      gender: M
+                      pincode: '560066'
+                      address: BENGALURU, KARNATAKA
+                      mobile: '8590680079'
+                      kyc_verified: false
+  /abdm/v1/registration/mobile/login:
+    post:
+      tags:
+        - Registration > Mobile
+      summary: Login
+      description: |-
+        ### API Request Description
+
+        This HTTP POST request is used to initiate mobile registration and login. The request is sent to the endpoint `{{APIEndpoint}}/abdm/v1/registration/mobile/login` with a raw request body type.
+
+        ### Response JSON Schema
+
+        ``` json
+        {
+            "type": "object",
+            "properties": {
+                "txn_id": {
+                    "type": "string"
+                },
+                "profile": {
+                    "type": "object",
+                    "properties": {
+                        "abha_address": {
+                            "type": "string"
+                        },
+                        "abha_number": {
+                            "type": "string"
+                        },
+                        "first_name": {
+                            "type": "string"
+                        },
+                        "middle_name": {
+                            "type": "string"
+                        },
+                        "last_name": {
+                            "type": "string"
+                        },
+                        "year_of_birth": {
+                            "type": "integer"
+                        },
+                        "month_of_birth": {
+                            "type": "integer"
+                        },
+                        "day_of_birth": {
+                            "type": "integer"
+                        },
+                        "gender": {
+                            "type": "string"
+                        },
+                        "pincode": {
+                            "type": "string"
+                        },
+                        "address": {
+                            "type": "string"
+                        },
+                        "mobile": {
+                            "type": "string"
+                        },
+                        "kyc_verified": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": ["abha_address", "abha_number", "first_name", "last_name", "year_of_birth", "month_of_birth", "day_of_birth", "gender", "pincode", "address", "mobile", "kyc_verified"]
+                }
+            },
+            "required": ["txn_id", "profile"]
+        }
+
+         ```
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                abha_address: abhishek975@sbx
+                txn_id: '{{txn_id}}'
+      parameters:
+        - name: accept
+          in: header
+          schema:
+            type: string
+          example: application/json
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 05 Aug 2024 14:48:43 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '262'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            apigw-requestid:
+              schema:
+                type: string
+                example: cCjrsgHthcwEJTQ=
+            access-control-allow-credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            access-control-allow-headers:
+              schema:
+                type: string
+                example: Via, X-Amzn-Trace-Id, Jwt-Payload, X-Forwarded-For, Content-Length, Targetpod, Accept-Encoding, X-Forwarded-Port, Accept, Auth, Postman-Token, Forwarded, X-Forwarded-Proto, User-Agent, Content-Type, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            access-control-allow-methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            content-encoding:
+              schema:
+                type: string
+                example: gzip
+            vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                txn_id: ad5f0c8b-d3e0-4fff-bb65-02b1d56f800e
+                profile:
+                  abha_address: sbbha4280079@sbx
+                  abha_number: ''
+                  first_name: Sb
+                  middle_name: ''
+                  last_name: Bhasi
+                  year_of_birth: 2001
+                  month_of_birth: 6
+                  day_of_birth: 13
+                  gender: M
+                  pincode: '560048'
+                  address: BENGALURU URBAN, KARNATAKA
+                  mobile: '8590680079'
+                  kyc_verified: false
+  /abdm/v1/registration/pincode/560048:
+    get:
+      tags:
+        - Registration > Commons
+      summary: PinCode Details
+      description: |-
+        This endpoint allows you to fetch pincode details
+
+        ### Request Body
+
+        - `pincode` (string, required): pincode of user address
+            
+
+        ### Response
+
+        - `dist_code` (string): District code associated with the given pincode.
+            
+        - `dist_name` (string): District name
+            
+        - `state_name` (string): State name for given district
+            
+        - `state_code` (string): State code
+            
+        - `pincode`: (string): Pincode
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 05 Aug 2024 10:57:59 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '105'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: Postman-Token, Accept-Encoding, X-Forwarded-For, X-Amzn-Trace-Id, User-Agent, Cache-Control, Accept, X-Forwarded-Proto, X-Forwarded-Port, Auth, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: 427c4602-3eb2-421b-985a-6cb556679d37
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                dist_code: '525'
+                dist_name: BENGALURU URBAN
+                state_name: KARNATAKA
+                state_code: '29'
+                pincode: '560048'
+  /abdm/v1/registration/suggest:
+    post:
+      tags:
+        - Registration > Commons
+      summary: Suggest Abha Address
+      description: |-
+        This endpoint allows you to fetch some suggested abha id that are available for user on the basis of user details
+
+        ### Request Body
+
+        - `txn_id` (string, required): Transaction id generated when verifying mobile details
+            
+        - `flow` (enum, required): Flow to be used **mobile | aadhar**
+            
+        - `user_detail` (json, optional): User details like name and other params to be used for suggestion
+            
+
+        ### Response
+
+        - `suggestions` (array): Available abha adddress for user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                txn_id: '{{txn_id}}'
+                flow: aadhaar
+                user_detail:
+                  first_name: Praveen
+                  last_name: Shah
+                  day_of_birth: '16'
+                  month_of_birth: '04'
+                  year_of_birth: '2000'
+                  email: raju16@gamil.com
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 05 Aug 2024 10:57:46 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '116'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: X-Amzn-Trace-Id, Cache-Control, Content-Length, User-Agent, X-Forwarded-Proto, Content-Type, Auth, Postman-Token, X-Forwarded-For, X-Forwarded-Port, Accept, Accept-Encoding, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: b8afd1a0-0ae9-4a5e-9898-0abbc0246280
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                suggestions:
+                  - praveen.1642000
+                  - 2000_praveen.shah
+                  - 164_praveen.shah
+                  - 16_praveen.shah
+                  - praveenshah_16
+                  - praveenshah1642000
+                  - praveenshah.16
+                  - shah.164
+                  - praveen1642000
+                  - praveenshah_2000
+                  - praveen_1642000
+                  - praveen_shah
+                  - shah_164
+  /abdm/v1/registration/abha/check:
+    post:
+      tags:
+        - Registration > Commons
+      summary: Does Health id Exist
+      description: |-
+        This endpoint allows you to check weather provided health id is already present in system
+
+        ### Request Body
+
+        - `abha_address` (string, required): Abha Id to check if eixst or not
+            
+
+        ### Response
+
+        - `exists` (bool): Indicate if abha id is already present or not
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                abha_address: praveenkshah
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 05 Aug 2024 10:55:07 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+            Content-Length:
+              schema:
+                type: integer
+                example: '39'
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                example: 'true'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: Accept-Encoding, X-Forwarded-For, X-Forwarded-Proto, User-Agent, Accept, Cache-Control, Postman-Token, X-Forwarded-Port, X-Amzn-Trace-Id, Auth, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, is-logged-in, utm_source, utm_campaign, utm_medium, clinic-id, patient-id, doc-id, subflow, flow, tp-client-id, tp-user-ref, tp-txn-ref, health-id
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Vary:
+              schema:
+                type: string
+                example: Accept-Encoding
+            X-Eka-Corid:
+              schema:
+                type: string
+                example: 97e4317c-26fb-4250-be84-6ef97b6b9ebe
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                exists: true
+  /profile/add-device:
+    post:
+      tags:
+        - Notifications
+      summary: add-device
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                devicePayload:
+                  app-id: ''
+                  app-platform: android
+                  app-version: '1571'
+                  did: aa8639d3ff050d55
+                  fcm-id: fr3Ybq-2QHW_JptUCHwhkh:APA91bEHF015uSYgjNSnCyC-RGbGmmHfqARZpi6eAWwWCw3SWnLMEFu34w5pgd9uM-NFCkK3nuCivqQlqUE2jt7V6x_BNB4tCLucU7eNYHfX5PliniucZf0_4gZ4H2gJMZrb6JS6tAZZ
+                  fid: fr3Ybq-2QHW_JptUCHwhkh
+                  lang: en
+                  os-version: 30
+                  user-hash: ''
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /v1/device:
+    delete:
+      tags:
+        - Notifications
+      summary: delete-device
+      parameters:
+        - name: device-id
+          in: header
+          schema:
+            type: string
+          example: aa8639d3ff050d55
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
