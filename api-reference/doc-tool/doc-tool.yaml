@@ -1,0 +1,2462 @@
+openapi: 3.0.3
+info:
+  title: Ekacare API & Webhook Documentation
+  description: >-
+    # Eka Care API Documentation
+
+
+    ## Overview
+
+
+    Eka care provides a set of APIs to facilitate seamless interaction with
+    their healthcare platform. These APIs allow external businesses to access
+    and manage doctor profiles, clinic details, patient directories, appointment
+    slots, and webhooks for event notifications.
+
+
+    ## API Endpoints
+
+
+    ### 1\. View Doctor Profile
+
+
+    **Purpose:** Retrieve details of a doctor profile registered on Eka.
+
+
+    **Endpoint:** `{{HOST}}/v1/business/doctor/{doctor_id}`  
+
+    **Method:** GET  
+
+    **Description:** Fetch detailed information about a specific doctor,
+    including their professional background, specialties, and contact
+    information.
+
+
+    ### 2\. View Clinic Details
+
+
+    **Purpose:** Retrieve details of clinics that a doctor is registered at.
+
+
+    **Endpoint:** `{{HOST}}/v1/business/doctor/{doctor_id}/clinic/{clinic_id}`  
+
+    **Method:** GET  
+
+    **Description:** Fetch information about clinics associated with a specific
+    doctor, including location, contact details, and services offered.
+
+
+    ### 3\. Search a Patient in a business
+
+
+    **Purpose:** Search for a patient in the business' directory and add them if
+    not present.
+
+
+    - Search by **mobile number**
+        
+
+    **Endpoint:** `{{HOST}}/v1/business/patients/search?mobile=999999999`  
+
+    **Method:** POST  
+
+    **Description:** Search for a patient in the doctor's directory using their
+    details. If the patient is not found, add them to the directory.
+
+
+    - Search by **name**
+        
+
+    **Endpoint:** `{{HOST}}/v1/business/patients/search?name=test`  
+
+    **Method:** POST  
+
+    **Description:** Search for a patient in the doctor's directory using their
+    name. If the patient is not found, business needs to add them to the
+    directory.
+
+
+    ### 4\. Add a Patient to a Business
+
+
+    **Purpose:** Add a patient with their details to a business. Currently a
+    patient can _**only be added with a doctor's context**__\*__._
+
+
+    **Endpoint:** `{{HOST}}/v1/business/doctor/{doctor_id}/patient/add`  
+
+    **Method:** POST  
+
+    **Description:**
+
+
+    - **doctor_id**: The unique identifier for the doctor under whose context
+    the patient is being added.
+        
+
+    This endpoint accepts patient details in the request body and adds the
+    patient to the specified doctor's directory within the business context.
+
+
+    ``` json
+
+    {
+        "patient_oid": "123456789",// Optional
+        "designation": "Mr.", //Optional
+        "first_name": "Test",
+        "middle_name": "", //optional
+        "last_name": "Patient",
+        "dob": "1987-01-06",
+        "mobile": "+919999999999",
+        "gender": "M",
+        "address": { // optional
+            "city": "Bangalore",
+            "line1": "ABC",
+            "line2": "XYZ",
+            "pincode": 560049,
+            "state": "Karnataka",
+            "country": "India"
+        },
+        "metadata": { //optional
+            "blood_group": "AB+",
+            "aadhar_number": "12345",
+            "notes": "Has a history of HTN"
+        },
+        "doctor_id" : {{doctor_id}}
+    }
+
+     ```
+
+    ### 5\. Get Appointment Slots
+
+
+    **Purpose**
+
+
+    Search for available appointment slots for a doctor within a specified date
+    range. This endpoint also allows for additional filters to be applied, such
+    as the type of consultation (in-clinic, teleconsultation, etc.).
+
+
+    **Endpoint:**  
+
+    `{{HOST}}/v1/business/doctor/{{doctor_id}}/clinic/{{clinic_id}}/appointments/slots?start_date={{start_date}}&end_date={{end_date}}`  
+
+    **Method:** GET
+
+
+    #### Description
+
+
+    - **doctor_id**: The unique identifier for the doctor whose appointment
+    slots are being searched.
+        
+    - **clinic_id**: The unique identifier for the clinic where the doctor
+    practices.
+        
+    - **start_date**: The start date for the search range.
+        
+    - **end_date**: The end date for the search range.
+        
+    - **mode**: the mode of consultation to filter on \[in-clinic |
+    teleconsultation\]
+        
+
+    The query param can include additional filters to narrow down the search
+    results, such as the `type` of consultation (e.g., in-clinic,
+    teleconsultation).
+
+
+    ### 6\. Book Appointment Slot
+
+
+    **Purpose**
+
+
+    Book a specified appointment slot for a patient, including details like
+    appointment type, payment mode, etc.
+
+
+    **Endpoint :** `{{HOST}}/v2/business/doctor/appointments/slots/book`  
+
+    **Method:** POST
+
+
+    #### Description
+
+
+    This API endpoint is used to book an appointment slot for a patient under a
+    specific doctor's context within a specified clinic. The request body
+    includes necessary details such as the patient's information, slot timing,
+    appointment type, and channel.
+
+
+    #### Request Body
+
+
+    The request body should include all necessary details to book an appointment
+    slot.  
+
+    `service_conf_id` is the configuration id choosen from the view slot details
+    API response. It contains all details of the services & fees included in
+    this appointment.  
+
+    Check APIs to see the response of view slot details API.
+
+
+    **Example Request:**
+
+
+    ``` json
+
+    {
+        "patient": {
+            "designation": "Mr.", //Optional
+            "first_name": "Test",
+            "middle_name": "", //Optional
+            "last_name": "Patient",
+            "dob": "1987-01-06",
+            "mobile": "+919999999999",
+            "gender": "M"
+        },
+        "slot": {
+            "start_time": "2024-06-11T09:00:00+05:30",
+            "end_time": "2024-06-11T09:30:00+05:30",
+            "service_conf_id": "904eec0a73d9b02d9145898db44e628bcb18e7a11cd92852be5a2d6f65159a04"
+        },
+        "doctor_id": {{doctor_id}}, 
+        "clinic_id": {{clinic_id}}
+    }
+
+     ```
+
+    ### 7\. Check-In Patient for Appointment \[Optional\]
+
+
+    **Purpose**
+
+
+    Check-in a patient for a previously created appointment using the
+    appointment ID. Checkin in a patient adds them to the doctor's currently
+    visiting queue.
+
+
+    **Endpoint :**
+    `{{HOST}}/v2/business/appointments/{appointment_id}/check-in`  
+
+    **Method:** PUT
+
+
+    #### Description
+
+
+    This API endpoint is used to check-in a patient for a specified appointment
+    using the appointment ID. This action typically marks the patient as having
+    arrived for their scheduled appointment.
+
+
+    #### Request Body
+
+
+    The request body can include additional information such as check-in time if
+    required. However, if no check in time is provided, then current datetime is
+    used to create check in
+
+
+    ``` json
+     "check_in_time": "2024-07-01T09:00:00+05:30"
+
+     ```
+
+    ### 8\. Get Appointment Details
+
+
+    **Purpose**
+
+
+    Retrieve details of a specific appointment using the appointment ID.
+
+
+    **Endpoint :** `{{HOST}}/v1/business/appointments/{appointment_id}`  
+
+    **Method:** GET
+
+
+    #### Description
+
+
+    This API endpoint is used to retrieve detailed information about a specific
+    appointment. The response includes comprehensive details such as appointment
+    status, patient information, doctor information, and other relevant data.
+
+
+    #### Request Parameters
+
+
+    - **appointment_id**: The unique identifier for the appointment.
+        
+
+    **Example Request:**
+
+
+    ```
+
+    curl --location --request GET
+    '{{HOST}}/v1/business/{{business_id}}/appointments/{{appointment_id}}' \
+
+    --header 'Content-Type: application/json'
+
+     ```
+
+    ### 8\. Edit and Reschedule Appointments
+
+
+    **Purpose:** Edit and reschedule existing appointments.
+
+
+    **Endpoint:** `{{HOST}}/v1/business/appointment/cancel/{{appointment_id}}`
+
+
+    **Description:** Currently to reschedule an appointment, business needs to
+    cancel existing appointment and create a new one.
+
+
+    ### 9\. Webhooks for Event Notifications
+
+
+    **Purpose:** Send events related to prescription creation and appointment
+    details to registered entities.
+
+
+    **Endpoint:** `{{HOST}}/v1/webhooks/events`  
+
+    **Method:** POST  
+
+    **Description:** Register webhooks to receive notifications about events
+    such as prescription creation and appointment updates.
+
+
+    ### 10\. Retrieve Prescription Details
+
+
+    **Purpose:** Retrieve details of a specific prescription using the
+    prescription ID.
+
+
+    **Endpoint:** `{{HOST}}/v1/business/prescription/{{rx_id}}`
+
+
+    **Method:** `GET`
+
+
+    **Request Parameters:**
+
+
+    - **rx_id**: The unique identifier for the prescription.
+        
+
+    **Description**: The Prescription API allows a business to manage
+    prescriptions, including retrieving details of a specific prescription.
+  version: 1.0.0
+  contact: {}
+servers:
+  - url: '{{HOST}}'
+paths:
+  /v1/business/patients/search:
+    get:
+      tags:
+        - APIs
+        - Patient Registration API
+      summary: Search Patient by mobile
+      description: >-
+        This API provides functionality to search a patient by their mobile
+        number in doctor's directory
+
+
+        ### Request Parameter
+
+
+        | Parameter | Type | Expected Values | Description |
+        Required/Optional/Not Required |
+
+        | --- | --- | --- | --- | --- |
+
+        | mobile | string |  | Patient's mobile number | Required |
+
+
+        ### **Response parameter**
+
+
+        | Parameter | Type | Expected Values | Description |
+
+        | --- | --- | --- | --- |
+
+        | data | object |  | Response data object |
+
+        | data.patients | array |  | List of patients |
+
+        | data.patients\[\].oid | string | 1234567890 | Unique identifier for
+        the patient |
+
+        | data.patients\[\].name | string | Patient Testname | Patient's name |
+
+        | data.patients\[\].last_visit | datetime | 2024-06-06T10:56:50.468Z |
+        Last visit date and time |
+
+        | data.patients\[\].clinic_id | string | 60532c11111101ba3a3Test |
+        Clinic identifier |
+
+        | data.patients\[\].patient_profile | object |  | Patient object |
+
+        | data.patients\[\].patient.patient_oid | string | 1234567890 | Unique
+        identifier for the patient |
+
+        | data.patients\[\].patient.first_name | string | Patient | Patient's
+        first name |
+
+        | data.patients\[\].patient.middle_name | string |  | Patient's middle
+        name |
+
+        | data.patients\[\].patient.last_name | string | Testname | Patient's
+        last name |
+
+        | data.patients\[\].patient.dob | date | 1981-11-11 | Patient's date of
+        birth |
+
+        | data.patients\[\].patient.dob-valid | boolean | true | Date of birth
+        validity |
+
+        | data.patients\[\].patient.health-ids | array | \["test@abdm",
+        "test@ndhm"\] | List of patient's health IDs |
+
+        |  |  |  |  |
+
+        | data.patients\[\].patient.email | string |
+        [ekademo@gmail.com](https://mailto:ekademo@gmail.com) | Patient's email
+        address |
+
+        | data.patients\[\].patient.gen | string | M | Patient's gender |
+
+        | data.patients\[\].patient.mobile | string | +919999999999 | Patient's
+        mobile number |
+
+        | data.patients\[\].patient.at | datetime | 2021-03-19T13:15:26.318Z |
+        Timestamp of patient profile creation |
+
+        **Status Codes**
+
+
+        • 200: Success
+
+
+        • 403: Patient/Business data missing
+
+
+        • 500: Wrong API URL/Wrong JSON request/ Something went wrong
+      operationId: searchPatientByMobile
+      parameters:
+        - name: mobile
+          in: query
+          schema:
+            type: string
+            example: <mobile_no>
+        - name: name
+          in: query
+          schema:
+            type: string
+            example: <name>
+        - name: x-api-key
+          in: header
+          schema:
+            type: string
+            example: '{{x-api-key}}'
+      requestBody:
+        content:
+          application/json:
+            examples:
+              Search Patient by mobile:
+                value: ''
+              Search Patient by name:
+                value: ''
+      responses:
+        '200':
+          description: 200 OK / 200 OK
+          headers:
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Content-Length:
+              schema:
+                type: string
+                example: '380'
+            Date:
+              schema:
+                type: string
+                example: Tue, 24 Mar 2020 06:26:06 GMT
+            Server:
+              schema:
+                type: string
+                example: nginx/1.10.3 (Ubuntu)
+            Strict-Transport-Security:
+              schema:
+                type: string
+                example: max-age=15768000
+            Vary:
+              schema:
+                type: string
+                example: Cookie, Accept-Encoding
+          content:
+            text/plain:
+              examples:
+                200 OK:
+                  value: |-
+                    {
+                        "data": {
+                            "patients": [
+                                {
+                                    "oid": "123456789",
+                                    "name": "Test Patient",
+                                    "last_visit": "2024-06-06T10:56:50.468Z",
+                                    "clinic_id": "12345678",
+                                    "patient_profile": { // <Patient Object> 
+                                        "oid": "123456789",
+                                        "first_name": "Test",
+                                        "middle_name": "",
+                                        "last_name": "Patient",
+                                        "dob": "1984-11-11",
+                                        "email": "ekademo@gmail.com",
+                                        "gen": "M",
+                                        "mobile": "+919999999999",
+                                        "created_at": "2021-03-19T13:15:26.318Z"
+                                    }
+                                },
+                                {
+                                    "oid": "234567890",
+                                    "name": "Test PT 2",
+                                    "last_visit": null,
+                                    "is_recent": false,
+                                    "clinic_id": null,
+                                    "patient_profile": {
+                                        "first_name": "Test",
+                                        "middle_name": "PT",
+                                        "last_name": "2",
+                                        "oid": "234567890",
+                                        "email": "demo_test@eka.care",
+                                        "gen": "M",
+                                        "mobile": "+91999999999",
+                                        "dob": "1991-11-11",
+                                        "created_at": "2021-03-19T13:15:26318Z"                    
+                                    }
+                                }
+                            ]
+                        }
+                    }
+        '403':
+          description: >-
+            403 Forbidden/Business/ Patient Details Missing / 403
+            Forbidden/Business/ Patient Details Missing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: {}
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: UNAUTHORIZED_PATIENT_SEARCH
+                      message:
+                        type: string
+                        example: >-
+                          Unauthorized access: You do not have permission to
+                          search for patients in this directory
+              examples:
+                403 Forbidden/Business/ Patient Details Missing:
+                  value:
+                    data: {}
+                    error:
+                      code: UNAUTHORIZED_PATIENT_SEARCH
+                      message: >-
+                        Unauthorized access: You do not have permission to
+                        search for patients in this directory
+        '500':
+          description: ' 500 Wrong API URL/Token mismatched/Wrong JSON request. /  500 Wrong API URL/Token mismatched/Wrong JSON request.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: {}
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: INVALID_DATA
+                      message:
+                        type: string
+                        example: Data entered is incorrect
+              examples:
+                ' 500 Wrong API URL/Token mismatched/Wrong JSON request.':
+                  value:
+                    data: {}
+                    error:
+                      code: INVALID_DATA
+                      message: Data entered in incorrect
+  /v1/business/doctor/{doctor_id}/clinic/{clinic_id}/appointments/slots:
+    get:
+      tags:
+        - APIs
+        - Appointment API
+      summary: Get Appointment Slots
+      description: >-
+        This API is the first step in booking appointment slot for a patient for
+        a doctor's clinic
+
+
+        **Parameters**
+
+
+        | Parameter | Type | Expected Values | Description |
+        Required/Optional/Not Required |
+
+        | --- | --- | --- | --- | --- |
+
+        | docid | string |  | Unique identifier for the doctor | Required |
+
+        | clinicid | string |  | Unique identifier for the clinic | Required |
+
+        | start_date | date | YYYY-MM-DD | Start date for the appointment slots
+        | Required |
+
+        | end_date | date | YYYY-MM-DD | End date for the appointment slots |
+        Required |
+
+
+        **Response Parameters**
+
+
+        | Parameter | Type | Description |
+
+        | --- | --- | --- |
+
+        | data | object | Response data object |
+
+        | data.schedule | object | Schedule of available slots |
+
+        | data.schedule. | object | Object containing appointment slots for the
+        clinic |
+
+        | data.schedule.. | array | Array of available slots for the given date
+        |
+
+        | data.schedule..\[\].available | boolean | Indicates if the slot is
+        available |
+
+        | data.schedule..\[\].conf_id | string | Configuration ID for the slot |
+
+        | data.schedule..\[\].e | datetime | End time of the slot |
+
+        | data.schedule..\[\].s | datetime | Start time of the slot |
+
+        | data.schedule..\[\].slots_booked | integer | Number of slots booked |
+
+        | data.services | object | Object containing service details |
+
+        | data.services. | object | Service object |
+
+        | data.services..allow_patient_booking | boolean | Indicates if patient
+        booking is allowed |
+
+        | data.services..appointment_type | string | Type of appointment (e.g.,
+        REGULAR) |
+
+        | data.services..archive | boolean | Indicates if the service is
+        archived |
+
+        | data.services..book_ahead_days | integer | Number of days ahead
+        booking is allowed |
+
+        | data.services..c_at | datetime | Creation timestamp of the service |
+
+        | data.services..conf_id | string | Configuration ID for the service |
+
+        | data.services..conv_fee | integer | Convenience fee for the service |
+
+        | data.services..currency | string | Currency code (e.g., INR) |
+
+        | data.services..duration | integer | Duration of the service in minutes
+        |
+
+        | data.services..eka_fee | integer | Eka fee for the service |
+
+        | data.services..followup_validity | integer | Validity period for
+        follow-up |
+
+        | data.services..mode | array | Modes of the service (e.g., tele,
+        in-clinic) |
+
+        | data.services..nickname | string | Nickname for the service |
+
+        | data.services..owner_id | string | Owner ID for the service |
+
+        | data.services..post_pay | boolean | Indicates if post-payment is
+        allowed |
+
+        | data.services..pre_pay | boolean | Indicates if pre-payment is allowed
+        |
+
+        | data.services..price | integer | Price of the service |
+
+        | data.services..service_id | integer | Service ID |
+
+        | data.services..service_name | string | Name of the service |
+
+
+        **Status codes**
+
+
+        • 200: Success
+
+
+        • 403: Business data missing
+
+
+        • 500: Wrong API URL/Token mismatched/Wrong JSON request.
+      operationId: getAppointmentSlots
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            example: '{{start_date}}'
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            example: '{{end_date}}'
+      requestBody:
+        content:
+          application/json:
+            examples:
+              Get Appointment Slots:
+                value: ''
+      responses:
+        '200':
+          description: 200 - OK
+          headers:
+            Connection:
+              schema:
+                type: string
+                example: keep-alive
+            Content-Encoding:
+              schema:
+                type: string
+                example: gzip
+            Content-Length:
+              schema:
+                type: string
+                example: '377'
+            Date:
+              schema:
+                type: string
+                example: Sun, 12 Apr 2020 11:09:57 GMT
+            Server:
+              schema:
+                type: string
+                example: nginx/1.10.3 (Ubuntu)
+            Strict-Transport-Security:
+              schema:
+                type: string
+                example: max-age=15768000
+            Vary:
+              schema:
+                type: string
+                example: Cookie, Accept-Encoding
+          content:
+            text/plain:
+              examples:
+                200 - OK:
+                  value: |-
+                    {
+                        "data": {
+                            "schedule": {
+                                {{clinic_id}}: { 
+                                        "2024-06-19": [
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T10:40:00+05:30",
+                                                "s": "2024-06-19T10:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T10:50:00+05:30",
+                                                "s": "2024-06-19T10:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T11:00:00+05:30",
+                                                "s": "2024-06-19T10:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T11:10:00+05:30",
+                                                "s": "2024-06-19T11:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T11:20:00+05:30",
+                                                "s": "2024-06-19T11:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T11:30:00+05:30",
+                                                "s": "2024-06-19T11:20:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T11:40:00+05:30",
+                                                "s": "2024-06-19T11:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T11:50:00+05:30",
+                                                "s": "2024-06-19T11:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T12:00:00+05:30",
+                                                "s": "2024-06-19T11:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T12:10:00+05:30",
+                                                "s": "2024-06-19T12:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T12:20:00+05:30",
+                                                "s": "2024-06-19T12:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T12:30:00+05:30",
+                                                "s": "2024-06-19T12:20:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T12:40:00+05:30",
+                                                "s": "2024-06-19T12:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T12:50:00+05:30",
+                                                "s": "2024-06-19T12:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T13:00:00+05:30",
+                                                "s": "2024-06-19T12:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T18:40:00+05:30",
+                                                "s": "2024-06-19T18:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T18:50:00+05:30",
+                                                "s": "2024-06-19T18:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T19:00:00+05:30",
+                                                "s": "2024-06-19T18:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T19:10:00+05:30",
+                                                "s": "2024-06-19T19:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T19:20:00+05:30",
+                                                "s": "2024-06-19T19:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T19:30:00+05:30",
+                                                "s": "2024-06-19T19:20:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T19:40:00+05:30",
+                                                "s": "2024-06-19T19:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T19:50:00+05:30",
+                                                "s": "2024-06-19T19:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T20:00:00+05:30",
+                                                "s": "2024-06-19T19:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T20:10:00+05:30",
+                                                "s": "2024-06-19T20:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T20:20:00+05:30",
+                                                "s": "2024-06-19T20:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-19T20:30:00+05:30",
+                                                "s": "2024-06-19T20:20:00+05:30",
+                                                "slots_booked": null
+                                            }
+                                        ],
+                                        "2024-06-20": [
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T10:40:00+05:30",
+                                                "s": "2024-06-20T10:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T10:50:00+05:30",
+                                                "s": "2024-06-20T10:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T11:00:00+05:30",
+                                                "s": "2024-06-20T10:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T11:10:00+05:30",
+                                                "s": "2024-06-20T11:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T11:20:00+05:30",
+                                                "s": "2024-06-20T11:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T11:30:00+05:30",
+                                                "s": "2024-06-20T11:20:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T11:40:00+05:30",
+                                                "s": "2024-06-20T11:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T11:50:00+05:30",
+                                                "s": "2024-06-20T11:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T12:00:00+05:30",
+                                                "s": "2024-06-20T11:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T12:10:00+05:30",
+                                                "s": "2024-06-20T12:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T12:20:00+05:30",
+                                                "s": "2024-06-20T12:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T12:30:00+05:30",
+                                                "s": "2024-06-20T12:20:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T12:40:00+05:30",
+                                                "s": "2024-06-20T12:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T12:50:00+05:30",
+                                                "s": "2024-06-20T12:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T13:00:00+05:30",
+                                                "s": "2024-06-20T12:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T18:40:00+05:30",
+                                                "s": "2024-06-20T18:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T18:50:00+05:30",
+                                                "s": "2024-06-20T18:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T19:00:00+05:30",
+                                                "s": "2024-06-20T18:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T19:10:00+05:30",
+                                                "s": "2024-06-20T19:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T19:20:00+05:30",
+                                                "s": "2024-06-20T19:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T19:30:00+05:30",
+                                                "s": "2024-06-20T19:20:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T19:40:00+05:30",
+                                                "s": "2024-06-20T19:30:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T19:50:00+05:30",
+                                                "s": "2024-06-20T19:40:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T20:00:00+05:30",
+                                                "s": "2024-06-20T19:50:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T20:10:00+05:30",
+                                                "s": "2024-06-20T20:00:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T20:20:00+05:30",
+                                                "s": "2024-06-20T20:10:00+05:30",
+                                                "slots_booked": null
+                                            },
+                                            {
+                                                "available": true,
+                                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                                "e": "2024-06-20T20:30:00+05:30",
+                                                "s": "2024-06-20T20:20:00+05:30",
+                                                "slots_booked": null
+                                            }
+                                        ]
+                                    }
+                                },
+                            "services": {
+                                "7166c97b908466a27b8c11b3c93090a65dd61fe85eeda9a38761ade663581dc4": {
+                                    "allow_patient_booking": true,
+                                    "appointment_type": "REGULAR",
+                                    "c_at": "2022-06-18T20:33:34.159Z",
+                                    "conf_id": "7166c97b908466a27b8c11b3c93090a65dd61fe85eeda9a38761ade663581dc4",
+                                    "mode": [
+                                        "tele"
+                                    ],
+                                    "owner_id": "161459684229004",
+                                    "post_pay": true,
+                                    "pre_pay": false,
+                                    "price": null,
+                                    "service_name": "consultation"
+                                },
+                                "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582": {
+                                    "allow_patient_booking": true,
+                                    "appointment_type": "REGULAR",
+                                    "book_ahead_days": 21,
+                                    "c_at": "2022-06-18T20:33:33.684Z",
+                                    "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                    "mode": [
+                                        "in-clinic"
+                                    ],
+                                    "owner_id": "{{doctor_id}}",
+                                    "post_pay": true,
+                                    "pre_pay": false,
+                                    "price": null,
+                                    "service_name": "consultation"
+                                },
+                                "eedaa0837acbc0380108615f34f1f42de20da6aab299f592cbb5a5dd10f94d07": {
+                                    "allow_patient_booking": true,
+                                    "appointment_type": "REGULAR",
+                                    "archive": false,
+                                    "book_ahead_days": 21,
+                                    "c_at": "2023-11-18T08:05:53.718Z",
+                                    "conf_id": "eedaa0837acbc0380108615f34f1f42de20da6aab299f592cbb5a5dd10f94d07",
+                                     "mode": [
+                                        "in-clinic"
+                                    ],
+                                    "owner_id": "{{doctor_id}}",
+                                    "post_pay": true,
+                                    "pre_pay": false,
+                                    "price": null,
+                                    "service_name": "Tele-Consulation"
+                                }
+                            }
+                        }
+                    }
+    parameters:
+      - name: doctor_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clinic_id
+        in: path
+        required: true
+        schema:
+          type: string
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      name: Authorization
+      in: header
+security:
+  - apiKey: []
+tags:
+  - name: Primary Actors/Objects
+    description: >-
+      This section describes the primary actors and objects that are used in
+      Eka's system. These entities are fundamental to the functioning of the
+      platform and are involved in various processes and interactions within the
+      Eka ecosystem.
+
+
+      ### Patient
+
+
+      A Patient is an individual who receives medical care and services. The
+      patient's profile contains personal information, contact details, medical
+      history, and other relevant data.
+
+
+      Example Patient Object
+
+
+      ``` json
+
+      {
+          "patient_oid": "123456789",// Will be created once patient is registered on Eka (Either via appointment or patient registration)
+          "designation": "Mr.", //Optional
+          "first_name": "Test",
+          "middle_name": "", //optional
+          "last_name": "Patient",
+          "dob": "1987-01-06",
+          "mobile": "+919999999999",
+          "gender": "M",
+          "address": { //Optional
+              "city": "Bangalore",
+              "line1": "ABC",
+              "line2": "XYZ",
+              "pincode": 560049,
+              "state": "Karnataka",
+              "country": "India"
+          },
+          "metadata": { //Optional
+              "blood_group": "AB+",
+              "aadhar_number": "12345",
+              "notes": "Has a history of HTN"
+          }
+      }
+
+       ```
+
+      #### Field Definitions
+
+
+      - **designation**: `string` - Title of the patient (e.g., Mr., Ms., Dr.).
+          
+      - **first_name**: `string` - First name of the patient.
+          
+      - **middle_name**: `string` - Middle name of the patient (optional).
+          
+      - **last_name**: `string` - Last name of the patient.
+          
+      - **dob**: `date` - Date of birth of the patient (YYYY-MM-DD).
+          
+      - **mobile**: `string` - Mobile phone number of the patient.
+          
+      - **gender**: `string` - Gender of the patient (e.g., M, F).
+          
+      - **email**: `string` - Email address of the patient.
+          
+      - **address**: `object` - Address details of the patient (optional).
+          
+          - **city**: `string` - City of residence.
+              
+          - **line1**: `string` - First line of the address.
+              
+          - **line2**: `string` - Second line of the address (optional).
+              
+          - **pincode**: `number` - Postal code of the address.
+              
+          - **state**: `string` - State of residence.
+              
+          - **country**: `string` - Country of residence.
+              
+      - **metadata**: `object` - Additional metadata about the patient
+      (optional).
+          
+          - **blood_group**: `string` - Blood group of the patient.
+              
+          - **aadhar_number**: `string` - Aadhar number of the patient.
+              
+
+      ### Doctor
+
+
+      A **Doctor** is a medical professional registered on the Eka platform. The
+      doctor's profile includes personal details, professional credentials,
+      clinic associations, and availability for appointments.
+
+
+      ``` json
+
+      {
+          "id": "1234567890",
+          "profile": {
+              "personal": {
+                  "first_name": "Doctor",
+                  "middle_name": "",
+                  "last_name": "Lastname",
+                  "dob": "",
+                  "gender": "M"
+              },
+              "professional": {
+                  "active": true,
+                  "about": "Dr. Doctor Lastname is a Cardiologist with 43 years of experience.",
+                  "language": [
+                      {
+                          "code": "en",
+                          "language": "English"
+                      }
+                  ],
+                  "degree": [
+                      {
+                          "name": "MD",
+                          "branch_name": "",
+                          "college_name": "",
+                          "start_year": "",
+                          "end_year": ""
+                      }
+                  ],
+                  "major_speciality": {
+                      "name": "Cardiologist",
+                      "code": "CA"
+                  },
+                  "speciality": [
+                      {
+                          "name": "General Physician",
+                      },
+                      {
+                          "name": "Diabetologist",
+                      }
+                  ],
+                  "clinics": [                
+                      {
+                          "id": "1234567890",
+                          "name": "Vagus Hospital & Health Services",
+                          "contacts": [
+                              {
+                                  "name": "Phone",
+                                  "number": "+910000999999"
+                              }
+                          ],
+                          "address": {
+                              "line1": "H No -122/a,, Pocket 2 back side of Yamaha 2 wheeler showroom., Pocket 2, Gate No :-2, nearest to Homeopathy clinic.",
+                              "city": "Delhi",
+                              "country": "India",
+                              "state": "Delhi",
+                              "pin": "110085"
+                          }
+                      }
+                  ],
+                  "default_clinic": "1234567890"
+              }
+          }
+      }
+
+       ```
+
+      #### Field Definitions
+
+
+      - **id**: `string` - Unique identifier for the doctor.
+          
+      - **profile**: `object` - Profile details of the doctor.
+          
+          - **personal**: `object` - Personal information of the doctor.
+              
+              - **first_name**: `string` - First name of the doctor.
+                  
+              - **middle_name**: `string` - Middle name of the doctor (optional).
+                  
+              - **last_name**: `string` - Last name of the doctor.
+                  
+              - **dob**: `date` - Date of birth of the doctor (YYYY-MM-DD).
+                  
+              - **gender**: `string` - Gender of the doctor (e.g., M, F).
+                  
+          - **professional**: `object` - Professional details of the doctor.
+              
+              - **active**: `boolean` - Indicates if the doctor is actively practicing.
+                  
+              - **about**: `string` - Brief description about the doctor.
+                  
+              - **language**: `array` - Languages spoken by the doctor.
+                  
+                  - **code**: `string` - Language code.
+                      
+                  - **language**: `string` - Language name.
+                      
+              - **degree**: `array` - Educational qualifications of the doctor.
+                  
+                  - **name**: `string` - Name of the degree.
+                      
+                  - **branch_name**: `string` - Branch of study (optional).
+                      
+                  - **college_name**: `string` - Name of the college (optional).
+                      
+                  - **start_year**: `string` - Start year of the degree (optional).
+                      
+                  - **end_year**: `string` - End year of the degree (optional).
+                      
+              - **major_speciality**: `object` - Major specialty of the doctor.
+                  
+                  - **name**: `string` - Name of the specialty.
+                      
+              - **speciality**: `array` - Additional specialties of the doctor.
+                  
+                  - **name**: `string` - Name of the specialty.
+                      
+              - **clinics**: `array` - Clinics associated with the doctor.
+                  
+                  - **id**: `string` - Unique identifier for the clinic.
+                      
+                  - **name**: `string` - Name of the clinic.
+                      
+                  - **contacts**: `array` - Contact details for the clinic.
+                      
+                      - **name**: `string` - Type of contact (e.g., Landline, Mobile, Fax).
+                          
+                      - **number**: `string` - Contact number.
+                          
+                  - **address**: `object` - Address details of the clinic.
+                      
+                      - **line1**: `string` - First line of the address.
+                          
+                      - **city**: `string` - City where the clinic is located.
+                          
+                      - **country**: `string` - Country where the clinic is located.
+                          
+                      - **state**: `string` - State where the clinic is located.
+                          
+                      - **pin**: `number` - Postal code of the clinic.
+                          
+              - **default_clinic**: `string` - Unique identifier for the default clinic of the doctor.
+                  
+
+      ### Clinic
+
+
+      A **Clinic** is a healthcare facility where doctors provide medical
+      services. The clinic profile includes the clinic's name, address, contact
+      information, specialties, and operating hours.
+
+
+      ### Appointment
+
+
+      An **Appointment** is a scheduled meeting between a patient and a doctor.
+      Appointment details include the appointment ID, doctor and patient
+      information, clinic location, date and time, and status.
+
+
+      \- Possible status ENUMS :
+
+
+      - CM - Completed with Rx creation
+          
+      - CMNP - Completed without Rx
+          
+      - BK- Booked
+          
+      - NS- No show
+          
+      - OG - Ongoing
+          
+
+      \- Payment Section may contain payment information which is done on Eka's
+      end :
+
+
+      - payment_transaction_id
+          
+      - payment status
+          
+      - amount paid
+          
+
+      ``` json
+
+      {
+          "aid": "APT-12345-IJHK",
+          "created_at": "2023-07-30T18:07:24.000Z",
+          "doctor_oid": "12345678908097",
+          "patient_oid": "12345678909876",
+          "clinic_id": "3456IUENS1234",
+          "channel": "Offline",
+          "status": "CM", [Completed, Ongoing, Booked, NO show, Cancelled,Completed without Rx]
+          "start_time": "2023-07-24T15:41:41.000Z",
+          "end_time": "2023-07-24T15:46:41.000Z",
+          "visit_checkin": "2023-07-30T12:37:24.000Z",
+          "visit_start": "2023-07-24T15:41:41.000Z",
+          "visit_end": "2023-07-24T15:46:41.000Z",
+          "stage": "COMPLETED",
+          "visit-type": "WALKIN",
+          "payment": {
+              "payment_id": null,
+              "payment_status": null,
+              "amount": null
+          },
+          "prescription_id": "PRES-123456-KEY-98765",
+          "service": {
+              "created_at": "2022-01-01T00:00:00.000Z",
+              "mode": [
+                  "in-clinic"
+              ],
+              "price": null,
+              "eka_fee": null,
+              "pre_pay": false,
+              "conv_fee": 0,
+              "currency": "INR",
+              "duration": 15,
+              "post_pay": false,
+              "service_name": "consultation",
+              "book_ahead_days": 21,
+              "appointment_type": "REGULAR"
+          }
+      }
+
+       ```
+
+      #### Field Definitions
+
+
+      - **aid**: `string` - Unique identifier for the appointment.
+          
+      - **created_at**: `datetime` - Timestamp when the appointment was created.
+          
+      - **doctor_oid**: `string` - Unique identifier for the doctor.
+          
+      - **patient_oid**: `string` - Unique identifier for the patient.
+          
+      - **clinic_id**: `string` - Unique identifier for the clinic.
+          
+      - **channel**: `string` - Channel through which the appointment was booked
+      (e.g., Offline, Online).
+          
+      - **status**: `string` - Status of the appointment (e.g., CM - Confirmed).
+          
+      - **start_time**: `datetime` - Start time of the appointment.
+          
+      - **end_time**: `datetime` - End time of the appointment.
+          
+      - **visit_checkin**: `datetime` - Check-in time for the appointment.
+          
+      - **visit_start**: `datetime` - Start time of the actual visit.
+          
+      - **visit_end**: `datetime` - End time of the actual visit.
+          
+      - **stage**: `string` - Current stage of the appointment (e.g.,
+      COMPLETED).
+          
+      - **visit-type**: `string` - Type of visit (e.g., WALKIN).
+          
+      - **payment**: `object` - Payment details for the appointment.
+          
+          - **payment_id**: `string` - Unique identifier for the payment (nullable).
+              
+          - **payment_status**: `string` - Status of the payment (nullable).
+              
+          - **amount**: `number` - Amount paid for the appointment (nullable).
+              
+      - **prescription_id**: `string` - Unique identifier for the prescription
+      associated with the appointment.
+          
+      - **service**: `object` - Service details for the appointment.
+          
+          - **created_at**: `datetime` - Timestamp when the service was created.
+              
+          - **mode**: `array` - Modes of service (e.g., in-clinic, teleconsultation).
+              
+          - **price**: `number` - Price of the service (nullable).
+              
+          - **archive**: `boolean` - Indicates if the service is archived.
+              
+          - **eka_fee**: `number` - Eka's fee for the service (nullable).
+              
+          - **pre_pay**: `boolean` - Indicates if pre-payment is required.
+              
+          - **conv_fee**: `number` - Convenience fee for the service.
+              
+          - **currency**: `string` - Currency code (e.g., INR).
+              
+          - **duration**: `number` - Duration of the service in minutes.
+              
+          - **post_pay**: `boolean` - Indicates if post-payment is allowed
+              
+          - **service_name**: `string` - Name of the service.
+              
+          - **book_ahead_days**: `number` - Number of days ahead the service can be booked.
+              
+          - **appointment_type**: `string` - Type of appointment (e.g., REGULAR)
+              
+
+      ### Prescription
+
+
+      A **Prescription** is a medical document provided by a doctor to a
+      patient. It includes the prescribed medications, dosage instructions, and
+      other treatment recommendations.
+
+
+      ``` json
+
+      {
+        "data": {
+          "rx_id": "PRES-123456-KEY-98765",
+          "visit_id": "APT-12345-IJHK",
+          "date": "2024-03-08T05:50:37.059Z",
+          "doctor": {
+            "id": "1234567890"
+          },
+          "patient": {
+            "id": "123456789900"
+          },
+          "selectedClinic": "3456IUENS1234",
+          "rx_url": "http://rx_url.com",
+          "visitName": "Febrile illness, Dengue",
+          "rx_entities": {
+            "symptoms": [
+              {
+                "ekaid": "id-1234",
+                "name": "Fever With Chills",
+                "properties": {
+                  "since": "5 days",
+                  "severity": "high",
+                  "abc": "xyz"
+                }
+              }
+              ],
+              "diagnosis": [
+                {
+                  "ekaid":  "id-1234",
+                  "name": "Febrile illness"
+                }
+              ],
+              "medications": [
+                {
+                  "name": "Dolo 650",
+                  "ekaid":  "id-1234",
+                  "dosage_form": "tablet",
+                  "frequency": "1-1-1",
+                  "duration": "5 Days",
+                  "timing": "After Meal",
+                  "instruction": "drink with water",
+                  "dose": "1 tablet",
+                  "generic_name": "Paracetamol (650mg)",
+                  "tapering_dose": []
+                }
+              ],
+              "labTests": [
+                {
+                  "eka_id":  "id-1234",
+                  "name": "Complete Blood Count (CBC)",
+                  "partner_id": "MP0101",
+                  "remark": null
+                }
+              ]
+            }
+          }
+        }
+
+       ```
+
+      #### Field Definitions
+
+
+      - **rx_id**: `string` - Unique identifier for the prescription.
+          
+      - **visit_id**: `string` - Unique identifier for the visit during which
+      the prescription was created.
+          
+      - **created_at**: `datetime` - Date and time when the prescription was
+      created.
+          
+      - **doctor**: `object` - Details of the doctor who created the
+      prescription.
+          
+          - **id**: `string` - Unique identifier for the doctor.
+              
+      - **patient**: `object` - Details of the patient for whom the prescription
+      was created.
+          
+          - **id**: `string` - Unique identifier for the patient.
+              
+      - **selectedClinic**: `string` - Unique identifier for the clinic where
+      the prescription was created.
+          
+      - **rx_url**: `string` - URL to the PDF version of the prescription.
+          
+      - **visitName**: `string` - Name or reason for the visit.
+          
+      - **rx_entities**: `object` - Entities associated with the prescription.
+          
+          - **symptoms**: `array` - List of symptoms reported.
+              
+              - **ekaid**: `string` - Unique identifier for the symptom.
+                  
+              - **name**: `string` - Name of the symptom.
+                  
+              - **properties**: `object` - Additional properties of the symptom.
+                  
+                  - **since**: `string` - Duration of the symptom.
+                      
+                  - **severity**: `string` - Severity of the symptom.
+                      
+                  - **abc**: `string` - Additional custom property.
+                      
+          - **diagnosis**: `array` - List of diagnoses made.
+              
+              - **ekaid**: `string` - Unique identifier for the diagnosis.
+                  
+              - **name**: `string` - Name of the diagnosis.
+                  
+          - **medications**: `array` - List of medications prescribed.
+              
+              - **name**: `string` - Name of the medication.
+                  
+              - **ekaid**: `string` - Unique identifier for the medication.
+                  
+              - **dosage_form**: `string` - Form of the medication (e.g., tablet, syrup).
+                  
+              - **frequency**: `string` - Frequency of medication intake. (1-1-1, Once in a week)
+                  
+              - **duration**: `string` - Duration for which the medication is prescribed. (5 Days, 3 Weeks)
+                  
+              - **timing**: `string` - Timing of medication intake (e.g., After Meal).
+                  
+              - **instruction**: `string` - Additional instructions for medication intake.
+                  
+              - **dose**: `string` - Dose of the medication. (1 Tablet, 10 ml)
+                  
+              - **generic_name**: `string` - Generic name of the medication.
+                  
+              - **tapering_dose**: `array` - List of tapering doses (optional).
+                  
+          - **labTests**: `array` - List of lab tests prescribed.
+              
+              - **eka_id**: `string` - Unique identifier for the lab test.
+                  
+              - **name**: `string` - Name of the lab test.
+                  
+              - **partner_id**: `string` - Partner identifier for the lab test (optional).
+                  
+              - **remark**: `string` - Remarks for the lab test (optional).
+                  
+
+      ### Business
+
+
+      A **Business** refers to an entity that operates clinics and employs
+      doctors. The business profile includes information about the business, its
+      clinics, and administrative details.
+
+
+      Understanding these primary actors and objects is crucial for effectively
+      interacting with the Eka platform and utilizing its API.
+  - name: Auth
+    description: >-
+      ## **API Authentication Guide for Third Parties**
+
+
+      **Overview**
+
+
+      To interact with our APIs securely, you must first authenticate and obtain
+      an access token. This token must be included in the headers of all
+      subsequent API requests. The token is valid for 30 minutes, after which
+      you will need to re-authenticate to obtain a new token. This guide will
+      walk you through the necessary steps and provide tips on managing token
+      expiration programmatically.
+
+
+      **Step 1: Obtain an Access Token**
+
+
+      The first step in interacting with our API is to authenticate using your
+      client credentials. This will provide you with an access token.
+
+
+      **Authentication Request**
+
+
+      Make a POST request to the authentication endpoint with your client
+      credentials:
+
+
+      ``` bash
+
+      curl --location '{{AUTH_HOST}}/connect-auth/v1/account/login' \
+
+      --header 'Content-Type: application/json' \
+
+      --data '{
+          "client_id": "<client_id_assigned>",
+          "client_secret": "<secret_key_assigned>"
+      }'
+
+       ```
+
+      **Response**
+
+
+      If the authentication is successful, you will receive a JSON response
+      containing the access token:
+
+
+      ``` json
+
+      {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5c1KlsXVCJ9.eyJleHAiOjE3MjMxMDk1NTIsImlhdCI6MTcyMzEwNzc1MiwiYy1pZCI6Im1ldHJvcG9saXMifQ.PdxjlgB3ZK4qGPdYwqfptAaZvBsGtSjqYLSN0wp1"
+      }
+
+       ```
+
+      The access_token is valid for 30 minutes.
+
+
+      **Step 2: Use the Access Token**
+
+
+      Include the access token in the `auth` header for all subsequent API
+      requests. This token is essential for the API gateway to authenticate your
+      requests and allow access.
+
+
+      **Example API Request**
+
+
+      Here’s how to include the access token in your API requests:
+
+
+      ``` bash
+
+      curl --location '{{HOST}}/api-suite/v1/any-endpoint' \
+
+      --header 'auth:
+      eyJhbGciOiJIUzI1NiIsInR5c1KlsXVCJ9.eyJleHAiOjE3MjMxMDk1NTIsImlhdCI6MTcyMzEwNzc1MiwiYy1pZCI6Im1ldHJvcG9saXMifQ.PdxjlgB3ZK4qGPdYwqfptAaZvBsGtSjqYLSN0wp1'
+      \
+
+      --header 'Content-Type: application/json'
+
+       ```
+
+      **Token Expiration and Renewal**
+
+
+      The access token is valid for **30 minutes.** After this period, you must
+      re-authenticate to obtain a new token. Failing to do so will result in
+      authentication errors for your API requests.
+
+
+      **Error Handling**
+
+
+      If the token is expired or not included in the `auth` header, all API
+      requests will return a **401 Unauthorized** status code. Ensure your
+      application handles this scenario by prompting re-authentication or
+      renewing the token as needed.
+
+
+      **Summary**
+
+
+      1\. **Authenticate:** Obtain an access token using your client
+      credentials.
+
+
+      2\. **Authorize:** Include the access token in the auth header for all API
+      requests.
+
+
+      3\. **Token Management:** Ensure the token is renewed every 30 minutes to
+      maintain continuous access. Implement token renewal logic in your
+      application to handle this automatically.
+
+
+      4.**Error Handling:** Handle 401 Unauthorized errors by re-authenticating
+      and obtaining a new token.
+  - name: APIs
+    description: >-
+      This collection provides resources for integrating our API, enabling
+      access to valuable healthcare management.
+
+
+      ## Before you begin
+
+
+      To start using this collection, you need to create your Eka developer
+      account by following the steps presented in Eka workspace page. This will
+      generate a `client-id` and `client_secret` for your business as well as
+      give access to resources like Appointment, Prescription, Doctor etc to
+      your business.
+
+
+      ### Auth
+
+
+      [Refer to the link
+      above](https://go.postman.co/workspace/Eka-API-suite~7ca4ff7b-0ee8-4660-a855-23610dcba696/documentation/14554930-e3ef477b-8398-430d-ac04-dacac98b6048?entity=folder-8cb609db-b552-4635-a0d9-cb1e7b6f2ab7)
+  - name: Patient Registration API
+    description: >-
+      ### Overview
+
+
+      The Patient Directory API is designed to manage patient information within
+      a business' directory. This API allows for searching, adding, and editing
+      patient details in a specific doctor's directory. It facilitates efficient
+      patient management and ensures that all necessary information is
+      up-to-date and easily accessible.
+
+
+      ### Main Actors
+
+
+      - **Patient:** The individual whose information is being managed in the
+      doctor's directory. This includes personal details, contact information,
+      medical history, and other relevant data.
+          
+
+      ### Functionality
+
+
+      1. **Search for Patients:**
+          
+          1. This functionality allows users to search for existing patients in a business' directory using various search criteria such as mobile number, name, etc. It helps in quickly locating patient records and retrieving relevant details.
+              
+      2. **Add a Patient:**
+          
+          1. This functionality enables the addition of new patient records to a business' directory. Users can provide necessary details such as personal information, contact details, and medical history to create a new patient profile.
+              
+      3. **Edit a Patient:**
+          
+          1. This functionality allows users to update existing patient records in a doctor's directory. Users can modify personal details, contact information, and other relevant data to ensure that the patient profile remains accurate and current.
+              
+
+      ### Example Endpoints
+
+
+      - **Search for Patients:**
+          
+          - `GET {{HOST}}/v1/business/patients/search?mobile=`
+              
+      - **Add a Patient:**
+          
+          - `POST {{HOST}}/v1/business/doctor/{{doctor_id}}/patient/add`
+              
+      - **Edit a Patient:**
+          
+          - `PUT {{HOST}}/v1/business/doctor/{{doctor_id}}/patient/{{patient_id}}`
+              
+
+      ### Usage
+
+
+      These APIs are crucial for maintaining an organized and comprehensive
+      patient directory within a business' practice. They ensure that patient
+      data is readily available, easily searchable, and always up-to-date, thus
+      enhancing the overall efficiency of patient management.
+
+
+      ### Notes
+
+
+      - Ensure that all required fields are provided when adding or editing
+      patient information.
+          
+      - Use appropriate search criteria to narrow down patient records
+      effectively.
+          
+      - Handle sensitive patient data with care and comply with relevant privacy
+      regulations.
+          
+      - Currently a patient can only be added in a reference to a doctor in a
+      business. This lets adding the patient to business directory as well as
+      searching on business level automatically.
+  - name: Doctor and clinic API
+    description: >-
+      ### Purpose
+
+
+      The Doctor and Clinic Details API serves the following main purposes:
+
+
+      1. **Retrieve Doctor Profile Details:**
+          
+          - This API provides detailed information about a doctor's profile, including their professional background, specialties, and contact information.
+              
+      2. **Fetch Associated Clinic Details\[WIP\]:**
+          
+          - In addition to the doctor's profile, this API retrieves information about the clinics associated with the doctor. This includes clinic locations, contact details, and available services.
+              
+      3. **Get Clinic and Doctor Details for a Business:**  
+          This API provides a comprehensive list of clinics and doctors associated with those clinics for a business, allowing for detailed information retrieval about the entire business entity.
+          
+
+      ### **Basic Information**
+
+
+      **Endpoint 1: Get Doctor Details**
+
+
+      • **URL:** {{HOST}}/v1/business/doctor/{doctor_id}
+
+
+      • **Method:** GET
+
+
+      **Endpoint 2: Get Clinic and Doctor Details for a Business**
+
+
+      • **URL:** {{HOST}}/v1/business/entities
+
+
+      • **Method:** GET
+
+
+      ### Usage
+
+
+      This API is intended to be used by healthcare platforms, patient
+      management systems, and appointment booking systems to display
+      comprehensive information about doctors and their associated clinics. By
+      integrating this API, users can make informed decisions when selecting a
+      healthcare provider or booking an appointment.
+
+
+      ### Example Workflow
+
+
+      1. **Fetch Doctor Profile:**
+          
+          - Retrieve detailed information about a specific doctor using their unique identifier.
+              
+      2. **Fetch Clinic Details:**
+          
+          - Retrieve details of a clinics associated with the doctor.
+              
+      3. **Fetch Clinic and Doctor Details for a Business:**  
+          •Retrieve a list of clinics, each with associated doctors, and detailed profiles of the doctors using a single API call.
+  - name: Appointment API
+    description: >-
+      #### Appointment API allows a business to to the following actions:
+
+
+      - Search for all slots daywise for a doctor and clinic.
+          
+      - Book appointment on a particular slot.
+          
+      - Check in a patient with appointment.
+          
+      - Get details of an appointment.
+          
+      - Edit/Delete/Reschedule appointments.
+          
+
+      ## Workflow for Booking an Appointment for a Patient
+
+
+      ### Step 1: Add Patient to Business' Directory (if not present)
+
+
+      Before booking an appointment, ensure that the patient is added to the
+      business' directory. Use the following API to add a patient.
+
+
+      _Note: You can also create an appointment without adding patient first.
+      Providing patient details while creating an appointment adds the patient
+      directory too._
+
+
+      **Endpoint:** `{{HOST}}/v1/business/doctor/{{doctor_id}}/patient/add`
+
+
+      **Method:** POST
+
+
+      ### Step 2: Search for Available Slots
+
+
+      Once the patient is added, select the doctor and clinic, and search for
+      the available slots for the desired dates.
+
+
+      **Endpoint:**
+      `{{HOST}}/v1/business/doctor/{doctor_id}/clinic/{clinic_id}/appointments/slots?start_date={{start_date}}&end_date={{end_date}}`
+
+
+      **Method:** GET
+
+
+      ### Step 3: Book an Appointment Slot
+
+
+      After finding an available slot, book the appointment for the desired date
+      and slot, including additional parameters like type of appointment and
+      payment mode. The appointment will be created in this step
+
+
+      **Endpoint:**
+      `{{HOST}}/v2/business/doctor/{doctor_id}/appointments/slots/book`
+
+
+      **Method:** POST
+
+
+      ### Step 4(Optional): Check-In Patient for Appointment
+
+
+      Check-in a patient for a previously created appointment using the
+      appointment ID.  
+
+      **Endpoint** :
+      `{{HOST}}/v2/business/appointments/{{appointment_id}}/check-in`  
+
+      **Method:** PUT
+
+
+      ### Step 5: Get Appointment Details
+
+
+      **Purpose**
+
+
+      Retrieve details of a specific appointment using the appointment ID.
+
+
+      **Endpoint :** `{{HOST}}/v1/business/appointments/{appointment_id}`  
+
+      **Method:** GET
+
+
+      #### Request Parameters
+
+
+      - **business_id**: The unique identifier for the business.
+          
+      - **appointment_id**: The unique identifier for the appointment.
+          
+
+      ### Step 6: Edit and Reschedule Appointments
+
+
+      **Purpose:** Edit and reschedule existing appointments. The current
+      process to reschedule an appointment is
+
+
+      1. Delete the current appointment using appointment_id
+          
+      2. Create a new appointment with new details/slots/timinga/
+          
+
+      **Cancel Endpoint:**
+      `{{HOST}}/v2/business/appointments/{appointment_id}/cancel`
+
+
+      **Book Endppoint:**
+      `{{HOST}}/v2/business/doctor/{doctor_id}/appointments/slots/book`  
+
+      Method:** PUT  
+
+      **Description:** Modify details of an existing appointment or reschedule
+      it to a different slot.
+  - name: Prescription API
+    description: >-
+      The Prescription API allows a business to manage prescriptions, including
+      retrieving details of a specific prescription.
+
+
+      ## Workflow for Managing a Prescription
+
+
+      ### Step 1: Retrieve Prescription Details
+
+
+      Retrieve details of a specific prescription using the prescription ID.
+
+
+      **Endpoint:** `{{HOST}}/v1/business/prescription/{{rx_id}}`
+
+
+      **Method:** `GET`
+
+
+      **Request Parameters:**
+
+
+      - **rx_id**: The unique identifier for the prescription.
+          
+
+      Response
+
+
+      ``` json
+
+      {
+          "data": {
+              "rx_id": "rx_id",
+              "visit_id": "appointment_id",
+              "date": "2024-03-08T05:50:37.059Z",
+              "doctor": {
+                  "id": "doctor_id"
+              },
+              "patient": {
+                  "id": "patient_id"
+              },
+              "selected_clinic": "clinic_id",
+              "rx_url": "pdf_url",
+              "visit_name": "Febrile illness, Dengue L",
+              "rx_entities": {
+                  "symptoms": [
+                      {
+                          "id": "s-1234",
+                          "name": "Fever With Chills",
+                          "properties": {
+                              "since": "5 days",
+                              "severity": "high",
+                              "abc": "xyz"
+                          }
+                      }
+                  ],
+                  "diagnosis": [
+                      {
+                          "id": "d-1345",
+                          "name": "Febrile illness"
+                      }
+                  ],
+                  "medications": [
+                      {
+                          "name": "Dolo 650",
+                          "id": "b-13456",
+                          "dosage_form": "tablet",
+                          "frequency": "1-1-1",
+                          "duration": "5 Days",
+                          "timing": "After Meal",
+                          "instruction": "drink with water",
+                          "dose": "1 tablet",
+                          "generic_name": "Paracetamol (650mg)",
+                          "tapering_dose": []
+                      }
+                  ],
+                  "labTests": [
+                      {
+                          "id": "lp-14567",
+                          "name": "Complete Blood Count (CBC)",
+                          "partner_id": "MP0101",
+                          "remark": null
+                      }
+                  ]
+              }
+          }
+      }
+
+       ```
+
+      ### Field Definitions
+
+
+      - **rx_id**: `string` - Unique identifier for the prescription.
+          
+      - **visit_id**: `string` - Unique identifier for the visit during which
+      the prescription was created.
+          
+      - **date**: `string` (ISO 8601) - Date and time when the prescription was
+      created.
+          
+      - **doctor**: `object` - Information about the doctor who created the
+      prescription.
+          
+          - **id**: `string` - Unique identifier for the doctor.
+              
+      - **patient**: `object` - Information about the patient for whom the
+      prescription was created.
+          
+          - **id**: `string` - Unique identifier for the patient.
+              
+      - **selected_clinic**: `string` - Unique identifier for the clinic where
+      the prescription was created.
+          
+      - **rx_url**: `string` - URL to download/view the prescription PDF.
+          
+      - **visit_name**: `string` - Description or name of the visit.
+          
+      - **rx_entities**: `object` - Contains detailed information about the
+      prescription entities.
+          
+          - **symptoms**: `array` - List of symptoms.
+              
+              - **id**: `string` - Unique identifier for the symptom.
+                  
+              - **name**: `string` - Name of the symptom.
+                  
+              - **properties**: `object` - Additional properties of the symptom.
+                  
+                  - **since**: `string` - Duration of the symptom.
+                      
+                  - **severity**: `string` - Severity of the symptom.
+                      
+                  - **abc**: `string` - Other property (example).
+                      
+          - **diagnosis**: `array` - List of diagnoses.
+              
+              - **id**: `string` - Unique identifier for the diagnosis.
+                  
+              - **name**: `string` - Name of the diagnosis.
+                  
+          - **medications**: `array` - List of medications.
+              
+              - **name**: `string` - Name of the medication.
+                  
+              - **id**: `string` - Unique identifier for the medication.
+                  
+              - **dosage_form**: `string` - Form of the dosage (e.g., tablet).
+                  
+              - **frequency**: `string` - Frequency of taking the medication.
+                  
+              - **duration**: `string` - Duration for taking the medication.
+                  
+              - **timing**: `string` - Timing for taking the medication.
+                  
+              - **instruction**: `string` - Additional instructions for taking the medication.
+                  
+              - **dose**: `string` - Dose of the medication.
+                  
+              - **generic_name**: `string` - Generic name of the medication.
+                  
+              - **tapering_dose**: `array` - Tapering dose information if applicable.
+                  
+          - **labTests**: `array` - List of lab tests.
+              
+              - **id**: `string` - Unique identifier for the lab test.
+                  
+              - **name**: `string` - Name of the lab test.
+                  
+              - **partner_id**: `string` - Identifier for the partner providing the lab test.
+                  
+              - **remark**: `string` - Additional remarks for the lab test.
+  - name: Webhooks
+    description: >-
+      <p>A webhook (also called a web callback or HTTP push API) is a way for an
+      app to provide other applications with real-time information. A webhook
+      delivers data to other applications as it happens, meaning you get data
+      immediately. Unlike typical APIs where you would need to poll for data
+      very frequently in order to get it real-time. This makes webhooks much
+      more efficient for both provider and consumer.</p>
+  - name: Appointment Webhooks
+  - name: Prescription Webhooks
+    description: >-
+      A webhook event for a prescription being created would typically be a POST
+      request sent to the registered webhook URL. The payload of the request
+      would include the relevant details such as prescription ID, appointment
+      ID, doctor ID, patient ID, and the event type.
+
+
+      **Request Headers**
+
+
+      ```
+
+      Content-Type: application/json
+
+       ```
+
+      **Request Body**
+
+
+      ``` json
+
+      {
+        "event_type": "prescription_created",
+        "data": {
+          "rx_id": "P-AN-AAB74FCF-52ED-537E-8032-ED69CD1D5A76",
+          "appointment_id": "09779b1b-4b2a-453b-8854-2fc0af2f1d93",
+          "doctor_id": "168085238706770",
+          "patient_id": "170313939719215"
+        }
+      }
+
+       ```
+
+      **Field Definitions**
+
+
+      • **event_type**: string - Type of the event. For this example, it is
+      “prescription_created”.
+
+
+      • **data**: object - Contains the details of the prescription event.
+
+
+      • **rx_id**: string - Unique identifier for the prescription.
+
+
+      • **appointment_id**: string - Unique identifier for the appointment
+      during which the prescription was created.
+
+
+      • **doctor_id**: string - Unique identifier for the doctor who created the
+      prescription.
+
+
+      • **patient_id**: string - Unique identifier for the patient for whom the
+      prescription was created.
+
+
+      This JSON payload would be sent as the body of a POST request to the
+      registered webhook URL. The receiving system can then process this
+      information as needed.
+  - name: Patient Information Webhooks
