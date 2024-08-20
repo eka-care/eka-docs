@@ -110,7 +110,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyRequestType4'
+              $ref: '#/components/schemas/VerifyRequestType5'
       responses:
         4XX:
           content:
@@ -182,7 +182,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyRequestType3'
+              $ref: '#/components/schemas/VerifyRequestType4'
       responses:
         4XX:
           content:
@@ -584,32 +584,33 @@ paths:
   /abdm/v1/request:
     get:
       parameters:
-      - in: query
+      - description: Consent/Subscription/Authorization ID
+        in: query
         name: id
         schema:
+          description: Consent/Subscription/Authorization ID
           type: string
-      - in: query
+      - description: Request type
+        in: query
         name: type
         schema:
+          description: Request type
           enum:
           - consent
           - subscription
           - authorization
-          - all
-          examples:
-          - consent
           type: string
-      - in: query
+      - description: Status of the request
+        in: query
         name: status
         schema:
+          description: Status of the request
           enum:
           - requested
           - granted
           - expired
           - denied
           - revoked
-          examples:
-          - granted
           type: string
       responses:
         4XX:
@@ -688,7 +689,7 @@ components:
           type: string
         care_contexts:
           items:
-            type: string
+            $ref: '#/components/schemas/CommonsCareContext'
           type:
           - array
           - "null"
@@ -704,8 +705,6 @@ components:
           - array
           - "null"
         hip_id:
-          type: string
-        patient_reference:
           type: string
       type: object
     ApproveRequest:
@@ -735,6 +734,13 @@ components:
         new_pin:
           type: string
         old_pin:
+          type: string
+      type: object
+    CommonsCareContext:
+      properties:
+        display:
+          type: string
+        id:
           type: string
       type: object
     CommonsDuration:
@@ -992,7 +998,11 @@ components:
         id:
           type: string
         providers:
-          $ref: '#/components/schemas/DetailsProviders'
+          items:
+            $ref: '#/components/schemas/DetailsProviders'
+          type:
+          - array
+          - "null"
         purpose:
           $ref: '#/components/schemas/CommonsPurpose'
           description: Purpose of the request
@@ -1339,14 +1349,14 @@ components:
           description: Transaction ID received in the /init API
           type: string
       type: object
-    VerifyRequestType3:
+    VerifyRequestType4:
       properties:
         pin:
           type: string
         scope:
           type: string
       type: object
-    VerifyRequestType4:
+    VerifyRequestType5:
       properties:
         otp:
           type: string
