@@ -1,140 +1,126 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
-  title: Records API
+  title: Document Upload API
+  description: API to pre-sign the URL for uploading documents.
   version: 1.0.0
-  description: API for uploading documents and receiving pre-signed URLs for further processing.
+  license:
+    name: Proprietary License
+    url: https://developer.eka.care/license
 
+servers:
+  - url: https://vault.dev.eka.care
+    description: Development server
+  - url: https://vault.eka.care
+    description: Production server
+tags:
+  - name: Records
+    description: API related to records document management.
 paths:
-  /api/v3/docs/:
+  /api/v3/docs:
     post:
-      summary: Upload a document and receive pre-signed URLs
-      operationId: uploadDocument
+      operationId: getAuthorization
+      tags:
+        - Records
+      summary: Obtain a Presigned URL for Document Upload
+      description: Generate a presigned URL that allows you to securely upload a document to the server. This URL can be used to upload the document directly without needing additional authentication or authorization steps.
       requestBody:
-        description: The request payload to upload a document.
         required: true
         content:
           application/json:
             schema:
               type: object
-              enum: ["ps","lr","cc","ca","pp","ot","ds","vc","in","iv","sc","nc","nq"]
               properties:
+                batch_request:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UpdateDocumentV3Request'
                 dt:
+                  $ref: '#/components/schemas/DocumentTypeQueryParam'
+                dd:
                   type: string
-                  example: "ot"
-                  description: Type of document.
+                  format: date-time
+                sh:
+                  type: boolean
+                tg:
+                  type: array
+                  items:
+                    type: string
+                patient_oid:
+                  type: string
+                p_uuid:
+                  type: string
+                sa_id:
+                  type: string
+                email_id:
+                  type: string
+                sync_id:
+                  type: string
+                type_of_sync:
+                  type: string
+                context:
+                  type: string
                 files:
                   type: array
                   items:
-                    type: object
-                    enum: ["image/jpeg", "image/jpg", "image/png", "application/pdf"]
-                    properties:
-                      contentType:
-                        type: string
-                        example: "image/jpeg"
-                        description: MIME type of the file.
-                dd:
+                    $ref: '#/components/schemas/FileUploadRequest'
+                hip_id:
                   type: string
-                  format: date
-                  example: "2023-10-12"
-                  description: Document date.
-                sh:
+                health_id:
+                  type: string
+                care_context:
+                  type: string
+                clinic_id:
+                  type: string
+                doctor_id:
+                  type: string
+                is_encrypted:
                   type: boolean
-                  example: false
-                  description: Shareable flag.
-                patient_oid:
-                  type: string
-                  example: "172295758497656"
-                  description: The unique identifier for the patient.
+                ndhm:
+                  type: boolean
                 p_poid:
                   type: string
-                  example: "172344612388185"
-                  description: The unique identifier for the associated entity.
       responses:
         '200':
-          description: Successfully received the document and pre-signed URL.
+          description: Presigned URL successfully retrieved
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: boolean
-                    example: false
-                    description: Indicates if there was an error.
-                  message:
-                    type: string
-                    example: ""
-                    description: Message detailing the response.
-                  batch_response:
-                    type: object
-                    nullable: true
-                    description: Additional batch information.
-                  token:
-                    type: string
-                    example: "1723794713"
-                    description: A token related to the request.
-                  document_id:
-                    type: string
-                    format: uuid
-                    example: "e32d8dc4-1880-4f7c-beb0-fb4e9a008e0f"
-                    description: The unique identifier of the document.
-                  forms:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        url:
-                          type: string
-                          format: uri
-                          example: "https://sample-lab-report.s3.amazonaws.com/"
-                          description: The pre-signed URL for uploading the file.
-                        fields:
-                          type: object
-                          properties:
-                            Content-Type:
-                              type: string
-                              example: "image/png"
-                              description: The content type of the file.
-                            Policy:
-                              type: string
-                              description: The policy string for S3 upload.
-                            X-Amz-Algorithm:
-                              type: string
-                              example: "AWS4-HMAC-SHA256"
-                              description: AWS signing algorithm.
-                            X-Amz-Credential:
-                              type: string
-                              example: "ASIAY3ANKL2EOPMVGSQZ/20240816/ap-south-1/s3/aws4_request"
-                              description: AWS credential scope.
-                            X-Amz-Date:
-                              type: string
-                              example: "20240816T075153Z"
-                              description: The date of the request.
-                            X-Amz-Security-Token:
-                              type: string
-                              description: AWS session token.
-                            X-Amz-Signature:
-                              type: string
-                              description: The signature of the request.
-                            key:
-                              type: string
-                              example: "d/10000/dd203e40-5ddc-438e-99f6-6a92371df7d0/e32d8dc4-1880-4f7c-beb0-fb4e9a008e0f/eka-1.png"
-                              description: The key under which the file will be stored in S3.
-
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUploadResponse'
+              examples:
+                ErrorUploadResponse:
+                  summary: Example of an error response with an empty batch_request
+                  value:
+                    error: true
+                    message: "Invalid document type."
+                    batch_response: []  # Empty array for batch_request
+                    upload_time: null
+        '500':
+          description: Internal Server Error. No response body is expected.
+        '502':
+          description: Bad Gateway. No response body is expected.
+        '503':
+          description: Service Unavailable. No response body is expected.
+        '504':
+          description: Gateway Timeout. No response body is expected.
       security:
-        - jwtPayloadAuth: []
-        - serviceIdAuth: []
+        - auth: []
 
   /:
-    post:
+    put:
       servers:
         - url: https://sample-lab-report.s3.amazonaws.com
           description: Upload files to s3 server
-      summary: Upload a file to S3
-      description: Uploads a file to the S3 bucket with the specified key and policy.
-      operationId: uploadFileToS3
+        - url: https://m-prod-eka-vault.s3.amazonaws.com
+          description: Upload files to s3 server
+      summary: Upload Records
+      description: Upload a records using the signed URL for each document requested in obtain authorization API
       requestBody:
-        required: true
         content:
           multipart/form-data:
             schema:
@@ -143,34 +129,43 @@ paths:
                 Content-Type:
                   type: string
                   example: image/jpeg
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload.
                 key:
                   type: string
+                  description: The key for the respective document which we have received from obtain authorization API
                   example: 161918171478263/1342d02b-0c80-436a-80a3-e0efa62dc6d4/d0508b41-f823-4149-8781-64fa4404b9af.jpeg
                 policy:
                   type: string
+                  description: Policy document for S3 upload.
                   example: >
-                    eyJleHBpcmF0aW9uIjogIjIwMjQtMDctMjVUMDk6MzA6NDFaIiwgImNvbmRpdGlvbnMiOiBbeyJDb250ZW50LVR5cGUiOiAiaW1hZ2UvanBlZyJ9LCBbImNvbnRlbnQtbGVuZ3RoLXJhbmdlIiwgMCwgMjA5NzE1MjAwXSwgeyJidWNrZXQiOiAic2FtcGxlLWxhYi1yZXBvcnQifSwgeyJrZXkiOiAiMTYxOTE4MTcxNDc4MjYzLzEzNDJkMDJiLTBjODAtNDM2YS04MGEzLWUwZWZhNjJkYzZkNC9kMDUwOGI0MS1mODIzLTQxNDktODc4MS02NGZhNDQwNGI5YWYuanBlZyJ9LCB7IngtYW16LWFsZ29yaXRobSI6ICJBV1M0LUhNQUMtU0hBMjU2In0sIHsieC1hbXotY3JlZGVudGlhbCI6ICJBU0lBWTNBTktMMkVKTkZNWFIyVC8yMDI0MDcyNS9hcC1zb3V0aC0xL3MzL2F3czRfcmVxdWVzdCJ9LCB7IngtYW16LWRhdGUiOiAiMjAyNDA3MjVUMDkyNTQxWiJ9LCB7IngtYW16LXNlY3VyaXR5LXRva2VuIjogIklRb0piM0pwWjJsdVgyVmpFT0gvLy8vLy8vLy8vd0VhQ21Gd0xYTnZkWFJvTFRFaVNEQkdBaUVBd3NiRmpteE9wYU1RSkpUdnBwekJ2VjVKaWI2bUJHVXZKV0hWOVdvMXZ6OENJUUN5K1g5YlN2SWVmNWJ2UVZoeWlsQmJ0bjlVKzI2ZDNQMlM0VldCTFo4MzNTcjZBZ2k2Ly8vLy8vLy8vLzhCRUFJYUREWXdOemMyTlRneE5Ea3lNQ0lNVWxkRHFwaFpxQS81N0tCa0tzNENCNUlnRkZ6aGoxaHB6bWhrSDNPTHZUUSt2UHY1RGJFV1QxZEN0dEo1N3Z4U05haS9OMURTeXBtaDFGY2w2VHRINWFXM01vTUJjSTZ0bitvcHNXS0p4SG5XbFVZSGdOZVhhWmNySVI3MklwT1c1NWZvOEFqYzlEVEdCVWJuY2xIMXhKOXZ4QUZVdXdxRkZpS3V0KysrNUtaSmJUQkxJaXJpdzBjaWcwWjRuVkRnU1lMc2RXaTJHWUNpTWsxcmxLeFVtamp3andtUXFXOHBWb0VteGdOb2JkYnB6UTFjRlNUNjZ5cERyejkrbDQ0WEFHcjdEZGM2RHNaSEpna0RhK1pCRnBJbzN5MzNoeHo0ZDVSeko4S2JTOXNDWTUyTGt4ekk4Znhpc1pmZGtId2NHTVp5UkkxSTZLZlB5RGxtNXpzNHJ1L0hrTVBCRUFBSHFQSzlpRk9BQVhQL2FmTTJpbkNZeExjU3hGRVMwZXlaNGVsbitpZWNEY0ZMQ0xSOC9DOEMxbGd3N3FEUE1aYlY0RzVXcEdMN1p1SldLOGRsajJVcUttR0hEVDJJSmNIOFppbUdINmRXZ250NGJyeWQyakN6cjRpMUJqcWRBWDlWcnFtWnNrR1NMTjlQbVErQUdRNFVqZU1sdVlRcmRCT0pEZG5VMi9xZkNZWStKWng5ZjZiTXZvSW5oVFo1T3R1dk5vS1gxM3RVYVdNdDV0OFFXanRITjNrdFN2M1FESGEzU21FN0ZtODBtZEQrMWFoQWx0aVNpNTFQL1hUZlhqUm1yejg4N3A3dXgrMktPdnhWNlkvczRUVzZ1OXFJMFlrQ2Jwd09LQjlVMm5GeWVBWUgrd1p3SXdCdGZaemh0aVVEVXhwVER2SFhqalNmK1lJPSJ9XX0=
+                    eyJleHBpcmF0aW9uIjogIjIwMjQtMDctMjVUMDk6MzA6NDFaIiwgImNvbmRpdGlvbnMiOiBbeyJDb250ZW50LVR5cGUiOiAiaW1hZ2UvanBlZyJ9LCBbImNvbnRlbnQtbGVuZ3RoLXJhbmdlIiwgMCwgMjA5NzE1MjAwXSwgeyJidWNrZXQiOiAic2FtcGxlLWxhYi1yZXBvcnQifSwgeyJrZXkiOiAiMTYxOTE4MTcxNDc4MjYzLzEzNDJkMDJiLTBjODAtNDM2YS04MGEzLWUwZWZhNjJkYzZkNC9kMDUwOGI0MS1mODIzLTQxNDktODc4MS02NGZhNDQwNGI5YWYuanBlZyJ9LCB7IngtYW16LWFsZ29yaXRobSI6ICJBV1M0LUhNQUMtU0hBMjU2In0sIHsieC1hbXotY3JlZGVudGlhbCI6ICJBU0lBWTNBTktMMkVKTkZNWFIyVC8yMDI0MDcyNS9hcC1zb3V0aC0xL3MzL2F3czRfcmVxdWVzdCJ9LCB7IngtYW16LWRhdGUiOiAiMjAyNDA3MjVUMDkyNTQxWiJ9LCB7IngtYW16LXNlY3VyaXR5LXRva2VuIjogIklRb0piM0pwWjJsdVgyVmpFT0gvLy8vLy8vLy8vd0VhQ21Gd0xYTnZkWFJvTFRFaVNEQkdBaUVBd3NiRmpteE9wYU1RSkpUdnBwekJ2VjVKaWI2bUJHVXZKV0hWOVdvMXZ6OENJUUN5K1g5YlN2SWVmNWJ2UVZoeWlsQmJ0bjlVKzI2ZDNQMlM0VldCTFo4MzNTcjZBZ2k2Ly8vLy8vLy8vLzhCRUFJYUREWXdOemMyTlRneE5Ea3lNQ0lNVWxkRHFwaFpxQS81N0tCa0tzNENCNUlnRkZ6aGoxaHB6bWhrSDNPTHZUUSt2UHY1RGJFV1QxZEN0dEo1N3Z4U05haS9OMURTeXBtaDFGY2w2VHRINWFXM01vTUJjSTZ0bitvcHNXS0p4SG5XbFVZSGdOZVhhWmNySVI3MklwT1c1NWZvOEFqYzlEVEdCVWJuY2xIMXhKOXZ4QUZVdXdxRkZpS3V0KysrNUtaSmJUQkxJaXJpdzBjaWcwWjRuVkRnU1lMc2RXaTJHWUNpTWsxcmxLeFVtamp3andtUXFXOHBWb0VteGdOb2JkYnB6UTFjRlNUNjZ5cERyejkrbDQ0WEFHcjdEZGM2RHNaSEpna0RhK1pCRnBJbzN5MzNoeHo0ZDVSeko4S2JTOXNDWTUyTGt4ekk4Znhpc1pmZGtId2NHTVp5UkkxSTZLZlB5RGxtNXpzNHJ1L0hrTVBCRUFBSHFQSzlpRk9BQVhQL2FmTTJpbkNZeExjU3hGRVMwZXlaNGVsbitpZWNEY0ZMQ0xSOC9DOEMxbGd3N3FEUE1aYlY0RzVXcEdMN1p1SldLOGRsajJVcUttR0hEVDJJSmNIOFppbUdINmRXZ250NGJyeWQyakN6cjRpMUJqcWRBWDlWcnFtWnNrR1NMTjlQbVErQUdRNFVqZU1sdVlRcmRCT0pEZG5VMi9xZkNZWStKWng5ZjZiTXZvSW5oVFo1T3R1dk5vS1gxM3RVYVdNdDV0OFFXanRITjNrdFN2M1FESGEzU21FN0ZtODBtZEQrMWFoQWx0aVNpNTFQL1hUZlhqUm1yejg4N3A3dXgrMktPdnhWNlkvczRUVzZ1OXFJMFlrQ2Jwd09LQjlVMm5GeWVBWUgrd1p3SXdCdGZaemh0aVVEVXhwVER2SFhqalNmK1lJPSJ9XX0eyJleHBpcmF0aW9uIjogIjIwMjQtMDctMjVUMDk6MzA6NDFaIiwgImNvbmRpdGlvbnMiOiBbeyJDb250ZW50LVR5cGUiOiAiaW1hZ2UvanBlZyJ9LCBbImNvbnRlbnQtbGVuZ3RoLXJhbmdlIiwgMCwgMjA5NzE1MjAwXSwgeyJidWNrZXQiOiAic2FtcGxlLWxhYi1yZXBvcnQifSwgeyJrZXkiOiAiMTYxOTE4MTcxNDc4MjYzLzEzNDJkMDJiLTBjODAtNDM2YS04MGEzLWUwZWZhNjJkYzZkNC9kMDUwOGI0MS1mODIzLTQxNDktODc4MS02NGZhNDQwNGI5YWYuanBlZyJ9LCB7IngtYW16LWFsZ29yaXRobSI6ICJBV1M0LUhNQUMtU0hBMjU2In0sIHsieC1hbXotY3JlZGVudGlhbCI6ICJBU0lBWTNBTktMMkVKTkZNWFIyVC8yMDI0MDcyNS9hcC1zb3V0aC0xL3MzL2F3czRfcmVxdWVzdCJ9LCB7IngtYW16LWRhdGUiOiAiMjAyNDA3MjVUMDkyNTQxWiJ9LCB7IngtYW16LXNlY3VyaXR5LXRva2VuIjogIklRb0piM0pwWjJsdVgyVmpFT0gvLy8vLy8vLy8vd0VhQ21Gd0xYTnZkWFJvTFRFaVNEQkdBaUVBd3NiRmpteE9wYU1RSkpUdnBwekJ2VjVKaWI2bUJHVXZKV0hWOVdvMXZ6OENJUUN5K1g5YlN2SWVmNWJ2UVZoeWlsQmJ0bjlVKzI2ZDNQMlM0VldCTFo4MzNTcjZBZ2k2Ly8vLy8vLy8vLzhCRUFJYUREWXdOemMyTlRneE5Ea3lNQ0lNVWxkRHFwaFpxQS81N0tCa0tzNENCNUlnRkZ6aGoxaHB6bWhrSDNPTHZUUSt2UHY1RGJFV1QxZEN0dEo1N3Z4U05haS9OMURTeXBtaDFGY2w2VHRINWFXM01vTUJjSTZ0bitvcHNXS0p4SG5XbFVZSGdOZVhhWmNySVI3MklwT1c1NWZvOEFqYzlEVEdCVWJuY2xIMXhKOXZ4QUZVdXdxRkZpS3V0KysrNUtaSmJUQkxJaXJpdzBjaWcwWjRuVkRnU1lMc2RXaTJHWUNpTWsxcmxLeFVtamp3andtUXFXOHBWb0VteGdOb2JkYnB6UTFjRlNUNjZ5cERyejkrbDQ0WEFHcjdEZGM2RHNaSEpna0RhK1pCRnBJbzN5MzNoeHo0ZDVSeko4S2JTOXNDWTUyTGt4ekk4Znhpc1pmZGtId2NHTVp5UkkxSTZLZlB5RGxtNXpzNHJ1L0hrTVBCRUFBSHFQSzlpRk9BQVhQL2FmTTJpbkNZeExjU3hGRVMwZXlaNGVsbitpZWNEY0ZMQ0xSOC9DOEMxbGd3N3FEUE1aYlY0RzVXcEdMN1p1SldLOGRsajJVcUttR0hEVDJJSmNIOFppbUdINmRXZ250NGJyeWQyakN6cjRpMUJqcWRBWDlWcnFtWnNrR1NMTjlQbVErQUdRNFVqZU1sdVlRcmRCT0pEZG5VMi9xZkNZWStKWng5ZjZiTXZvSW5oVFo1T3R1dk5vS1gxM3RVYVdNdDV0OFFXanRITjNrdFN2M1FESGEzU21FN0ZtODBtZEQrMWFoQWx0aVNpNTFQL1hUZlhqUm1yejg4N3A3dXgrMktPdnhWNlkvczRUVzZ1OXFJMFlrQ2Jwd09LQjlVMm5GeWVBWUgrd1p3SXdCdGZaemh0aVVEVXhwVER2SFhqalNmK1lJPSJ9XX0=
                 x-amz-algorithm:
                   type: string
+                  description: AWS algorithm used for signing the request.
                   example: AWS4-HMAC-SHA256
                 x-amz-credential:
                   type: string
+                  description: AWS credentials for signing the request.
                   example: ASIAY3ANKL2EJNFMXR2T/20240725/ap-south-1/s3/aws4_request
                 x-amz-date:
                   type: string
+                  description: Date of the request.
                   example: 20240725T092541Z
                 x-amz-security-token:
                   type: string
+                  description: Security token for the request.
                   example: >
                     IQoJb3JpZ2luX2VjEOH//////////wEaCmFwLXNvdXRoLTEiSDBGAiEAwsbFjmxOpaMQJJTvppzBvV5Jib6mBGUvJWHV9Wo1vz8CIQCy+X9bSvIef5bvQVhyilBbtn9U+26d3P2S4VWBLZ833Sr6Agi6//////////8BEAIaDDYwNzc2NTgxNDkyMCIMUldDqphZqA/57KBkKs4CB5IgFFzhj1hpzmhkH3OLvTQ+vPv5DbEWT1dCttJ57vxSNai/N1DSypmh1Fcl6TtH5aW3MoMBcI6tn+opsWKJxHnWlUYHgNeXaZcrIR72IpOW55fo8Ajc9DTGBUbnclH1xJ9vxAFUuwqFFiKut+++5KZJbTBLIiriw0cig0Z4nVDgSYLsdWi2GYCiMk1rlKxUmjjwjwmQqW8pVoEmxgNobdbpzQ1cFST66ypDrz9+l44XAGr7Ddc6DsZHJgkDa+ZBFpIo3y33hxz4d5RzJ8KbS9sCY52LkxzI8fxisZfdkHwcGMZyRI1I6KfPyDlm5zs4ru/HkMPBEAAHqPK9iFOAAXP/afM2inCYxLcSxFES0eyZ4eln+iecDcFLCLR8/C8C1lgw7qDPMZbV4G5WpGL7ZuJWK8dlj2UqKmGHDT2IJcH8ZimGH6dWgnt4bryd2jCzr4i1BjqdAX9VrqmZskGSLN9PmQ+AGQ4UjeMluYQrdBOJDdnU2/qfCYZ+JZx9f6bMvoInhTZ5OtuvaoKX13tUaWMt5t8qQWjtHN3ktSv3QDH3mS3mE7Fm80mdD+1ahAltiSi51P/XTfXjRmrz887p7ux+2K2ovxV6Y/s4TW6u9qI0YkCbptOKB9U2nFyeAYH+wZwIwBtgFQ0bFMSmNJR4PpSRRNL9PbVPvWcqGmHKpZciCqSHR5x5hJ9ShMVhjqSf+YI=
                 x-amz-signature:
                   type: string
+                  description: Signature for the request.
                   example: 2157a852f2f8db5b0595cbe3f002fb71e8be450b22d16a7b6ad3da6697b9c1cb
-                file:
-                  type: string
-                  format: binary
               required:
                 - Content-Type
+                - file
                 - key
                 - policy
                 - x-amz-algorithm
@@ -178,19 +173,44 @@ paths:
                 - x-amz-date
                 - x-amz-security-token
                 - x-amz-signature
-                - file
-
       responses:
         '204':
-          description: No Content
-        '400':
-          description: Bad Request
+          description: No Content - Successful Upload with No Response Body
+        '403':
+          description: Forbidden - Access Denied
+          content:
+            application/xml:
+              schema:
+                type: object
+                properties:
+                  Error:
+                    type: object
+                    properties:
+                      Code:
+                        type: string
+                        description: Error code.
+                      Message:
+                        type: string
+                        description: Error message.
+                      RequestId:
+                        type: string
+                        description: Request ID.
+                      HostId:
+                        type: string
+                        description: Host ID.
+                example:
+                  Error:
+                    Code: "AccessDenied"
+                    Message: "Invalid according to Policy: Extra input fields: content-type"
+                    RequestId: "JGD23XY93Z00Z2DB"
+                    HostId: "NjZf6f4Yo3LwikPHTwtyS02TEftaoWWvS8BmfRlQmA5pwllX6FHyMuO4hNVT0AIBOwKHFoEFkk8="
         '500':
           description: Internal Server Error
 
   /api/v4/docs:
     get:
       summary: Fetch documents based on filters
+      description: To get the list of all the records for an given patient oid
       operationId: getDocuments
       parameters:
         - name: oid
@@ -211,25 +231,6 @@ paths:
           schema:
             type: string
           description: Flavour to specify the type of documents to fetch.
-        - name: Accept
-          in: header
-          required: false
-          schema:
-            type: string
-          example: "*/*"
-          description: Accept header.
-        - name: jwt-payload
-          in: header
-          required: true
-          schema:
-            type: string
-          description: JWT payload containing user information.
-        - name: client-id
-          in: header
-          required: true
-          schema:
-            type: string
-          description: Client ID for authentication.
 
       responses:
         '200':
@@ -321,14 +322,339 @@ paths:
           description: Unauthorized. Invalid JWT token or client ID.
         '500':
           description: Internal Server Error.
-components:
-  securitySchemes:
-    jwtPayloadAuth:
-      type: apiKey
-      in: header
-      name: jwt-payload
-    serviceIdAuth:
-      type: apiKey
-      in: header
-      name: service-id
+      security:
+        - auth: []
 
+  /api/v1/fhir/retrieve:
+    get:
+      servers:
+        - url: https://health-repo.dev.eka.care
+        - url: https://health-repo.eka.care
+      summary: Retrieve health records
+      description: Retrieve a health record based on the given identifier, hip_id, and health_id in nrces FHIR json format.
+      parameters:
+        - name: identifier
+          in: query
+          required: true
+          description: The unique identifier for the health record.
+          schema:
+            type: string
+        - name: hip_id
+          in: query
+          required: true
+          description: The HIP (Health Information Provider) ID.
+          schema:
+            type: string
+        - name: health_id
+          in: query
+          required: true
+          description: The health ID associated with the record.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of health records.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: Bundle
+                  type:
+                    type: string
+                    example: document
+                  link:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        relation:
+                          type: string
+                  entry:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        resource:
+                          type: object
+                          properties:
+                            author:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  reference:
+                                    type: string
+                            date:
+                              type: string
+                              format: date-time
+                            extension:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  url:
+                                    type: string
+                                  valueString:
+                                    type: string
+                            id:
+                              type: string
+                            identifier:
+                              type: object
+                              properties:
+                                system:
+                                  type: string
+                                value:
+                                  type: string
+                            meta:
+                              type: object
+                              properties:
+                                lastUpdated:
+                                  type: string
+                                  format: date-time
+                            resourceType:
+                              type: string
+                            section:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  entry:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        reference:
+                                          type: string
+                                  title:
+                                    type: string
+                            status:
+                              type: string
+                            subject:
+                              type: object
+                              properties:
+                                reference:
+                                  type: string
+                            title:
+                              type: string
+                            type:
+                              type: object
+                              properties:
+                                text:
+                                  type: string
+                  id:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      versionId:
+                        type: string
+                      lastUpdated:
+                        type: string
+                        format: date-time
+                      profile:
+                        type: array
+                        items:
+                          type: string
+                      security:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                            display:
+                              type: string
+                            system:
+                              type: string
+                  identifier:
+                    type: object
+                    properties:
+                      system:
+                        type: string
+                      value:
+                        type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          description: Unauthorized. Invalid or missing authentication.
+      security:
+        - auth: []
+
+components:
+  schemas:
+    DocumentTypeQueryParam:
+      type: string
+      description: |
+        Specifies the type of document being uploaded. 
+        The following values are allowed:
+        - `ps`: Prescription
+        - `lr`: Lab Report
+        - `cc`: Cowin Certificate
+        - `ca`: Cowin Appointment Slip
+        - `pp`: Profile Picture
+        - `ot`: Other
+        - `ds`: Discharge Summary
+        - `vc`: Vaccine Certificate
+        - `in`: Insurance
+        - `iv`: Invoice
+        - `sc`: Scan
+        - `nc`: NDHM ID Card
+        - `nq`: NDHM QR Code
+      enum:
+        - ps
+        - lr
+        - cc
+        - ca
+        - pp
+        - ot
+        - ds
+        - vc
+        - in
+        - iv
+        - sc
+        - nc
+        - nq
+
+    FileUploadRequest:
+      type: object
+      properties:
+        contentType:
+          type: string
+        file_size:
+          type: integer
+          format: int64
+
+    UpdateDocumentV3Request:
+      type: object
+      properties:
+        dt:
+          $ref: '#/components/schemas/DocumentTypeQueryParam'
+        dd:
+          type: string
+          format: date-time
+        sh:
+          type: boolean
+        tg:
+          type: array
+          items:
+            type: string
+        patient_oid:
+          type: string
+        p_uuid:
+          type: string
+        sa_id:
+          type: string
+        email_id:
+          type: string
+        sync_id:
+          type: string
+        type_of_sync:
+          type: string
+        context:
+          type: string
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileUploadRequest'
+        hip_id:
+          type: string
+        health_id:
+          type: string
+        care_context:
+          type: string
+        clinic_id:
+          type: string
+        doctor_id:
+          type: string
+        is_encrypted:
+          type: boolean
+        ndhm:
+          type: boolean
+        p_poid:
+          type: string
+
+    UploadResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: ""
+        batch_response:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadResponseBody'
+        token:
+          type: string
+          format: date-time
+
+    ErrorUploadResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Description of the error encountered
+        batch_response:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadResponseBody'
+        token:
+          type: string
+          format: date-time
+
+    UploadResponseBody:
+      type: object
+      properties:
+        document_id:
+          type: string
+        forms:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadResponseBodyForms'
+
+    UploadResponseBodyForms:
+      type: object
+      properties:
+        url:
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+
+    Fields:
+      type: object
+      properties:
+        Content-Type:
+          type: string
+        Policy:
+          type: string
+        X-Amz-Algorithm:
+          type: string
+        X-Amz-Credential:
+          type: string
+        X-Amz-Date:
+          type: string
+        X-Amz-Security-Token:
+          type: string
+        X-Amz-Signature:
+          type: string
+        key:
+          type: string
+
+  securitySchemes:
+    auth:
+      type: apiKey
+      in: header
+      name: auth
+      description: |
+        The API requires the following auth in headers for authentication.
