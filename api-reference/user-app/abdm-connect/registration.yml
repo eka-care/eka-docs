@@ -9,8 +9,224 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/v1/consents/approve:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApproveResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/deny:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DenyRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/change:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forget/init:
+    get:
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forget/verify:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType4'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/reset:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/set:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/verify:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/revoke:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
   /abdm/v1/registration/aadhaar/create:
     post:
+      description: This API is used to create a new ABHA address
       requestBody:
         content:
           application/json:
@@ -39,6 +255,7 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/aadhaar/init:
     post:
+      description: This endpoint is used to initiate the Aadhaar registration process.
       requestBody:
         content:
           application/json:
@@ -67,6 +284,9 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/aadhaar/mobile/verify:
     post:
+      description: This API operates on a skip logic basis. If the mobile number provided
+        in the second step differs from the one linked to the Aadhaar, this API will
+        be used to verify the new mobile number.
       requestBody:
         content:
           application/json:
@@ -95,6 +315,8 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/aadhaar/verify:
     post:
+      description: This endpoint is used to verify Aadhaar otp generated for registration
+        using Aadhaar.
       requestBody:
         content:
           application/json:
@@ -123,6 +345,8 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/abha/check:
     post:
+      description: This API endpoint allows to check weather provided health id is
+        already present in system.
       requestBody:
         content:
           application/json:
@@ -151,6 +375,7 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/mobile/create:
     post:
+      description: This API is used to create a new ABHA address for the user.
       requestBody:
         content:
           application/json:
@@ -179,6 +404,8 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/mobile/init:
     post:
+      description: This endpoint is used to initiate the registration process for
+        a mobile number.
       requestBody:
         content:
           application/json:
@@ -207,6 +434,9 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/mobile/login:
     post:
+      description: If the user already has an existing ABHA address, use this API
+        to select that ABHA address and proceed to log the user in using the chosen
+        address.
       requestBody:
         content:
           application/json:
@@ -235,6 +465,7 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/mobile/resend:
     post:
+      description: This endpoint is used to resend a mobile registration request.
       requestBody:
         content:
           application/json:
@@ -263,6 +494,7 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/mobile/verify:
     post:
+      description: This endpoint allows  to verify a mobile otp.
       requestBody:
         content:
           application/json:
@@ -291,6 +523,7 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/pincode/{pincode}:
     get:
+      description: This API endpoint is used to fetch pincode details.
       parameters:
       - in: path
         name: pincode
@@ -320,6 +553,8 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/suggest:
     post:
+      description: This API endpoint is used to fetch some suggested abha id that
+        are available on the basis of user details.
       requestBody:
         content:
           application/json:
@@ -346,8 +581,239 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/request:
+    get:
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+      - in: query
+        name: type
+        schema:
+          enum:
+          - consent
+          - subscription
+          - authorization
+          - all
+          examples:
+          - consent
+          type: string
+      - in: query
+        name: status
+        schema:
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          examples:
+          - granted
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailsResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/requests:
+    get:
+      description: API to list all the Subscriptions / Authorization and Consent requests
+      parameters:
+      - in: query
+        name: status
+        schema:
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          examples:
+          - granted
+          type: string
+      - in: query
+        name: type
+        schema:
+          enum:
+          - consent
+          - subscription
+          - authorization
+          - all
+          examples:
+          - consent
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestsResponse'
+          description: OK
+      security:
+      - authApiKey: []
 components:
   schemas:
+    ApproveConsent:
+      properties:
+        access_mode:
+          type: string
+        care_contexts:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        erase_at:
+          format: date-time
+          type: string
+        hi_types:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        hip_id:
+          type: string
+        patient_reference:
+          type: string
+      type: object
+    ApproveRequest:
+      properties:
+        consents:
+          items:
+            $ref: '#/components/schemas/ApproveConsent'
+          type:
+          - array
+          - "null"
+        id:
+          type: string
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
+    ApproveResponse:
+      properties:
+        artefact_ids:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+      type: object
+    ChangeRequest:
+      properties:
+        new_pin:
+          type: string
+        old_pin:
+          type: string
+      type: object
+    CommonsDuration:
+      properties:
+        from:
+          description: Start time of the consent
+          format: date-time
+          type: string
+        to:
+          description: End time of the consent
+          format: date-time
+          type: string
+      type: object
+    CommonsHiType:
+      properties:
+        display:
+          type: string
+        enabled:
+          type: boolean
+        id:
+          description: Health Information Type ID
+          enum:
+          - OPConsultation
+          - Prescription
+          - DischargeSummary
+          - DiagnosticReport
+          - ImmunizationRecord
+          - HealthDocumentRecord
+          - WellnessRecord
+          type: string
+      type: object
+    CommonsHip:
+      properties:
+        id:
+          description: Health Information Provider ID
+          examples:
+          - INXXXXX
+          type: string
+        name:
+          description: Name of the Health Information Provider
+          examples:
+          - Apollo Hospital
+          type: string
+      type: object
+    CommonsHiu:
+      properties:
+        id:
+          description: Health Information User ID
+          examples:
+          - INXXXXX
+          type: string
+        name:
+          description: Name of the Health Information User
+          examples:
+          - Apollo Hospital
+          type: string
+      type: object
+    CommonsPinDetail:
+      properties:
+        pin:
+          type: string
+        scope:
+          type: string
+      type: object
+    CommonsPurpose:
+      properties:
+        code:
+          type: string
+        text:
+          type: string
+      type: object
+    CommonsRequester:
+      properties:
+        name:
+          description: Name of the requester.
+          examples:
+          - Dr John
+          type: string
+      type: object
     CreateRequest:
       properties:
         abha_address:
@@ -419,6 +885,31 @@ components:
           - "null"
           - string
       type: object
+    DenyRequest:
+      properties:
+        id:
+          type: string
+        reason:
+          type: string
+      type: object
+    DetailsCareContext:
+      properties:
+        display:
+          type: string
+        id:
+          type: string
+      type: object
+    DetailsProviders:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/DetailsCareContext'
+          type:
+          - array
+          - "null"
+        hip:
+          $ref: '#/components/schemas/CommonsHip'
+      type: object
     DetailsRequest:
       properties:
         address:
@@ -473,6 +964,52 @@ components:
           type:
           - "null"
           - integer
+      type: object
+    DetailsResponse:
+      properties:
+        access_mode:
+          enum:
+          - view
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        erase_at:
+          format: date-time
+          type: string
+        hi_types:
+          description: List of HI Types
+          items:
+            $ref: '#/components/schemas/CommonsHiType'
+          type:
+          - array
+          - "null"
+        hiu:
+          $ref: '#/components/schemas/CommonsHiu'
+          description: HIU details
+        id:
+          type: string
+        providers:
+          $ref: '#/components/schemas/DetailsProviders'
+        purpose:
+          $ref: '#/components/schemas/CommonsPurpose'
+          description: Purpose of the request
+        requester:
+          $ref: '#/components/schemas/CommonsRequester'
+          description: Requester details
+        status:
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          type: string
+        updated_at:
+          format: date-time
+          type: string
       type: object
     ErrsGenericError:
       properties:
@@ -566,6 +1103,11 @@ components:
         txn_id:
           type: string
       type: object
+    PinRequest:
+      properties:
+        pin:
+          type: string
+      type: object
     PincodeResolvedPincodeData:
       properties:
         dist_code:
@@ -655,6 +1197,45 @@ components:
           - "null"
           - string
       type: object
+    RequestsRequestDetail:
+      properties:
+        created_at:
+          description: Time when the consent was created
+          format: date-time
+          type: string
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        hiu:
+          $ref: '#/components/schemas/CommonsHiu'
+          description: Health Information User,the requesting entity Clinic hospital
+        id:
+          type: string
+        purpose:
+          $ref: '#/components/schemas/CommonsPurpose'
+        requester:
+          $ref: '#/components/schemas/CommonsRequester'
+      type: object
+    RequestsResponse:
+      properties:
+        authorizations:
+          items:
+            $ref: '#/components/schemas/RequestsRequestDetail'
+          type:
+          - array
+          - "null"
+        consents:
+          items:
+            $ref: '#/components/schemas/RequestsRequestDetail'
+          type:
+          - array
+          - "null"
+        subscriptions:
+          items:
+            $ref: '#/components/schemas/RequestsRequestDetail'
+          type:
+          - array
+          - "null"
+      type: object
     ResendRequest:
       properties:
         txn_id:
@@ -667,6 +1248,17 @@ components:
           type: string
         txn_id:
           type: string
+      type: object
+    RevokeRequest:
+      properties:
+        consent_artefacts:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
       type: object
     SuggestRequest:
       properties:
@@ -745,6 +1337,20 @@ components:
           type: string
         txn_id:
           description: Transaction ID received in the /init API
+          type: string
+      type: object
+    VerifyRequestType3:
+      properties:
+        pin:
+          type: string
+        scope:
+          type: string
+      type: object
+    VerifyRequestType4:
+      properties:
+        otp:
+          type: string
+        session_id:
           type: string
       type: object
     VerifyResponse:
