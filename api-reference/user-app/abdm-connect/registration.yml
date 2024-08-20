@@ -9,6 +9,125 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/v1/consents/approve:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApproveResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/deny:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DenyRequest'
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/change:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRequest'
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forget/init:
+    get:
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forget/verify:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType4'
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/reset:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinRequest'
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/set:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinRequest'
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/verify:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType3'
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/revoke:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
   /abdm/v1/registration/aadhaar/create:
     post:
       requestBody:
@@ -388,6 +507,7 @@ paths:
       - authApiKey: []
   /abdm/v1/requests:
     get:
+      description: API to list all the Subscriptions / Authorization and Consent requests
       parameters:
       - in: query
         name: status
@@ -434,6 +554,61 @@ paths:
       - authApiKey: []
 components:
   schemas:
+    ApproveConsent:
+      properties:
+        access_mode:
+          type: string
+        care_contexts:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        erase_at:
+          format: date-time
+          type: string
+        hi_types:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        hip_id:
+          type: string
+        patient_reference:
+          type: string
+      type: object
+    ApproveRequest:
+      properties:
+        consents:
+          items:
+            $ref: '#/components/schemas/ApproveConsent'
+          type:
+          - array
+          - "null"
+        id:
+          type: string
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
+    ApproveResponse:
+      properties:
+        artefact_ids:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+      type: object
+    ChangeRequest:
+      properties:
+        new_pin:
+          type: string
+        old_pin:
+          type: string
+      type: object
     CommonsDuration:
       properties:
         from:
@@ -487,6 +662,13 @@ components:
           description: Name of the Health Information User
           examples:
           - Apollo Hospital
+          type: string
+      type: object
+    CommonsPinDetail:
+      properties:
+        pin:
+          type: string
+        scope:
           type: string
       type: object
     CommonsPurpose:
@@ -574,6 +756,13 @@ components:
           type:
           - "null"
           - string
+      type: object
+    DenyRequest:
+      properties:
+        id:
+          type: string
+        reason:
+          type: string
       type: object
     DetailsCareContext:
       properties:
@@ -786,6 +975,11 @@ components:
         txn_id:
           type: string
       type: object
+    PinRequest:
+      properties:
+        pin:
+          type: string
+      type: object
     PincodeResolvedPincodeData:
       properties:
         dist_code:
@@ -915,6 +1109,17 @@ components:
         txn_id:
           type: string
       type: object
+    RevokeRequest:
+      properties:
+        consent_artefacts:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
     SuggestRequest:
       properties:
         flow:
@@ -976,6 +1181,20 @@ components:
           type: string
         txn_id:
           description: Transaction ID received in the /init API
+          type: string
+      type: object
+    VerifyRequestType3:
+      properties:
+        pin:
+          type: string
+        scope:
+          type: string
+      type: object
+    VerifyRequestType4:
+      properties:
+        otp:
+          type: string
+        session_id:
           type: string
       type: object
     VerifyResponse:
