@@ -127,7 +127,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SuggestRequest'
+              $ref: '#/components/schemas/ExistRequest'
       responses:
         4XX:
           content:
@@ -145,7 +145,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuggestResponse'
+                $ref: '#/components/schemas/ExistResponse'
           description: OK
       security:
       - authApiKey: []
@@ -346,8 +346,164 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/request:
+    get:
+      parameters:
+      - description: Consent/Subscription/Authorization ID
+        in: query
+        name: id
+        schema:
+          description: Consent/Subscription/Authorization ID
+          type: string
+      - description: Request type
+        in: query
+        name: type
+        schema:
+          description: Request type
+          enum:
+          - consent
+          - subscription
+          - authorization
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailsResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/requests:
+    get:
+      parameters:
+      - in: query
+        name: status
+        schema:
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          examples:
+          - granted
+          type: string
+      - in: query
+        name: type
+        schema:
+          enum:
+          - consent
+          - subscription
+          - authorization
+          examples:
+          - consent
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrsGenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestsResponse'
+          description: OK
+      security:
+      - authApiKey: []
 components:
   schemas:
+    CommonsDuration:
+      properties:
+        from:
+          description: Start time of the consent
+          format: date-time
+          type: string
+        to:
+          description: End time of the consent
+          format: date-time
+          type: string
+      type: object
+    CommonsHiType:
+      properties:
+        display:
+          type: string
+        enabled:
+          type: boolean
+        id:
+          description: Health Information Type ID
+          enum:
+          - OPConsultation
+          - Prescription
+          - DischargeSummary
+          - DiagnosticReport
+          - ImmunizationRecord
+          - HealthDocumentRecord
+          - WellnessRecord
+          type: string
+      type: object
+    CommonsHip:
+      properties:
+        id:
+          description: Health Information Provider ID
+          examples:
+          - INXXXXX
+          type: string
+        name:
+          description: Name of the Health Information Provider
+          examples:
+          - Apollo Hospital
+          type: string
+      type: object
+    CommonsHiu:
+      properties:
+        id:
+          description: Health Information User ID
+          examples:
+          - INXXXXX
+          type: string
+        name:
+          description: Name of the Health Information User
+          examples:
+          - Apollo Hospital
+          type: string
+      type: object
+    CommonsPurpose:
+      properties:
+        code:
+          type: string
+        text:
+          type: string
+      type: object
+    CommonsRequester:
+      properties:
+        name:
+          description: Name of the requester.
+          examples:
+          - Dr John
+          type: string
+      type: object
     CreateRequest:
       properties:
         abha_address:
@@ -419,6 +575,24 @@ components:
           - "null"
           - string
       type: object
+    DetailsCareContext:
+      properties:
+        display:
+          type: string
+        id:
+          type: string
+      type: object
+    DetailsProviders:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/DetailsCareContext'
+          type:
+          - array
+          - "null"
+        hip:
+          $ref: '#/components/schemas/CommonsHip'
+      type: object
     DetailsRequest:
       properties:
         address:
@@ -474,12 +648,69 @@ components:
           - "null"
           - integer
       type: object
+    DetailsResponse:
+      properties:
+        access_mode:
+          enum:
+          - view
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        erase_at:
+          format: date-time
+          type: string
+        hi_types:
+          description: List of HI Types
+          items:
+            $ref: '#/components/schemas/CommonsHiType'
+          type:
+          - array
+          - "null"
+        hiu:
+          $ref: '#/components/schemas/CommonsHiu'
+          description: HIU details
+        id:
+          type: string
+        providers:
+          $ref: '#/components/schemas/DetailsProviders'
+        purpose:
+          $ref: '#/components/schemas/CommonsPurpose'
+          description: Purpose of the request
+        requester:
+          $ref: '#/components/schemas/CommonsRequester'
+          description: Requester details
+        status:
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      type: object
     ErrsGenericError:
       properties:
         code:
           type: integer
         message:
           type: string
+      type: object
+    ExistRequest:
+      properties:
+        abha_address:
+          type: string
+      type: object
+    ExistResponse:
+      properties:
+        exist:
+          description: True if the ABHA Address already exists
+          type: boolean
       type: object
     InitRequest:
       properties:
@@ -643,6 +874,33 @@ components:
           type:
           - "null"
           - string
+      type: object
+    RequestsConsent:
+      properties:
+        created_at:
+          description: Time when the consent was created
+          format: date-time
+          type: string
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        hiu:
+          $ref: '#/components/schemas/CommonsHiu'
+          description: Health Information User,the requesting entity Clinic hospital
+        id:
+          type: string
+        purpose:
+          $ref: '#/components/schemas/CommonsPurpose'
+        requester:
+          $ref: '#/components/schemas/CommonsRequester'
+      type: object
+    RequestsResponse:
+      properties:
+        consents:
+          items:
+            $ref: '#/components/schemas/RequestsConsent'
+          type:
+          - array
+          - "null"
       type: object
     ResendRequest:
       properties:
