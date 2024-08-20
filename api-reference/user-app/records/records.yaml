@@ -116,6 +116,8 @@ paths:
       servers:
         - url: https://sample-lab-report.s3.amazonaws.com
           description: Upload files to s3 server
+        - url: https://m-prod-eka-vault.s3.amazonaws.com
+          description: Upload files to s3 server
       summary: Upload Records
       description: Upload a records using the signed URL for each document requested in obtain authorization API
       requestBody:
@@ -204,6 +206,286 @@ paths:
                     HostId: "NjZf6f4Yo3LwikPHTwtyS02TEftaoWWvS8BmfRlQmA5pwllX6FHyMuO4hNVT0AIBOwKHFoEFkk8="
         '500':
           description: Internal Server Error
+
+  /api/v4/docs:
+    get:
+      summary: Fetch documents based on filters
+      description: To get the list of all the records for an given patient oid
+      operationId: getDocuments
+      parameters:
+        - name: oid
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Object ID to filter documents.
+        - name: sort
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Sort order of the documents.
+        - name: flavour
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Flavour to specify the type of documents to fetch.
+
+      responses:
+        '200':
+          description: A list of documents matching the query.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            record:
+                              type: object
+                              properties:
+                                item:
+                                  type: object
+                                  properties:
+                                    documentId:
+                                      type: string
+                                      description: Unique ID of the document.
+                                      example: df04c7e6-577b-4990-948c-5a31820c6a67
+                                    uploadDate:
+                                      type: string
+                                      format: date-time
+                                      description: Date when the document was uploaded.
+                                      example: 2024-08-06T07:39:35Z
+                                    documentType:
+                                      type: string
+                                      description: Type of the document.
+                                      example: TYPE_LAB_REPORT
+                                    metadata:
+                                      type: object
+                                      properties:
+                                        thumbnail:
+                                          type: string
+                                          format: uri
+                                          description: URL of the document's thumbnail.
+                                          example: https://vault-cdn.dev.eka.care/fac0704e-a0e3-4c93-a972-e6c1f188592d/df04c7e6-577b-4990-948c-5a31820c6a67/5dbc4b75-df1a-412d-82a3-77d54671398c.jpeg
+                                        documentDate:
+                                          type: string
+                                          format: date-time
+                                          description: Date of the document.
+                                          example: 2021-09-08T18:30:00Z
+                                        tags:
+                                          type: array
+                                          items:
+                                            type: string
+                                            description: Tags associated with the document.
+                                            example: TYPE_TAG_SMART
+                                        cta:
+                                          type: object
+                                          properties:
+                                            pid:
+                                              type: string
+                                              description: PID for CTA.
+                                              example: deepthought_page
+                                            params:
+                                              type: object
+                                              properties:
+                                                context:
+                                                  type: string
+                                                  description: Context parameter for the CTA.
+                                                  example: '{"prescription_id":"P-PP-68F9D6EC-536B-4BC2-8366-EBEA8C42E35E"}'
+                                                page_type:
+                                                  type: string
+                                                  description: Page type for the CTA.
+                                                  example: smart_prescription
+                                            ctaParamsProto:
+                                              type: string
+                                              description: CTA parameters in proto format.
+                                              example: '{"context":"{\"prescription_id\":\"P-PP-68F9D6EC-536B-4BC2-8366-EBEA8C42E35E\"}","page_type":"smart_prescription"}'
+                                    patientOid:
+                                      type: string
+                                      description: Patient OID associated with the document.
+                                      example: 161494290947153
+                                hash:
+                                  type: string
+                                  description: Hash of the document.
+                                  example: b81bc27bc1e7608a93dcf675ecc21125aaf9351c88bdbde55f0a3b01ccc6c234
+        '400':
+          description: Bad Request. Invalid or missing parameters.
+        '401':
+          description: Unauthorized. Invalid JWT token or client ID.
+        '500':
+          description: Internal Server Error.
+      security:
+        - auth: []
+
+  /api/v1/fhir/retrieve:
+    get:
+      servers:
+        - url: https://health-repo.dev.eka.care
+        - url: https://health-repo.eka.care
+      summary: Retrieve health records
+      description: Retrieve a health record based on the given identifier, hip_id, and health_id in nrces FHIR json format.
+      parameters:
+        - name: identifier
+          in: query
+          required: true
+          description: The unique identifier for the health record.
+          schema:
+            type: string
+        - name: hip_id
+          in: query
+          required: true
+          description: The HIP (Health Information Provider) ID.
+          schema:
+            type: string
+        - name: health_id
+          in: query
+          required: true
+          description: The health ID associated with the record.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of health records.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: Bundle
+                  type:
+                    type: string
+                    example: document
+                  link:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        relation:
+                          type: string
+                  entry:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        resource:
+                          type: object
+                          properties:
+                            author:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  reference:
+                                    type: string
+                            date:
+                              type: string
+                              format: date-time
+                            extension:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  url:
+                                    type: string
+                                  valueString:
+                                    type: string
+                            id:
+                              type: string
+                            identifier:
+                              type: object
+                              properties:
+                                system:
+                                  type: string
+                                value:
+                                  type: string
+                            meta:
+                              type: object
+                              properties:
+                                lastUpdated:
+                                  type: string
+                                  format: date-time
+                            resourceType:
+                              type: string
+                            section:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  entry:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        reference:
+                                          type: string
+                                  title:
+                                    type: string
+                            status:
+                              type: string
+                            subject:
+                              type: object
+                              properties:
+                                reference:
+                                  type: string
+                            title:
+                              type: string
+                            type:
+                              type: object
+                              properties:
+                                text:
+                                  type: string
+                  id:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      versionId:
+                        type: string
+                      lastUpdated:
+                        type: string
+                        format: date-time
+                      profile:
+                        type: array
+                        items:
+                          type: string
+                      security:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                            display:
+                              type: string
+                            system:
+                              type: string
+                  identifier:
+                    type: object
+                    properties:
+                      system:
+                        type: string
+                      value:
+                        type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          description: Unauthorized. Invalid or missing authentication.
+      security:
+        - auth: []
+
 components:
   schemas:
     DocumentTypeQueryParam:
