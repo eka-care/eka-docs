@@ -71,7 +71,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyRequest'
+              $ref: '#/components/schemas/VerifyRequestType2'
       responses:
         4XX:
           content:
@@ -89,7 +89,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VerifyResponse'
+                $ref: '#/components/schemas/VerifyResponseType2'
           description: OK
       security:
       - authApiKey: []
@@ -127,7 +127,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SuggestRequest'
+              $ref: '#/components/schemas/ExistRequest'
       responses:
         4XX:
           content:
@@ -145,7 +145,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuggestResponse'
+                $ref: '#/components/schemas/ExistResponse'
           description: OK
       security:
       - authApiKey: []
@@ -267,7 +267,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyRequestType2'
+              $ref: '#/components/schemas/VerifyRequestType3'
       responses:
         4XX:
           content:
@@ -285,7 +285,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VerifyResponseType2'
+                $ref: '#/components/schemas/VerifyResponseType3'
           description: OK
       security:
       - authApiKey: []
@@ -480,6 +480,17 @@ components:
           type: integer
         message:
           type: string
+      type: object
+    ExistRequest:
+      properties:
+        abha_address:
+          type: string
+      type: object
+    ExistResponse:
+      properties:
+        exist:
+          description: True if the ABHA Address already exists
+          type: boolean
       type: object
     InitRequest:
       properties:
@@ -703,6 +714,22 @@ components:
       type: object
     VerifyRequest:
       properties:
+        mobile:
+          description: Mobile number to be linked with ABHA, this mobile number can
+            be different from the mobile number linked with the Aadhaar. ABHA Created
+            will be linked with this mobile number.
+          type:
+          - "null"
+          - string
+        otp:
+          type:
+          - "null"
+          - string
+        txn_id:
+          type: string
+      type: object
+    VerifyRequestType2:
+      properties:
         otp:
           description: OTP received on the mobile number
           type:
@@ -712,7 +739,7 @@ components:
           description: Transaction ID received in the /init API
           type: string
       type: object
-    VerifyRequestType2:
+    VerifyRequestType3:
       properties:
         otp:
           type: string
@@ -721,6 +748,35 @@ components:
           type: string
       type: object
     VerifyResponse:
+      properties:
+        eka:
+          $ref: '#/components/schemas/RegistrationEkaIds'
+          description: Eka IDs, will be present if SkipState is abha_end
+        hint:
+          description: Hint for the mobile number
+          type:
+          - "null"
+          - string
+        profile:
+          $ref: '#/components/schemas/ProfileResponse'
+        skip_state:
+          enum:
+          - abha_end
+          - confirm_mobile_otp
+          - abha_select
+          - abha_create
+          type: string
+        token:
+          description: Access token for the user, will be present if SkipState is
+            abha_end
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    VerifyResponseType2:
       properties:
         eka:
           $ref: '#/components/schemas/RegistrationEkaIds'
@@ -745,7 +801,7 @@ components:
           description: Transaction ID received in the /init API
           type: string
       type: object
-    VerifyResponseType2:
+    VerifyResponseType3:
       properties:
         abha_profiles:
           description: ABHA profiles, will be present if user has created ABHA.
