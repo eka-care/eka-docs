@@ -9,6 +9,35 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/v1/care-contexts/linked:
+    get:
+      parameters:
+      - in: query
+        name: hip_id
+        required: true
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordsResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/care-contexts/providers:
     get:
       responses:
@@ -28,35 +57,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProviderResponseType2'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/care-contexts/records:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RecordsRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RecordsResponse'
+                $ref: '#/components/schemas/ProviderResponse'
           description: OK
       security:
       - authApiKey: []
@@ -301,6 +302,126 @@ paths:
           description: No Content
       security:
       - authApiKey: []
+  /abdm/v1/profile:
+    get:
+      description: Fetches the ABHA profile of the User. <Note> Do cache these results
+        locally, we don't recommend using API this at every page load and evict the
+        cache when the profile is updated.</Note>
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+          description: OK
+      security:
+      - authApiKey: []
+    patch:
+      description: |-
+        Update Profile Details
+
+        <Note>API expects all the fields from the [Get Profiles API](/api-reference/user-app/abdm-connect/profile/details/profile-details) back in the PATCH body.</Note>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetailsRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/asset/qr:
+    get:
+      description: |-
+        Fetch the data for ABHA qr code display. <Note> Do cache these results locally, we don't recommend using this API at every page load.</Note>
+
+        <Warning>There is not fixed structre to this json, it can vary according to the creation of ABHA. So create the QR code based on the content of the response body</Warning>
+      parameters:
+      - in: query
+        name: format
+        schema:
+          enum:
+          - json
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/share:
+    post:
+      description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
+        by reading the QR code of the Hospital/Clinic.</Note> <Note>Use the device
+        location for the location data</Note>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanandshareRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HipQRScanShareProfileResponseV2'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/provider/{hip_id}:
     get:
       parameters:
@@ -326,7 +447,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProviderResponse'
+                $ref: '#/components/schemas/ProviderResponseType2'
           description: OK
       security:
       - authApiKey: []
@@ -334,8 +455,9 @@ paths:
     get:
       parameters:
       - in: query
-        name: hip_name
+        name: name
         schema:
+          minLength: 3
           type: string
       responses:
         4XX:
@@ -355,7 +477,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ProviderResponse'
+                  $ref: '#/components/schemas/ProviderResponseType2'
                 type:
                 - "null"
                 - array
@@ -483,7 +605,7 @@ paths:
       - authApiKey: []
   /abdm/v1/registration/abha/check:
     post:
-      description: This API endpoint allows to check weather provided health id is
+      description: This API endpoint allows to check whether provided health id is
         already present in system.
       requestBody:
         content:
@@ -1195,6 +1317,36 @@ components:
         error:
           type: string
       type: object
+    HipLocation:
+      properties:
+        latitude:
+          type: string
+        longitude:
+          type: string
+      type: object
+    HipQRScanShareProfileResponseV2:
+      properties:
+        address:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        footer:
+          type: string
+        hip_id:
+          type: string
+        hip_name:
+          type: string
+        request_id:
+          type: string
+        show_token_screen:
+          type: boolean
+        token_expiry:
+          format: date-time
+          type: string
+        token_number:
+          type: string
+      type: object
     InitRequest:
       properties:
         aadhaar_number:
@@ -1418,6 +1570,15 @@ components:
       type: object
     ProviderResponse:
       properties:
+        providers:
+          items:
+            $ref: '#/components/schemas/ProviderHipDetail'
+          type:
+          - array
+          - "null"
+      type: object
+    ProviderResponseType2:
+      properties:
         city:
           type:
           - "null"
@@ -1433,15 +1594,6 @@ components:
           - "null"
           - string
       type: object
-    ProviderResponseType2:
-      properties:
-        providers:
-          items:
-            $ref: '#/components/schemas/ProviderHipDetail'
-          type:
-          - array
-          - "null"
-      type: object
     RecordsCareContext:
       properties:
         care_context_id:
@@ -1454,13 +1606,6 @@ components:
           type: string
         status:
           type: string
-      type: object
-    RecordsRequest:
-      properties:
-        hip_id:
-          type: string
-      required:
-      - hip_id
       type: object
     RecordsResponse:
       properties:
@@ -1508,6 +1653,18 @@ components:
           - "null"
         pin_detail:
           $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
+    ScanandshareRequest:
+      properties:
+        counter_id:
+          description: Counter ID
+          type: string
+        hip_id:
+          description: HIP ID from QR Code
+          type: string
+        location:
+          $ref: '#/components/schemas/HipLocation'
+          description: Location of the user
       type: object
     SetRequest:
       properties:
