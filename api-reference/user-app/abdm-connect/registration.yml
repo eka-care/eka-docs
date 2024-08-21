@@ -9,6 +9,57 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/v1/care-contexts/providers:
+    get:
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/care-contexts/records:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordsResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/consents/approve:
     post:
       requestBody:
@@ -248,6 +299,67 @@ paths:
           description: ""
         "204":
           description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/provider/{hip_id}:
+    get:
+      parameters:
+      - in: path
+        name: hip_id
+        required: true
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/providers:
+    get:
+      parameters:
+      - in: query
+        name: hip_name
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ProviderResponse'
+                type:
+                - "null"
+                - array
+          description: OK
       security:
       - authApiKey: []
   /abdm/v1/registration/aadhaar/create:
@@ -1130,8 +1242,14 @@ components:
         expiry_in_minutes:
           type: integer
         medium:
+          description: Medium which is used to generate otp
+          examples:
+          - mobile
           type: string
         otp_medium_value:
+          description: Value of medium
+          examples:
+          - "9225828688"
           type: string
         session_id:
           type: string
@@ -1288,6 +1406,72 @@ components:
           type:
           - "null"
           - integer
+      type: object
+    ProviderHipDetail:
+      properties:
+        hip_id:
+          type: string
+        hip_name:
+          type:
+          - "null"
+          - string
+      type: object
+    ProviderResponse:
+      properties:
+        city:
+          type:
+          - "null"
+          - string
+        hip_id:
+          type: string
+        hip_name:
+          type:
+          - "null"
+          - string
+        state:
+          type:
+          - "null"
+          - string
+      type: object
+    ProviderResponseType2:
+      properties:
+        providers:
+          items:
+            $ref: '#/components/schemas/ProviderHipDetail'
+          type:
+          - array
+          - "null"
+      type: object
+    RecordsCareContext:
+      properties:
+        care_context_id:
+          type: string
+        created_at:
+          type: string
+        display:
+          type: string
+        fhir_url:
+          type: string
+        status:
+          type: string
+      type: object
+    RecordsRequest:
+      properties:
+        hip_id:
+          type: string
+      required:
+      - hip_id
+      type: object
+    RecordsResponse:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/RecordsCareContext'
+          type:
+          - array
+          - "null"
+      required:
+      - care_contexts
       type: object
     RegistrationEkaIds:
       properties:
