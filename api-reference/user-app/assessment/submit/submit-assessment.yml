@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+
+paths:
+  /assessments/submit/:
+    post:
+      tags:
+        - Assessments > Submit
+      summary: Submit the assessment
+      description: >-
+        This API is used to Submit the assessment. This api should be called after the assessment is completed and progress reaches 100%.
+        <Tip>Use this API to submit the assessment and get assessment summary</Tip>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                submit_assessment: True
+              description: >-
+                The request body must contain this key-value pair
+
+                ```json
+
+                {
+                  "submit_assessment": true
+                }
+
+                ```
+      parameters:
+        - name: auth
+          in: header
+          required: True
+          description: >-
+            The auth token of the user. It is used to authenticate the user.
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: Content-Type
+          in: header
+          description: >-
+            The content type of the request. It is used to determine the type of data being sent.
+          schema:
+            type: string
+          example: application/json
+        - name: hash
+          in: path
+          required: True
+          description: >-
+            The conversation id of the assessment. It is used to identify the assessment.
+          schema:
+            type: string
+          example: sn_2952355823833
+
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 12 Aug 2024 07:41:05 GMT
+            Server:
+              schema:
+                type: number
+                example: WSGIServer/0.2 CPython/3.9.17
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+            Vary:
+              schema:
+                type: string
+                example: Accept, Cookie, origin
+            Allow:
+              schema:
+                type: string
+                example: POST, OPTIONS
+            X-Frame-Options:
+              schema:
+                type: string
+                example: DENY
+            Content-Length:
+              schema:
+                type: integer
+                example: '51'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                example: nosniff
+            Referrer-Policy:
+              schema:
+                type: string
+                example: same-origin
+            Cross-Origin-Opener-Policy:
+              schema:
+                type: string
+                example: same-origin
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                display:
+                - elements:
+                  - type: icon
+                    text: https://deepthought-cdn.eka.care/sa/thankyou/sa_ty_green_icon.png
+                    colour: "#4C5980"
+                  - type: head1
+                    text: Thank you for sharing
+                    colour: "#7ABD5E"
+                  - type: body
+                    text: Your health details have been shared with the doctor.
+                    colour: "#4C5980"
+                summary:
+                  initial:
+                    present:
+                    - Fever
+                    - Headache
+                    absent:
+                    - General discomfort
+                    unknown:
+                    - Red skin rash
+                    - Cough
+                    - Throat pain
+                    - Skin rash
+                  predefined:
+                    present:
+                    - Obesity
+                    - Hypertension
+                    absent: []
+                    unknown:
+                    - Thyroid disorder
+                  interview:
+                    present:
+                    - Headache
+                    - 1 day to 4 days
+                    - Temperature between 98 and 100 degree F
+                    - Varies with each episode
+                    - Over a period of time
+                    - Medication
+                    - Less than 30 mins
+                    - Sudden intense sharp pain
+                    - Immunocompromised
+                    - Meningitis
+                    absent:
+                    - General discomfort
+                    unknown:
+                    - Red skin rash
+                    - Cough
+                    - Throat pain
+                    - Skin rash
+                    - Throbbing or pulsating pain
+                    - Electric shock like
+                    - Constantly present low grade pain
+                    - Hyperthyroidism
+                    - Hypothyroidism
+                    - Taken a vaccine
+                success: true
