@@ -121,8 +121,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericError'
           description: ""
-        "204":
-          description: No Content
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType3'
+          description: OK
       security:
       - authApiKey: []
   /abdm/v1/consents/pin/forget/verify:
@@ -155,7 +159,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PinRequest'
+              $ref: '#/components/schemas/SetRequest'
       responses:
         4XX:
           content:
@@ -179,7 +183,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PinRequest'
+              $ref: '#/components/schemas/SetRequest'
       responses:
         4XX:
           content:
@@ -605,6 +609,7 @@ paths:
       - authApiKey: []
   /abdm/v1/request:
     get:
+      description: ""
       parameters:
       - description: Consent/Subscription/Authorization ID
         in: query
@@ -699,7 +704,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestsResponse'
+                $ref: '#/components/schemas/ListsResponse'
           description: OK
       security:
       - authApiKey: []
@@ -708,6 +713,8 @@ components:
     ApproveConsent:
       properties:
         access_mode:
+          enum:
+          - view
           type: string
         care_contexts:
           items:
@@ -1118,6 +1125,60 @@ components:
           - 5d060cad-a93b-4edf-p3ef-bd412f69s400
           type: string
       type: object
+    InitResponseType3:
+      properties:
+        expiry_in_minutes:
+          type: integer
+        medium:
+          type: string
+        otp_medium_value:
+          type: string
+        session_id:
+          type: string
+      type: object
+    ListsRequestDetail:
+      properties:
+        created_at:
+          description: Time when the consent was created
+          format: date-time
+          type: string
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        hiu:
+          $ref: '#/components/schemas/CommonsHiu'
+          description: Health Information User,the requesting entity Clinic hospital
+        id:
+          description: Unique identifier for the consent/authorization/subsripition
+          type: string
+        purpose:
+          $ref: '#/components/schemas/CommonsPurpose'
+        requester:
+          $ref: '#/components/schemas/CommonsRequester'
+      type: object
+    ListsResponse:
+      properties:
+        authorizations:
+          description: List of authorizations
+          items:
+            $ref: '#/components/schemas/ListsRequestDetail'
+          type:
+          - array
+          - "null"
+        consents:
+          description: List of consents
+          items:
+            $ref: '#/components/schemas/ListsRequestDetail'
+          type:
+          - array
+          - "null"
+        subscriptions:
+          description: List of subscriptions
+          items:
+            $ref: '#/components/schemas/ListsRequestDetail'
+          type:
+          - array
+          - "null"
+      type: object
     LoginRequest:
       properties:
         abha_address:
@@ -1148,11 +1209,6 @@ components:
           - "null"
           - string
         txn_id:
-          type: string
-      type: object
-    PinRequest:
-      properties:
-        pin:
           type: string
       type: object
     PincodeResolvedPincodeData:
@@ -1244,49 +1300,6 @@ components:
           - "null"
           - string
       type: object
-    RequestsRequestDetail:
-      properties:
-        created_at:
-          description: Time when the consent was created
-          format: date-time
-          type: string
-        duration:
-          $ref: '#/components/schemas/CommonsDuration'
-        hiu:
-          $ref: '#/components/schemas/CommonsHiu'
-          description: Health Information User,the requesting entity Clinic hospital
-        id:
-          description: Unique identifier for the consent/authorization/subsripition
-          type: string
-        purpose:
-          $ref: '#/components/schemas/CommonsPurpose'
-        requester:
-          $ref: '#/components/schemas/CommonsRequester'
-      type: object
-    RequestsResponse:
-      properties:
-        authorizations:
-          description: List of authorizations
-          items:
-            $ref: '#/components/schemas/RequestsRequestDetail'
-          type:
-          - array
-          - "null"
-        consents:
-          description: List of consents
-          items:
-            $ref: '#/components/schemas/RequestsRequestDetail'
-          type:
-          - array
-          - "null"
-        subscriptions:
-          description: List of subscriptions
-          items:
-            $ref: '#/components/schemas/RequestsRequestDetail'
-          type:
-          - array
-          - "null"
-      type: object
     ResendRequest:
       properties:
         txn_id:
@@ -1311,6 +1324,11 @@ components:
           - "null"
         pin_detail:
           $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
+    SetRequest:
+      properties:
+        pin:
+          type: string
       type: object
     SuggestRequest:
       properties:
