@@ -1,0 +1,177 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+
+paths:
+  /assessments/components:
+    get:
+      tags:
+        - Components
+      summary: List the components
+      description: >-
+        This API can be used by developers to get info about the components used throughout the assessment. This API is intended to provide knowledge about the Components that developers can use to display in their UI.
+
+        Here's a short description of each component:
+
+        <CardGroup cols={1}>
+          <Card title="Autosuggest Component (I-ASTG)" icon="square-1">
+            - **Description**: Provides real-time suggestions as the user types in the input field.
+            - **Properties**:
+                * `choices`: List of options.
+                * `url`: Data source URL.
+                * `static_items`: Predefined suggestions.
+                * `title`: Field title.
+                + `placeholder`: Input field hint.
+            - **Mandatory**: Yes
+          </Card>
+          <Card title="Single-Select Component (I-RADO)" icon="square-2">
+            - **Description**: Provides real-time suggestions as the user types in the input field.
+            - **Properties**:
+                * `choices`: List of options.
+                * `url`: Data source URL.
+                * `static_items`: Predefined suggestions.
+                * `title`: Field title.
+                + `placeholder`: Input field hint.
+            - **Mandatory**: Yes
+          </Card>
+          <Card title="Multi-Select Component (I-MULT)" icon="square-3">
+            - **Description**: Allows selection of multiple options from a list.
+            - **Properties**:
+                1. `choices`: List of options.
+                2. `url`: Data source URL.
+                3. `static_items`: Predefined suggestions.
+                4. `title`: Field title.
+                5. `placeholder`: Input field hint.
+                6. `nota`: "None of the above" option.
+            - **Mandatory**: Yes
+          </Card>
+          <Card title="Radio Group Component (I-RADG)" icon="square-4">
+            - **Properties**:
+                1. `choices`: List of options.
+                2. `url`: Data source URL.
+                3. `static_items`: Predefined suggestions.
+                4. `title`: Field title.
+                5. `placeholder`: Input field hint.
+            - **Mandatory**: Yes
+          </Card>
+        </CardGroup>
+
+      parameters:
+        - name: auth
+          in: header
+          required: True
+          description: >-
+            The auth token of the user. It is used to authenticate the user.
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: Content-Type
+          in: header
+          description: >-
+            The content type of the request. It is used to determine the type of data being sent.
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 12 Aug 2024 07:41:05 GMT
+            Server:
+              schema:
+                type: number
+                example: WSGIServer/0.2 CPython/3.9.17
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+            Vary:
+              schema:
+                type: string
+                example: Accept, Cookie, origin
+            Allow:
+              schema:
+                type: string
+                example: POST, OPTIONS
+            X-Frame-Options:
+              schema:
+                type: string
+                example: DENY
+            Content-Length:
+              schema:
+                type: integer
+                example: '51'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                example: nosniff
+            Referrer-Policy:
+              schema:
+                type: string
+                example: same-origin
+            Cross-Origin-Opener-Policy:
+              schema:
+                type: string
+                example: same-origin
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                components:
+                  - code: I-ASTG
+                    name: Autosuggest Component
+                    description: >-
+                      This component is used to provide suggestions to the user
+                      as they type in the input field.
+                    properties:
+                      choices: '[{”id”:””, “label”:””]'
+                      url: URL of the Autosuggest API
+                      static_items: Static Items to be shown
+                      title: Title of the question
+                      placeholder: ''
+                    is_mandatory: true
+                  - code: I-RADO
+                    name: Radio Component
+                    description: >-
+                      This component is used to provide a list of options to the
+                      user to select from.
+                    properties:
+                      choices: '[{”id”:””, “label”:””]'
+                      url: ''
+                      static_items: ''
+                      title: ''
+                      placeholder: ''
+                    is_mandatory: true
+                  - code: I-MULT
+                    name: Multiselect Component
+                    description: >-
+                      This component is used to provide a list of options to the
+                      user to select from.
+                    properties:
+                      choices: '[{”id”:””, “label”:””]'
+                      url: ''
+                      static_items: ''
+                      title: ''
+                      placeholder: ''
+                      nota: (None of the above) Only provided in Multiselect.
+                    is_mandatory: true
+                  - code: I-RADG
+                    name: Radio Group Component
+                    description: >-
+                      This component is used to provide a list of options to the
+                      user to select from.
+                    properties:
+                      choices: '[{”id”:””, “label”:””]'
+                      url: ''
+                      static_items: ''
+                      title: ''
+                      placeholder: ''
+                    is_mandatory: true
