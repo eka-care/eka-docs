@@ -10,6 +10,13 @@ servers:
   - url: https://api.eka.care
   - url: https://api.dev.eka.care
 components:
+  securitySchemes:
+    auth:
+      type: apiKey
+      in: header
+      name: auth
+      description: |
+        The API requires the following auth in headers for authentication.
   schemas:
     AddDeviceRequest:
       type: object
@@ -60,7 +67,7 @@ components:
             "fcm-id": "string",
             "fid": "string",
             "lang": "string",
-            "os-version": "string",
+            "os-version": "integer",
             "user-hash": "string"
           }
         }
@@ -149,6 +156,8 @@ components:
           auth_provider_x509_cert_url: https://www.googleapis.com/oauth2/v1/certs
           client_x509_cert_url: https://www.googleapis.com/robot/v1/metadata/x509/example@example.iam.gserviceaccount.com
           universal_domain: example.com
+security:
+  - auth: []
 paths:
   /notification/add-device:
     post:
@@ -162,16 +171,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AddDeviceRequest'
-      parameters:
-        - name: auth
-          in: header
-          required: True
-          description: >-
-            The auth token of the user. It is used to authenticate the user.
-          schema:
-            type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
       responses:
         '200':
           description: Successful response
@@ -206,15 +205,13 @@ paths:
       summary: Delete Device
       description: To be called when the device is logged out or uninstalled.
       parameters:
-        - name: auth
+        - name: device-id
           in: header
           required: True
-          description: >-
-            The auth token of the user. It is used to authenticate the user.
+          description: The device ID of the device to be deleted.
           schema:
             type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+          example: aa8650d03
       responses:
         '200':
           description: Successful response
@@ -255,16 +252,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FCMPayload'
-      parameters:
-        - name: auth
-          in: header
-          required: True
-          description: >-
-            The auth token of the user. It is used to authenticate the user.
-          schema:
-            type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
       responses:
         '200':
           description: Successful response
