@@ -942,6 +942,64 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/session/init:
+    post:
+      description: Generate mobile OTP for user session token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType4'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/session/verify:
+    post:
+      description: Verify mobile OTP and return user session token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType6'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponseType4'
+          description: OK
+      security:
+      - authApiKey: []
 components:
   schemas:
     ApproveConsent:
@@ -1359,6 +1417,15 @@ components:
         mobile_number:
           type: string
       type: object
+    InitRequestType3:
+      properties:
+        abha_address:
+          examples:
+          - sudo@abdm
+          type: string
+      required:
+      - abha_address
+      type: object
     InitResponse:
       properties:
         hint:
@@ -1404,6 +1471,12 @@ components:
           - "9225828688"
           type: string
         session_id:
+          type: string
+      type: object
+    InitResponseType4:
+      properties:
+        txn_id:
+          description: Transaction ID for the session
           type: string
       type: object
     ListsRequestDetail:
@@ -1764,6 +1837,17 @@ components:
         session_id:
           type: string
       type: object
+    VerifyRequestType6:
+      properties:
+        otp:
+          type: string
+        txn_id:
+          description: Transaction ID for the session
+          type: string
+      required:
+      - txn_id
+      - otp
+      type: object
     VerifyResponse:
       properties:
         eka:
@@ -1836,6 +1920,14 @@ components:
           type: string
         txn_id:
           type: string
+      type: object
+    VerifyResponseType4:
+      properties:
+        token:
+          description: Access token for the user
+          type:
+          - "null"
+          - string
       type: object
   securitySchemes:
     authApiKey:
