@@ -1,8 +1,28 @@
-### Care Context
+---
+title: Care Context
+---
 
-Specific segments of healthcare data provided by an HIP, such as diagnostic reports or prescriptions.
+A Care Context represents a logical grouping of health records. Each HMIS, LMIS, or PHR system should determine how to organize data into one or more care contexts for a user. For example, a hospital system might create a care context for each hospital visit, a lab test is a care-context for LMIS, or user-uploaded records in a PHR app.
 
-**How does the API’s works:**
+# Listing Care Contexts
+<Note>
+This feature is useful for displaying a list of care contexts to a doctor (HMIS) or within a PHR app.
+</Note>
+Listing linked Care Contexts involves two steps, as an ABHA address could have thousands of documents associated with multiple providers.
 
-1. **Get Linked Providers :** This API retrieves the list of providers (e.g., hospitals) linked to the user. And it returns a list with provider names and their corresponding IDs.
-2. **Get Linked Care Contexts :** This API retrieves the list of care contexts linked to hip ID. And it returns a list of care contexts with details such as `care_context_id`, `created_at`,`status.`
+<Steps>
+  <Step title="List Linked Providers">
+    Use the [List Providers](/api-reference/user-app/abdm-connect/care-contexts/providers/providers) API to retrieve all linked providers. This API returns a `hip_id` and the name for each linked provider.
+  </Step>
+  <Step title="List Care Contexts for a Provider">
+    Using the `hip_id` obtained from the previous step, use the [List Care Contexts](/api-reference/user-app/abdm-connect/care-contexts/records/records) API to retrieve all linked care contexts for that provider.
+  </Step>
+</Steps>
+
+# Linking Care Contexts
+Care contexts can be linked to an ABHA in various ways, depending on the document type.
+
+## Upload a Medical Record
+
+Use the [Upload](/api-reference/user-app/records/obtain-authorization) API to upload a document and API will automatically create a care context.
+
