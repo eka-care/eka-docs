@@ -9,6 +9,93 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/v1/care-contexts/discover:
+    post:
+      description: Discover unlinked care-contexts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoverRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/care-contexts/discover/link/confirm:
+    post:
+      description: Confirm linking for discovered care context
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/care-contexts/discover/link/init:
+    post:
+      description: Initialise the linking for discovered care context.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType4'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/care-contexts/linked:
     get:
       parameters:
@@ -353,6 +440,34 @@ paths:
           description: ""
         "204":
           description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/asset/card:
+    get:
+      description: |-
+        Fetch the ABHA card
+
+        <Warning>Use the card data based on the `content-type` response header</Warning>
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                format: base64
+                type: string
+          description: OK
       security:
       - authApiKey: []
   /abdm/v1/profile/asset/qr:
@@ -949,7 +1064,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InitRequestType3'
+              $ref: '#/components/schemas/InitRequestType4'
       responses:
         4XX:
           content:
@@ -967,7 +1082,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitResponseType4'
+                $ref: '#/components/schemas/InitResponseType5'
           description: OK
       security:
       - authApiKey: []
@@ -1141,6 +1256,22 @@ components:
           - Dr John
           type: string
       type: object
+    ConfirmRequest:
+      properties:
+        otp:
+          type: string
+        txn_id:
+          type: string
+      required:
+      - txn_id
+      type: object
+    ConfirmResponse:
+      properties:
+        cc_ref_id:
+          type: string
+        txn_id:
+          type: string
+      type: object
     CreateRequest:
       properties:
         abha_address:
@@ -1267,6 +1398,10 @@ components:
           - "null"
           - string
         gender:
+          enum:
+          - M
+          - F
+          - O
           examples:
           - M
           type: string
@@ -1352,6 +1487,48 @@ components:
           format: date-time
           type: string
       type: object
+    DiscoverCareContext:
+      properties:
+        display:
+          type: string
+        id:
+          type: string
+      type: object
+    DiscoverPatient:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/DiscoverCareContext'
+          type:
+          - array
+          - "null"
+        display:
+          type: string
+        id:
+          type: string
+      type: object
+    DiscoverRequest:
+      properties:
+        hip_id:
+          type: string
+        ref_id:
+          description: patient reference id of HIP
+          type: string
+      required:
+      - hip_id
+      - ref_id
+      type: object
+    DiscoverResponse:
+      properties:
+        patient:
+          items:
+            $ref: '#/components/schemas/DiscoverPatient'
+          type:
+          - array
+          - "null"
+        txn_id:
+          type: string
+      type: object
     ExistRequest:
       properties:
         abha_address:
@@ -1370,6 +1547,41 @@ components:
       type: object
     GenericError:
       properties:
+        code:
+          type: integer
+        error:
+          type: string
+      type: object
+    GerrorAction:
+      properties:
+        cta:
+          $ref: '#/components/schemas/GerrorActionCta'
+        description:
+          type: string
+        img:
+          type: string
+        suggest_method:
+          type: string
+        title:
+          type: string
+      type: object
+    GerrorActionCta:
+      properties:
+        params:
+          additionalProperties:
+            type: string
+          type:
+          - object
+          - "null"
+        pid:
+          type: string
+        title:
+          type: string
+      type: object
+    GerrorErrorResp:
+      properties:
+        action:
+          $ref: '#/components/schemas/GerrorAction'
         code:
           type: integer
         error:
@@ -1418,6 +1630,19 @@ components:
           type: string
       type: object
     InitRequestType3:
+      properties:
+        cc_ref_id:
+          type: string
+        patient_ref_id:
+          type: string
+        txn_id:
+          type: string
+      required:
+      - txn_id
+      - patient_ref_id
+      - cc_ref_id
+      type: object
+    InitRequestType4:
       properties:
         abha_address:
           examples:
@@ -1474,6 +1699,11 @@ components:
           type: string
       type: object
     InitResponseType4:
+      properties:
+        txn_id:
+          type: string
+      type: object
+    InitResponseType5:
       properties:
         txn_id:
           description: Transaction ID for the session
@@ -1674,8 +1904,6 @@ components:
         created_at:
           type: string
         display:
-          type: string
-        fhir_url:
           type: string
         status:
           type: string
