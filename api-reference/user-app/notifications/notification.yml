@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: ABDM Connect
+  title: Notification Connect
   description: |-
     | **Pipeline** | **Release Date** |
     | --- | --- |
@@ -9,64 +9,150 @@ info:
 servers:
   - url: https://api.eka.care
   - url: https://api.dev.eka.care
+security:
+  - apiKey: []
 components:
   securitySchemes:
-    noauthAuth:
-      type: http
-      scheme: apikey
-    apikeyAuth:
-      type: http
-      scheme: apikey
-security:
-  - apikeyAuth: []
-
+    apiKey:
+      type: apiKey
+      name: auth
+      in: header
+  schemas:
+    AddDeviceRequest:
+      type: object
+      properties:
+        devicePayload:
+          app-id:
+            type: string
+          app-platform:
+            type: string
+          app-version:
+            type: string
+          did:
+            type: string
+          fcm-id:
+            type: string
+          fid:
+            type: string
+          lang:
+            type: string
+          os-version:
+            type: string
+          user-hash:
+            type: string
+      example:
+        devicePayload:
+          app-id: 123
+          app-platform: android
+          app-version: 1.0.0
+          did: 123
+          fcm-id: 123
+          fid: 123
+          lang: en
+          os-version: 1.0.0
+          user-hash: 123
+    FCMPayload:
+      type: object
+      properties:
+        sa_key:
+          type:
+            type: string
+          project_id:
+            type: string
+          private_key_id:
+            type: string
+          private_key:
+            type: string
+          client_email:
+            type: string
+          client_id:
+            type: string
+          auth_uri:
+            type: string
+          token_uri:
+            type: string
+          auth_provider_x509_cert_url:
+            type: string
+          client_x509_cert_url:
+            type: string
+          universal_domain:
+            type: string
+      example:
+        sa_key:
+          type: service_account
+          project_id: example-project
+          private_key_id: 1234567890abcdef
+          private_key: -----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----\n
+          client_email: example@example.iam.gserviceaccount.com
+          client_id: 12345678901234567890
+          auth_uri: https://accounts.google.com/o/oauth2/auth
+          token_uri: https://oauth2.googleapis.com/token
+          auth_provider_x509_cert_url: https://www.googleapis.com/oauth2/v1/certs
+          client_x509_cert_url: https://www.googleapis.com/robot/v1/metadata/x509/example@example.iam.gserviceaccount.com
+          universal_domain: example.com
 paths:
-  /profile/add-device:
+  /notification/add-device:
     post:
       tags:
         - Notifications
-      summary: add-device
+      summary: Add Device
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              example:
-                devicePayload:
-                  app-id: ''
-                  app-platform: android
-                  app-version: '1571'
-                  did: aa8639d3ff050d55
-                  fcm-id: fr3Ybq-2QHW_JptUCHwhkh:APA91bEHF015uSYgjNSnCyC-RGbGmmHfqARZpi6eAWwWCw3SWnLMEFu34w5pgd9uM-NFCkK3nuCivqQlqUE2jt7V6x_BNB4tCLucU7eNYHfX5PliniucZf0_4gZ4H2gJMZrb6JS6tAZZ
-                  fid: fr3Ybq-2QHW_JptUCHwhkh
-                  lang: en
-                  os-version: 30
-                  user-hash: ''
+              $ref: '#/components/schemas/AddDeviceRequest'
       parameters:
         - name: Content-Type
           in: header
           schema:
-            type: string
-          example: application/json
+            type: object
       responses:
         '200':
           description: Successful response
           content:
-            application/json: {}
-  /v1/device:
+            application/json:
+              example:
+                success: true
+  /notification/delete-device:
     delete:
       tags:
         - Notifications
-      summary: delete-device
+      summary: Delete Device
       parameters:
         - name: device-id
           in: header
           schema:
             type: string
-          example: aa8639d3ff050d55
       responses:
         '200':
           description: Successful response
           content:
-            application/json: {}
-  
+            application/json:
+              example:
+                success: true
+  /notification/fcm-creds:
+    post:
+      operationId: addFcmCreds
+      tags:
+        - Notifications
+      summary: Add FCM Credentials
+      description: Store FCM credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FCMPayload'
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              example:
+                message: FCM token added successfully
