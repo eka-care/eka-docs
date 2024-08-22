@@ -11,7 +11,9 @@ servers:
 paths:
   /abdm/v1/care-contexts/discover:
     post:
-      description: Discover unlinked care-contexts
+      description: "ABDM allows a user to find their health records from any health
+        facility they have visited via the discovery process. \n\nDiscover API returns
+        any unlinked care-context for the ABHA User."
       requestBody:
         content:
           application/json:
@@ -391,9 +393,9 @@ paths:
       - authApiKey: []
   /abdm/v1/profile:
     get:
-      description: Fetches the ABHA profile of the User. <Note> Do cache these results
-        locally, we don't recommend using API this at every page load and evict the
-        cache when the profile is updated.</Note>
+      description: Fetches the ABHA profile of the User. <Note>Please cache these
+        results locally. We do not recommend calling this API on every page load.
+        Evict the cache when there is profile update.</Note>
       responses:
         4XX:
           content:
@@ -419,7 +421,7 @@ paths:
       description: |-
         Update Profile Details
 
-        <Note>API expects all the fields from the [Get Profiles API](/api-reference/user-app/abdm-connect/profile/details/profile-details) back in the PATCH body.</Note>
+        <Note>The API expects all the fields returned by the [Get Profiles API](/api-reference/user-app/abdm-connect/profile/details/profile-details) to be included in the PATCH request body.</Note>
       requestBody:
         content:
           application/json:
@@ -444,10 +446,9 @@ paths:
       - authApiKey: []
   /abdm/v1/profile/asset/card:
     get:
-      description: |-
-        Fetch the ABHA card
-
-        <Warning>Use the card data based on the `content-type` response header</Warning>
+      description: Fetch the ABHA card.<Note>Please cache these results locally. We
+        do not recommend calling this API on every page load. Evict the cache when
+        there is profile update.</Note>
       responses:
         4XX:
           content:
@@ -463,19 +464,20 @@ paths:
           description: ""
         "200":
           content:
-            application/json:
+            image/png:
               schema:
-                format: base64
+                format: binary
                 type: string
           description: OK
       security:
       - authApiKey: []
   /abdm/v1/profile/asset/qr:
     get:
-      description: |-
-        Fetch the data for ABHA qr code display. <Note> Do cache these results locally, we don't recommend using this API at every page load.</Note>
-
-        <Warning>There is not fixed structre to this json, it can vary according to the creation of ABHA. So create the QR code based on the content of the response body</Warning>
+      description: Fetch the data for ABHA qr code display. <Note>Please cache these
+        results locally. We do not recommend calling this API on every page load.
+        Evict the cache when there is profile update.</Note><Warning>There is no fixed
+        structure for this JSON; it can vary depending on the creation of ABHA. Generate
+        the QR code based on the content of the response body.</Warning>
       parameters:
       - in: query
         name: format
@@ -1512,11 +1514,12 @@ components:
         hip_id:
           type: string
         ref_id:
-          description: patient reference id of HIP
+          description: The unique identifier for the patient within the Healthcare
+            Information Provider (HIP), such as the patient's registration ID, email
+            address, or phone number used at the hospital or lab.
           type: string
       required:
       - hip_id
-      - ref_id
       type: object
     DiscoverResponse:
       properties:
