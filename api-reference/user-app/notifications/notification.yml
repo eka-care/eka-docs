@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: ABDM Connect
+  title: Notification Connect
   description: |-
     | **Pipeline** | **Release Date** |
     | --- | --- |
@@ -11,62 +11,271 @@ servers:
   - url: https://api.dev.eka.care
 components:
   securitySchemes:
-    noauthAuth:
-      type: http
-      scheme: apikey
-    apikeyAuth:
-      type: http
-      scheme: apikey
-security:
-  - apikeyAuth: []
+    auth:
+      type: apiKey
+      in: header
+      name: auth
+      description: |
+        The API requires the following auth in headers for authentication.
+  schemas:
+    AddDeviceRequest:
+      type: object
+      properties:
+        devicePayload:
+          type: object
+          properties:
+            app-id:
+              description: Would be a enum describing the platform in use. Allowed Enums - android, ios
+              type: string
+            app-platform:
+              description: The platform on which the application is running (e.g., Android, iOS).
+              type: string
+            app-version:
+              description: This helps us in Notifications to trigger based on App Version compatibility.
+              type: string
+            did:
+              required: true
+              description: Device ID any unique id where we can identify a device.
+              type: string
+            fcm-id:
+              required: true
+              description: The Firebase Cloud Messaging identifier for the device.
+              type: string
+            fid:
+              description: The Firebase Installation identifier.
+              type: string
+            lang:
+              description: The language setting of the device.
+              type: string
+            os-version:
+              description: The operating system version of the device.
+              type: integer
+            user-hash:
+              description: A hash representing the user, can be empty if not applicable.
+              type: string
+      description: >-
+        The request body must contain the device payload information.
+        The format should be:
 
+        ```json
+        {
+          "devicePayload": {
+            "app-id": "string",
+            "app-platform": "string",
+            "app-version": "string",
+            "did": "string",
+            "fcm-id": "string",
+            "fid": "string",
+            "lang": "string",
+            "os-version": "integer",
+            "user-hash": "string"
+          }
+        }
+        ```
+      example:
+        devicePayload:
+          app-id: "123"
+          app-platform: android
+          app-version: "1571"
+          did: "aa8650d03"
+          fcm-id: "fr3Ybq-2QHW_Jp:CivqQlS6tZZZ"
+          fid: "frbq-2Qkh"
+          lang: en
+          os-version: 20
+          user-hash: "user123"
+    FCMPayload:
+      type: object
+      properties:
+        sa_key:
+          type: object
+          properties:
+            type:
+              description: The type of the service account key.
+              type: string
+            project_id:
+              description: The unique identifier for the project.
+              type: string
+            private_key_id:
+              description: The unique identifier for the private key.
+              type: string
+            private_key:
+              description: The private key used for authentication.
+              type: string
+            client_email:
+              description: The email address associated with the client.
+              type: string
+            client_id:
+              description: The unique identifier for the client.
+              type: string
+            auth_uri:
+              description: The URI used for authentication.
+              type: string
+            token_uri:
+              description: The URI used to obtain the token.
+              type: string
+            auth_provider_x509_cert_url:
+              description: The URL for the auth provider's X.509 certificate.
+              type: string
+            client_x509_cert_url:
+              description: The URL for the client's X.509 certificate.
+              type: string
+            universal_domain:
+              description: The universal domain associated with the service account.
+              type: string
+      description: >-
+        The request body must contain the FCM payload information.
+        The format should be:
+
+        ```json
+        {
+          "sa_key": {
+            "type": "string",
+            "project_id": "string",
+            "private_key_id": "string",
+            "private_key": "string",
+            "client_email": "string",
+            "client_id": "string",
+            "auth_uri": "string",
+            "token_uri": "string",
+            "auth_provider_x509_cert_url": "string",
+            "client_x509_cert_url": "string",
+            "universal_domain": "string"
+          }
+        }
+        ```
+      example:
+        sa_key:
+          type: service_account
+          project_id: example-project
+          private_key_id: 1234567890abcdef
+          private_key: -----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----\n
+          client_email: example@example.iam.gserviceaccount.com
+          client_id: 12345678901234567890
+          auth_uri: https://accounts.google.com/o/oauth2/auth
+          token_uri: https://oauth2.googleapis.com/token
+          auth_provider_x509_cert_url: https://www.googleapis.com/oauth2/v1/certs
+          client_x509_cert_url: https://www.googleapis.com/robot/v1/metadata/x509/example@example.iam.gserviceaccount.com
+          universal_domain: example.com
+security:
+  - auth: []
 paths:
-  /profile/add-device:
+  /notification/add-device:
     post:
       tags:
         - Notifications
-      summary: add-device
+      summary: Add Device
+      description: Call to add or register a device for notifications.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              example:
-                devicePayload:
-                  app-id: ''
-                  app-platform: android
-                  app-version: '1571'
-                  did: aa8639d3ff050d55
-                  fcm-id: fr3Ybq-2QHW_JptUCHwhkh:APA91bEHF015uSYgjNSnCyC-RGbGmmHfqARZpi6eAWwWCw3SWnLMEFu34w5pgd9uM-NFCkK3nuCivqQlqUE2jt7V6x_BNB4tCLucU7eNYHfX5PliniucZf0_4gZ4H2gJMZrb6JS6tAZZ
-                  fid: fr3Ybq-2QHW_JptUCHwhkh
-                  lang: en
-                  os-version: 30
-                  user-hash: ''
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
+              $ref: '#/components/schemas/AddDeviceRequest'
       responses:
         '200':
           description: Successful response
           content:
-            application/json: {}
-  /v1/device:
+            application/json:
+              schema:
+                type: object
+              example:
+                success: true
+        '400':
+          description: Client error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Unauthorized access.
+                error_code: 401
+        '500':
+          description: Server error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Internal server error.
+                error_code: 500
+  /notification/delete-device:
     delete:
       tags:
         - Notifications
-      summary: delete-device
+      summary: Delete Device
+      description: To be called when the device is logged out or uninstalled.
       parameters:
         - name: device-id
           in: header
+          required: True
+          description: The device ID of the device to be deleted.
           schema:
             type: string
-          example: aa8639d3ff050d55
+          example: aa8650d03
       responses:
         '200':
           description: Successful response
           content:
-            application/json: {}
-  
+            application/json:
+              schema:
+                type: object
+              example:
+                success: true
+        '400':
+          description: Client error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Unauthorized access.
+                error_code: 401
+        '500':
+          description: Server error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Internal server error.
+                error_code: 500
+  /notification/fcm-creds:
+    post:
+      operationId: addFcmCreds
+      tags:
+        - Notifications
+      summary: Add FCM Credentials
+      description: Store FCM credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FCMPayload'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: FCM token added successfully
+        '400':
+          description: Client error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Unauthorized access.
+                error_code: 401
+        '500':
+          description: Server error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Internal server error.
+                error_code: 500
