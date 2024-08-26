@@ -712,6 +712,36 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/registration/aadhaar/resend:
+    post:
+      description: This endpoint is used to resend a otp for aadhaar registration
+        process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/registration/aadhaar/verify:
     post:
       description: This endpoint is used to verify Aadhaar otp generated for registration
@@ -869,7 +899,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResendRequest'
+              $ref: '#/components/schemas/ResendRequestType2'
       responses:
         4XX:
           content:
@@ -887,7 +917,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResendResponse'
+                $ref: '#/components/schemas/ResendResponseType2'
           description: OK
       security:
       - authApiKey: []
@@ -1958,10 +1988,32 @@ components:
     ResendRequest:
       properties:
         txn_id:
+          examples:
+          - 5d060cad-a93b-4edf-p3ef-bd412f69s400
+          type: string
+      type: object
+    ResendRequestType2:
+      properties:
+        txn_id:
           description: Transaction ID received in the /init API
           type: string
       type: object
     ResendResponse:
+      properties:
+        hint:
+          description: Hint message for the mobile number
+          examples:
+          - OTP sent successfully to your mobile number ******90973
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction ID received in the /init API
+          examples:
+          - 5d060cad-a93b-4edf-p3ef-bd412f69s400
+          type: string
+      type: object
+    ResendResponseType2:
       properties:
         hint:
           type: string
