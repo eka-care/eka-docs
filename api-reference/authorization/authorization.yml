@@ -1,127 +1,116 @@
 openapi: 3.1.0
 info:
-  title: ABDM Connect
-  description: |-
-    | **Pipeline** | **Release Date** |
-    | --- | --- |
-    | Registration API | 12th Aug, 2024 |
+  description: Authorization APIs for connect
+  title: Connect Auth
   version: 1.0.0
 servers:
-  - url: https://api.eka.care
-  - url: https://api.dev.eka.care
-components:
-  securitySchemes:
-    noauthAuth:
-      type: http
-      scheme: apikey
-    apikeyAuth:
-      type: http
-      scheme: apikey
-security:
-  - apikeyAuth: []
-
+- description: Production
+  url: https://api.eka.care
+- description: Stage/Sandbox
+  url: https://api.dev.eka.care
 paths:
   /connect-auth/v1/account/login:
     post:
-      summary: Client Token API
-      description: ''
+      description: Authorization APIs to get access and refresh token
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                client_id:
-                  type: string
-                client_secret:
-                  type: string
-              required:
-                 - client_id
-                 - client_secret
-              example:
-                client_id: '{{client_id}}'
-                client_secret: '{{client_secret}}'
+              $ref: '#/components/schemas/AccountLoginRequest'
       responses:
-        '200':
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountLoginResponse'
           description: OK
-          headers:
-            Date:
-              schema:
-                type: string
-                example: Wed, 07 Aug 2024 07:03:45 GMT
-            Content-Type:
-              schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
-              schema:
-                type: integer
-                example: '170'
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
-            apigw-requestid:
-              schema:
-                type: string
-                example: cIFc0ibOhcwEJbQ=
-            access-control-allow-credentials:
-              schema:
-                type: boolean
-                example: 'true'
-            access-control-allow-headers:
-              schema:
-                type: string
-                example: Targetpod, X-Forwarded-Proto, Content-Length, Accept, Postman-Token, X-Amzn-Trace-Id, Accept-Encoding, Forwarded, X-Forwarded-For, Via, X-Forwarded-Port, User-Agent, Content-Type, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, utm_source, utm_campaign, utm_medium
-            access-control-allow-methods:
-              schema:
-                type: string
-                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+      security:
+      - authApiKey: []
+  /connect-auth/v1/account/refresh:
+    post:
+      description: Get new Authorization token using the refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRefreshRequest'
+      responses:
+        4XX:
           content:
             application/json:
               schema:
-                type: object
-              example:
-                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjMwMTYwMjUsImlhdCI6MTcyMzAxNDIyNSwiYy1pZCI6InRlc3RpbmcifQ.BN4Q9b8QGvbsqS7DXESsSLcdbHNnny1r304eR87QbBs
-        '500':
-          description: Internal Server Error
-          headers:
-            Date:
-              schema:
-                type: string
-                example: Wed, 07 Aug 2024 07:04:15 GMT
-            Content-Type:
-              schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
-              schema:
-                type: integer
-                example: '44'
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
-            apigw-requestid:
-              schema:
-                type: string
-                example: cIFhgh1WBcwEJOw=
-            access-control-allow-credentials:
-              schema:
-                type: boolean
-                example: 'true'
-            access-control-allow-headers:
-              schema:
-                type: string
-                example: Content-Length, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, Accept, Content-Type, Accept-Encoding, Forwarded, X-Forwarded-Proto, User-Agent, Postman-Token, Targetpod, Via, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin, Cache-Control, X-Requested-With, Auth, X-Token, X-Token-Exp, Flavour, Locale, Client-Id, Jwt-Payload, Res-Payload, Device-Id, Version, Accept, Resjwttoken, os-version, utm_source, utm_campaign, utm_medium
-            access-control-allow-methods:
-              schema:
-                type: string
-                example: POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
           content:
             application/json:
               schema:
-                type: object
-              example:
-                message: invalid credentials
-                code: 400
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRefreshResponse'
+          description: OK
+      security:
+      - authApiKey: []
+components:
+  schemas:
+    AccountLoginRequest:
+      properties:
+        client_id:
+          type: string
+        client_secret:
+          type: string
+      type: object
+    AccountLoginResponse:
+      properties:
+        access_token:
+          type: string
+        expires_at:
+          description: Access token expiry in seconds
+          type: integer
+        refresh_expires_at:
+          description: Refresh token expiry in seconds
+          type: integer
+        refresh_token:
+          type: string
+      type: object
+    AccountRefreshRequest:
+      properties:
+        refresh_token:
+          type: string
+      type: object
+    AccountRefreshResponse:
+      properties:
+        access_token:
+          type: string
+        expires_at:
+          description: Access token expiry in seconds
+          type: integer
+        refresh_expires_at:
+          description: Refresh token expiry in seconds
+          type: integer
+        refresh_token:
+          type: string
+      type: object
+    GenericError:
+      properties:
+        code:
+          type: integer
+        error:
+          type: string
+      type: object
