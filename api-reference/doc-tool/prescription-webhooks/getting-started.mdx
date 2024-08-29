@@ -1,0 +1,107 @@
+## What are Webhooks?
+
+A webhook (also called a web callback or HTTP push API) is a way for an app to provide other applications with real-time information. A webhook delivers data to other applications as it happens, meaning you get data immediately. Unlike typical APIs where you would need to poll for data very frequently in order to get it real-time. This makes webhooks much more efficient for both provider and consumer.
+
+These are the steps to handle webhook events for appointments and prescriptions:
+
+<Steps>
+
+<Step title="Set Up Webhook Endpoint">
+Create an endpoint on your server to receive webhook events. This endpoint should be able to handle POST requests.
+
+**Example Endpoint:** `https://your-app.com/api/webhooks`
+
+Ensure your endpoint is publicly accessible and can handle the expected load of incoming webhook events.
+</Step>
+
+<Step title="Register Webhook URL">
+Register your webhook URL with Eka Care. This is typically done through a settings or configuration page in your Eka Care account.
+
+**Note:** Make sure to keep your webhook URL up to date if it changes.
+</Step>
+
+<Step title="Receive Appointment Webhook">
+When an appointment is created, modified, or completed, Eka Care will send a webhook event to your registered URL.
+
+**Example Payload:**
+```json
+{
+  "event_type": "appointment",
+  "data": {
+    "appointment_id": "12345-abcde-67890-fghij",
+    "doctor_id": "0910731080189",
+    "patient_id": "54321098809",
+    "status": "BK",
+    "action": "create",
+    "timestamp": "2024-06-28T10:30:00Z"
+  }
+}
+```
+</Step>
+
+<Step title="Fetch Appointment Details">
+After receiving the appointment webhook, use the appointment ID to fetch full details using the Get Appointment Details API.
+
+**Endpoint:** `GET {{HOST}}/v1/business/appointments/{{appointment_id}}`
+
+This step allows you to retrieve comprehensive information about the appointment, including any additional details not included in the webhook payload.
+</Step>
+
+<Step title="Receive Prescription Webhook">
+When a prescription is created, Eka Care will send a webhook event to your registered URL.
+
+**Example Payload:**
+```json
+{
+  "event_type": "prescription_created",
+  "data": {
+    "prescription": "12345-abcde-67890-fghij",
+    "doctor_id": "0910731080189",
+    "patient_id": "54321098809",
+    "created_at": "2023-07-30T18:07:24.000Z",
+    "client_meta": {
+      "visit_id": "98765-zyxwv-43210-utsrq"
+    }
+  }
+}
+```
+</Step>
+
+<Step title="Fetch Prescription Details">
+After receiving the prescription webhook, use the prescription ID to fetch full details using the Get Prescription Details API.
+
+**Endpoint:** `GET {{HOST}}/v1/business/doctor/prescription/{{prescription_id}}`
+
+This step allows you to retrieve comprehensive information about the prescription, including medication details and other relevant information not included in the webhook payload.
+</Step>
+
+</Steps>
+
+---
+
+## Overview
+
+Webhooks provide a real-time notification system for events occurring within the Eka Care platform. By implementing webhook listeners, your application can immediately respond to events such as new appointments being created or prescriptions being issued.
+
+## Main Events
+
+- **Appointment Events:** Created, modified, or completed appointments.
+- **Prescription Events:** New prescriptions created.
+
+## Usage Notes
+
+- Ensure your webhook endpoint is secure and can handle the expected volume of incoming requests.
+- Implement proper error handling and retry logic in case of temporary failures.
+- Consider implementing a queueing system if you need to process a high volume of webhook events.
+- Always verify the authenticity of incoming webhook requests to prevent security issues.
+- Use the provided APIs to fetch full details after receiving a webhook, as the webhook payload may contain limited information.
+
+## Example Workflow
+
+1. Receive a webhook notification for a new appointment.
+2. Extract the appointment ID from the webhook payload.
+3. Use the Get Appointment Details API to fetch comprehensive information about the appointment.
+4. Process the appointment information as needed in your application.
+5. Follow a similar process for prescription webhooks, using the appropriate API to fetch full prescription details.
+
+By leveraging webhooks, your application can maintain real-time synchronization with Eka Care's system, providing up-to-date information to your users and enabling immediate actions based on new events.
