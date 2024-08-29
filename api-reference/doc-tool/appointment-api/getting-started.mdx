@@ -1,0 +1,95 @@
+# Appointment API Overview
+
+## Overview
+The Appointment API is designed to manage appointments within a business' practice. This API allows for searching available slots, booking appointments, checking in patients, and managing existing appointments. It facilitates efficient appointment management and ensures that all necessary information is up-to-date and easily accessible.
+
+## Main Actors
+* **Patient:** The individual for whom the appointment is being scheduled or managed.
+* **Doctor:** The healthcare provider with whom the appointment is scheduled.
+* **Business:** The healthcare practice or organization managing the appointments.
+
+## Functionality
+1. **Search for Available Slots:**
+   - This functionality allows users to search for available appointment slots for a specific doctor and clinic within a given date range.
+
+2. **Book an Appointment:**
+   - This functionality enables the booking of appointments in available slots, including specifying appointment type and payment mode.
+
+3. **Check-in Patient:**
+   - This functionality allows checking in a patient for their scheduled appointment.
+
+4. **Get Appointment Details:**
+   - This functionality retrieves detailed information about a specific appointment.
+
+5. **Edit/Delete/Reschedule Appointments:**
+   - This functionality allows for modifying existing appointments, including cancellation and rescheduling.
+
+## Workflow for Booking an Appointment
+<Steps>
+<Step title="Add Patient to Business' Directory (if not present)">
+Before booking an appointment, ensure that the patient is added to the business' directory. Use the following API to add a patient:
+
+**Endpoint:** `{{HOST}}/v1/business/doctor/patient/add`
+
+**Method:** POST
+
+**Note**: You can also create an appointment without adding the patient first. Providing patient details while creating an appointment adds the patient to the directory automatically.
+</Step>
+
+<Step title="Search for Available Slots">
+Once the patient is added, select the doctor and clinic, and search for the available slots for the desired dates:
+
+**Endpoint:** `{{HOST}}/v1/business/doctor/{doctor_id}/clinic/{clinic_id}/appointments/slots?start_date={{start_date}}&end_date={{end_date}}`
+
+**Method:** GET
+</Step>
+
+<Step title="Book an Appointment Slot">
+After finding an available slot, book the appointment for the desired date and slot, including additional parameters like type of appointment and payment mode:
+
+**Endpoint:** `{{HOST}}/v2/business/doctor/appointments/slots/book`
+
+**Method:** POST
+</Step>
+
+<Step title="Check-In Patient for Appointment (Optional)">
+Check-in a patient for a previously created appointment using the appointment ID:
+
+**Endpoint:** `{{HOST}}/v2/business/appointments/check-in`
+
+**Method:** PUT
+</Step>
+
+<Step title="Get Appointment Details">
+Retrieve details of a specific appointment using the appointment ID:
+
+**Endpoint:** `{{HOST}}/v1/business/appointments/{appointment_id}`
+**Method:** GET
+
+Request Parameters:
+* **business_id**: The unique identifier for the business.
+* **appointment_id**: The unique identifier for the appointment.
+</Step>
+
+<Step title="Edit and Reschedule Appointments">
+Edit and reschedule existing appointments. The current process to reschedule an appointment is:
+1. Delete the current appointment using appointment_id
+2. Create a new appointment with new details/slots/timings
+
+**Cancel Endpoint:** `{{HOST}}/v2/business/appointments/cancel`
+
+**Book Endpoint:** `{{HOST}}/v2/business/doctor/appointments/slots/book`
+**Method:** PUT
+
+Description: Modify details of an existing appointment or reschedule it to a different slot.
+</Step>
+</Steps>
+
+## Usage
+These APIs are crucial for maintaining an organized and efficient appointment system within a business' practice. They ensure that appointment slots are easily searchable, bookings are streamlined, and existing appointments can be managed effectively.
+
+## Notes
+* Ensure that all required fields are provided when booking or editing appointments.
+* Use appropriate search criteria to find available slots effectively.
+* Handle sensitive patient and appointment data with care and comply with relevant privacy regulations.
+* The API allows for creating appointments without adding the patient to the directory first, which can streamline the booking process in some cases.
