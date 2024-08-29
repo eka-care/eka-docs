@@ -124,7 +124,7 @@ paths:
       summary: Add Patient to Directory
       description: >-
         This functionality enables the addition of new patient records to a
-        doctor's directory. Users can provide necessary details such as personal
+        business' directory. Users can provide necessary details such as personal
         information, contact details, and medical history to create a new
         patient profile.
 
@@ -224,7 +224,16 @@ paths:
 
         • 500: Wrong API URL/Token mismatched/Wrong JSON request.
       operationId: AddPatienttoDirectory
-      parameters: [ ]
+      parameters:
+        - name: auth
+          in: header
+          required: True
+          description: >-
+            The auth token of the user. It is used to authenticate the user.
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
       requestBody:
         description: 'Request body for adding a patient to the directory'
         content:
@@ -360,7 +369,7 @@ paths:
     get:
       tags:
         - Patient Registration API
-      summary: Get patient details by Ekaid
+      summary: Get patient details by profile id
       description: >-
         This API provides functionality to get details of a patient by their Eka
         profile id, from a business' directory. 
@@ -376,7 +385,7 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | patient_id | string |  | Patient's eka profile id | Required |
+        | patient_id | string | Patient's Eka profile id | Patient's eka profile id | Required |
 
 
         ### **Response parameter**
@@ -620,10 +629,15 @@ paths:
     get:
       tags:
         - Patient Registration API
-      summary: Search Patient by mobile
+      summary: Search Patient profiles by mobile number
       description: >-
-        This API provides functionality to search profiles of patient by their mobile
-        number in business' directory
+        This API provides functionality to get all profiles of patient by their mobile
+        number in business' directory. 
+        
+        
+        <Note> This API only works on 10 digit mobile number and cannot be used for searching partial phone numbers.
+        The patient with given mobile number should already be registered with business account for results to show up. </Note>
+        
 
 
         ### Request Parameter
@@ -634,7 +648,7 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | mobile | string |  | Patient's mobile number | Required |
+        | mobile | string | 10 digit phone number | Patient's mobile number | Required |
 
 
         ### **Response parameter**
@@ -717,16 +731,15 @@ paths:
           schema:
             type: string
             example: <mobile_no>
-        - name: Content-Type
+        - name: auth
           in: header
-          description: ''
-          required: true
-          style: simple
+          required: True
+          description: >-
+            The auth token of the user. It is used to authenticate the user.
           schema:
-            enum:
-              - application/json
             type: string
-            example: application/json
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
       responses:
         '200':
           description: OK
