@@ -129,8 +129,14 @@ paths:
         patient profile.
 
 
-        > _In case the patient is already registered with Eka care, then only
-        passing the patient eka oid will be enough_ 
+        > _In case the patient is already registered with Eka care, then
+        passing the patient eka id will be enough_
+        
+        
+        <Warning> Right now adding a patient is done wrt to a specific doctor,
+        which automatically adds the patient to the business directory as well. 
+        This will be `deprecated` soon by adding patient directly to a business (WIP). </Warning>
+
         
         
         ### Request Parameters
@@ -153,7 +159,7 @@ paths:
 
         | middle_name | varchar(100) |  | Middle Name | Optional |
 
-        | lastName | varchar(100) | Patient | Last Name | Required |
+        | last_name | varchar(100) | Patient | Last Name | Optional |
 
         | dob | Date | 1987-01-06 | Patient DOB | Required |
 
@@ -167,8 +173,6 @@ paths:
         | email | varchar(100) |
         [test@orbi.health](https://mailto:pp@orbi.health) | Patient Email
         Address | Optional |
-
-        | UHID | varchar(20) | VP128 | Unique Health ID | Optional |
 
         | address | object |  | Address Object | Optional |
 
@@ -189,6 +193,10 @@ paths:
         | metadata.blood_group | varchar(10) | AB+ | Blood Group | Optional |
 
         | metadata.aadhar_number | varchar(20) | 12345 | Aadhar Number | Optional |
+        
+        | metadata.UHID | varchar(20) | VP128 | Unique Health ID | Optional |
+        
+        | doctor_id (to_be_deprecated) | varchar(20) | 12345 | doctor_id | Required |
 
 
         ### Response Parameters
@@ -229,7 +237,7 @@ paths:
           in: header
           required: True
           description: >-
-            The auth token of the user. It is used to authenticate the user.
+            The auth token of business_id. It is used to authenticate the business. The token can be fetched from the auth api.
           schema:
             type: string
           example: >-
@@ -249,6 +257,7 @@ paths:
               dob: "1987-01-06"
               mobile: "+919999999999"
               gender: "M"
+              doctor_id: "{{doctor_id}}"
               address:
                 city: "Bangalore"
                 line1: "ABC"
