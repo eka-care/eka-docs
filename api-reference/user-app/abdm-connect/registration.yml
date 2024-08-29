@@ -448,7 +448,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DetailsRequest'
+              $ref: '#/components/schemas/DetailsRequestType2'
       responses:
         4XX:
           content:
@@ -681,6 +681,36 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/registration/aadhaar/mobile/resend:
+    post:
+      description: This endpoint is used to resend the mobile otp for aadhaar registration
+        process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/registration/aadhaar/mobile/verify:
     post:
       description: This API operates on a skip logic basis. If the mobile number provided
@@ -899,7 +929,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResendRequestType2'
+              $ref: '#/components/schemas/ResendRequestType3'
       responses:
         4XX:
           content:
@@ -917,7 +947,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResendResponseType2'
+                $ref: '#/components/schemas/ResendResponseType3'
           description: OK
       security:
       - authApiKey: []
@@ -1342,7 +1372,7 @@ components:
         abha_address:
           type: string
         profile:
-          $ref: '#/components/schemas/DetailsRequest'
+          $ref: '#/components/schemas/DetailsRequestType2'
         txn_id:
           description: Transaction ID received in the /init API
           type: string
@@ -1431,7 +1461,7 @@ components:
           $ref: '#/components/schemas/CommonsHip'
           description: HIP details
       type: object
-    DetailsRequest:
+    DetailsRequestType2:
       properties:
         address:
           examples:
@@ -1458,7 +1488,9 @@ components:
           - O
           examples:
           - M
-          type: string
+          type:
+          - "null"
+          - string
         last_name:
           examples:
           - Singh
@@ -1887,6 +1919,12 @@ components:
           - "null"
           - string
         gender:
+          enum:
+          - M
+          - F
+          - O
+          examples:
+          - M
           type: string
         kyc_verified:
           type:
@@ -1961,6 +1999,16 @@ components:
         display:
           type: string
         status:
+          enum:
+          - Consent raised to HIP
+          - Consent granted from HIP
+          - Consent error by HIP
+          - Data request from HIP
+          - Data received from HIP
+          - Data is being processed
+          - Data processed
+          - Invalid data received from HIP
+          - No Data Available from HIP
           type: string
       type: object
     RecordsResponse:
@@ -1995,6 +2043,14 @@ components:
     ResendRequestType2:
       properties:
         txn_id:
+          description: Transaction ID received in the init API
+          type: string
+      required:
+      - txn_id
+      type: object
+    ResendRequestType3:
+      properties:
+        txn_id:
           description: Transaction ID received in the /init API
           type: string
       type: object
@@ -2008,12 +2064,21 @@ components:
           - "null"
           - string
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID received in the init API
           examples:
           - 5d060cad-a93b-4edf-p3ef-bd412f69s400
           type: string
       type: object
     ResendResponseType2:
+      properties:
+        hint:
+          type:
+          - "null"
+          - string
+        txn_id:
+          type: string
+      type: object
+    ResendResponseType3:
       properties:
         hint:
           type: string
