@@ -17,6 +17,7 @@ paths:
       description: >-
         ### Auth Login API
 
+
         The Auth Login API allows clients to authenticate by providing their
         client ID and secret. Upon successful authentication, it responds with
         an access token that is valid for 30 minutes. This token must be
@@ -123,19 +124,13 @@ paths:
       summary: Add Patient to Directory
       description: >-
         This functionality enables the addition of new patient records to a
-        business' directory. Users can provide necessary details such as personal
+        doctor's directory. Users can provide necessary details such as personal
         information, contact details, and medical history to create a new
         patient profile.
 
 
-        > _In case the patient is already registered with Eka care, then
-        passing the patient eka id will be enough_
-        
-        
-        <Warning> Right now adding a patient is done wrt to a specific doctor,
-        which automatically adds the patient to the business directory as well. 
-        This will be `deprecated` soon by adding patient directly to a business (WIP). </Warning>
-
+        > _In case the patient is already registered with Eka care, then only
+        passing the patient eka oid will be enough_ 
         
         
         ### Request Parameters
@@ -158,7 +153,7 @@ paths:
 
         | middle_name | varchar(100) |  | Middle Name | Optional |
 
-        | last_name | varchar(100) | Patient | Last Name | Optional |
+        | lastName | varchar(100) | Patient | Last Name | Required |
 
         | dob | Date | 1987-01-06 | Patient DOB | Required |
 
@@ -172,6 +167,8 @@ paths:
         | email | varchar(100) |
         [test@orbi.health](https://mailto:pp@orbi.health) | Patient Email
         Address | Optional |
+
+        | UHID | varchar(20) | VP128 | Unique Health ID | Optional |
 
         | address | object |  | Address Object | Optional |
 
@@ -192,10 +189,6 @@ paths:
         | metadata.blood_group | varchar(10) | AB+ | Blood Group | Optional |
 
         | metadata.aadhar_number | varchar(20) | 12345 | Aadhar Number | Optional |
-        
-        | metadata.UHID | varchar(20) | VP128 | Unique Health ID | Optional |
-        
-        | doctor_id (to_be_deprecated) | varchar(20) | 12345 | doctor_id | Required |
 
 
         ### Response Parameters
@@ -231,16 +224,7 @@ paths:
 
         • 500: Wrong API URL/Token mismatched/Wrong JSON request.
       operationId: AddPatienttoDirectory
-      parameters:
-        - name: auth
-          in: header
-          required: True
-          description: >-
-            The auth token of business_id. It is used to authenticate the business. The token can be fetched from the auth api.
-          schema:
-            type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      parameters: [ ]
       requestBody:
         description: 'Request body for adding a patient to the directory'
         content:
@@ -256,7 +240,6 @@ paths:
               dob: "1987-01-06"
               mobile: "+919999999999"
               gender: "M"
-              doctor_id: "{{doctor_id}}"
               address:
                 city: "Bangalore"
                 line1: "ABC"
@@ -377,7 +360,7 @@ paths:
     get:
       tags:
         - Patient Registration API
-      summary: Get patient details by profile id
+      summary: Get patient details by Ekaid
       description: >-
         This API provides functionality to get details of a patient by their Eka
         profile id, from a business' directory. 
@@ -393,7 +376,7 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | patient_id | string | Patient's Eka profile id | Patient's eka profile id | Required |
+        | patient_id | string |  | Patient's eka profile id | Required |
 
 
         ### **Response parameter**
@@ -637,15 +620,10 @@ paths:
     get:
       tags:
         - Patient Registration API
-      summary: Search Patient profiles by mobile number
+      summary: Search Patient by mobile
       description: >-
-        This API provides functionality to get all profiles of patient by their mobile
-        number in business' directory. 
-        
-        
-        <Note> This API only works on 10 digit mobile number and cannot be used for searching partial phone numbers.
-        The patient with given mobile number should already be registered with business account for results to show up. </Note>
-        
+        This API provides functionality to search profiles of patient by their mobile
+        number in business' directory
 
 
         ### Request Parameter
@@ -656,7 +634,7 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | mobile | string | 10 digit phone number | Patient's mobile number | Required |
+        | mobile | string |  | Patient's mobile number | Required |
 
 
         ### **Response parameter**
@@ -739,15 +717,16 @@ paths:
           schema:
             type: string
             example: <mobile_no>
-        - name: auth
+        - name: Content-Type
           in: header
-          required: True
-          description: >-
-            The auth token of the user. It is used to authenticate the user.
+          description: ''
+          required: true
+          style: simple
           schema:
+            enum:
+              - application/json
             type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+            example: application/json
       responses:
         '200':
           description: OK
@@ -1140,7 +1119,6 @@ paths:
         ### Endpoint
         
         **URL:** `{{HOST}}/v1/business/doctor/{{doctor_id}}`
-        
         
         **Method:** GET
         
@@ -1663,9 +1641,6 @@ paths:
       description: >-
         This API is the first step in booking appointment slot for a patient at
         a doctor's clinic
-        
-        <Note> We only support date range of D to D+1 to show all available slots of a day. </Note>
-
 
 
         **Parameters**
@@ -1860,121 +1835,883 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      schedule:
-                        type: object
-                        additionalProperties:
-                          type: object
-                          additionalProperties:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                available:
-                                  type: boolean
-                                conf_id:
-                                  type: string
-                                e:
-                                  type: string
-                                  format: date-time
-                                s:
-                                  type: string
-                                  format: date-time
-                                slots_booked:
-                                  type: integer
-                                  nullable: true
-                      services:
-                        type: object
-                        additionalProperties:
-                          type: object
-                          properties:
-                            allow_patient_booking:
-                              type: boolean
-                            appointment_type:
-                              type: string
-                            c_at:
-                              type: string
-                              format: date-time
-                            conf_id:
-                              type: string
-                            mode:
-                              type: array
-                              items:
-                                type: string
-                            owner_id:
-                              type: string
-                            post_pay:
-                              type: boolean
-                            pre_pay:
-                              type: boolean
-                            price:
-                              type: number
-                              nullable: true
-                            service_name:
-                              type: string
-              example:
-                data:
-                  schedule:
-                    "{{clinic_id}}":
-                      "2024-06-19":
-                        - available: true
-                          conf_id: "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588583"
-                          e: "2024-06-19T10:40:00+05:30"
-                          s: "2024-06-19T10:30:00+05:30"
-                          slots_booked: null
-                        - available: true
-                          conf_id: "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582"
-                          e: "2024-06-19T10:50:00+05:30"
-                          s: "2024-06-19T10:40:00+05:30"
-                          slots_booked: null
-                        - available: true
-                          conf_id: "f3d74fedb89527258bbd53c4e7f9a6f764690c64b682bad2d72fd3d376159b15"
-                          e: "2024-06-19T11:00:00+05:30"
-                          s: "2024-06-19T10:50:00+05:30"
-                          slots_booked: null
-                      # Additional dates and slots can be added here
-                  services:
-                    "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588583":
-                      allow_patient_booking: true
-                      appointment_type: "REGULAR"
-                      c_at: "2022-06-18T20:33:34.159Z"
-                      conf_id: "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588583"
-                      mode:
-                        - "tele"
-                      owner_id: "161459684229004"
-                      post_pay: true
-                      pre_pay: false
-                      price: null
-                      service_name: "consultation"
-                    "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582":
-                      allow_patient_booking: true
-                      appointment_type: "REGULAR"
-                      c_at: "2022-06-18T20:33:33.684Z"
-                      conf_id: "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582"
-                      mode:
-                        - "tele"
-                      owner_id: "{{doctor_id}}"
-                      post_pay: true
-                      pre_pay: false
-                      price: null
-                      service_name: "teleconsultation"
-                    "f3d74fedb89527258bbd53c4e7f9a6f764690c64b682bad2d72fd3d376159b15":
-                      allow_patient_booking: true
-                      appointment_type: "REGULAR"
-                      c_at: "2023-11-18T08:05:53.718Z"
-                      conf_id: "f3d74fedb89527258bbd53c4e7f9a6f764690c64b682bad2d72fd3d376159b15"
-                      mode:
-                        - "in-clinic"
-                      owner_id: "{{doctor_id}}"
-                      post_pay: true
-                      pre_pay: false
-                      price: null
-                      service_name: "In-Clinic Consultation"
-                    # Additional services can be added here
+                type: string
+                example: |-
+                  {
+                      "data": {
+                          "schedule": {
+                              {{clinic_id}}: { 
+                                      "2024-06-19": [
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T10:40:00+05:30",
+                                              "s": "2024-06-19T10:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T10:50:00+05:30",
+                                              "s": "2024-06-19T10:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T11:00:00+05:30",
+                                              "s": "2024-06-19T10:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T11:10:00+05:30",
+                                              "s": "2024-06-19T11:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T11:20:00+05:30",
+                                              "s": "2024-06-19T11:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T11:30:00+05:30",
+                                              "s": "2024-06-19T11:20:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T11:40:00+05:30",
+                                              "s": "2024-06-19T11:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T11:50:00+05:30",
+                                              "s": "2024-06-19T11:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T12:00:00+05:30",
+                                              "s": "2024-06-19T11:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T12:10:00+05:30",
+                                              "s": "2024-06-19T12:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T12:20:00+05:30",
+                                              "s": "2024-06-19T12:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T12:30:00+05:30",
+                                              "s": "2024-06-19T12:20:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T12:40:00+05:30",
+                                              "s": "2024-06-19T12:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T12:50:00+05:30",
+                                              "s": "2024-06-19T12:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T13:00:00+05:30",
+                                              "s": "2024-06-19T12:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T18:40:00+05:30",
+                                              "s": "2024-06-19T18:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T18:50:00+05:30",
+                                              "s": "2024-06-19T18:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T19:00:00+05:30",
+                                              "s": "2024-06-19T18:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T19:10:00+05:30",
+                                              "s": "2024-06-19T19:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T19:20:00+05:30",
+                                              "s": "2024-06-19T19:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T19:30:00+05:30",
+                                              "s": "2024-06-19T19:20:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T19:40:00+05:30",
+                                              "s": "2024-06-19T19:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T19:50:00+05:30",
+                                              "s": "2024-06-19T19:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T20:00:00+05:30",
+                                              "s": "2024-06-19T19:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T20:10:00+05:30",
+                                              "s": "2024-06-19T20:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T20:20:00+05:30",
+                                              "s": "2024-06-19T20:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-19T20:30:00+05:30",
+                                              "s": "2024-06-19T20:20:00+05:30",
+                                              "slots_booked": null
+                                          }
+                                      ],
+                                      "2024-06-20": [
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T10:40:00+05:30",
+                                              "s": "2024-06-20T10:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T10:50:00+05:30",
+                                              "s": "2024-06-20T10:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T11:00:00+05:30",
+                                              "s": "2024-06-20T10:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T11:10:00+05:30",
+                                              "s": "2024-06-20T11:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T11:20:00+05:30",
+                                              "s": "2024-06-20T11:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T11:30:00+05:30",
+                                              "s": "2024-06-20T11:20:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T11:40:00+05:30",
+                                              "s": "2024-06-20T11:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T11:50:00+05:30",
+                                              "s": "2024-06-20T11:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T12:00:00+05:30",
+                                              "s": "2024-06-20T11:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T12:10:00+05:30",
+                                              "s": "2024-06-20T12:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T12:20:00+05:30",
+                                              "s": "2024-06-20T12:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T12:30:00+05:30",
+                                              "s": "2024-06-20T12:20:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T12:40:00+05:30",
+                                              "s": "2024-06-20T12:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T12:50:00+05:30",
+                                              "s": "2024-06-20T12:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T13:00:00+05:30",
+                                              "s": "2024-06-20T12:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T18:40:00+05:30",
+                                              "s": "2024-06-20T18:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T18:50:00+05:30",
+                                              "s": "2024-06-20T18:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T19:00:00+05:30",
+                                              "s": "2024-06-20T18:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T19:10:00+05:30",
+                                              "s": "2024-06-20T19:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T19:20:00+05:30",
+                                              "s": "2024-06-20T19:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T19:30:00+05:30",
+                                              "s": "2024-06-20T19:20:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T19:40:00+05:30",
+                                              "s": "2024-06-20T19:30:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T19:50:00+05:30",
+                                              "s": "2024-06-20T19:40:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T20:00:00+05:30",
+                                              "s": "2024-06-20T19:50:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T20:10:00+05:30",
+                                              "s": "2024-06-20T20:00:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T20:20:00+05:30",
+                                              "s": "2024-06-20T20:10:00+05:30",
+                                              "slots_booked": null
+                                          },
+                                          {
+                                              "available": true,
+                                              "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                              "e": "2024-06-20T20:30:00+05:30",
+                                              "s": "2024-06-20T20:20:00+05:30",
+                                              "slots_booked": null
+                                          }
+                                      ]
+                                  }
+                              },
+                          "services": {
+                              "7166c97b908466a27b8c11b3c93090a65dd61fe85eeda9a38761ade663581dc4": {
+                                  "allow_patient_booking": true,
+                                  "appointment_type": "REGULAR",
+                                  "c_at": "2022-06-18T20:33:34.159Z",
+                                  "conf_id": "7166c97b908466a27b8c11b3c93090a65dd61fe85eeda9a38761ade663581dc4",
+                                  "mode": [
+                                      "tele"
+                                  ],
+                                  "owner_id": "161459684229004",
+                                  "post_pay": true,
+                                  "pre_pay": false,
+                                  "price": null,
+                                  "service_name": "consultation"
+                              },
+                              "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582": {
+                                  "allow_patient_booking": true,
+                                  "appointment_type": "REGULAR",
+                                  "book_ahead_days": 21,
+                                  "c_at": "2022-06-18T20:33:33.684Z",
+                                  "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                  "mode": [
+                                      "in-clinic"
+                                  ],
+                                  "owner_id": "{{doctor_id}}",
+                                  "post_pay": true,
+                                  "pre_pay": false,
+                                  "price": null,
+                                  "service_name": "consultation"
+                              },
+                              "eedaa0837acbc0380108615f34f1f42de20da6aab299f592cbb5a5dd10f94d07": {
+                                  "allow_patient_booking": true,
+                                  "appointment_type": "REGULAR",
+                                  "archive": false,
+                                  "book_ahead_days": 21,
+                                  "c_at": "2023-11-18T08:05:53.718Z",
+                                  "conf_id": "eedaa0837acbc0380108615f34f1f42de20da6aab299f592cbb5a5dd10f94d07",
+                                   "mode": [
+                                      "in-clinic"
+                                  ],
+                                  "owner_id": "{{doctor_id}}",
+                                  "post_pay": true,
+                                  "pre_pay": false,
+                                  "price": null,
+                                  "service_name": "Tele-Consulation"
+                              }
+                          }
+                      }
+                  }
+              example: |-
+                {
+                    "data": {
+                        "schedule": {
+                            {{clinic_id}}: { 
+                                    "2024-06-19": [
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T10:40:00+05:30",
+                                            "s": "2024-06-19T10:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T10:50:00+05:30",
+                                            "s": "2024-06-19T10:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T11:00:00+05:30",
+                                            "s": "2024-06-19T10:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T11:10:00+05:30",
+                                            "s": "2024-06-19T11:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T11:20:00+05:30",
+                                            "s": "2024-06-19T11:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T11:30:00+05:30",
+                                            "s": "2024-06-19T11:20:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T11:40:00+05:30",
+                                            "s": "2024-06-19T11:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T11:50:00+05:30",
+                                            "s": "2024-06-19T11:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T12:00:00+05:30",
+                                            "s": "2024-06-19T11:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T12:10:00+05:30",
+                                            "s": "2024-06-19T12:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T12:20:00+05:30",
+                                            "s": "2024-06-19T12:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T12:30:00+05:30",
+                                            "s": "2024-06-19T12:20:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T12:40:00+05:30",
+                                            "s": "2024-06-19T12:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T12:50:00+05:30",
+                                            "s": "2024-06-19T12:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T13:00:00+05:30",
+                                            "s": "2024-06-19T12:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T18:40:00+05:30",
+                                            "s": "2024-06-19T18:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T18:50:00+05:30",
+                                            "s": "2024-06-19T18:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T19:00:00+05:30",
+                                            "s": "2024-06-19T18:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T19:10:00+05:30",
+                                            "s": "2024-06-19T19:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T19:20:00+05:30",
+                                            "s": "2024-06-19T19:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T19:30:00+05:30",
+                                            "s": "2024-06-19T19:20:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T19:40:00+05:30",
+                                            "s": "2024-06-19T19:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T19:50:00+05:30",
+                                            "s": "2024-06-19T19:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T20:00:00+05:30",
+                                            "s": "2024-06-19T19:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T20:10:00+05:30",
+                                            "s": "2024-06-19T20:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T20:20:00+05:30",
+                                            "s": "2024-06-19T20:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-19T20:30:00+05:30",
+                                            "s": "2024-06-19T20:20:00+05:30",
+                                            "slots_booked": null
+                                        }
+                                    ],
+                                    "2024-06-20": [
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T10:40:00+05:30",
+                                            "s": "2024-06-20T10:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T10:50:00+05:30",
+                                            "s": "2024-06-20T10:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T11:00:00+05:30",
+                                            "s": "2024-06-20T10:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T11:10:00+05:30",
+                                            "s": "2024-06-20T11:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T11:20:00+05:30",
+                                            "s": "2024-06-20T11:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T11:30:00+05:30",
+                                            "s": "2024-06-20T11:20:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T11:40:00+05:30",
+                                            "s": "2024-06-20T11:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T11:50:00+05:30",
+                                            "s": "2024-06-20T11:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T12:00:00+05:30",
+                                            "s": "2024-06-20T11:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T12:10:00+05:30",
+                                            "s": "2024-06-20T12:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T12:20:00+05:30",
+                                            "s": "2024-06-20T12:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T12:30:00+05:30",
+                                            "s": "2024-06-20T12:20:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T12:40:00+05:30",
+                                            "s": "2024-06-20T12:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T12:50:00+05:30",
+                                            "s": "2024-06-20T12:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T13:00:00+05:30",
+                                            "s": "2024-06-20T12:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T18:40:00+05:30",
+                                            "s": "2024-06-20T18:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T18:50:00+05:30",
+                                            "s": "2024-06-20T18:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T19:00:00+05:30",
+                                            "s": "2024-06-20T18:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T19:10:00+05:30",
+                                            "s": "2024-06-20T19:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T19:20:00+05:30",
+                                            "s": "2024-06-20T19:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T19:30:00+05:30",
+                                            "s": "2024-06-20T19:20:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T19:40:00+05:30",
+                                            "s": "2024-06-20T19:30:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T19:50:00+05:30",
+                                            "s": "2024-06-20T19:40:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T20:00:00+05:30",
+                                            "s": "2024-06-20T19:50:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T20:10:00+05:30",
+                                            "s": "2024-06-20T20:00:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T20:20:00+05:30",
+                                            "s": "2024-06-20T20:10:00+05:30",
+                                            "slots_booked": null
+                                        },
+                                        {
+                                            "available": true,
+                                            "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                            "e": "2024-06-20T20:30:00+05:30",
+                                            "s": "2024-06-20T20:20:00+05:30",
+                                            "slots_booked": null
+                                        }
+                                    ]
+                                }
+                            },
+                        "services": {
+                            "7166c97b908466a27b8c11b3c93090a65dd61fe85eeda9a38761ade663581dc4": {
+                                "allow_patient_booking": true,
+                                "appointment_type": "REGULAR",
+                                "c_at": "2022-06-18T20:33:34.159Z",
+                                "conf_id": "7166c97b908466a27b8c11b3c93090a65dd61fe85eeda9a38761ade663581dc4",
+                                "mode": [
+                                    "tele"
+                                ],
+                                "owner_id": "161459684229004",
+                                "post_pay": true,
+                                "pre_pay": false,
+                                "price": null,
+                                "service_name": "consultation"
+                            },
+                            "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582": {
+                                "allow_patient_booking": true,
+                                "appointment_type": "REGULAR",
+                                "book_ahead_days": 21,
+                                "c_at": "2022-06-18T20:33:33.684Z",
+                                "conf_id": "e2c63ceda76315147aa4c4e2d6eba6e653589b53a571bad1c61ec7c2bc588582",
+                                "mode": [
+                                    "in-clinic"
+                                ],
+                                "owner_id": "{{doctor_id}}",
+                                "post_pay": true,
+                                "pre_pay": false,
+                                "price": null,
+                                "service_name": "consultation"
+                            },
+                            "eedaa0837acbc0380108615f34f1f42de20da6aab299f592cbb5a5dd10f94d07": {
+                                "allow_patient_booking": true,
+                                "appointment_type": "REGULAR",
+                                "archive": false,
+                                "book_ahead_days": 21,
+                                "c_at": "2023-11-18T08:05:53.718Z",
+                                "conf_id": "eedaa0837acbc0380108615f34f1f42de20da6aab299f592cbb5a5dd10f94d07",
+                                 "mode": [
+                                    "in-clinic"
+                                ],
+                                "owner_id": "{{doctor_id}}",
+                                "post_pay": true,
+                                "pre_pay": false,
+                                "price": null,
+                                "service_name": "Tele-Consulation"
+                            }
+                        }
+                    }
+                }
       deprecated: false
   /v2/business/doctor/appointments/slots/book:
     post:
@@ -1984,12 +2721,6 @@ paths:
       description: >-
         This API is used to book an appointment slot for a patient based on the
         available slots retrieved from the `get appointment slots` API.
-        
-        
-        <Note> If Eka profile id of a patient is known, there is no need to pass entire patient meta information.
-        Simply passing the patient_id will work.
-        
-        If patient is not already registered on eka, passing their info under "patient" key will create new profile id.</Note>
 
 
         **Method:** POST
@@ -2005,26 +2736,24 @@ paths:
         Required/Optional/Not Required |
 
         | --- | --- | --- | --- | --- |
-        
-        | patient_id | string | 1234567890 | Patient's id on Eka | Optional |
 
-        | designation | string | Mr./Miss/Mrs./Dr | Patient's designation |
+        | designation | varchar(10) | Mr./Miss/Mrs./Dr | Patient's designation |
         Optional |
 
-        | first_name | string | Test | Patient's first name | Required |
+        | first_name | varchar(100) | Test | Patient's first name | Required |
 
-        | middle_name | string |  | Patient's middle name | Optional |
+        | middle_name | varchar(100) |  | Patient's middle name | Optional |
 
-        | last_name | string | Test | Patient's last name | Required |
+        | last_name | varchar(100) | Test | Patient's last name | Required |
 
         | dob | Date | 1987-01-06 | Patient's date of birth | Required |
 
-        | mobile | string | +919999999999 | Patient's mobile number with country code |
+        | mobile | varchar(15) | +919999999999 | Patient's mobile number |
         Required |
 
-        | gender | string | M/F/O | Patient's gender | Required |
+        | gender | varchar(10) | M/F/O | Patient's gender | Required |
 
-        | email | string | [abc@eka.care](https://mailto:pp@orbi.health)
+        | email | varchar(100) | [abc@eka.care](https://mailto:pp@orbi.health)
         | Patient's email address | Optional |
 
 
@@ -2045,18 +2774,6 @@ paths:
         | service_conf_id | string |
         904eec0a73d9b02d9145898db44e628bcb18e7a11cd92852be5a2d6f65159a04 |
         Configuration ID for the service | Required |
-        
-        
-        #### Doctor and Clinic Information
-        
-  
-        | Parameter | Type | Expected Values | Description | Required/Optional/Not Required |
-        
-        | --- | --- | --- | --- | --- |
-        
-        | doctor_id | string | 1234567890 | Doctor's ID | Required |
-
-        | clinic_id | string | 1234567890 | Clinic's ID | Required |
 
 
         **Response Parameters**
@@ -2093,59 +2810,47 @@ paths:
       requestBody:
         description: ''
         content:
-          application/json:
+          text/plain:
             schema:
-              type: object
-              properties:
-                patient:
-                  type: object
-                  properties:
-                    designation:
-                      type: string
-                    first_name:
-                      type: string
-                    middle_name:
-                      type: string
-                    last_name:
-                      type: string
-                    dob:
-                      type: string
-                      format: date
-                    mobile:
-                      type: string
-                    gender:
-                      type: string
-                      enum: [ M, F, O ]
-                slot:
-                  type: object
-                  properties:
-                    start_time:
-                      type: string
-                      format: date-time
-                    end_time:
-                      type: string
-                      format: date-time
-                    service_conf_id:
-                      type: string
-                doctor_id:
-                  type: string
-                clinic_id:
-                  type: string
-            example:
-              patient:
-                designation: "Mr."
-                first_name: "Test"
-                middle_name: ""
-                last_name: "Patient"
-                dob: "1987-01-06"
-                mobile: "+919999999999"
-                gender: "M"
-              slot:
-                start_time: "2024-06-11T09:00:00+05:30"
-                end_time: "2024-06-11T09:30:00+05:30"
-                service_conf_id: "904eec0a73d9b02d9145898db44e628bcb18e7a11cd92852be5a2d6f65159a04"
-              doctor_id: "{{doctor_id}}"
-              clinic_id: "{{clinic_id}}"
+              type: string
+              example: |-
+                {
+                    "patient": {
+                        "designation": "Mr.",
+                        "first_name": "Test",
+                        "middle_name": "",
+                        "last_name": "Patient",
+                        "dob": "1987-01-06",
+                        "mobile": "+919999999999",
+                        "gender": "M"
+                    },
+                    "slot": {
+                        "start_time": "2024-06-11T09:00:00+05:30",
+                        "end_time": "2024-06-11T09:30:00+05:30",
+                        "service_conf_id": "904eec0a73d9b02d9145898db44e628bcb18e7a11cd92852be5a2d6f65159a04"
+                    },
+                    "doctor_id": {{doctor_id}}, 
+                    "clinic_id": {{clinic_id}}
+                }
+            example: |-
+              {
+                  "patient": {
+                      "designation": "Mr.",
+                      "first_name": "Test",
+                      "middle_name": "",
+                      "last_name": "Patient",
+                      "dob": "1987-01-06",
+                      "mobile": "+919999999999",
+                      "gender": "M"
+                  },
+                  "slot": {
+                      "start_time": "2024-06-11T09:00:00+05:30",
+                      "end_time": "2024-06-11T09:30:00+05:30",
+                      "service_conf_id": "904eec0a73d9b02d9145898db44e628bcb18e7a11cd92852be5a2d6f65159a04"
+                  },
+                  "doctor_id": {{doctor_id}}, 
+                  "clinic_id": {{clinic_id}}
+              }
         required: true
       responses:
         '200':
@@ -2196,23 +2901,23 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      start_time:
-                        type: string
-                        format: date-time
-                      message:
-                        type: string
-                      appointment_id:
-                        type: string
-              example:
-                data:
-                  start_time: "2024-06-11T09:00:00+05:30"
-                  message: "Appointment has been confirmed"
-                  appointment_id: "{{appointment_id}}"
+                type: string
+                example: |-
+                  {
+                      "data": {
+                          "start_time": "2024-06-11T09:00:00+05:30",
+                          "message": "Appointment has been confirmed",
+                          "appointment_id": {{appointment_id}}
+                      }
+                  }
+              example: |-
+                {
+                    "data": {
+                        "start_time": "2024-06-11T09:00:00+05:30",
+                        "message": "Appointment has been confirmed",
+                        "appointment_id": {{appointment_id}}
+                    }
+                }
         '400':
           description: Bad Request
           headers:
@@ -2738,8 +3443,8 @@ paths:
         - Appointment API
       summary: Get Appointment Details
       description: >-
-        
-        
+        ## Get Appointment Details by ID
+
         ### Overview
 
         This API endpoint is used to retrieve the details of an appointment
@@ -2760,7 +3465,6 @@ paths:
         ### Endpoint
 
         **URL:** `{{HOST}}/v2/business/appointments/{{appointment_id}}`  
-        
         **Method:** GET
 
         ### Request Parameters
@@ -2815,7 +3519,7 @@ paths:
         
         | data.payment.amount | number | Payment amount (nullable) |
         
-        | data.prescription_id | string | Prescription Id (if visit lead to Rx) |
+        | data.prescription_id | string | Unique identifier for the prescription |
         
         | data.service | object | Service details |
         
@@ -2828,9 +3532,12 @@ paths:
         | data.service.post_pay | boolean | Indicates if post-payment is allowed |
         
         | data.service.service_name | string | Name of the service |
-                
+        
+        | data.service.book_ahead_days | number | Number of days ahead the service can be booked |
+        
         | data.service.appointment_type | string | Type of appointment (`REGULAR`, etc.) |
         
+        | data.service.allow_patient_booking | boolean | Indicates if patient booking is allowed |
       operationId: GetappointmentDetails
       parameters:
         - name: auth
@@ -2963,9 +3670,9 @@ paths:
                   data:
                     aid: example_appointment_id
                     created_at: '2023-07-30T18:07:24.000Z'
-                    doctor_oid: "{{doctor_id}}"
-                    patient_oid: "{{patient_id}}"
-                    clinic_id: "{{clinic_id}}"
+                    doctor_oid: "doctor_id"
+                    patient_oid: "patient_id"
+                    clinic_id: "clinic_id"
                     channel: Offline
                     status: CM
                     start_time: '2023-07-24T15:41:41.000Z'
@@ -2979,7 +3686,7 @@ paths:
                       payment_id: null
                       payment_status: null
                       amount: null
-                    prescription_id: "{{rx_id}}"
+                    prescription_id: "rx_id"
                     service:
                       created_at: '2022-01-01T00:00:00.000Z'
                       mode:
