@@ -67,13 +67,8 @@ paths:
       security:
         - auth: []
 
-  /:
-    put:
-      servers:
-        - url: https://sample-lab-report.s3.amazonaws.com
-          description: Upload files to s3 server
-        - url: https://m-prod-eka-vault.s3.amazonaws.com
-          description: Upload files to s3 server
+  /upload:
+    post:
       summary: Upload Records
       description: Upload a records using the signed URL for each document requested in obtain authorization API
       requestBody:
@@ -85,10 +80,6 @@ paths:
                 Content-Type:
                   type: string
                   example: image/jpeg
-                file:
-                  type: string
-                  format: binary
-                  description: The file to upload.
                 key:
                   type: string
                   description: The key for the respective document which we have received from obtain authorization API
@@ -119,16 +110,20 @@ paths:
                   type: string
                   description: Signature for the request.
                   example: 2157a852f2f8db5b0595cbe3f002fb71e8be450b22d16a7b6ad3da6697b9c1cb
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload.
               required:
                 - Content-Type
-                - file
-                - key
                 - policy
                 - x-amz-algorithm
                 - x-amz-credential
                 - x-amz-date
                 - x-amz-security-token
                 - x-amz-signature
+                - key
+                - file
       responses:
         '204':
           description: No Content - Successful Upload with No Response Body
