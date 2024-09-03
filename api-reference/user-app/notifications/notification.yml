@@ -284,3 +284,63 @@ paths:
               example:
                 message: Internal server error.
                 error_code: 500
+  /notification/message:
+    post:
+      tags:
+        - Notifications
+      summary: Send Notification
+      description: Send a notification message using the specified template and channels.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                template_id:
+                  type: string
+                  description: The ID of the notification template to use.
+                language:
+                  type: string
+                  description: The language of the notification.
+              required:
+                - template_id
+                - language
+              example:
+                template_id: samsung_test##1
+                language: en
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: The status of the notification request.
+                  id:
+                    type: string
+                    description: The unique identifier for the notification request.
+              example:
+                status: queued
+                id: c7188ac6-d91c-4ace-8b10-a8c1bcfd403e
+        '400':
+          description: Client error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Unauthorized access.
+                error_code: 401
+        '500':
+          description: Server error response
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: Internal server error.
+                error_code: 500
