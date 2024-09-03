@@ -34,7 +34,17 @@ paths:
                   type: array
                   items:
                     $ref: '#/components/schemas/UpdateDocumentV3Request'
-                
+            example:
+              batch_request:
+                -
+                  dt: "ps"
+                  sh: false
+                  dd: "2021-03-01"
+                  tg: ["tag1", "tag2"]
+                  files:
+                    -
+                      contentType: "image/jpeg"
+                      file_size: 110000
       responses:
         '200':
           description: Presigned URL successfully retrieved
@@ -76,53 +86,14 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              additionalProperties:
+                type: string
               properties:
-                Content-Type:
-                  type: string
-                  example: image/jpeg
-                key:
-                  type: string
-                  description: The key for the respective document which we have received from obtain authorization API
-                  example: 161918171478263/1342d02b-0c80-436a-80a3-e0efa62dc6d4/d0508b41-f823-4149-8781-64fa4404b9af.jpeg
-                policy:
-                  type: string
-                  description: Policy document for S3 upload.
-                  example: >
-                    eyJleHBpcmF0aW9uIjogIjIwMjQtMDctMjVUMDk6MzA6NDFaIiwgImNvbmRpdGlvbnMiOiBbeyJDb250ZW50LVR5cGUiOiAiaW1hZ2UvanBlZyJ9LCBbImNvbnRlbnQtbGVuZ3RoLXJhbmdlIiwgMCwgMjA5NzE1MjAwXSwgeyJidWNrZXQiOiAic2FtcGxlLWxhYi1yZXBvcnQifSwgeyJrZXkiOiAiMTYxOTE4MTcxNDc4MjYzLzEzNDJkMDJiLTBjODAtNDM2YS04MGEzLWUwZWZhNjJkYzZkNC9kMDUwOGI0MS1mODIzLTQxNDktODc4MS02NGZhNDQwNGI5YWYuanBlZyJ9LCB7IngtYW16LWFsZ29yaXRobSI6ICJBV1M0LUhNQUMtU0hBMjU2In0sIHsieC1hbXotY3JlZGVudGlhbCI6ICJBU0lBWTNBTktMMkVKTkZNWFIyVC8yMDI0MDcyNS9hcC1zb3V0aC0xL3MzL2F3czRfcmVxdWVzdCJ9LCB7IngtYW16LWRhdGUiOiAiMjAyNDA3MjVUMDkyNTQxWiJ9LCB7IngtYW16LXNlY3VyaXR5LXRva2VuIjogIklRb0piM0pwWjJsdVgyVmpFT0gvLy8vLy8vLy8vd0VhQ21Gd0xYTnZkWFJvTFRFaVNEQkdBaUVBd3NiRmpteE9wYU1RSkpUdnBwekJ2VjVKaWI2bUJHVXZKV0hWOVdvMXZ6OENJUUN5K1g5YlN2SWVmNWJ2UVZoeWlsQmJ0bjlVKzI2ZDNQMlM0VldCTFo4MzNTcjZBZ2k2Ly8vLy8vLy8vLzhCRUFJYUREWXdOemMyTlRneE5Ea3lNQ0lNVWxkRHFwaFpxQS81N0tCa0tzNENCNUlnRkZ6aGoxaHB6bWhrSDNPTHZUUSt2UHY1RGJFV1QxZEN0dEo1N3Z4U05haS9OMURTeXBtaDFGY2w2VHRINWFXM01vTUJjSTZ0bitvcHNXS0p4SG5XbFVZSGdOZVhhWmNySVI3MklwT1c1NWZvOEFqYzlEVEdCVWJuY2xIMXhKOXZ4QUZVdXdxRkZpS3V0KysrNUtaSmJUQkxJaXJpdzBjaWcwWjRuVkRnU1lMc2RXaTJHWUNpTWsxcmxLeFVtamp3andtUXFXOHBWb0VteGdOb2JkYnB6UTFjRlNUNjZ5cERyejkrbDQ0WEFHcjdEZGM2RHNaSEpna0RhK1pCRnBJbzN5MzNoeHo0ZDVSeko4S2JTOXNDWTUyTGt4ekk4Znhpc1pmZGtId2NHTVp5UkkxSTZLZlB5RGxtNXpzNHJ1L0hrTVBCRUFBSHFQSzlpRk9BQVhQL2FmTTJpbkNZeExjU3hGRVMwZXlaNGVsbitpZWNEY0ZMQ0xSOC9DOEMxbGd3N3FEUE1aYlY0RzVXcEdMN1p1SldLOGRsajJVcUttR0hEVDJJSmNIOFppbUdINmRXZ250NGJyeWQyakN6cjRpMUJqcWRBWDlWcnFtWnNrR1NMTjlQbVErQUdRNFVqZU1sdVlRcmRCT0pEZG5VMi9xZkNZWStKWng5ZjZiTXZvSW5oVFo1T3R1dk5vS1gxM3RVYVdNdDV0OFFXanRITjNrdFN2M1FESGEzU21FN0ZtODBtZEQrMWFoQWx0aVNpNTFQL1hUZlhqUm1yejg4N3A3dXgrMktPdnhWNlkvczRUVzZ1OXFJMFlrQ2Jwd09LQjlVMm5GeWVBWUgrd1p3SXdCdGZaemh0aVVEVXhwVER2SFhqalNmK1lJPSJ9XX0eyJleHBpcmF0aW9uIjogIjIwMjQtMDctMjVUMDk6MzA6NDFaIiwgImNvbmRpdGlvbnMiOiBbeyJDb250ZW50LVR5cGUiOiAiaW1hZ2UvanBlZyJ9LCBbImNvbnRlbnQtbGVuZ3RoLXJhbmdlIiwgMCwgMjA5NzE1MjAwXSwgeyJidWNrZXQiOiAic2FtcGxlLWxhYi1yZXBvcnQifSwgeyJrZXkiOiAiMTYxOTE4MTcxNDc4MjYzLzEzNDJkMDJiLTBjODAtNDM2YS04MGEzLWUwZWZhNjJkYzZkNC9kMDUwOGI0MS1mODIzLTQxNDktODc4MS02NGZhNDQwNGI5YWYuanBlZyJ9LCB7IngtYW16LWFsZ29yaXRobSI6ICJBV1M0LUhNQUMtU0hBMjU2In0sIHsieC1hbXotY3JlZGVudGlhbCI6ICJBU0lBWTNBTktMMkVKTkZNWFIyVC8yMDI0MDcyNS9hcC1zb3V0aC0xL3MzL2F3czRfcmVxdWVzdCJ9LCB7IngtYW16LWRhdGUiOiAiMjAyNDA3MjVUMDkyNTQxWiJ9LCB7IngtYW16LXNlY3VyaXR5LXRva2VuIjogIklRb0piM0pwWjJsdVgyVmpFT0gvLy8vLy8vLy8vd0VhQ21Gd0xYTnZkWFJvTFRFaVNEQkdBaUVBd3NiRmpteE9wYU1RSkpUdnBwekJ2VjVKaWI2bUJHVXZKV0hWOVdvMXZ6OENJUUN5K1g5YlN2SWVmNWJ2UVZoeWlsQmJ0bjlVKzI2ZDNQMlM0VldCTFo4MzNTcjZBZ2k2Ly8vLy8vLy8vLzhCRUFJYUREWXdOemMyTlRneE5Ea3lNQ0lNVWxkRHFwaFpxQS81N0tCa0tzNENCNUlnRkZ6aGoxaHB6bWhrSDNPTHZUUSt2UHY1RGJFV1QxZEN0dEo1N3Z4U05haS9OMURTeXBtaDFGY2w2VHRINWFXM01vTUJjSTZ0bitvcHNXS0p4SG5XbFVZSGdOZVhhWmNySVI3MklwT1c1NWZvOEFqYzlEVEdCVWJuY2xIMXhKOXZ4QUZVdXdxRkZpS3V0KysrNUtaSmJUQkxJaXJpdzBjaWcwWjRuVkRnU1lMc2RXaTJHWUNpTWsxcmxLeFVtamp3andtUXFXOHBWb0VteGdOb2JkYnB6UTFjRlNUNjZ5cERyejkrbDQ0WEFHcjdEZGM2RHNaSEpna0RhK1pCRnBJbzN5MzNoeHo0ZDVSeko4S2JTOXNDWTUyTGt4ekk4Znhpc1pmZGtId2NHTVp5UkkxSTZLZlB5RGxtNXpzNHJ1L0hrTVBCRUFBSHFQSzlpRk9BQVhQL2FmTTJpbkNZeExjU3hGRVMwZXlaNGVsbitpZWNEY0ZMQ0xSOC9DOEMxbGd3N3FEUE1aYlY0RzVXcEdMN1p1SldLOGRsajJVcUttR0hEVDJJSmNIOFppbUdINmRXZ250NGJyeWQyakN6cjRpMUJqcWRBWDlWcnFtWnNrR1NMTjlQbVErQUdRNFVqZU1sdVlRcmRCT0pEZG5VMi9xZkNZWStKWng5ZjZiTXZvSW5oVFo1T3R1dk5vS1gxM3RVYVdNdDV0OFFXanRITjNrdFN2M1FESGEzU21FN0ZtODBtZEQrMWFoQWx0aVNpNTFQL1hUZlhqUm1yejg4N3A3dXgrMktPdnhWNlkvczRUVzZ1OXFJMFlrQ2Jwd09LQjlVMm5GeWVBWUgrd1p3SXdCdGZaemh0aVVEVXhwVER2SFhqalNmK1lJPSJ9XX0=
-                x-amz-algorithm:
-                  type: string
-                  description: AWS algorithm used for signing the request.
-                  example: AWS4-HMAC-SHA256
-                x-amz-credential:
-                  type: string
-                  description: AWS credentials for signing the request.
-                  example: ASIAY3ANKL2EJNFMXR2T/20240725/ap-south-1/s3/aws4_request
-                x-amz-date:
-                  type: string
-                  description: Date of the request.
-                  example: 20240725T092541Z
-                x-amz-security-token:
-                  type: string
-                  description: Security token for the request.
-                  example: >
-                    IQoJb3JpZ2luX2VjEOH//////////wEaCmFwLXNvdXRoLTEiSDBGAiEAwsbFjmxOpaMQJJTvppzBvV5Jib6mBGUvJWHV9Wo1vz8CIQCy+X9bSvIef5bvQVhyilBbtn9U+26d3P2S4VWBLZ833Sr6Agi6//////////8BEAIaDDYwNzc2NTgxNDkyMCIMUldDqphZqA/57KBkKs4CB5IgFFzhj1hpzmhkH3OLvTQ+vPv5DbEWT1dCttJ57vxSNai/N1DSypmh1Fcl6TtH5aW3MoMBcI6tn+opsWKJxHnWlUYHgNeXaZcrIR72IpOW55fo8Ajc9DTGBUbnclH1xJ9vxAFUuwqFFiKut+++5KZJbTBLIiriw0cig0Z4nVDgSYLsdWi2GYCiMk1rlKxUmjjwjwmQqW8pVoEmxgNobdbpzQ1cFST66ypDrz9+l44XAGr7Ddc6DsZHJgkDa+ZBFpIo3y33hxz4d5RzJ8KbS9sCY52LkxzI8fxisZfdkHwcGMZyRI1I6KfPyDlm5zs4ru/HkMPBEAAHqPK9iFOAAXP/afM2inCYxLcSxFES0eyZ4eln+iecDcFLCLR8/C8C1lgw7qDPMZbV4G5WpGL7ZuJWK8dlj2UqKmGHDT2IJcH8ZimGH6dWgnt4bryd2jCzr4i1BjqdAX9VrqmZskGSLN9PmQ+AGQ4UjeMluYQrdBOJDdnU2/qfCYZ+JZx9f6bMvoInhTZ5OtuvaoKX13tUaWMt5t8qQWjtHN3ktSv3QDH3mS3mE7Fm80mdD+1ahAltiSi51P/XTfXjRmrz887p7ux+2K2ovxV6Y/s4TW6u9qI0YkCbptOKB9U2nFyeAYH+wZwIwBtgFQ0bFMSmNJR4PpSRRNL9PbVPvWcqGmHKpZciCqSHR5x5hJ9ShMVhjqSf+YI=
-                x-amz-signature:
-                  type: string
-                  description: Signature for the request.
-                  example: 2157a852f2f8db5b0595cbe3f002fb71e8be450b22d16a7b6ad3da6697b9c1cb
                 file:
                   type: string
                   format: binary
                   description: The file to upload.
               required:
-                - Content-Type
-                - policy
-                - x-amz-algorithm
-                - x-amz-credential
-                - x-amz-date
-                - x-amz-security-token
-                - x-amz-signature
-                - key
                 - file
       responses:
         '204':
@@ -505,31 +476,21 @@ components:
         The following values are allowed:
         - `ps`: Prescription
         - `lr`: Lab Report
-        - `cc`: Cowin Certificate
-        - `ca`: Cowin Appointment Slip
-        - `pp`: Profile Picture
         - `ot`: Other
         - `ds`: Discharge Summary
         - `vc`: Vaccine Certificate
         - `in`: Insurance
         - `iv`: Invoice
         - `sc`: Scan
-        - `nc`: NDHM ID Card
-        - `nq`: NDHM QR Code
       enum:
         - ps
         - lr
-        - cc
-        - ca
-        - pp
         - ot
         - ds
         - vc
         - in
         - iv
         - sc
-        - nc
-        - nq
 
     FileUploadRequest:
       type: object
@@ -539,6 +500,7 @@ components:
         file_size:
           type: integer
           format: int64
+          description: Unit of file size should be bytes
 
     UpdateDocumentV3Request:
       type: object
@@ -548,46 +510,17 @@ components:
         dd:
           type: string
           format: date-time
+          description: Format should "YYYY-MM-DD"
         sh:
           type: boolean
         tg:
           type: array
           items:
             type: string
-        patient_oid:
-          type: string
-        p_uuid:
-          type: string
-        sa_id:
-          type: string
-        email_id:
-          type: string
-        sync_id:
-          type: string
-        type_of_sync:
-          type: string
-        context:
-          type: string
         files:
           type: array
           items:
             $ref: '#/components/schemas/FileUploadRequest'
-        hip_id:
-          type: string
-        health_id:
-          type: string
-        care_context:
-          type: string
-        clinic_id:
-          type: string
-        doctor_id:
-          type: string
-        is_encrypted:
-          type: boolean
-        ndhm:
-          type: boolean
-        p_poid:
-          type: string
 
     UploadResponse:
       type: object
