@@ -559,48 +559,84 @@ paths:
 
                       status_code: 200
                       success: true
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                  status_code:
+                    type: integer
+                  success:
+                    type: boolean
+              example:
+                error:
+                  code: "PATIENTS_NOT_FOUND"
+                  message: "No patients found with the provided id belonging to this business"
+                status_code: 404
+                success: false
         '403':
           description: Forbidden
-          headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/403ForbiddenBusinessPatientDetailsMissing1
-                  - example:
-                      data: { }
-                      error:
-                        code: UNAUTHORIZED_PATIENT_SEARCH
-                        message: >-
-                          Unauthorized access: You do not have permission to
-                          search for patients in this directory
+                type: object
+                properties:
+                  data:
+                    type: object
+                  status_code:
+                    type: integer
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
                 data: { }
+                status_code: 403
+                success: false
                 error:
-                  code: UNAUTHORIZED_PATIENT_SEARCH
-                  message: >-
-                    Unauthorized access: You do not have permission to search
-                    for patients in this directory
+                  code: "UNAUTHORIZED_ACCESS"
+                  message: "You do not have permission to get details for this patient"
         '500':
           description: Internal Server Error
-          headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/500WrongAPIURLTokenmismatchedWrongJSONrequest.1
-                  - example:
-                      data: { }
-                      error:
-                        code: INVALID_DATA
-                        message: Data entered is incorrect
+                type: object
+                properties:
+                  data:
+                    type: object
+                  status_code:
+                    type: integer
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
                 data: { }
+                status_code: 500
+                success: false
                 error:
-                  code: INVALID_DATA
-                  message: Data entered is incorrect
+                  code: "SERVER_ERROR"
+                  message: "An unexpected error occurred on the server"
       deprecated: false
   /dr/v1/business/patients/search:
     get:
@@ -787,48 +823,84 @@ paths:
                               created_at: '2024-08-14T09:01:14.806Z'
                       status_code: 200
                       success: true
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                  status_code:
+                    type: integer
+                  success:
+                    type: boolean
+              example:
+                error:
+                  code: "PATIENTS_NOT_FOUND"
+                  message: "No patients found with the provided mobile number"
+                status_code: 404
+                success: false
         '403':
           description: Forbidden
-          headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/403ForbiddenBusinessPatientDetailsMissing1
-                  - example:
-                      data: { }
-                      error:
-                        code: UNAUTHORIZED_PATIENT_SEARCH
-                        message: >-
-                          Unauthorized access: You do not have permission to
-                          search for patients in this directory
+                type: object
+                properties:
+                  data:
+                    type: object
+                  status_code:
+                    type: integer
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
                 data: { }
+                status_code: 403
+                success: false
                 error:
-                  code: UNAUTHORIZED_PATIENT_SEARCH
-                  message: >-
-                    Unauthorized access: You do not have permission to search
-                    for patients in this directory
+                  code: "UNAUTHORIZED_ACCESS"
+                  message: "You do not have permission to search for patients"
         '500':
           description: Internal Server Error
-          headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/500WrongAPIURLTokenmismatchedWrongJSONrequest.1
-                  - example:
-                      data: { }
-                      error:
-                        code: INVALID_DATA
-                        message: Data entered is incorrect
+                type: object
+                properties:
+                  data:
+                    type: object
+                  status_code:
+                    type: integer
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
                 data: { }
+                status_code: 500
+                success: false
                 error:
-                  code: INVALID_DATA
-                  message: Data entered is incorrect
+                  code: "SERVER_ERROR"
+                  message: "An unexpected error occurred on the server"
       deprecated: false
   /v1/business/patient/edit:
     patch:
@@ -1024,7 +1096,8 @@ paths:
               schema:
                 type: string
                 example:
-                  status: 200
+                  status_code: 200
+                  success: true
                   data:
                     clinics:
                       - clinic_id: "{{clinic_id1}}"
@@ -1049,6 +1122,78 @@ paths:
                     business:
                       business_id: "{{business_id}}"
                       name: "{{business_name}}"
+        '403':
+          description: Forbidden
+          headers: { }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 403
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Access denied. Insufficient permissions to retrieve business data."
+              example:
+                data: { }
+                status_code: 403
+                success: false
+                error:
+                  code: "UNAUTHORIZED_ACCESS"
+                  message: "Access denied. Insufficient permissions to retrieve business data."
+        '404':
+          description: Not Found
+          headers: { }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 404
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Business not found with the provided business_id."
+              example:
+                data: { }
+                status_code: 404
+                success: false
+                error:
+                  code: "BUSINESS_NOT_FOUND"
+                  message: "Business not found with the provided business_id."
+        '500':
+          description: Internal Server Error
+          headers: { }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 500
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "An unexpected error occurred while processing your request."
+              example:
+                data: { }
+                status_code: 500
+                success: false
+                error:
+                  code: "SERVER_ERROR"
+                  message: "An unexpected error occurred on the server"
       deprecated: false
   /v1/business/doctor/{doctor_id}:
     get:
@@ -1592,83 +1737,113 @@ paths:
 
 
 
-        **Parameters**
+        **Request Parameters**
 
 
-        | Param | Type | Expected Values | Description | Required/Optional/Not Required
-        |
-
+        | Param | Type | Expected Values | Description | Required/Optional/Not Required |
+        
         | --- | --- | --- | --- | --- |
-
-        | patient_oid | string |  | In case patient oid already exists use this
-        - no need for whole profile |
-
-        | designation | varchar(10) | Mr./Miss/Mrs./Dr | Patient Designation | Optional |
-
-        | first_name | varchar(100) | Test | First Name | Required |
-
-        | middle_name | varchar(100) |  | Middle Name | Optional |
-
-        | last_name | varchar(100) | Patient | Last Name | Optional |
-
-        | dob | Date | 1987-01-06 | Patient DOB | Required |
-
-        | age | varchar(20) | 36 | Patient Age | Optional |
-
-        | mobile | varchar(15) | +919999999999 | Mobile Number with country code | Required
-        |
-
-        | gender | varchar(10) | M/F/O | Patient Gender | Required |
-
-        | email | varchar(100) |
-        [test@orbi.health](https://mailto:pp@orbi.health) | Patient Email
-        Address | Optional |
-
-        | address | object |  | Address Object | Optional |
-
-        | address.city | varchar(300) | Bangalore | City | Optional |
-
-        | address.line1 | varchar(300) | ABC | Address Line 1 | Optional |
-
-        | address.line2 | varchar(300) | XYZ | Address Line 2 | Optional |
-
-        | address.pincode | int(11) | 560049 | Pincode | Optional |
-
-        | address.state | varchar(100) | Karnataka | State | Optional |
-
-        | address.country | varchar(100) | India | Country | Optional |
-
-        | metadata | object |  | Metadata Object (Set of key-value pairs) | Optional |
-
-        | metadata.blood_group | varchar(10) | AB+ | Blood Group | Optional |
-
-        | metadata.aadhar_number | varchar(20) | 12345 | Aadhar Number | Optional |
-
-        | metadata.UHID | varchar(20) | VP128 | Unique Health ID | Optional |
-
-        | doctor_id (to_be_deprecated) | varchar(20) | 12345 | doctor_id | Required |
+        
+        | patient_oid | string | | In case patient oid already exists use this - no need for whole profile | Optional |
+        
+        | designation | string | Mr./Miss/Mrs | Patient Designation | Optional |
+        
+        | first_name | string | Test | First Name | Required |
+        
+        | middle_name | string | | Middle Name | Optional |
+        
+        | last_name | string | Patient | Last Name | Optional |
+        
+        | dob | string | 1987-01-06 | Patient DOB | Required |
+        
+        | age | string | 36 | Patient Age | Optional |
+        
+        | mobile | string | +919999999999 | Mobile Number with country code | Required |
+        
+        | gender | string | M/F/O | Patient Gender | Required |
+        
+        | email | string | test@orbi.health | Patient Email Address | Optional |
+        
+        | address | object | | Address Object | Optional |
+        
+        | address.city | string | Bangalore | City | Optional |
+        
+        | address.line1 | string | ABC | Address Line 1 | Optional |
+        
+        | address.line2 | string | XYZ | Address Line 2 | Optional |
+        
+        | address.pincode | integer | 560049 | Pincode | Optional |
+        
+        | address.state | string | Karnataka | State | Optional |
+        
+        | address.country | string | India | Country | Optional |
+        
+        | metadata | object | | Metadata Object (Set of key-value pairs) | Optional |
+        
+        | metadata.blood_group | string | AB+ | Blood Group | Optional |
+        
+        | metadata.aadhar_number | string | 12345 | Aadhar Number | Optional |
+        
+        | metadata.UHID | string | VP128 | Unique Health ID | Optional |
+        
+        | doctor_id (to_be_deprecated) | string | 12345 | doctor_id | Required |
 
 
-                ### Response Parameters
+        ### Response Parameters
 
+        | Parameter | Type | Expected Values | Description |
+        
+        | --- | --- | --- | --- |
 
-                | Parameter | Type | Expected Values | Description |
+        | success | string | "true" | Indicates if the request was successful |
 
-                | --- | --- | --- | --- |
+        | data | object | | Contains the main response data |
 
-                | response | object |  | Response Object |
+        | data.clinic_id | object | | Contains the schedule information |
 
-                | response.patient_oid | string | 1234567890 | Generated Patient OID |
+        | data.clinic_id.[doctor_id] | array | | Array of schedules for a specific doctor (doctor_id is the key) |
 
-                | response.profile | object |  | Profile Object |
+        | data.clinic_id.[doctor_id][].service_type | string | "consultation" | Type of service offered |
 
-                | response.profile.id | string | 1234567890 | Profile ID |
+        | data.clinic_id.[doctor_id][].slots | array | | Array of available time slots |
 
-                | response.profile.created_at | datetime | 2024-06-12T21:55:51.593Z |
-                Profile Creation Timestamp |
+        | data.clinic_id.[doctor_id][].slots[].available | boolean | true/false | Indicates if the slot is available |
 
-                | response.profile.updated_at | datetime | 2024-06-17T09:52:55.257Z |
-                Profile Update Timestamp |
+        | data.clinic_id.[doctor_id][].slots[].conf_id | string | | Configuration ID for the slot |
+
+        | data.clinic_id.[doctor_id][].slots[].e | string | "2024-09-05T09:30:00+05:30" | End time of the slot in ISO 8601 format |
+
+        | data.clinic_id.[doctor_id][].slots[].s | string | "2024-09-05T09:15:00+05:30" | Start time of the slot in ISO 8601 format |
+
+        | data.services | object | | Contains information about available services |
+
+        | data.services.[conf_id] | object | | Service details (conf_id is the key) |
+
+        | data.services.[conf_id].allow_patient_booking | boolean | true/false | Indicates if patients can book directly |
+
+        | data.services.[conf_id].appointment_type | string | "REGULAR" | Type of appointment |
+
+        | data.services.[conf_id].conf_id | string | | Configuration ID for the service |
+
+        | data.services.[conf_id].conv_fee | number | 0 | Convenience fee |
+
+        | data.services.[conf_id].currency | string | "INR" | Currency for pricing |
+
+        | data.services.[conf_id].discount | number | 0 | Discount amount |
+
+        | data.services.[conf_id].mode | array | ["in-clinic"] | Array of service modes |
+
+        | data.services.[conf_id].owner_id | string | "161419272566611" | ID of the service owner |
+
+        | data.services.[conf_id].post_pay | boolean | false | Indicates if post-payment is allowed |
+
+        | data.services.[conf_id].pre_pay | boolean | true | Indicates if pre-payment is required |
+
+        | data.services.[conf_id].price | number | 500 | Price of the service |
+
+        | data.services.[conf_id].service_id | integer | 1 | Identifier for the service |
+
+        | data.services.[conf_id].service_name | string | "consultation" | Name of the service |
 
 
         **Status codes**
@@ -1864,8 +2039,179 @@ paths:
                       service_name: "consultation"
                 success: 'true'
                 status_code: 200
+        '400':
+          description: Bad Request
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Sun, 12 Apr 2024 11:10:57 GMT
+            Content-Length:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: '152'
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+              example:
+                success: 'false'
+                status_code: 400
+                message: "Invalid request parameters. Please check your input and try again."
+
+        '403':
+          description: Forbidden
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Sun, 12 Apr 2024 11:11:57 GMT
+            Content-Length:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: '145'
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+              example:
+                success: 'false'
+                status_code: 403
+                message: "Access denied. You do not have permission to view this doctor's schedule."
+
+        '404':
+          description: Not Found
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Sun, 12 Apr 2024 11:12:57 GMT
+            Content-Length:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: '126'
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+              example:
+                success: 'false'
+                status_code: 404
+                message: "Doctor not found. Please check the provided doctor ID."
+
+        '500':
+          description: Internal Server Error
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Sun, 12 Apr 2024 11:13:57 GMT
+            Content-Length:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: '158'
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+              example:
+                success: 'false'
+                status_code: 500
+                message: "An unexpected error occurred while processing your request. Please try again later."
       deprecated: false
-  /v2/business/doctor/appointments/slots/book:
+  /dr/v1/business/doctor/appointments/slots/book:
     post:
       tags:
         - Appointment API
@@ -2099,6 +2445,8 @@ paths:
                       appointment_id:
                         type: string
               example:
+                status_code: 200
+                success: "true"
                 data:
                   start_time: "2024-06-11T09:00:00+05:30"
                   end_time: "2024-06-11T09:30:00+05:30"
@@ -2164,12 +2512,14 @@ paths:
                         code: INVALID_REQUEST_PARAMETERS
                         message: The request contains invalid parameters
               example:
+                status_code: 400
+                success: "false"
                 data: { }
                 error:
                   code: INVALID_REQUEST_PARAMETERS
                   message: The request contains invalid parameters
       deprecated: false
-  /v2/business/doctor/appointments/slots/reserve:
+  /dr/v1/business/doctor/appointments/slots/reserve:
     post:
       tags:
         - Appointment API
@@ -2207,70 +2557,56 @@ paths:
 
         ### Request Parameters
 
-
-        | Parameter | Type | Expected Values | Description |
-        Required/Optional/Not Required |
-
+        | Parameter | Type | Expected Values | Description | Required/Optional/Not Required |
+        
         | --- | --- | --- | --- | --- |
 
-        | first_name | varchar(100) | Patient | Patient's first name | Required
-        |
+        | first_name | string | Patient | Patient's first name | Required |
 
-        | middle_name | varchar(100) |  | Patient's middle name | Optional |
+        | middle_name | string | | Patient's middle name | Optional |
 
-        | last_name | varchar(100) | Test | Patient's last name | Required |
+        | last_name | string | Test | Patient's last name | Required |
 
-        | dob | Date | 1987-01-06 | Patient's date of birth | Required |
+        | dob | string | 1987-01-06 | Patient's date of birth | Required |
 
-        | mobile | varchar(15) | +919999999999 | Patient's mobile number |
-        Required |
+        | mobile | string | +919999999999 | Patient's mobile number | Required |
 
-        | gender | varchar(10) | M/F/O | Patient's gender | Required |
+        | gender | string | M/F/O | Patient's gender | Required |
 
-        | doctor_id | varchar(100) | default | Doctor's ID | Required |
+        | doctor_id | string | default | Doctor's ID | Required |
 
-        | clinic_id | varchar(100) | {{clinic_id}} | Clinic's ID | Required |
+        | clinic_id | string | {{clinic_id}} | Clinic's ID | Required |
 
-        | visit_start_time | datetime | 2024-06-26T11:28:45.000Z | Start time of
-        the appointment slot | Optional |
+        | visit_start_time | string | 2024-06-26T11:28:45.000Z | Start time of the appointment slot | Optional |
 
-        | client_meta.client_visit_id | varchar(100) | RNI1234567 | Client visit
-        ID | Optional |
+        | client_meta.client_visit_id | string | RNI1234567 | Client visit ID | Optional |
 
-        | client_meta.patient_id | varchar(100) | P123456 | Patient ID |
-        Optional |
+        | client_meta.patient_id | string | P123456 | Patient ID | Optional |
 
 
-        **Response Parameters**
+        ### Response Parameters
 
-
-        | Parameter | Type | Expected Values | Description |
-        Required/Optional/Not Required |
-
+        | Parameter | Type | Expected Values | Description | Required/Optional/Not Required |
+        
         | --- | --- | --- | --- | --- |
 
-        | appointment_id | varchar(100) | apt-12345-123456 | Appointment's ID |
-        Required |
+        | appointment_id | string | apt-12345-123456 | Appointment's ID | Required |
 
-        | doctor_id | varchar(100) | 1234567890 | Doctor's ID | Required |
+        | doctor_id | string | 1234567890 | Doctor's ID | Required |
 
-        | patient_id | varchar(100) | 1234567890 | Patient's ID | Required |
+        | patient_id | string | 1234567890 | Patient's ID | Required |
 
-        | clinic_id | varchar(100) | 019319i10i01a3e462 | Clinic's ID | Required
-        |
+        | clinic_id | string | 019319i10i01a3e462 | Clinic's ID | Required |
 
-        | channel | varchar(50) | Walking | Channel of appointment | Required |
+        | channel | string | Walkin | Channel of appointment | Required |
 
-        | status | varchar(10) | BK | Status of appointment | Required |
+        | status | string | BK | Status of appointment | Required |
 
-        | start_time | datetime | 2024-06-26T11:28:45.000Z | Start time of the
-        appointment | Required |
+        | start_time | string | 2024-06-26T11:28:45.000Z | Start time of the appointment | Required |
 
-        | end_time | datetime | 2024-06-26T11:28:45.000Z | End time of the
-        appointment | Required |
+        | end_time | string | 2024-06-26T11:28:45.000Z | End time of the appointment | Required |
 
-        | message | varchar(255) | Appointment has been confirmed | Confirmation
-        message | Required |
+        | message | string | Appointment has been confirmed | Confirmation message | Required |
 
 
         **Status Codes**  
@@ -2297,55 +2633,67 @@ paths:
         content:
           application/json:
             schema:
-              type: string
-              example: |-
-                {
-                    "patient": {
-                        "designation": "Mr.",
-                        "first_name": "Test",
-                        "middle_name": "",
-                        "last_name": "Patient",
-                        "dob": "1987-01-06",
-                        "mobile": "+919999999999",
-                        "gender": "M"
-                    },
-                    "visit_start_time":"2024-06-26T11:28:45.000Z",
-                    "doctor_id" : {{doctor_id}},
-                    "clinic_id" : {{clinic_id}},
-                    "client_meta" : { // information from client registration system
-                        "client_visit_id": "RNI1234567",
-                        "patient_id" : "P123456",
-                        "payment_details": {
-                            "payment_id" : "txn_123",
-                            "amount_paid" : "1010.50"
-                        }
-                    }
-
-                }
-            example: |-
-              {
-                  "patient": {
-                      "designation": "Mr.",
-                      "first_name": "Test",
-                      "middle_name": "",
-                      "last_name": "Patient",
-                      "dob": "1987-01-06",
-                      "mobile": "+919999999999",
-                      "gender": "M"
-                  },
-                  "visit_start_time":"2024-06-26T11:28:45.000Z",
-                  "doctor_id" : {{doctor_id}},
-                  "clinic_id" : {{clinic_id}},
-                  "client_meta" : { // information from client registration system
-                      "client_visit_id": "RNI1234567",
-                      "patient_id" : "P123456",
-                      "payment_details": {
-                          "payment_id" : "txn_123",
-                          "amount_paid" : "1010.50"
-                      }
-                  }
-
-              }
+              type: object
+              properties:
+                patient:
+                  type: object
+                  properties:
+                    designation:
+                      type: string
+                    first_name:
+                      type: string
+                    middle_name:
+                      type: string
+                    last_name:
+                      type: string
+                    dob:
+                      type: string
+                      format: date
+                    mobile:
+                      type: string
+                    gender:
+                      type: string
+                      enum: [ M, F, O ]
+                visit_start_time:
+                  type: string
+                  format: date-time
+                doctor_id:
+                  type: string
+                clinic_id:
+                  type: string
+                client_meta:
+                  type: object
+                  properties:
+                    client_visit_id:
+                      type: string
+                    patient_id:
+                      type: string
+                    payment_details:
+                      type: object
+                      properties:
+                        payment_id:
+                          type: string
+                        amount_paid:
+                          type: string
+            example:
+              patient:
+                designation: "Mr."
+                first_name: "Test"
+                middle_name: ""
+                last_name: "Patient"
+                dob: "1987-01-06"
+                mobile: "+919999999999"
+                gender: "M"
+              visit_start_time: "2024-06-26T11:28:45.000Z"
+              doctor_id: "{{doctor_id}}"
+              clinic_id: "{{clinic_id}}"
+              client_meta:
+                # information from client registration system
+                client_visit_id: "RNI1234567"
+                patient_id: "P123456"
+                payment_details:
+                  payment_id: "txn_123"
+                  amount_paid: "1010.50"
         required: true
       responses:
         '200':
@@ -2396,39 +2744,51 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-                example: |-
-                  {
-                      "status" : 200,
-                      "data": {
-                          "appointment_id": {{appointment_id}},
-                          "doctor_id": {{doctor_id}},
-                          "patient_id": {{patient_id}},
-                          "clinic_id": {{clinic_id}},
-                          "channel": "Walkin",
-                          "status": "BK",
-                          "start_time": "2024-06-26T11:28:45.000Z",
-                          "end_time": "2024-06-26T11:28:45.000Z",
-                          "message": "Appointment has been confirmed",
-                          "created_at": "2024-06-26T11:28:45.000Z"
-                      }
-                  }
-              example: |-
-                {
-                    "status" : 200,
-                    "data": {
-                        "appointment_id": {{appointment_id}},
-                        "doctor_id": {{doctor_id}},
-                        "patient_id": {{patient_id}},
-                        "clinic_id": {{clinic_id}},
-                        "channel": "Walkin",
-                        "status": "BK",
-                        "start_time": "2024-06-26T11:28:45.000Z",
-                        "end_time": "2024-06-26T11:28:45.000Z",
-                        "message": "Appointment has been confirmed",
-                        "created_at": "2024-06-26T11:28:45.000Z"
-                    }
-                }
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  data:
+                    type: object
+                    properties:
+                      appointment_id:
+                        type: string
+                      doctor_id:
+                        type: string
+                      patient_id:
+                        type: string
+                      clinic_id:
+                        type: string
+                      channel:
+                        type: string
+                      status:
+                        type: string
+                      start_time:
+                        type: string
+                        format: date-time
+                      end_time:
+                        type: string
+                        format: date-time
+                      message:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+              example:
+                status: 200
+                status_code: 200
+                success: "true"
+                data:
+                  appointment_id: "{{appointment_id}}"
+                  doctor_id: "{{doctor_id}}"
+                  patient_id: "{{patient_id}}"
+                  clinic_id: "{{clinic_id}}"
+                  channel: "Walkin"
+                  status: "BK"
+                  start_time: "2024-06-26T11:28:45.000Z"
+                  end_time: "2024-06-26T11:28:45.000Z"
+                  message: "Appointment has been confirmed"
+                  created_at: "2024-06-26T11:28:45.000Z"
         '400':
           description: Bad Request
           headers:
@@ -2627,7 +2987,7 @@ paths:
                     doctorId: '12345'
       deprecated: false
       security: [ ]
-  /v2/business/appointments/{appointment_id}:
+  /dr/v1/business/appointments/{appointment_id}:
     get:
       tags:
         - Appointment API
@@ -2654,7 +3014,7 @@ paths:
         
         ### Endpoint
 
-        **URL:** `{{HOST}}/v2/business/appointments/{{appointment_id}}`  
+        **URL:** `{{HOST}}/dr/v1/business/appointments/{{appointment_id}}`  
         
         **Method:** GET
 
@@ -2725,6 +3085,8 @@ paths:
         | data.service.service_name | string | Name of the service |
                 
         | data.service.appointment_type | string | Type of appointment (`REGULAR`, etc.) |
+        
+        
         
       operationId: GetappointmentDetails
       parameters:
@@ -2855,6 +3217,8 @@ paths:
                           allow_patient_booking:
                             type: boolean
                 example:
+                  status_code: 200
+                  success: "true"
                   data:
                     aid: example_appointment_id
                     created_at: '2023-07-30T18:07:24.000Z'
@@ -2883,8 +3247,147 @@ paths:
                       post_pay: false
                       service_name: consultation
                       appointment_type: REGULAR
+        '400':
+          description: Bad Request
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2024 11:10:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '152'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                  success:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status_code: 400
+                success: "false"
+                message: "Invalid request parameters. Please check your input and try again."
+
+        '403':
+          description: Forbidden
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2024 11:11:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '145'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                  success:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status_code: 403
+                success: "false"
+                message: "Access denied. You do not have permission to view this appointment."
+
+        '404':
+          description: Not Found
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2024 11:12:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '126'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                  success:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status_code: 404
+                success: "false"
+                message: "Appointment not found. Please check the provided appointment ID."
+
+        '500':
+          description: Internal Server Error
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2024 11:13:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '158'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                  success:
+                    type: string
+                  message:
+                    type: string
+              example:
+                status_code: 500
+                success: "false"
+                message: "An unexpected error occurred while processing your request. Please try again later."
       deprecated: false
-  /v2/business/doctor/appointments/{appointment_id}/cancel:
+  /dr/v1/business/doctor/appointments/{appointment_id}/cancel:
     put:
       tags:
         - Appointment API
@@ -2901,7 +3404,7 @@ paths:
 
 
         **URL:**
-        `{{HOST}}/v2/business/appointments/cancel`  
+        `{{HOST}}/dr/v1/business/appointments/cancel`  
 
         **Method:** PUT
 
@@ -2926,17 +3429,7 @@ paths:
 
         | Content-Type | string | `application/json` | Yes |
 
-        ### Sample Request
 
-
-        ``` bash
-
-        curl --location --request PUT
-        '{{HOST}}/appointment/{{appointment_id}}/cancel' \
-
-        --header 'Content-Type: application/json' \
-
-         ```
       operationId: CancelAppointment
       parameters:
         - name: appointment_id
@@ -2995,23 +3488,93 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-                example: |-
-                  {
-                      "data": {
-                          "message": "Appointment has been cancelled",
-                          "appointment_id": {{appointment_id}}
-                      }
-                  }
-              example: |-
-                {
-                    "data": {
-                        "message": "Appointment has been cancelled",
-                        "appointment_id": {{appointment_id}}
-                    }
-                }
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      appointment_id:
+                        type: string
+              example:
+                data:
+                  message: "Appointment has been cancelled"
+                  appointment_id: "{{appointment_id}}"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "APPOINTMENT_NOT_FOUND"
+                  message: "The specified appointment ID does not exist"
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "CANCEL_NOT_ALLOWED"
+                  message: "You do not have permission to cancel this appointment"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "INVALID_REQUEST"
+                  message: "The request is invalid or missing required parameters"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "SERVER_ERROR"
+                  message: "An unexpected error occurred on the server"
       deprecated: false
-  /v2/business/appointments/patient/{patient_id}:
+  /dr/v1/business/appointments/patient/{patient_id}:
     get:
       tags:
         - Appointment API
@@ -3188,7 +3751,7 @@ paths:
                     ]
                 }
       deprecated: false
-  /v1/business/prescription/{rx_id}:
+  /dr/v1/business/prescription/{rx_id}:
     get:
       tags:
         - Prescription API
@@ -3310,17 +3873,17 @@ paths:
         • 500: Wrong API URL/Wrong JSON request/ Something went wrong
       operationId: GetPrescriptiondetails
       parameters:
-        - name: x-api-key
+        - name: auth
           in: header
-          description: ''
+          description: 'Authentication token'
           required: true
           style: simple
           schema:
             type: string
-            example: '{{x-api-key}}'
+          example: '{{auth_token}}'
         - name: rx_id
           in: path
-          description: ''
+          description: 'Prescription ID'
           required: true
           style: simple
           schema:
@@ -3590,6 +4153,7 @@ paths:
 
         **Example Webhook Event Payload**
 
+        
 
         ``` json
 
@@ -5608,7 +6172,7 @@ tags:
       Retrieve details of a specific appointment using the appointment ID.
 
 
-      **Endpoint :** `{{HOST}}/v1/business/appointments/{appointment_id}`  
+      **Endpoint :** `{{HOST}}/dr/v1/business/appointments/{appointment_id}`  
 
       **Method:** GET
 

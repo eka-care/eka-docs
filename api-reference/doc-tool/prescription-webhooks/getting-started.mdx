@@ -2,6 +2,42 @@
 
 A webhook (also called a web callback or HTTP push API) is a way for an app to provide other applications with real-time information. A webhook delivers data to other applications as it happens, meaning you get data immediately. Unlike typical APIs where you would need to poll for data very frequently in order to get it real-time. This makes webhooks much more efficient for both provider and consumer.
 
+
+## Webhook Implementation Strategy
+
+At Eka Care, we've chosen to implement webhooks by sending minimal information in the webhook payload, specifically the resource ID (appointment, rx, patient) and the action performed (e.g., created, modified, completed). This approach offers several advantages over sending complete appointment/prescription details in every webhook:
+
+### Technical Benefits
+
+1. **Reduced Payload Size:** Sending only essential information (appointment ID and action) significantly reduces the payload size. This leads to faster transmission times and lower bandwidth usage, especially important for systems handling a high volume of appointments.
+
+2. **Improved Scalability:** Smaller payloads allow our webhook system to handle a much higher number of events per second, ensuring better performance and scalability as our user base grows.
+
+3. **Flexibility for Future Changes:** By keeping the webhook payload minimal, we can easily add new fields or modify the appointment data structure without breaking existing integrations. Third-party developers only need to update their code when they want to utilize new features.
+
+4. **Reduced Risk of Data Inconsistency:** Sending full details in webhooks could lead to race conditions where the data in the webhook might be outdated by the time it's processed. By encouraging API calls for the latest data, we ensure that third-party applications always have the most up-to-date information.
+
+### Security Considerations
+
+1. **Data Minimization:** Sending only the appointment ID adheres to the principle of data minimization, reducing the risk of sensitive information exposure in transit.
+
+2. **Granular Access Control:** Third-party applications can be granted specific API permissions, allowing for more fine-grained control over data access compared to receiving all details via webhooks.
+
+3. **Audit Trail:** By requiring API calls for detailed information, we can maintain a comprehensive audit trail of data access, enhancing security and compliance efforts.
+
+4. **Future Security Enhancements:** We are committed to continuously improving the security of our webhook system. In the future, we plan to implement the following security measure:
+
+   - **Digital Signature:** We will implement measures to secure message transmission and data integrity. We will add a digital signature (not encryption) to the payload if the developer has provided a key. If a developer does not provide a key, we will still send the payload, but it will be unsigned. This will allow developers to verify the authenticity and integrity of the webhooks they receive.
+
+### Developer Experience
+
+1. **Consistent Data Retrieval:** Developers can use the same API call to get appointment details, whether triggered by a webhook or not, leading to more consistent and maintainable code.
+
+2. **Reduced Webhook Complexity:** Simpler webhook payloads are easier to parse and validate, reducing the likelihood of errors in webhook processing.
+
+3. **Flexibility in Data Retrieval:** Developers can choose which appointment details they need and when to fetch them, optimizing their application's performance and resource usage.
+
+
 These are the steps to handle webhook events for appointments and prescriptions:
 
 <Steps>
@@ -27,13 +63,20 @@ When an appointment is created, modified, or completed, Eka Care will send a web
 ```json
 {
   "event_type": "appointment",
+    "timestamp": "2023-07-30T18:07:24.000Z",
+    "partition_id": "{{appointment_id}}-{{patient_id}}",
   "data": {
     "appointment_id": "12345-abcde-67890-fghij",
     "doctor_id": "0910731080189",
     "patient_id": "54321098809",
+    "clinic_id": "09876345768790",
     "status": "BK",
     "action": "create",
-    "timestamp": "2024-06-28T10:30:00Z"
+    "created_at": "2023-07-30T18:07:24.000Z",
+    "modified_at": "2023-07-30T18:07:24.000Z",
+    "client_meta": {
+        "visit_id": "Client_visit_id123"
+    }
   }
 }
 ```
@@ -54,6 +97,8 @@ When a prescription is created, Eka Care will send a webhook event to your regis
 ```json
 {
   "event_type": "prescription_created",
+  "timestamp": "2023-07-30T18:07:24.000Z",
+    "partition_id": "{{prescription_id}}-{{patient_id}}",
   "data": {
     "prescription": "12345-abcde-67890-fghij",
     "doctor_id": "0910731080189",
@@ -95,6 +140,8 @@ Webhooks provide a real-time notification system for events occurring within the
 - Consider implementing a queueing system if you need to process a high volume of webhook events.
 - Always verify the authenticity of incoming webhook requests to prevent security issues.
 - Use the provided APIs to fetch full details after receiving a webhook, as the webhook payload may contain limited information.
+- If you plan to use the upcoming digital signature feature, prepare to provide a key and implement signature verification on your end.
+- Even without a digital signature, always implement additional security measures such as IP whitelisting and HTTPS to secure your webhook endpoint.
 
 ## Example Workflow
 
