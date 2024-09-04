@@ -1,0 +1,203 @@
+openapi: 3.1.0
+info:
+  title: Vitals API Contract
+  description: Documentation for the Vitals API endpoint.
+  version: 1.0.0
+  license:
+    name: Proprietary License
+    url: https://example.com/license
+
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+
+tags:
+  - name: Vitals
+    description: API related to managing patient's vitals.
+
+paths:
+  /api/v1/vitals/{txn_id}:
+    put:
+      tags:
+        - Vitals
+      summary: Update Patient Vitals
+      description: Update the vitals data for a specific patient using the transaction ID.
+      parameters:
+        - name: txn_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Transaction ID to identify the specific vitals record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vitals:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Vital'
+              example:
+                vitals:
+                  - vital_display_name: heart_rate
+                    vital_loinc_code: 8867-4
+                    vital_value: 
+                      vital_numeric_value: 75
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: '{Counts}/min'
+                    unit_ucum_code: '<ucum code>'
+                    measured_at:
+                      DateTime: '2024-09-01'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
+                  - vital_display_name: random_blood_glucose
+                    vital_loinc_code: 15074-8
+                    vital_value: 
+                      vital_numeric_value: 90
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: mg/dL
+                    unit_ucum_code: '<ucum code>'
+                    measured_at:
+                      DateTime: '2024-09-01 20:10'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
+                  - vital_display_name: fasting_blood_glucose
+                    vital_loinc_code: 1558-6
+                    vital_value: 
+                      vital_numeric_value: 85
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: mg/dL
+                    unit_ucum_code: mg/dL
+                    measured_at:
+                      DateTime: '2024-09-01 10:10:10'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
+                  - vital_display_name: after_food_blood_glucose
+                    vital_loinc_code: 15074-8
+                    vital_value: 
+                      vital_numeric_value: 120
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: mg/dL
+                    unit_ucum_code: mg/dL
+                    measured_at:
+                      DateTime: '2024-09-01 10:10:10'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
+      responses:
+        '200':
+          description: Vitals updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Vitals updated successfully
+        '400':
+          description: Bad Request - Invalid data or missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+      security:
+        - auth: []
+
+components:
+  schemas:
+    Vital:
+      type: object
+      properties:
+        vital_display_name:
+          type: string
+          description: Type of the vital sign (e.g., heart_rate, blood_pressure).
+        vital_loinc_code:
+          type: string
+          description: LOINC code corresponding to the vital sign.
+        vital_value:
+          type: object
+          description: Measured value of the vital sign. Only one type of vital_value is expected (vital_numeric_value or vital_boolean_value or vital_string_value)
+          properties:
+            vital_numeric_value:
+              type: number
+              description: Numeric value of the vital sign.
+            vital_boolean_value:
+              type: boolean
+              description: Boolean value of the vital sign, if applicable.
+            vital_string_value:
+              type: string
+              description: String value of the vital sign, if applicable.
+        unit_display_name:
+          type: string
+          description: Unit of the measured value (e.g., mmHg, mg/dL).
+        unit_ucum_code:
+          type: string
+          description: Unit code as per standard (e.g., {Counts}/min, mg/dL).
+        measured_at:
+          type: object
+          properties:
+            effectiveDateTime:
+              type: string
+              format: date-time
+              description: Date and time when the vital was measured.
+            instant:
+              type: string
+              description: Instant timestamp when the vital was measured.
+            period:
+              type: object
+              properties:
+                startDateTime:
+                  type: string
+                  format: date-time
+                  description: Start date and time of the measurement period.
+                endDateTime:
+                  type: string
+                  format: date-time
+                  description: End date and time of the measurement period.
+          description: Details on when the vital was measured, only one type of value is expected
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Description of the error encountered.
+
+  securitySchemes:
+    auth:
+      type: apiKey
+      in: header
+      name: auth
+      description: |
+        The API requires the following `auth` header for authentication.
