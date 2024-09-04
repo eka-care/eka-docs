@@ -42,44 +42,64 @@ paths:
                   type: array
                   items:
                     $ref: '#/components/schemas/Vital'
-            example:
-              vitals:
-                - vital_display_name: heart_rate
-                  vital_loinc_code: 8867-4
-                  vital_value: 
-                    vital_numeric_value: 75
-                    vital_boolean_value: Null
-                    vital_string_value: Null
-                  unit_display_name: '{Counts}/min'
-                  unit_ucum_code: '{Counts}/min'
-                  measured_at: '1693802400'
-                - vital_display_name: random_blood_glucose
-                  vital_loinc_code: 15074-8
-                  vital_value: 
-                    vital_numeric_value: 90
-                    vital_boolean_value: Null
-                    vital_string_value: Null
-                  unit_display_name: mg/dL
-                  unit_ucum_code: mg/dL
-                  measured_at: '1693802400'
-                - vital_display_name: fasting_blood_glucose
-                  vital_loinc_code: 1558-6
-                  vital_value: 
-                    vital_numeric_value: 85
-                    vital_boolean_value: Null
-                    vital_string_value: Null
-                  unit_display_name: mg/dL
-                  unit_ucum_code: mg/dL
-                  measured_at: '1693802400'
-                - vital_display_name: after_food_blood_glucose
-                  vital_loinc_code: 15074-8
-                  vital_value: 
-                    vital_numeric_value: 120
-                    vital_boolean_value: Null
-                    vital_string_value: Null
-                  unit_display_name: mg/dL
-                  unit_ucum_code: mg/dL
-                  measured_at: '1693806000'
+              example:
+                vitals:
+                  - vital_display_name: heart_rate
+                    vital_loinc_code: 8867-4
+                    vital_value: 
+                      vital_numeric_value: 75
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: '{Counts}/min'
+                    unit_ucum_code: '{Counts}/min'
+                    measured_at:
+                      effectiveDateTime: '1693802400'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
+                  - vital_display_name: random_blood_glucose
+                    vital_loinc_code: 15074-8
+                    vital_value: 
+                      vital_numeric_value: 90
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: mg/dL
+                    unit_ucum_code: mg/dL
+                    measured_at:
+                      effectiveDateTime: '1693802400'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
+                  - vital_display_name: fasting_blood_glucose
+                    vital_loinc_code: 1558-6
+                    vital_value: 
+                      vital_numeric_value: 85
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: mg/dL
+                    unit_ucum_code: mg/dL
+                    measured_at:
+                      effectiveDateTime: '1693802400'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
+                  - vital_display_name: after_food_blood_glucose
+                    vital_loinc_code: 15074-8
+                    vital_value: 
+                      vital_numeric_value: 120
+                      vital_boolean_value: null
+                      vital_string_value: null
+                    unit_display_name: mg/dL
+                    unit_ucum_code: mg/dL
+                    measured_at:
+                      effectiveDateTime: '1693802400'
+                      instant: null
+                      period:
+                        startDateTime: null
+                        endDateTime: null
       responses:
         '200':
           description: Vitals updated successfully
@@ -142,9 +162,27 @@ components:
           type: string
           description: Unit code as per standard (e.g., {Counts}/min, mg/dL).
         measured_at:
-          type: string
-          format: int64
-          description: Unix timestamp when the vital was measured.
+          type: object
+          properties:
+            effectiveDateTime:
+              type: string
+              format: date-time
+              description: Date and time when the vital was measured.
+            instant:
+              type: string
+              description: Instant timestamp when the vital was measured.
+            period:
+              type: object
+              properties:
+                startDateTime:
+                  type: string
+                  format: date-time
+                  description: Start date and time of the measurement period.
+                endDateTime:
+                  type: string
+                  format: date-time
+                  description: End date and time of the measurement period.
+          description: Details on when the vital was measured.
 
     ErrorResponse:
       type: object
