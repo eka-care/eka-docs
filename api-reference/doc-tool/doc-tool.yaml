@@ -613,7 +613,7 @@ paths:
           in: header
           required: True
           description: >-
-            The auth token of the business.  It is used to authenticate the business.
+            The auth token of the user. It is used to authenticate the user.
           schema:
             type: string
           example: >-
@@ -4221,3 +4221,1477 @@ paths:
           description: ''
           headers: { }
       deprecated: false
+components:
+  schemas:
+    AuthLoginRequest:
+      title: AuthLoginRequest
+      required:
+        - client_id
+        - client_secret
+      type: object
+      properties:
+        client_id:
+          type: string
+        client_secret:
+          type: string
+      example:
+        client_id: testing
+        client_secret: 4440ffe2-07e4-3364-a162-887f7652ae5d
+    AuthLogin:
+      title: AuthLogin
+      required:
+        - access_token
+      type: object
+      properties:
+        access_token:
+          type: string
+      example:
+        access_token: >-
+          eyJhbGciOiJIUzI1NiIsInR5cCI010101.eyJleHAiOjE3MjMxMTE3MDYsImlhdCI6MTcyMzEwOTkwNiwiYy1pZCI6InRlc3RpbmcifQ.RqiPmu983VyW8jm1RFW-UrW3m14ZezKqXfBzkKl80
+    200Success:
+      title: 200Success
+      required:
+        - access_token
+      type: object
+      properties:
+        access_token:
+          type: string
+      example:
+        access_token: >-
+          eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjMxMTE3MDYsImlhdCI6MTcyMzEwOTkwNiwiYy1pZCI6InRlc3RpbmcifQ.RqiPmu983VyW8jm1RFW-UrW3m14ZezKqXfBTkElsoPG
+    200OK:
+      title: 200OK
+      required:
+        - data
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Data'
+      example:
+        data:
+          patient_id: '123456789'
+          profile:
+            id: '123456789'
+            created_at: '2024-06-12T21:55:51.593Z'
+            updated_at: '2024-06-17T09:52:55.257Z'
+    Data:
+      title: Data
+      required:
+        - patient_id
+        - profile
+      type: object
+      properties:
+        patient_id:
+          type: string
+        profile:
+          $ref: '#/components/schemas/Profile'
+      example:
+        patient_id: '123456789'
+        profile:
+          id: '123456789'
+          created_at: '2024-06-12T21:55:51.593Z'
+          updated_at: '2024-06-17T09:52:55.257Z'
+    Profile:
+      title: Profile
+      required:
+        - id
+        - created_at
+        - updated_at
+      type: object
+      properties:
+        id:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      example:
+        id: '123456789'
+        created_at: '2024-06-12T21:55:51.593Z'
+        updated_at: '2024-06-17T09:52:55.257Z'
+    Error:
+      title: Error
+      required:
+        - code
+        - message
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      example:
+        code: NOT_ALLOWED
+        message: You are not allowed to add resource
+    403ForbiddenBusinessPatientDetailsMissing1:
+      title: 403ForbiddenBusinessPatientDetailsMissing1
+      required:
+        - data
+        - error
+      type: object
+      properties:
+        data:
+          type: object
+        error:
+          $ref: '#/components/schemas/Error'
+      example:
+        data: { }
+        error:
+          code: NOT_ALLOWED
+          message: You are not allowed to add resource
+    500WrongAPIURLTokenmismatchedWrongJSONrequest.1:
+      title: 500WrongAPIURLTokenmismatchedWrongJSONrequest.1
+      required:
+        - data
+        - error
+      type: object
+      properties:
+        data:
+          type: object
+        error:
+          $ref: '#/components/schemas/Error'
+      example:
+        data: { }
+        error:
+          code: INVALID_DATA
+          message: Data entered in incorrect
+    200OK1:
+      title: 200OK1
+      required:
+        - data
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Data1'
+      example:
+        data:
+          patient_id: '123456789'
+          name: Test Patient
+          clinic_id: '12345678'
+          patient_profile:
+            patient_id: '123456789'
+            first_name: Test
+            middle_name: ''
+            last_name: Patient
+            dob: '1984-11-11'
+            email: ekademo@gmail.com
+            gen: M
+            mobile: '+919999999999'
+            created_at: '2021-03-19T13:15:26.318Z'
+            address:
+              city: Bangalore
+              line1: ABC
+              line2: XYZ
+              pincode: 560049
+              state: Karnataka
+              country: India
+              district: Bangalore Urban
+            metadata:
+              blood_group: AB+
+              aadhar_number: '12345'
+              notes: Has a history of HTN
+              father_name: Test Father
+    Data1:
+      title: Data1
+      required:
+        - patient_id
+        - name
+        - clinic_id
+        - patient_profile
+      type: object
+      properties:
+        patient_id:
+          type: string
+        name:
+          type: string
+        clinic_id:
+          type: string
+        patient_profile:
+          $ref: '#/components/schemas/PatientProfile'
+      example:
+        patient_id: '123456789'
+        name: Test Patient
+        clinic_id: '12345678'
+        patient_profile:
+          patient_id: '123456789'
+          first_name: Test
+          middle_name: ''
+          last_name: Patient
+          dob: '1984-11-11'
+          email: ekademo@gmail.com
+          gen: M
+          mobile: '+919999999999'
+          created_at: '2021-03-19T13:15:26.318Z'
+          address:
+            city: Bangalore
+            line1: ABC
+            line2: XYZ
+            pincode: 560049
+            state: Karnataka
+            country: India
+            district: Bangalore Urban
+          metadata:
+            blood_group: AB+
+            aadhar_number: '12345'
+            notes: Has a history of HTN
+            father_name: Test Father
+    PatientProfile:
+      title: PatientProfile
+      required:
+        - patient_id
+        - first_name
+        - middle_name
+        - last_name
+        - dob
+        - email
+        - gen
+        - mobile
+        - created_at
+        - address
+        - metadata
+      type: object
+      properties:
+        patient_id:
+          type: string
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        dob:
+          type: string
+        email:
+          type: string
+        gen:
+          type: string
+        mobile:
+          type: string
+        created_at:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+      example:
+        patient_id: '123456789'
+        first_name: Test
+        middle_name: ''
+        last_name: Patient
+        dob: '1984-11-11'
+        email: ekademo@gmail.com
+        gen: M
+        mobile: '+919999999999'
+        created_at: '2021-03-19T13:15:26.318Z'
+        address:
+          city: Bangalore
+          line1: ABC
+          line2: XYZ
+          pincode: 560049
+          state: Karnataka
+          country: India
+          district: Bangalore Urban
+        metadata:
+          blood_group: AB+
+          aadhar_number: '12345'
+          notes: Has a history of HTN
+          father_name: Test Father
+    Address:
+      title: Address
+      required:
+        - city
+        - line1
+        - line2
+        - pincode
+        - state
+        - country
+        - district
+      type: object
+      properties:
+        city:
+          type: string
+        line1:
+          type: string
+        line2:
+          type: string
+        pincode:
+          type: integer
+          format: int32
+        state:
+          type: string
+        country:
+          type: string
+        district:
+          type: string
+      example:
+        city: Bangalore
+        line1: ABC
+        line2: XYZ
+        pincode: 560049
+        state: Karnataka
+        country: India
+        district: Bangalore Urban
+    Metadata:
+      title: Metadata
+      required:
+        - blood_group
+        - aadhar_number
+        - notes
+        - father_name
+      type: object
+      properties:
+        blood_group:
+          type: string
+        aadhar_number:
+          type: string
+        notes:
+          type: string
+        father_name:
+          type: string
+      example:
+        blood_group: AB+
+        aadhar_number: '12345'
+        notes: Has a history of HTN
+        father_name: Test Father
+    200OK2:
+      title: 200OK2
+      required:
+        - data
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Data2'
+      example:
+        data:
+          patients:
+            - patient_id: '123456789'
+              name: Test Patient
+              clinic_id: '12345678'
+              patient_profile:
+                patient_id: '123456789'
+                first_name: Test
+                middle_name: ''
+                last_name: Patient
+                dob: '1984-11-11'
+                email: ekademo@gmail.com
+                gen: M
+                mobile: '+919999999999'
+                created_at: '2021-03-19T13:15:26.318Z'
+            - patient_id: '234567890'
+              name: Test PT 2
+              is_recent: false
+              clinic_id: null
+              patient_profile:
+                first_name: Test
+                middle_name: PT
+                last_name: '2'
+                patient_id: '234567890'
+                email: demo_test@eka.care
+                gen: M
+                mobile: '+91999999999'
+                dob: '1991-11-11'
+                created_at: 2021-03-19T13:15:26318Z
+    Data2:
+      title: Data2
+      required:
+        - patients
+      type: object
+      properties:
+        patients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+          description: ''
+      example:
+        patients:
+          - patient_id: '123456789'
+            name: Test Patient
+            clinic_id: '12345678'
+            patient_profile:
+              patient_id: '123456789'
+              first_name: Test
+              middle_name: ''
+              last_name: Patient
+              dob: '1984-11-11'
+              email: ekademo@gmail.com
+              gen: M
+              mobile: '+919999999999'
+              created_at: '2021-03-19T13:15:26.318Z'
+          - patient_id: '234567890'
+            name: Test PT 2
+            is_recent: false
+            clinic_id: null
+            patient_profile:
+              first_name: Test
+              middle_name: PT
+              last_name: '2'
+              patient_id: '234567890'
+              email: demo_test@eka.care
+              gen: M
+              mobile: '+91999999999'
+              dob: '1991-11-11'
+              created_at: 2021-03-19T13:15:26318Z
+    Patient:
+      title: Patient
+      required:
+        - patient_id
+        - name
+        - clinic_id
+        - patient_profile
+      type: object
+      properties:
+        patient_id:
+          type: string
+        name:
+          type: string
+        clinic_id:
+          type: string
+          nullable: true
+        patient_profile:
+          $ref: '#/components/schemas/PatientProfile1'
+        is_recent:
+          type: boolean
+      example:
+        patient_id: '123456789'
+        name: Test Patient
+        clinic_id: '12345678'
+        patient_profile:
+          patient_id: '123456789'
+          first_name: Test
+          middle_name: ''
+          last_name: Patient
+          dob: '1984-11-11'
+          email: ekademo@gmail.com
+          gen: M
+          mobile: '+919999999999'
+          created_at: '2021-03-19T13:15:26.318Z'
+    PatientProfile1:
+      title: PatientProfile1
+      required:
+        - patient_id
+        - first_name
+        - middle_name
+        - last_name
+        - dob
+        - email
+        - gen
+        - mobile
+        - created_at
+      type: object
+      properties:
+        patient_id:
+          type: string
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        dob:
+          type: string
+        email:
+          type: string
+        gen:
+          type: string
+        mobile:
+          type: string
+        created_at:
+          type: string
+      example:
+        patient_id: '123456789'
+        first_name: Test
+        middle_name: ''
+        last_name: Patient
+        dob: '1984-11-11'
+        email: ekademo@gmail.com
+        gen: M
+        mobile: '+919999999999'
+        created_at: '2021-03-19T13:15:26.318Z'
+    200OK3:
+      title: 200OK3
+      required:
+        - data
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Data3'
+      example:
+        data:
+          patients:
+            - oid: '123456789'
+              name: Test Patient
+              clinic_id: '12345678'
+              patient_profile:
+                oid: '123456789'
+                first_name: Test
+                middle_name: ''
+                last_name: Patient
+                dob: '1984-11-11'
+                email: ekademo@gmail.com
+                gen: M
+                mobile: '+919999999999'
+                created_at: '2021-03-19T13:15:26.318Z'
+            - oid: '234567890'
+              name: Test PT 2
+              is_recent: false
+              clinic_id: null
+              patient_profile:
+                first_name: Test
+                middle_name: PT
+                last_name: '2'
+                oid: '234567890'
+                email: demo_test@eka.care
+                gen: M
+                mobile: '+91999999999'
+                dob: '1991-11-11'
+                created_at: 2021-03-19T13:15:26318Z
+    Data3:
+      title: Data3
+      required:
+        - patients
+      type: object
+      properties:
+        patients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient1'
+          description: ''
+      example:
+        patients:
+          - oid: '123456789'
+            name: Test Patient
+            clinic_id: '12345678'
+            patient_profile:
+              oid: '123456789'
+              first_name: Test
+              middle_name: ''
+              last_name: Patient
+              dob: '1984-11-11'
+              email: ekademo@gmail.com
+              gen: M
+              mobile: '+919999999999'
+              created_at: '2021-03-19T13:15:26.318Z'
+          - oid: '234567890'
+            name: Test PT 2
+            is_recent: false
+            clinic_id: null
+            patient_profile:
+              first_name: Test
+              middle_name: PT
+              last_name: '2'
+              oid: '234567890'
+              email: demo_test@eka.care
+              gen: M
+              mobile: '+91999999999'
+              dob: '1991-11-11'
+              created_at: 2021-03-19T13:15:26318Z
+    Patient1:
+      title: Patient1
+      required:
+        - oid
+        - name
+        - clinic_id
+        - patient_profile
+      type: object
+      properties:
+        oid:
+          type: string
+        name:
+          type: string
+        clinic_id:
+          type: string
+          nullable: true
+        patient_profile:
+          $ref: '#/components/schemas/PatientProfile2'
+        is_recent:
+          type: boolean
+      example:
+        oid: '123456789'
+        name: Test Patient
+        clinic_id: '12345678'
+        patient_profile:
+          oid: '123456789'
+          first_name: Test
+          middle_name: ''
+          last_name: Patient
+          dob: '1984-11-11'
+          email: ekademo@gmail.com
+          gen: M
+          mobile: '+919999999999'
+          created_at: '2021-03-19T13:15:26.318Z'
+    PatientProfile2:
+      title: PatientProfile2
+      required:
+        - oid
+        - first_name
+        - middle_name
+        - last_name
+        - dob
+        - email
+        - gen
+        - mobile
+        - created_at
+      type: object
+      properties:
+        oid:
+          type: string
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        dob:
+          type: string
+        email:
+          type: string
+        gen:
+          type: string
+        mobile:
+          type: string
+        created_at:
+          type: string
+      example:
+        oid: '123456789'
+        first_name: Test
+        middle_name: ''
+        last_name: Patient
+        dob: '1984-11-11'
+        email: ekademo@gmail.com
+        gen: M
+        mobile: '+919999999999'
+        created_at: '2021-03-19T13:15:26.318Z'
+    UpdatePatientDetailsAPIRequest:
+      title: UpdatePatientDetailsAPIRequest
+      required:
+        - firstName
+        - middleName
+        - lastName
+        - mobile
+        - email
+        - address
+        - metadata
+      type: object
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        mobile:
+          type: string
+        email:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address1'
+        metadata:
+          $ref: '#/components/schemas/Metadata1'
+      example:
+        firstName: John
+        middleName: Doe
+        lastName: NewLastName
+        mobile: '+91999999999'
+        email: john.doe@example.com
+        address:
+          city: Bangalore
+          line1: ABC
+          line2: XYZ
+          pincode: 560049
+          state: Karnataka
+          country: India
+        metadata:
+          blood_group: AB+
+          aadhar_number: '12345'
+    Address1:
+      title: Address1
+      required:
+        - city
+        - line1
+        - line2
+        - pincode
+        - state
+        - country
+      type: object
+      properties:
+        city:
+          type: string
+        line1:
+          type: string
+        line2:
+          type: string
+        pincode:
+          type: integer
+          format: int32
+        state:
+          type: string
+        country:
+          type: string
+      example:
+        city: Bangalore
+        line1: ABC
+        line2: XYZ
+        pincode: 560049
+        state: Karnataka
+        country: India
+    Metadata1:
+      title: Metadata1
+      required:
+        - blood_group
+        - aadhar_number
+      type: object
+      properties:
+        blood_group:
+          type: string
+        aadhar_number:
+          type: string
+      example:
+        blood_group: AB+
+        aadhar_number: '12345'
+    200-Success1:
+      title: 200-Success1
+      required:
+        - patientId
+      type: object
+      properties:
+        patientId:
+          type: string
+      example:
+        patientId: '1234567890'
+    500patientIdlabPatientIdismissing:
+      title: 500patientIdlabPatientIdismissing
+      required:
+        - message
+        - code
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+          format: int32
+      example:
+        message: Please check data.
+        code: 500
+    200OK4:
+      title: 200OK4
+      required:
+        - id
+        - profile
+      type: object
+      properties:
+        id:
+          type: string
+        profile:
+          $ref: '#/components/schemas/Profile1'
+      example:
+        id: '1234567890'
+        profile:
+          personal:
+            first_name: doctor
+            middle_name: ''
+            last_name: doctor
+            dob: ''
+            gender: M
+          professional:
+            active: true
+            about: doctor doctor is a Cardiologist with 43 years of experience.
+            language:
+              - code: en
+                language: English
+            degree:
+              - name: MD
+                branch_name: ''
+                college_name: ''
+                start_year: ''
+                end_year: ''
+            major_speciality:
+              name: Cardiologist
+              code: CA
+            speciality:
+              - name: General Physician
+              - name: Diabetologist
+              - name: Allergy Specialist
+            clinics:
+              - id: '1234567899876'
+                name: Vagus Hospital & Health Services
+                contacts:
+                  - name: Phone
+                    number: '+91999999999'
+                address:
+                  line1: >-
+                    H No -122/a,, Pocket 2 back side of Yamaha 2 wheeler
+                    showroom., Pocket 2, Gate No :-2, nearest to Homeopathy
+                    clinic.
+                  city: Delhi
+                  country: India
+                  state: Delhi
+                  pin: '110085'
+            default_clinic: '1234567899876'
+    Profile1:
+      title: Profile1
+      required:
+        - personal
+        - professional
+      type: object
+      properties:
+        personal:
+          $ref: '#/components/schemas/Personal'
+        professional:
+          $ref: '#/components/schemas/Professional'
+      example:
+        personal:
+          first_name: doctor
+          middle_name: ''
+          last_name: doctor
+          dob: ''
+          gender: M
+        professional:
+          active: true
+          about: doctor doctor is a Cardiologist with 43 years of experience.
+          language:
+            - code: en
+              language: English
+          degree:
+            - name: MD
+              branch_name: ''
+              college_name: ''
+              start_year: ''
+              end_year: ''
+          major_speciality:
+            name: Cardiologist
+            code: CA
+          speciality:
+            - name: General Physician
+            - name: Diabetologist
+            - name: Allergy Specialist
+          clinics:
+            - id: '1234567899876'
+              name: Vagus Hospital & Health Services
+              contacts:
+                - name: Phone
+                  number: '+91999999999'
+              address:
+                line1: >-
+                  H No -122/a,, Pocket 2 back side of Yamaha 2 wheeler
+                  showroom., Pocket 2, Gate No :-2, nearest to Homeopathy
+                  clinic.
+                city: Delhi
+                country: India
+                state: Delhi
+                pin: '110085'
+          default_clinic: '1234567899876'
+    Personal:
+      title: Personal
+      required:
+        - first_name
+        - middle_name
+        - last_name
+        - dob
+        - gender
+      type: object
+      properties:
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        dob:
+          type: string
+        gender:
+          type: string
+      example:
+        first_name: doctor
+        middle_name: ''
+        last_name: doctor
+        dob: ''
+        gender: M
+    Professional:
+      title: Professional
+      required:
+        - active
+        - about
+        - language
+        - degree
+        - major_speciality
+        - speciality
+        - clinics
+        - default_clinic
+      type: object
+      properties:
+        active:
+          type: boolean
+        about:
+          type: string
+        language:
+          type: array
+          items:
+            $ref: '#/components/schemas/Language'
+          description: ''
+        degree:
+          type: array
+          items:
+            $ref: '#/components/schemas/Degree'
+          description: ''
+        major_speciality:
+          $ref: '#/components/schemas/MajorSpeciality'
+        speciality:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speciality'
+          description: ''
+        clinics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Clinic'
+          description: ''
+        default_clinic:
+          type: string
+      example:
+        active: true
+        about: doctor doctor is a Cardiologist with 43 years of experience.
+        language:
+          - code: en
+            language: English
+        degree:
+          - name: MD
+            branch_name: ''
+            college_name: ''
+            start_year: ''
+            end_year: ''
+        major_speciality:
+          name: Cardiologist
+          code: CA
+        speciality:
+          - name: General Physician
+          - name: Diabetologist
+          - name: Allergy Specialist
+        clinics:
+          - id: '1234567899876'
+            name: Vagus Hospital & Health Services
+            contacts:
+              - name: Phone
+                number: '+91999999999'
+            address:
+              line1: >-
+                H No -122/a,, Pocket 2 back side of Yamaha 2 wheeler showroom.,
+                Pocket 2, Gate No :-2, nearest to Homeopathy clinic.
+              city: Delhi
+              country: India
+              state: Delhi
+              pin: '110085'
+        default_clinic: '1234567899876'
+    Language:
+      title: Language
+      required:
+        - code
+        - language
+      type: object
+      properties:
+        code:
+          type: string
+        language:
+          type: string
+      example:
+        code: en
+        language: English
+    Degree:
+      title: Degree
+      required:
+        - name
+        - branch_name
+        - college_name
+        - start_year
+        - end_year
+      type: object
+      properties:
+        name:
+          type: string
+        branch_name:
+          type: string
+        college_name:
+          type: string
+        start_year:
+          type: string
+        end_year:
+          type: string
+      example:
+        name: MD
+        branch_name: ''
+        college_name: ''
+        start_year: ''
+        end_year: ''
+    MajorSpeciality:
+      title: MajorSpeciality
+      required:
+        - name
+        - code
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+      example:
+        name: Cardiologist
+        code: CA
+    Speciality:
+      title: Speciality
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+      example:
+        name: General Physician
+    Clinic:
+      title: Clinic
+      required:
+        - id
+        - name
+        - contacts
+        - address
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+          description: ''
+        address:
+          $ref: '#/components/schemas/Address2'
+      example:
+        id: '1234567899876'
+        name: Vagus Hospital & Health Services
+        contacts:
+          - name: Phone
+            number: '+91999999999'
+        address:
+          line1: >-
+            H No -122/a,, Pocket 2 back side of Yamaha 2 wheeler showroom.,
+            Pocket 2, Gate No :-2, nearest to Homeopathy clinic.
+          city: Delhi
+          country: India
+          state: Delhi
+          pin: '110085'
+    Contact:
+      title: Contact
+      required:
+        - name
+        - number
+      type: object
+      properties:
+        name:
+          type: string
+        number:
+          type: string
+      example:
+        name: Phone
+        number: '+91999999999'
+    Address2:
+      title: Address2
+      required:
+        - line1
+        - city
+        - country
+        - state
+        - pin
+      type: object
+      properties:
+        line1:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        state:
+          type: string
+        pin:
+          type: string
+      example:
+        line1: >-
+          H No -122/a,, Pocket 2 back side of Yamaha 2 wheeler showroom., Pocket
+          2, Gate No :-2, nearest to Homeopathy clinic.
+        city: Delhi
+        country: India
+        state: Delhi
+        pin: '110085'
+    Err:
+      title: Err
+      required:
+        - code
+        - message
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      example:
+        code: DOCTOR_DATA_INVALID
+        message: Please enter valid doctor data
+    403ForbiddenBusinessPatientDetailsMissing11:
+      title: 403ForbiddenBusinessPatientDetailsMissing11
+      required:
+        - data
+        - err
+      type: object
+      properties:
+        data:
+          type: object
+        err:
+          $ref: '#/components/schemas/Err'
+      example:
+        data: { }
+        err:
+          code: DOCTOR_DATA_INVALID
+          message: Please enter valid doctor data
+    500WrongAPIURLTokenmismatchedWrongJSONrequest.11:
+      title: 500WrongAPIURLTokenmismatchedWrongJSONrequest.11
+      required:
+        - data
+        - err
+      type: object
+      properties:
+        data:
+          type: object
+        err:
+          $ref: '#/components/schemas/Err'
+      example:
+        data: { }
+        err:
+          code: INVALID_DATA
+          message: Data entered in incorrect
+    400BadRequest1:
+      title: 400BadRequest1
+      required:
+        - data
+        - error
+      type: object
+      properties:
+        data:
+          type: object
+        error:
+          $ref: '#/components/schemas/Error'
+      example:
+        data: { }
+        error:
+          code: INVALID_REQUEST_PARAMETERS
+          message: The request contains invalid parameters
+    403Forbidden1:
+      title: 403Forbidden1
+      required:
+        - data
+        - error
+      type: object
+      properties:
+        data:
+          type: object
+        error:
+          $ref: '#/components/schemas/Error'
+      example:
+        data: { }
+        error:
+          code: UNAUTHORIZED_ENTITY
+          message: >-
+            Unauthorized access. Booking appointments for business entities or
+            doctors is not allowed
+    Error24:
+      title: Error24
+      required:
+        - code
+        - message
+        - details
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          $ref: '#/components/schemas/Details'
+      example:
+        code: APPOINTMENT_BOOKING_FAILED
+        message: Unable to book appointment due to unavailable slots
+        details:
+          reason: NO_AVAILABLE_SLOTS
+          doctorId: '12345'
+    Details:
+      title: Details
+      required:
+        - reason
+        - doctorId
+      type: object
+      properties:
+        reason:
+          type: string
+        doctorId:
+          type: string
+      example:
+        reason: NO_AVAILABLE_SLOTS
+        doctorId: '12345'
+    422-UnprocessableEntity1:
+      title: 422-UnprocessableEntity1
+      required:
+        - status
+        - data
+        - error
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        data:
+          type: object
+        error:
+          $ref: '#/components/schemas/Error24'
+      example:
+        status: 422
+        data: { }
+        error:
+          code: APPOINTMENT_BOOKING_FAILED
+          message: Unable to book appointment due to unavailable slots
+          details:
+            reason: NO_AVAILABLE_SLOTS
+            doctorId: '12345'
+    400BadRequest3:
+      title: 400BadRequest3
+      required:
+        - status
+        - data
+        - error
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        data:
+          type: object
+        error:
+          $ref: '#/components/schemas/Error'
+      example:
+        status: 400
+        data: { }
+        error:
+          code: INVALID_REQUEST_PARAMETERS
+          message: The request contains invalid parameters
+    403Forbidden3:
+      title: 403Forbidden3
+      required:
+        - status
+        - data
+        - error
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        data:
+          type: object
+        error:
+          $ref: '#/components/schemas/Error'
+      example:
+        status: 403
+        data: { }
+        error:
+          code: UNAUTHORIZED_ENTITY
+          message: >-
+            Unauthorized access. Booking appointments for business entities or
+            doctors is not allowed
+    PatientInformationUpdatedRequest:
+      title: PatientInformationUpdatedRequest
+      required:
+        - nationalIdentityNumber
+        - patient_merge
+        - Patient middleName
+        - optionCode
+        - Patient Name
+        - country code
+        - wardNo
+        - ethnicity
+        - Patient Contact
+        - Patient City
+        - Patient Designation
+        - labId
+        - zipcode
+        - Patient email
+        - Patient Alternate Contact
+        - ssnNumber
+        - race
+        - referral_id
+        - Patient Address
+        - Patient Dob
+        - status
+        - Mobile Number
+        - Patient firstName
+        - Insurance Details
+        - Patient gender
+        - workerCode
+        - Patient Type
+        - Patient lastName
+        - state
+        - Patient Age
+        - Patient Id
+        - nationality
+        - insuranceNo
+        - Patient Area
+        - old_patient_id
+        - old_user_det_id
+        - Guarantor Details
+        - org_id
+        - mrn
+        - passportNumber
+        - Patient MRN
+        - landmark
+        - areaOfResidance
+        - webhookId
+      type: object
+      properties:
+        nationalIdentityNumber:
+          type: string
+        patient_merge:
+          type: integer
+          format: int32
+        Patient middleName:
+          type: string
+        optionCode:
+          type: string
+        Patient Name:
+          type: string
+        country code:
+          type: string
+        wardNo:
+          type: string
+        ethnicity:
+          type: string
+        Patient Contact:
+          type: string
+        Patient City:
+          type: string
+        Patient Designation:
+          type: string
+        labId:
+          type: integer
+          format: int32
+        zipcode:
+          type: string
+        Patient email:
+          type: string
+        Patient Alternate Contact:
+          type: string
+        ssnNumber:
+          type: string
+        race:
+          type: string
+        referral_id:
+          type: string
+        Patient Address:
+          type: string
+        Patient Dob:
+          type: string
+        status:
+          type: string
+        Mobile Number:
+          type: string
+        Patient firstName:
+          type: string
+        Insurance Details:
+          type: array
+          items:
+            type: string
+          description: ''
+        Patient gender:
+          type: string
+        workerCode:
+          type: string
+        Patient Type:
+          type: string
+        Patient lastName:
+          type: string
+        state:
+          type: string
+        Patient Age:
+          type: string
+        Patient Id:
+          type: integer
+          format: int32
+        nationality:
+          type: string
+        insuranceNo:
+          type: string
+        Patient Area:
+          type: string
+        old_patient_id:
+          type: integer
+          format: int32
+        old_user_det_id:
+          type: integer
+          format: int32
+        Guarantor Details:
+          type: object
+        org_id:
+          type: string
+        mrn:
+          type: string
+        passportNumber:
+          type: string
+        Patient MRN:
+          type: string
+        landmark:
+          type: string
+        areaOfResidance:
+          type: string
+        webhookId:
+          type: integer
+          format: int32
+      example:
+        nationalIdentityNumber: ''
+        patient_merge: 0
+        Patient middleName: ''
+        optionCode: ''
+        Patient Name: Dummy Patient 12
+        country code: '44'
+        wardNo: Angola
+        ethnicity: Hispanic or Latino
+        Patient Contact: ''
+        Patient City: Pune
+        Patient Designation: Mr.
+        labId: 1336
+        zipcode: '123432'
+        Patient email: Test@gmail.com
+        Patient Alternate Contact: '1234554321'
+        ssnNumber: ''
+        race: ''
+        referral_id: '1665687'
+        Patient Address: ''
+        Patient Dob: '2022-01-01'
+        status: Patient Information Update
+        Mobile Number: '1234554321'
+        Patient firstName: Dummy
+        Insurance Details: [ ]
+        Patient gender: Male
+        workerCode: ''
+        Patient Type: I
+        Patient lastName: Patient
+        state: Maharashtra
+        Patient Age: 2 years
+        Patient Id: 18178
+        nationality: Indian
+        insuranceNo: ''
+        Patient Area: Baner, Pune, Maharashtra, India
+        old_patient_id: 0
+        old_user_det_id: 0
+        Guarantor Details: { }
+        org_id: '179510'
+        mrn: ''
+        passportNumber: ''
+        Patient MRN: 11234MRN
+        landmark: ''
+        areaOfResidance: Pune
+        webhookId: 58
