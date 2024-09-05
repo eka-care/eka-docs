@@ -42,53 +42,50 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | patient_oid | string |  | In case patient oid already exists use this
-        - no need for whole profile |
+        | patient_id | string |  | In case Eka patient_id already exists use this
+        - no need for profile metadata |
 
-        | designation | varchar(10) | Mr./Miss/Mrs./Dr | Patient Designation | Optional |
+        | designation | string | Mr./Miss/Mrs. | Patient Designation | Optional |
 
-        | first_name | varchar(100) | Test | First Name | Required |
+        | first_name | string | Rahul | First Name | Required |
 
-        | middle_name | varchar(100) |  | Middle Name | Optional |
+        | middle_name | string | Kumar | Middle Name | Optional |
 
-        | last_name | varchar(100) | Patient | Last Name | Optional |
+        | last_name | string | Sharma | Last Name | Optional |
 
         | dob | Date | 1987-01-06 | Patient DOB | Required |
 
-        | age | varchar(20) | 36 | Patient Age | Optional |
+        | age | string | 36 | Patient Age | Optional |
 
-        | mobile | varchar(15) | +919999999999 | Mobile Number with country code | Required
-        |
+        | mobile | string | +919876543210 | Mobile Number with country code | Required |
 
-        | gender | varchar(10) | M/F/O | Patient Gender | Required |
+        | gender | string | M/F/O | Patient Gender | Required |
 
-        | email | varchar(100) |
-        [test@orbi.health](https://mailto:pp@orbi.health) | Patient Email
-        Address | Optional |
+        | email | string | rahul.sharma@example.com | Patient Email Address | Optional |
 
-        | address | object |  | Address Object | Optional |
+        | address | object | | Address Object | Optional |
 
-        | address.city | varchar(300) | Bangalore | City | Optional |
+        | address.city | string | Mumbai | City | Optional |
 
-        | address.line1 | varchar(300) | ABC | Address Line 1 | Optional |
+        | address.line1 | string | 123, Shanti Nagar | Address Line 1 | Optional |
 
-        | address.line2 | varchar(300) | XYZ | Address Line 2 | Optional |
+        | address.line2 | string | Near City Hospital | Address Line 2 | Optional |
 
-        | address.pincode | int(11) | 560049 | Pincode | Optional |
+        | address.pincode | int | 400001 | Pincode | Optional |
 
-        | address.state | varchar(100) | Karnataka | State | Optional |
+        | address.state | string | Maharashtra | State | Optional |
 
-        | address.country | varchar(100) | India | Country | Optional |
+        | address.country | string | India | Country | Optional |
 
-        | metadata | object |  | Metadata Object (Set of key-value pairs) | Optional |
+        | metadata | object | | Metadata Object (Set of key-value pairs) | Optional |
 
-        | metadata.blood_group | varchar(10) | AB+ | Blood Group | Optional |
+        | metadata.blood_group | string | B+ | Blood Group | Optional |
 
-        | metadata.aadhar_number | varchar(20) | 12345 | Aadhar Number | Optional |
-        
-        | metadata.UHID | varchar(20) | VP128 | Unique Health ID | Optional |
-        
-        | doctor_id (to_be_deprecated) | varchar(20) | 12345 | doctor_id | Required |
+        | metadata.aadhar_number | string | 123456789012 | Aadhar Number | Optional |
+
+        | metadata.UHID | string | MH2024001 | Unique Health ID | Optional |
+
+        | doctor_id (to_be_deprecated) | string | DOC12345 | doctor_id | Required |
 
 
         ### Response Parameters
@@ -100,7 +97,7 @@ paths:
 
         | response | object |  | Response Object |
 
-        | response.patient_oid | string | 1234567890 | Generated Patient OID |
+        | response.patient_id | string | 1234567890 | Generated Patient ID |
 
         | response.profile | object |  | Profile Object |
 
@@ -141,7 +138,7 @@ paths:
             schema:
               type: string
             example:
-              patient_oid: "123456789"
+              patient_id: "123456789"
               designation: "Mr."
               first_name: "Test"
               middle_name: ""
@@ -215,14 +212,14 @@ paths:
                   - $ref: '#/components/schemas/200OK'
                   - example:
                       data:
-                        patient_oid: '123456789'
+                        patient_id: '123456789'
                         profile:
                           id: '123456789'
                           created_at: '2024-06-12T21:55:51.593Z'
                           updated_at: '2024-06-17T09:52:55.257Z'
               example:
                 data:
-                  patient_oid: '123456789'
+                  patient_id: '123456789'
                   profile:
                     id: '123456789'
                     created_at: '2024-06-12T21:55:51.593Z'
@@ -297,9 +294,7 @@ paths:
         | ----------------------------------- | --------- | ----------------------------------------- | --------------------------------------------------------- |
         
         | data                                | object    |                                           | Response data object                                      |
-        
-        | data.last_visit                     | datetime  | "2024-05-17T12:36:43.136Z"                | Timestamp of last visit                                   |
-        
+                
         | data.name                           | string    | "John Doe"                                | Patient's full name                                       |
         
         | data.patient_id                     | string    | "987654321012345"                         | Unique identifier for the patient                         |
@@ -566,8 +561,6 @@ paths:
         | data                                | object    |                                           | Response data object                                      |
         
         | data.profiles                       | array     |                                           | List of patient profiles                                  |
-        
-        | data.profiles[].last_visit          | string \| null | null                                     | Timestamp of last visit (can be null)                     |
         
         | data.profiles[].name                | string    | "Amit Kumar"                              | Patient's full name                                       |
         
@@ -1636,7 +1629,7 @@ paths:
         
         | --- | --- | --- | --- | --- |
         
-        | patient_oid | string | | In case patient oid already exists use this - no need for whole profile | Optional |
+        | patient_id | string | | In case patient oid already exists use this - no need for whole profile | Optional |
         
         | designation | string | Mr./Miss/Mrs | Patient Designation | Optional |
         
@@ -2932,7 +2925,7 @@ paths:
         
         | data.doctor_oid | string | Unique identifier for the doctor |
         
-        | data.patient_oid | string | Unique identifier for the patient |
+        | data.patient_id | string | Unique identifier for the patient |
         
         | data.clinic_id | string | Unique identifier for the clinic |
         
@@ -3044,7 +3037,7 @@ paths:
                         format: date-time
                       doctor_oid:
                         type: string
-                      patient_oid:
+                      patient_id:
                         type: string
                       clinic_id:
                         type: string
@@ -3115,7 +3108,7 @@ paths:
                     aid: example_appointment_id
                     created_at: '2023-07-30T18:07:24.000Z'
                     doctor_oid: "{{doctor_id}}"
-                    patient_oid: "{{patient_id}}"
+                    patient_id: "{{patient_id}}"
                     clinic_id: "{{clinic_id}}"
                     channel: Offline
                     status: CM
@@ -4258,7 +4251,7 @@ components:
           $ref: '#/components/schemas/Data'
       example:
         data:
-          patient_oid: '123456789'
+          patient_id: '123456789'
           profile:
             id: '123456789'
             created_at: '2024-06-12T21:55:51.593Z'
@@ -4266,16 +4259,16 @@ components:
     Data:
       title: Data
       required:
-        - patient_oid
+        - patient_id
         - profile
       type: object
       properties:
-        patient_oid:
+        patient_id:
           type: string
         profile:
           $ref: '#/components/schemas/Profile'
       example:
-        patient_oid: '123456789'
+        patient_id: '123456789'
         profile:
           id: '123456789'
           created_at: '2024-06-12T21:55:51.593Z'
@@ -4354,12 +4347,11 @@ components:
           $ref: '#/components/schemas/Data1'
       example:
         data:
-          patient_oid: '123456789'
+          patient_id: '123456789'
           name: Test Patient
-          last_visit: '2024-06-06T10:56:50.468Z'
           clinic_id: '12345678'
           patient_profile:
-            patient_oid: '123456789'
+            patient_id: '123456789'
             first_name: Test
             middle_name: ''
             last_name: Patient
@@ -4384,30 +4376,26 @@ components:
     Data1:
       title: Data1
       required:
-        - patient_oid
+        - patient_id
         - name
-        - last_visit
         - clinic_id
         - patient_profile
       type: object
       properties:
-        patient_oid:
+        patient_id:
           type: string
         name:
-          type: string
-        last_visit:
           type: string
         clinic_id:
           type: string
         patient_profile:
           $ref: '#/components/schemas/PatientProfile'
       example:
-        patient_oid: '123456789'
+        patient_id: '123456789'
         name: Test Patient
-        last_visit: '2024-06-06T10:56:50.468Z'
         clinic_id: '12345678'
         patient_profile:
-          patient_oid: '123456789'
+          patient_id: '123456789'
           first_name: Test
           middle_name: ''
           last_name: Patient
@@ -4432,7 +4420,7 @@ components:
     PatientProfile:
       title: PatientProfile
       required:
-        - patient_oid
+        - patient_id
         - first_name
         - middle_name
         - last_name
@@ -4445,7 +4433,7 @@ components:
         - metadata
       type: object
       properties:
-        patient_oid:
+        patient_id:
           type: string
         first_name:
           type: string
@@ -4468,7 +4456,7 @@ components:
         metadata:
           $ref: '#/components/schemas/Metadata'
       example:
-        patient_oid: '123456789'
+        patient_id: '123456789'
         first_name: Test
         middle_name: ''
         last_name: Patient
@@ -4558,12 +4546,11 @@ components:
       example:
         data:
           patients:
-            - patient_oid: '123456789'
+            - patient_id: '123456789'
               name: Test Patient
-              last_visit: '2024-06-06T10:56:50.468Z'
               clinic_id: '12345678'
               patient_profile:
-                patient_oid: '123456789'
+                patient_id: '123456789'
                 first_name: Test
                 middle_name: ''
                 last_name: Patient
@@ -4572,16 +4559,15 @@ components:
                 gen: M
                 mobile: '+919999999999'
                 created_at: '2021-03-19T13:15:26.318Z'
-            - patient_oid: '234567890'
+            - patient_id: '234567890'
               name: Test PT 2
-              last_visit: null
               is_recent: false
               clinic_id: null
               patient_profile:
                 first_name: Test
                 middle_name: PT
                 last_name: '2'
-                patient_oid: '234567890'
+                patient_id: '234567890'
                 email: demo_test@eka.care
                 gen: M
                 mobile: '+91999999999'
@@ -4600,12 +4586,11 @@ components:
           description: ''
       example:
         patients:
-          - patient_oid: '123456789'
+          - patient_id: '123456789'
             name: Test Patient
-            last_visit: '2024-06-06T10:56:50.468Z'
             clinic_id: '12345678'
             patient_profile:
-              patient_oid: '123456789'
+              patient_id: '123456789'
               first_name: Test
               middle_name: ''
               last_name: Patient
@@ -4614,16 +4599,15 @@ components:
               gen: M
               mobile: '+919999999999'
               created_at: '2021-03-19T13:15:26.318Z'
-          - patient_oid: '234567890'
+          - patient_id: '234567890'
             name: Test PT 2
-            last_visit: null
             is_recent: false
             clinic_id: null
             patient_profile:
               first_name: Test
               middle_name: PT
               last_name: '2'
-              patient_oid: '234567890'
+              patient_id: '234567890'
               email: demo_test@eka.care
               gen: M
               mobile: '+91999999999'
@@ -4632,20 +4616,16 @@ components:
     Patient:
       title: Patient
       required:
-        - patient_oid
+        - patient_id
         - name
-        - last_visit
         - clinic_id
         - patient_profile
       type: object
       properties:
-        patient_oid:
+        patient_id:
           type: string
         name:
           type: string
-        last_visit:
-          type: string
-          nullable: true
         clinic_id:
           type: string
           nullable: true
@@ -4654,12 +4634,11 @@ components:
         is_recent:
           type: boolean
       example:
-        patient_oid: '123456789'
+        patient_id: '123456789'
         name: Test Patient
-        last_visit: '2024-06-06T10:56:50.468Z'
         clinic_id: '12345678'
         patient_profile:
-          patient_oid: '123456789'
+          patient_id: '123456789'
           first_name: Test
           middle_name: ''
           last_name: Patient
@@ -4671,7 +4650,7 @@ components:
     PatientProfile1:
       title: PatientProfile1
       required:
-        - patient_oid
+        - patient_id
         - first_name
         - middle_name
         - last_name
@@ -4682,7 +4661,7 @@ components:
         - created_at
       type: object
       properties:
-        patient_oid:
+        patient_id:
           type: string
         first_name:
           type: string
@@ -4701,7 +4680,7 @@ components:
         created_at:
           type: string
       example:
-        patient_oid: '123456789'
+        patient_id: '123456789'
         first_name: Test
         middle_name: ''
         last_name: Patient
@@ -4723,7 +4702,6 @@ components:
           patients:
             - oid: '123456789'
               name: Test Patient
-              last_visit: '2024-06-06T10:56:50.468Z'
               clinic_id: '12345678'
               patient_profile:
                 oid: '123456789'
@@ -4737,7 +4715,6 @@ components:
                 created_at: '2021-03-19T13:15:26.318Z'
             - oid: '234567890'
               name: Test PT 2
-              last_visit: null
               is_recent: false
               clinic_id: null
               patient_profile:
@@ -4765,7 +4742,6 @@ components:
         patients:
           - oid: '123456789'
             name: Test Patient
-            last_visit: '2024-06-06T10:56:50.468Z'
             clinic_id: '12345678'
             patient_profile:
               oid: '123456789'
@@ -4779,7 +4755,6 @@ components:
               created_at: '2021-03-19T13:15:26.318Z'
           - oid: '234567890'
             name: Test PT 2
-            last_visit: null
             is_recent: false
             clinic_id: null
             patient_profile:
@@ -4797,7 +4772,6 @@ components:
       required:
         - oid
         - name
-        - last_visit
         - clinic_id
         - patient_profile
       type: object
@@ -4806,9 +4780,6 @@ components:
           type: string
         name:
           type: string
-        last_visit:
-          type: string
-          nullable: true
         clinic_id:
           type: string
           nullable: true
@@ -4819,7 +4790,6 @@ components:
       example:
         oid: '123456789'
         name: Test Patient
-        last_visit: '2024-06-06T10:56:50.468Z'
         clinic_id: '12345678'
         patient_profile:
           oid: '123456789'
