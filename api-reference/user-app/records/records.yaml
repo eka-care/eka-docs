@@ -16,7 +16,84 @@ tags:
   - name: Records
     description: API related to records document management.
 paths:
-  /mr/api/v3/docs:
+  /mr/api/v1/docs:
+    get:
+      summary: Fetch documents based on filters
+      description: To get the list of all the records for an given patient oid
+      operationId: getDocuments
+      parameters:
+        - name: sort
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Sort order of the documents.
+      responses:
+        '200':
+          description: A list of documents matching the query.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            record:
+                              type: object
+                              properties:
+                                item:
+                                  type: object
+                                  properties:
+                                    documentId:
+                                      type: string
+                                      description: Unique ID of the document.
+                                      example: df04c7e6-577b-4990-948c-5a31820c6a67
+                                    uploadDate:
+                                      type: string
+                                      format: date-time
+                                      description: Date when the document was uploaded.
+                                      example: 2024-08-06T07:39:35Z
+                                    documentType:
+                                      type: string
+                                      description: Type of the document.
+                                      example: TYPE_LAB_REPORT
+                                    metadata:
+                                      type: object
+                                      properties:
+                                        thumbnail:
+                                          type: string
+                                          format: uri
+                                          description: URL of the document's thumbnail.
+                                          example: https://vault-cdn.dev.eka.care/fac0704e-a0e3-4c93-a972-e6c1f188592d/df04c7e6-577b-4990-948c-5a31820c6a67/5dbc4b75-df1a-412d-82a3-77d54671398c.jpeg
+                                        documentDate:
+                                          type: string
+                                          format: date-time
+                                          description: Date of the document.
+                                          example: 2021-09-08T18:30:00Z
+                                        tags:
+                                          type: array
+                                          items:
+                                            type: string
+                                            description: Tags associated with the document.
+                                            example: TYPE_TAG_SMART
+                                    patientOid:
+                                      type: string
+                                      description: Patient OID associated with the document.
+                                      example: 161494290947153
+        '400':
+          description: Bad Request. Invalid or missing parameters.
+        '401':
+          description: Unauthorized. Invalid JWT token or client ID.
+        '500':
+          description: Internal Server Error.
+      security:
+        - auth: []
     post:
       operationId: getAuthorization
       tags:
@@ -128,122 +205,73 @@ paths:
                     HostId: "NjZf6f4Yo3LwikPHTwtyS02TEftaoWWvS8BmfRlQmA5pwllX6FHyMuO4hNVT0AIBOwKHFoEFkk8="
         '500':
           description: Internal Server Error
-
-  /mr/api/v4/docs:
+  /mr/api/v1/docs/{doc_id}:
     get:
-      summary: Fetch documents based on filters
-      description: To get the list of all the records for an given patient oid
-      operationId: getDocuments
+      summary: Describes a document.
+      description: Once you get the list of all the documents with coresponding id's, you can this to know more details about the document.
+      operationId: getDocument
       parameters:
-        - name: oid
-          in: query
+        - in: path
+          name: doc_id
           required: true
           schema:
             type: string
-          description: Object ID to filter documents.
-        - name: sort
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Sort order of the documents.
-        - name: flavour
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Flavour to specify the type of documents to fetch.
-
+            example: 2df9e795-d368-4ceb-be9d-b44281703827
       responses:
         '200':
-          description: A list of documents matching the query.
+          description: Description of a document.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  response:
-                    type: object
-                    properties:
-                      items:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            record:
-                              type: object
-                              properties:
-                                item:
-                                  type: object
-                                  properties:
-                                    documentId:
-                                      type: string
-                                      description: Unique ID of the document.
-                                      example: df04c7e6-577b-4990-948c-5a31820c6a67
-                                    uploadDate:
-                                      type: string
-                                      format: date-time
-                                      description: Date when the document was uploaded.
-                                      example: 2024-08-06T07:39:35Z
-                                    documentType:
-                                      type: string
-                                      description: Type of the document.
-                                      example: TYPE_LAB_REPORT
-                                    metadata:
-                                      type: object
-                                      properties:
-                                        thumbnail:
-                                          type: string
-                                          format: uri
-                                          description: URL of the document's thumbnail.
-                                          example: https://vault-cdn.dev.eka.care/fac0704e-a0e3-4c93-a972-e6c1f188592d/df04c7e6-577b-4990-948c-5a31820c6a67/5dbc4b75-df1a-412d-82a3-77d54671398c.jpeg
-                                        documentDate:
-                                          type: string
-                                          format: date-time
-                                          description: Date of the document.
-                                          example: 2021-09-08T18:30:00Z
-                                        tags:
-                                          type: array
-                                          items:
-                                            type: string
-                                            description: Tags associated with the document.
-                                            example: TYPE_TAG_SMART
-                                        cta:
-                                          type: object
-                                          properties:
-                                            pid:
-                                              type: string
-                                              description: PID for CTA.
-                                              example: deepthought_page
-                                            params:
-                                              type: object
-                                              properties:
-                                                context:
-                                                  type: string
-                                                  description: Context parameter for the CTA.
-                                                  example: '{"prescription_id":"P-PP-68F9D6EC-536B-4BC2-8366-EBEA8C42E35E"}'
-                                                page_type:
-                                                  type: string
-                                                  description: Page type for the CTA.
-                                                  example: smart_prescription
-                                            ctaParamsProto:
-                                              type: string
-                                              description: CTA parameters in proto format.
-                                              example: '{"context":"{\"prescription_id\":\"P-PP-68F9D6EC-536B-4BC2-8366-EBEA8C42E35E\"}","page_type":"smart_prescription"}'
-                                    patientOid:
-                                      type: string
-                                      description: Patient OID associated with the document.
-                                      example: 161494290947153
-                                hash:
-                                  type: string
-                                  description: Hash of the document.
-                                  example: b81bc27bc1e7608a93dcf675ecc21125aaf9351c88bdbde55f0a3b01ccc6c234
-        '400':
-          description: Bad Request. Invalid or missing parameters.
-        '401':
-          description: Unauthorized. Invalid JWT token or client ID.
-        '500':
-          description: Internal Server Error.
+                  source:
+                    type: string
+                  document_date:
+                    type: string
+                    format: date-time
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  dt:
+                    type: string
+                    enum:
+                      - TYPE_LAB_REPORT
+                      - TYPE_PRESCRIPTION
+                      - TYPE_DISCHARGE_SUMMARY
+                      - TYPE_VACCINE_CERTIFICATE
+                      - TYPE_INSURANCE
+                      - TYPE_INVOICE
+                      - TYPE_SCAN
+                      - TYPE_OTHER
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset_url:
+                          type: string
+                          format: uri
+                        file_type:
+                          type: string
+                          enum:
+                            - IMG
+                            - PDF
+              example:
+                source: "androidp"
+                document_date: "2021-03-13T13:01:59Z"
+                document_type: TYPE_LAB_REPORT
+                tags: ["covid"]
+                files:
+                  - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/161494290947153/2df9e795-d368-4ceb-be9d-b44281703827/0cb1277e-1c4d-42cc-acd1-9630497e4f9d.jpeg
+                    file_type: IMG
+                  - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/161494290947153/2df9e795-d368-4ceb-be9d-b44281703827/0cb1277e-1c4d-42cc-acd1-9630497e4f9d.pdf
+                    file_type: PDF
+        '5XX':
+          description: Unexpected error.
+        '404':
+          description: No such document.
       security:
         - auth: []
 
@@ -434,7 +462,8 @@ paths:
   /mr/webhook/smart-report:
     post:
       summary: Smart Report Events
-      description: When the records get uploaded, a webhook event is sent to register to get the smart report of the record upload. If there are multiple records upload in upload docs API we need to register web hook for all the document id recevied in the reponse. Use the below request payload to register to webhook. You can find [here](https://ekacare.notion.site/726b13df13ea4409b0cd30c6f3a80315?v=dcd10c722d3149d880ae889b06f4820a) list of parsing capablities we have as of now. 
+      description: >-
+        When the records get uploaded, a webhook event is sent to register to get the smart report of the record upload. If there are multiple records upload in upload docs API we need to register web hook for all the document id recevied in the reponse. Use the below request payload to register to webhook. You can find [here](https://ekacare.notion.site/726b13df13ea4409b0cd30c6f3a80315?v=dcd10c722d3149d880ae889b06f4820a) list of parsing capablities we have as of now.
       requestBody:
         required: true
         content:
@@ -471,7 +500,7 @@ paths:
           description: Something went wrong
       security:
         - auth: []
-  /vault/api/smart-report/{random_access_token}:
+  /mr/api/smart-report/{random_access_token}:
     get:
       summary: Retrieve the smart report
       description: This API is temporary accessible, the random_access_token will be recevied in webook url shared by you while registering webook for uploaded document 
@@ -713,28 +742,9 @@ components:
         url:
           type: string
         fields:
-          $ref: '#/components/schemas/Fields'
-
-    Fields:
-      type: object
-      properties:
-        Content-Type:
-          type: string
-        Policy:
-          type: string
-        X-Amz-Algorithm:
-          type: string
-        X-Amz-Credential:
-          type: string
-        X-Amz-Date:
-          type: string
-        X-Amz-Security-Token:
-          type: string
-        X-Amz-Signature:
-          type: string
-        key:
-          type: string
-
+          type: object
+          additionalProperties:
+            type: string
   securitySchemes:
     auth:
       type: apiKey
