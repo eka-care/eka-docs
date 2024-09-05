@@ -1,0 +1,35 @@
+## Overview
+
+The Eka API Authentication process ensures secure access to sensitive healthcare data through a robust authentication process. To interact with the APIs, third-party developers must obtain an access token, use it in all API requests, and handle token expiration efficiently. This guide outlines the essential steps to securely integrate with Eka's API.
+
+### Key Components
+
+- **Client Application:** A third-party application that communicates with Eka's API.
+- **Eka API Gateway:** The server-side component that authenticates and processes API requests.
+
+<Steps>
+<Step title="Obtain an Access Token">
+    Authenticate your client using the [login](/api-reference/authorization/client-login) API. This will return both an access token and a refresh token, which you will use for subsequent API requests.
+</Step>
+
+<Step title="Using the Access Token">
+    Include the access token in the `auth` header of every API request to authenticate and access Eka’s services
+</Step>
+
+<Step title="Handle Token Expiration">
+    To ensure continuous access to the API, implement logic to manage token expiration and renewal.
+
+    - If an API request returns a `401 Unauthorized` status code, it indicates that the access token has expired.
+    - Use the [refresh token](/api-reference/authorization/refresh-token) API to obtain a new access token and re-authenticate.
+</Step>
+</Steps>
+
+---
+
+## Best Practices
+
+- Safeguard your client credentials (client_id and client_secret) at all times.
+- Implement a reliable token renewal mechanism to handle token expiration.
+- Always include the access token in the `auth` header for all API calls.
+- Manage 401 Unauthorized errors gracefully by automatically refreshing the token.
+- Ensure that your application complies with all privacy regulations when handling healthcare data.
