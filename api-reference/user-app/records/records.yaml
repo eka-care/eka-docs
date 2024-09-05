@@ -247,6 +247,43 @@ paths:
       security:
         - auth: []
 
+  /mr/api/v1/docs/{doc_id}:
+    get:
+      summary: Describes a document.
+      description: Once you get the list of all the documents with coresponding id's, you can this to know more details about the document.
+      operationId: getDocument
+      parameters:
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+            example: 2df9e795-d368-4ceb-be9d-b44281703827
+      responses:
+        '200':
+          description: Description of a document.
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                source: "androidp"
+                document_date: "2021-03-13T13:01:59Z"
+                document_type: LAB_REPORT
+                tags: ["covid"]
+                files:
+                  - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/161494290947153/2df9e795-d368-4ceb-be9d-b44281703827/0cb1277e-1c4d-42cc-acd1-9630497e4f9d.jpeg
+                    file_type: IMG
+                    share_text: Shared via eka care app
+                  - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/161494290947153/2df9e795-d368-4ceb-be9d-b44281703827/0cb1277e-1c4d-42cc-acd1-9630497e4f9d.pdf
+                    file_type: PDF
+        '5XX':
+          description: Unexpected error.
+        '404':
+          description: No such document.
+      security:
+        - auth: []
+
   /health/api/v1/fhir/retrieve:
     get:
       summary: Retrieve health records
@@ -434,7 +471,8 @@ paths:
   /mr/webhook/smart-report:
     post:
       summary: Smart Report Events
-      description: When the records get uploaded, a webhook event is sent to register to get the smart report of the record upload. If there are multiple records upload in upload docs API we need to register web hook for all the document id recevied in the reponse. Use the below request payload to register to webhook. You can find [here](https://ekacare.notion.site/726b13df13ea4409b0cd30c6f3a80315?v=dcd10c722d3149d880ae889b06f4820a) list of parsing capablities we have as of now. 
+      description: >-
+        When the records get uploaded, a webhook event is sent to register to get the smart report of the record upload. If there are multiple records upload in upload docs API we need to register web hook for all the document id recevied in the reponse. Use the below request payload to register to webhook. You can find [here](https://ekacare.notion.site/726b13df13ea4409b0cd30c6f3a80315?v=dcd10c722d3149d880ae889b06f4820a) list of parsing capablities we have as of now.
       requestBody:
         required: true
         content:
@@ -471,7 +509,7 @@ paths:
           description: Something went wrong
       security:
         - auth: []
-  /vault/api/smart-report/{random_access_token}:
+  /mr/api/smart-report/{random_access_token}:
     get:
       summary: Retrieve the smart report
       description: This API is temporary accessible, the random_access_token will be recevied in webook url shared by you while registering webook for uploaded document 
