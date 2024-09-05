@@ -4,12 +4,12 @@ info:
   contact: { }
   version: '1.0'
 servers:
-  - description: Production
-    url: https://api.eka.care
-  - description: Stage/Sandbox
-    url: https://api.dev.eka.care
+- description: Production
+  url: https://api.eka.care
+- description: Stage/Sandbox
+  url: https://api.dev.eka.care
 paths:
-  /dr/v1/business/doctor/patient/add:
+  /v1/business/doctor/patient/add:
     post:
       tags:
         - Patient Registration API
@@ -28,7 +28,7 @@ paths:
         <Warning> Right now adding a patient is done wrt to a specific doctor,
         which automatically adds the patient to the business directory as well. 
         This will be `deprecated` soon by adding patient directly to a business (WIP). </Warning>
-        
+
         
         
         ### Request Parameters
@@ -116,11 +116,10 @@ paths:
         • 200: Success
 
 
-        • 404: Patient data missing
+        • 403: Patient data missing
 
 
-        • 500: Something went wrong
-
+        • 500: Wrong API URL/Token mismatched/Wrong JSON request.
       operationId: AddPatienttoDirectory
       parameters:
         - name: auth
@@ -290,13 +289,13 @@ paths:
         ### **Response parameter**
 
 
-        | Parameter | Type | Expected Values | Description |
+        | Parameter                           | Type      | Expected Values                           | Description                                               |
         
-        | --- |  --- |  --- |  --- |
+        | ----------------------------------- | --------- | ----------------------------------------- | --------------------------------------------------------- |
         
         | data                                | object    |                                           | Response data object                                      |
-        
-        | data.name                           | string    | "Amit Kumar"                                | Patient's full name                                       |
+                
+        | data.name                           | string    | "John Doe"                                | Patient's full name                                       |
         
         | data.patient_id                     | string    | "987654321012345"                         | Unique identifier for the patient                         |
         
@@ -306,7 +305,7 @@ paths:
         
         | data.patient_profile.address.city   | string    | "Bengaluru"                               | City of residence                                         |
         
-        | data.patient_profile.address.line1  | string    | "ABC, B Grade Metropolis"              | Address line 1                                            |
+        | data.patient_profile.address.line1  | string    | "ABC, Brigade Metropolis,"              | Address line 1                                            |
         
         | data.patient_profile.address.pincode| string    | "560048"                                  | Pincode                                                   |
         
@@ -314,30 +313,30 @@ paths:
         
         | data.patient_profile.dob            | date      | "1990-05-17"                              | Patient's date of birth                                   |
         
-        | data.patient_profile.email          | string    | "amit.kumar@example.com"                    | Patient's email address                                   |
+        | data.patient_profile.email          | string    | "john.doe@example.com"                    | Patient's email address                                   |
         
-        | data.patient_profile.first_name     | string    | "Amit"                                    | Patient's first name                                      |
+        | data.patient_profile.first_name     | string    | "John"                                    | Patient's first name                                      |
         
         | data.patient_profile.middle_name    | string    | ""                                        | Patient's middle name (can be empty)                      |
         
-        | data.patient_profile.last_name      | string    | "Kumar"                                     | Patient's last name                                       |
+        | data.patient_profile.last_name      | string    | "Doe"                                     | Patient's last name                                       |
         
         | data.patient_profile.gender         | string    | "M"/"F"/"O"                                    | Patient's gender                                          |
         
         | data.patient_profile.metadata       | object    |                                           | Metadata related to the patient                           |
         
-        | data.patient_profile.metadata.blood_group | string | "AB+"                                    | Patient's blood group                                     |
+        | data.patient_profile.metadata.blood_group | string | ""                                    | Patient's blood group                                     |
         
         | data.patient_profile.metadata.uhid  | string    | "DESK-177"                                | Unique Health Identifier (UHID)                           |
         
         | data.patient_profile.mobile         | string    | "+919876543210"                           | Patient's mobile number                                   |
         
-        | data.patient_profile.patient_id     | string | "987654321012345"                               | Unique identifier for the patient        |
+        | data.patient_profile.patient_id     | string \| null | null                                 | Unique identifier for the patient (can be null)           |
         
         | status_code                         | integer   | 200                                       | HTTP status code of the response                          |
         
         | success                             | boolean   | true                                      | Indicates if the request was successful                   |
-        
+
         
         
         **Status Codes**
@@ -442,7 +441,9 @@ paths:
                             alternate_phone: '+919876543211'
                             marital_status: "Married"
                             tag: "tag#1"
+
                           created_at: '2024-08-12T09:23:45.678Z'
+
                       status_code: 200
                       success: true
         '404':
@@ -537,8 +538,8 @@ paths:
         <Note> This API only works on 10 digit mobile number and cannot be used for searching partial phone numbers.
         The patient with given mobile number should already be registered with business account for results to show up. </Note>
         
-        
-        
+
+
         ### Request Parameter
 
 
@@ -1487,7 +1488,7 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | doctor_id | string |  | Unique identifier for the doctor | Required |
+        | doctor_oid | string |  | Unique identifier for the doctor | Required |
 
 
         ### **Response parameter**
@@ -1628,7 +1629,7 @@ paths:
         
         | --- | --- | --- | --- | --- |
         
-        | patient_id | string | | In case patient id already exists use this - no need for whole profile | Optional |
+        | patient_id | string | | In case patient oid already exists use this - no need for whole profile | Optional |
         
         | designation | string | Mr./Miss/Mrs | Patient Designation | Optional |
         
@@ -2168,7 +2169,7 @@ paths:
         
         #### Doctor and Clinic Information
         
-        
+  
         | Parameter | Type | Expected Values | Description | Required/Optional/Not Required |
         
         | --- | --- | --- | --- | --- |
@@ -2922,7 +2923,7 @@ paths:
         
         | data.created_at | datetime | Appointment creation timestamp |
         
-        | data.doctor_id | string | Unique identifier for the doctor |
+        | data.doctor_oid | string | Unique identifier for the doctor |
         
         | data.patient_id | string | Unique identifier for the patient |
         
@@ -2967,11 +2968,11 @@ paths:
         | data.service.post_pay | boolean | Indicates if post-payment is allowed |
         
         | data.service.service_name | string | Name of the service |
-        
+                
         | data.service.appointment_type | string | Type of appointment (`REGULAR`, etc.) |
-      
-      
-
+        
+        
+        
       operationId: GetappointmentDetails
       parameters:
         - name: auth
@@ -3034,7 +3035,7 @@ paths:
                       created_at:
                         type: string
                         format: date-time
-                      doctor_id:
+                      doctor_oid:
                         type: string
                       patient_id:
                         type: string
@@ -3106,7 +3107,7 @@ paths:
                   data:
                     aid: example_appointment_id
                     created_at: '2023-07-30T18:07:24.000Z'
-                    doctor_id: "{{doctor_id}}"
+                    doctor_oid: "{{doctor_id}}"
                     patient_id: "{{patient_id}}"
                     clinic_id: "{{clinic_id}}"
                     channel: Offline
@@ -3641,168 +3642,121 @@ paths:
         - Prescription API
       summary: Get Prescription details
       description: >-
-        This API retrieves comprehensive details of a prescription created by a doctor. It provides a rich set of data encompassing patient history, diagnosis, medications, lab tests, and various other clinical elements. The response includes:
+        This API can be used to fetch details of a prescription created by
+        doctor.
 
-          1. Basic Prescription Info: Includes unique identifiers (rx_id, visit_id), creation timestamp, and associated doctor and patient details.
-
-          2. Clinical Data:
-             - Symptoms: Detailed symptom information including severity and duration.
-             - Diagnosis: Primary diagnoses made by the doctor.
-             - Medications: Comprehensive medication details including dosage, frequency, duration, and special instructions. Both oral medications and injections are covered.
-             - Lab Tests: Prescribed laboratory tests with testing dates and types (e.g., routine, urgent).
-             - Vitals: Any recorded vital signs or lab results, including their interpretations.
-
-          3. Patient History:
-             - Current Medications: Ongoing treatments the patient is undergoing.
-             - Allergies: Both drug and food/environmental allergies.
-             - Medical Conditions: Pre-existing and newly diagnosed conditions.
-             - Family History: Relevant medical history of family members.
-             - Lifestyle Factors: Information on habits like smoking, alcohol consumption, etc.
-             - Past Procedures: Previous surgeries or significant medical procedures.
-             - Travel History: Recent travel information relevant to the diagnosis.
-
-          4. Treatment Plan:
-             - Advices: General medical advice given by the doctor.
-             - Examinations: Physical examinations performed during the visit.
-
-          5. Prescription URL: A link to access the full prescription document in PDF format.
-
-          This API is designed to provide a holistic view of the patient's current medical situation and the doctor's prescribed treatment plan. It's particularly useful for follow-up care, referrals to specialists, and maintaining a comprehensive electronic health record.
 
         **Response Parameters**
 
+
         | Parameter | Type | Description |
-        
+
         | --- | --- | --- |
-        
+
         | data | object | Response data object |
-        
-        | data.rx_id | string | Unique Prescription ID |
-        
-        | data.visit_id | string | Associated Appointment ID |
-        
-        | data.created_at | datetime | Timestamp of prescription creation |
-        
+
+        | data.rx_id | string | Prescription ID |
+
+        | data.visit_id | string | Appointment ID |
+
+        | data.created_at | datetime | Timestamp when the prescription was
+        created |
+
         | data.doctor | object | Object containing doctor details |
-        
-        | data.doctor.id | string | Unique Doctor ID |
-        
+
+        | data.doctor.id | string | Doctor ID |
+
         | data.patient | object | Object containing patient details |
-        
-        | data.patient.id | string | Unique Patient ID |
-        
-        | data.selected_clinic | string | ID of the selected clinic |
-        
-        | data.rx_url | string | URL to access the prescription PDF |
-        
-        | data.visit_name | string | Name or purpose of the visit |
-        
-        | data.rx_entities | object | Comprehensive object containing prescription details |
-        
-        | data.rx_entities.symptoms | array | Array of patient symptoms |
-        
-        | data.rx_entities.symptoms[].id | string | Unique Symptom ID |
-        
-        | data.rx_entities.symptoms[].name | string | Name of the symptom |
-        
-        | data.rx_entities.symptoms[].properties | object | Properties of the symptom (e.g., severity, duration) |
-        
+
+        | data.patient.id | string | Patient ID |
+
+        | data.selected_clinic | string | Selected clinic ID |
+
+        | data.rx_url | string | URL to the prescription |
+
+        | data.visit_name | string | Name of the visit |
+
+        | data.rx_entities | object | Object containing prescription entities |
+
+        | data.rx_entities.symptoms | array | Array of symptoms |
+
+        | data.rx_entities.symptoms\[\].id | string | Symptom ID |
+
+        | data.rx_entities.symptoms\[\].name | string | Name of the symptom |
+
+        | data.rx_entities.symptoms\[\].properties | object | Object containing
+        properties of the symptom |
+
+        | data.rx_entities.symptoms\[\].properties.since | string | Duration
+        since the symptom started |
+
+        | data.rx_entities.symptoms\[\].properties.severity | string | Severity
+        of the symptom |
+
+        | data.rx_entities.symptoms\[\].properties.abc | string | Additional
+        property of the symptom |
+
         | data.rx_entities.diagnosis | array | Array of diagnoses |
-        
-        | data.rx_entities.diagnosis[].id | string | Unique Diagnosis ID |
-        
-        | data.rx_entities.diagnosis[].name | string | Name of the diagnosis |
-        
-        | data.rx_entities.diagnosis[].properties | object | Additional properties of the diagnosis |
-        
-        | data.rx_entities.medications | array | Array of prescribed medications |
-        
-        | data.rx_entities.medications[].id | string | Unique Medication ID |
-        
-        | data.rx_entities.medications[].name | string | Name of the medication |
-        
-        | data.rx_entities.medications[].generic_name | string | Generic name of the medication |
-        
-        | data.rx_entities.medications[].dosage_form | string | Form of the medication (e.g., tablet, syrup) |
-        
-        | data.rx_entities.medications[].dose | string | Dosage of the medication |
-        
-        | data.rx_entities.medications[].frequency | string | Frequency of medication intake |
-        
-        | data.rx_entities.medications[].duration | string | Duration for which medication should be taken |
-        
-        | data.rx_entities.medications[].timing | string | Timing of medication intake |
-        
-        | data.rx_entities.medications[].instruction | string | Additional instructions for medication |
-        
-        | data.rx_entities.medications[].tapering_dose | array | Tapering dosage instructions, if applicable |
-        
-        | data.rx_entities.lab_tests | array | Array of prescribed lab tests |
-        
-        | data.rx_entities.lab_tests[].id | string | Unique Lab Test ID |
-        
-        | data.rx_entities.lab_tests[].name | string | Name of the lab test |
-        
-        | data.rx_entities.lab_tests[].test_on | datetime | Date when the test should be performed |
-        
-        | data.rx_entities.lab_tests[].repeat_on | datetime | Date when the test should be repeated, if applicable |
-        
-        | data.rx_entities.lab_tests[].testing_type | string | Type of testing (e.g., ROUTINE) |
-        
-        | data.rx_entities.lab_vitals | array | Array of lab vitals recorded |
-        
-        | data.rx_entities.lab_vitals[].id | string | Unique Lab Vital ID |
-        
-        | data.rx_entities.lab_vitals[].name | string | Name of the lab vital |
-        
-        | data.rx_entities.lab_vitals[].value | string | Recorded value of the vital |
-        
-        | data.rx_entities.lab_vitals[].unit | object | Unit of measurement for the vital |
-        
-        | data.rx_entities.lab_vitals[].date | datetime | Date when the vital was recorded |
-        
-        | data.rx_entities.advices | array | Array of medical advices given |
-        
-        | data.rx_entities.advices[].text | string | Advice text |
-        
-        | data.rx_entities.examinations | array | Array of examinations performed |
-        
-        | data.rx_entities.examinations[].name | string | Name of the examination |
-        
-        | data.rx_entities.medical_history | object | Comprehensive medical history of the patient |
-        
-        | data.rx_entities.medical_history.patient_history | object | Detailed patient history |
-        
-        | data.rx_entities.medical_history.patient_history.current_medications | array | Current medications of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.drug_allergy | array | Drug allergies of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.food_other_allergy | array | Food and other allergies of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.family_history | array | Family medical history |
-        
-        | data.rx_entities.medical_history.patient_history.lifestyle_habits | array | Patient's lifestyle habits |
-        
-        | data.rx_entities.medical_history.patient_history.past_procedures | array | Past medical procedures of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.patient_medical_conditions | array | Existing medical conditions of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.recent_travel_history | array | Recent travel history of the patient |
-        
-        | data.rx_entities.medical_history.vitals | array | Recorded vitals of the patient |
 
-        **Status Codes**
+        | data.rx_entities.diagnosis\[\].id | string | Diagnosis ID |
 
-        • 200: Success
-        
-        • 403: Forbidden
-        
-        • 404: Rx id/Business data missing
-        
+        | data.rx_entities.diagnosis\[\].name | string | Name of the diagnosis |
+
+        | data.rx_entities.medications | array | Array of medications |
+
+        | data.rx_entities.medications\[\].name | string | Name of the
+        medication |
+
+        | data.rx_entities.medications\[\].id | string | Medication ID |
+
+        | data.rx_entities.medications\[\].dosage_form | string | Dosage form of
+        the medication |
+
+        | data.rx_entities.medications\[\].frequency | string | Frequency of the
+        medication |
+
+        | data.rx_entities.medications\[\].duration | string | Duration for
+        which the medication should be taken |
+
+        | data.rx_entities.medications\[\].timing | string | Timing of the
+        medication |
+
+        | data.rx_entities.medications\[\].instruction | string | Instruction
+        for taking the medication |
+
+        | data.rx_entities.medications\[\].dose | string | Dose of the
+        medication |
+
+        | data.rx_entities.medications\[\].generic_name | string | Generic name
+        of the medication |
+
+        | data.rx_entities.medications\[\].tapering_dose | array | Array of
+        tapering doses for the medication |
+
+        | data.rx_entities.labTests | array | Array of lab tests |
+
+        | data.rx_entities.labTests\[\].id | string | Lab test ID |
+
+        | data.rx_entities.labTests\[\].name | string | Name of the lab test |
+
+        | data.rx_entities.labTests\[\].partner_id | string | Partner ID for the
+        lab test |
+
+        | data.rx_entities.labTests\[\].remark | string | Remark for the lab
+        test |
+
+
+        **Status codes**
+
+
+        • 200: Success  
+
+        • 403: Forbidden  
+
+        • 404: Rx id/Business data missing  
+
         • 500: Wrong API URL/Wrong JSON request/ Something went wrong
-      
-
-      operationId: GetPrescriptionDetails
+      operationId: GetPrescriptiondetails
       parameters:
         - name: auth
           in: header
@@ -3822,6 +3776,49 @@ paths:
       responses:
         '200':
           description: OK
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Sun, 12 Apr 2020 11:09:57 GMT
+            Content-Length:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: '377'
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+            Vary:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Cookie, Accept-Encoding
+            Content-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: gzip
+            Strict-Transport-Security:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: max-age=15768000
           content:
             application/json:
               schema:
@@ -3832,35 +3829,35 @@ paths:
                     properties:
                       rx_id:
                         type: string
-                        example: "PRES-ID-8B54-5F19-B3DA-58599191F931"
+                        example: "{{rx_id}}"
                       visit_id:
                         type: string
-                        example: "VISIT_ID-26347907-161615972631847-LFZC"
+                        example: "{{appointment_id}}"
                       created_at:
                         type: string
                         format: date-time
-                        example: "2024-09-05T08:52:27.908Z"
+                        example: "2024-03-08T05:50:37.059Z"
                       doctor:
                         type: object
                         properties:
                           id:
                             type: string
-                            example: "111615972631847"
+                            example: "{{doctor_id}}"
                       patient:
                         type: object
                         properties:
                           id:
                             type: string
-                            example: "111493263420736"
+                            example: "{{patient_id}}"
                       selected_clinic:
                         type: string
-                        example: "0104a3fcba83b848f9c9f679"
+                        example: "{{clinic_id}}"
                       rx_url:
                         type: string
-                        example: "<web_pdf_url>"
+                        example: "url"
                       visit_name:
                         type: string
-                        example: "blood pressure high"
+                        example: "Febrile illness, Dengue L"
                       rx_entities:
                         type: object
                         properties:
@@ -3871,13 +3868,22 @@ paths:
                               properties:
                                 id:
                                   type: string
-                                  example: "s-12345"
+                                  example: "id-123"
                                 name:
                                   type: string
-                                  example: "Fever with chills"
+                                  example: "Fever With Chills"
                                 properties:
                                   type: object
-                                  example: { "since": "5 Days", "severity": "High", "body temperature": "98 degrees F", "key1": "value1" }
+                                  properties:
+                                    since:
+                                      type: string
+                                      example: "5 days"
+                                    severity:
+                                      type: string
+                                      example: "high"
+                                    abc:
+                                      type: string
+                                      example: "xyz"
                           diagnosis:
                             type: array
                             items:
@@ -3885,33 +3891,24 @@ paths:
                               properties:
                                 id:
                                   type: string
-                                  example: "d-12345"
+                                  example: "id-2345"
                                 name:
                                   type: string
-                                  example: "Covid -19"
-                                properties:
-                                  type: object
-                                  example: { "since": "5 Days", "status": "Confirmed", "details": "patient was diagnosed with covid yesterday.", "key1": "value1" }
+                                  example: "Febrile illness"
                           medications:
                             type: array
                             items:
                               type: object
                               properties:
-                                id:
-                                  type: string
-                                  example: "b-12345"
                                 name:
                                   type: string
-                                  example: "Benadryl Dr"
-                                generic_name:
+                                  example: "Dolo 650"
+                                id:
                                   type: string
-                                  example: "Dextromethorphan Hydrobromide (15mg/5ml)"
+                                  example: "id-678"
                                 dosage_form:
                                   type: string
-                                  example: "syrup"
-                                dose:
-                                  type: string
-                                  example: "5 ml"
+                                  example: "tablet"
                                 frequency:
                                   type: string
                                   example: "1-1-1"
@@ -3923,243 +3920,115 @@ paths:
                                   example: "After Meal"
                                 instruction:
                                   type: string
-                                  example: "patient is advised to have medicines on time"
-                          #                          injections:
-                          #                            type: array
-                          #                            items:
-                          #                              type: object
-                          #                              properties:
-                          #                                id:
-                          #                                  type: string
-                          #                                name:
-                          #                                  type: string
-                          #                                generic_name:
-                          #                                  type: string
-                          #                                dosage_form:
-                          #                                  type: string
-                          #                                dose:
-                          #                                  type: string
-                          #                                frequency:
-                          #                                  type: string
-                          #                                duration:
-                          #                                  type: string
-                          #                                instruction:
-                          #                                  type: string
-                          #                                infusion_rate:
-                          #                                  type: object
-                          lab_tests:
+                                  example: "drink with water"
+                                dose:
+                                  type: string
+                                  example: "1 tablet"
+                                generic_name:
+                                  type: string
+                                  example: "Paracetamol (650mg)"
+                                tapering_dose:
+                                  type: array
+                                  items: { }
+                          labTests:
                             type: array
                             items:
                               type: object
                               properties:
                                 id:
                                   type: string
-                                  example: "l-2493983"
+                                  example: "id-888"
                                 name:
                                   type: string
-                                  example: "CBC"
-                                test_on:
+                                  example: "Complete Blood Count (CBC)"
+                                partner_id:
                                   type: string
-                                  format: date-time
-                                  example: "2024-09-05T06:30:00.000Z"
-                                repeat_on:
+                                  example: "MP0101"
+                                remark:
                                   type: string
-                                  format: date-time
-                                  example: "2024-09-10T06:30:00.000Z"
-                                testing_type:
-                                  type: string
-                                  example: "ROUTINE"
-                          lab_vitals:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  example: "l-8156869"
-                                name:
-                                  type: string
-                                  example: "Calcium"
-                                value:
-                                  type: string
-                                  example: 10
-                                unit:
-                                  type: object
-                                  example: "mg/dL"
-                                date:
-                                  type: string
-                                  format: date-time
-                          advices:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                text:
-                                  type: string
-                                  example: "avoid spicy food"
-                          examinations:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                name:
-                                  type: string
-                                  example: "Tooth Chattering"
-
-                          vitals:
-                            type: array
-                            example: [
-                              {
-                                "date": "2024-09-05T13:00:19.784Z",
-                                "id": "v-134568",
-                                "name": "Body height",
-                                "value": "23",
-                                "unit": "Cms"
-
-                              },
-                              {
-                                "date": "2024-09-05T13:00:23.705Z",
-                                "id": "v-091802101",
-                                "name": "Blood pressure",
-                                "value": "23",
-                                "unit": "mmHg"
-
-                              },
-                              {
-                                "date": "2024-09-05T13:00:27.337Z",
-                                "id": "v-6780897827",
-                                "name": "Respiratory rate",
-                                "value": "43",
-                                "unit": "/min"
-
-                              },
-                              {
-                                "date": "2024-09-05T13:00:21.867Z",
-                                "id": "v-820011111",
-                                "name": "Body Temperature",
-                                "value": "21",
-                                "unit": "F"
-
-                              }
-                            ]
-                          medical_history:
+                                  nullable: true
+                                  example: null
+                          speciality:
                             type: object
                             properties:
-                              patient_history:
+                              opthal_readings:
                                 type: object
                                 properties:
-                                  current_medications:
-                                    type: array
-                                    example: { "frequency": "6 time in a Hour",
-                                               "id": "b-1098320",
-                                               "name": "D3-Zen 60K Soft Gelatin Capsule",
-                                               "reported_at": "2024-09-05T08:55:44.456Z",
-                                               "since": "5 Months",
-                                               "status": "Active"
-                                    }
-                                  drug_allergy:
-                                    type: array
-                                    example: { "id": "b-901010",
-                                               "name": "Dolo 650 Tablet",
-                                               "reported_at": "2024-09-05T08:54:48.023Z",
-                                               "since": "4 Weeks",
-                                               "status": "Active"
-                                    }
-                                  food_other_allergy:
-                                    type: array
-                                    example: {
-                                      "id": "a-614222324",
-                                      "name": "allergy to animal hair",
-                                      "reported_at": "2024-09-05T08:55:13.590Z",
-                                      "since": "5 Years",
-                                      "status": "Active"
-                                    }
-                                  family_history:
-                                    type: array
-                                    example: {
-                                      "id": "d-1329201",
-                                      "name": "Diabetes mellitus type 2",
-                                      "reported_at": "2024-09-05T08:55:23.854Z",
-                                      "status": "Active",
-                                      "who": "Mother"
-                                    }
-                                  lifestyle_habits:
-                                    type: array
-                                    example: [
-                                      {
-                                        "id": "3",
-                                        "name": "Alcohol",
-                                        "reported_at": "2024-09-05T08:54:20.406Z",
-                                        "since": null,
-                                        "status": "Active"
-                                      },
-                                      {
-                                        "frequency": "Twice a day",
-                                        "id": "1",
-                                        "name": "Tobacco",
-                                        "reported_at": "2024-09-05T08:54:24.287Z",
-                                        "since": "11 Years",
-                                        "status": "Active"
-                                      },
-                                      {
-                                        "frequency": "5 times a day",
-                                        "id": "2",
-                                        "name": "Smoke",
-                                        "reported_at": "2024-09-05T08:54:28.258Z",
-                                        "since": "5 Years",
-                                        "status": "Active"
-                                      }
-                                    ]
-                                  past_procedures:
-                                    type: array
-                                    example: {
-                                      "id": "p-123456",
-                                      "name": "Vasectomy",
-                                      "on": "05-2024",
-                                      "reported_at": "2024-09-05T08:55:00.056Z",
-                                      "status": "Active"
-                                    }
-                                  patient_medical_conditions:
-                                    type: array
-                                    example: [
-                                      {
-                                        "id": "d-12576387902",
-                                        "name": "Diabetes mellitus",
-                                        "reported_at": "2024-09-05T08:54:19.057Z",
-                                        "since": null,
-                                        "status": "Active"
-                                      },
-                                      {
-                                        "id": "d-12980110",
-                                        "name": "Hypothyroidism",
-                                        "reported_at": "2024-09-05T08:54:27.108Z",
-                                        "since": null,
-                                        "status": "Active"
-                                      }
-                                    ]
-                                  recent_travel_history:
-                                    type: array
-                                    example: [
-                                      {
-                                        "id": "locale-recentTravelHistory-1725526477738",
-                                        "name": "Travel History",
-                                        "notes": "china",
-                                        "reported_at": "2024-09-05T08:54:37.738Z",
-                                        "status": ""
-                                      }
-                                    ]
+                                  refraction:
+                                    type: object
+                                    properties:
+                                      rightEye:
+                                        type: object
+                                        properties:
+                                          spherical:
+                                            type: number
+                                            example: -2.25
+                                          cylindrical:
+                                            type: number
+                                            example: -0.75
+                                          axis:
+                                            type: integer
+                                            example: 180
+                                          addPower:
+                                            type: number
+                                            example: 2.00
+                                      leftEye:
+                                        type: object
+                                        properties:
+                                          spherical:
+                                            type: number
+                                            example: -2.00
+                                          cylindrical:
+                                            type: number
+                                            example: -0.50
+                                          axis:
+                                            type: integer
+                                            example: 175
+                                          addPower:
+                                            type: number
+                                            example: 2.00
+                                  ipd:
+                                    type: object
+                                    properties:
+                                      distance:
+                                        type: integer
+                                        example: 62
+                                      near:
+                                        type: integer
+                                        example: 59
+                                  lensAdvised:
+                                    type: object
+                                    properties:
+                                      type:
+                                        type: string
+                                        example: "Progressive"
+                                      material:
+                                        type: string
+                                        example: "Polycarbonate"
+                                      coatings:
+                                        type: array
+                                        items:
+                                          type: string
+                                        example: [ "Anti-reflective", "Blue light filter" ]
+                                  glassAdvised:
+                                    type: object
+                                    properties:
+                                      frame:
+                                        type: string
+                                        example: "Metal"
+                                      style:
+                                        type: string
+                                        example: "Full rim"
+                                      size:
+                                        type: string
+                                        example: "Medium"
 
-        '403':
-          description: Forbidden
-        '404':
-          description: Rx id/Business data missing
-        '500':
-          description: Wrong API URL/Wrong JSON request/ Something went wrong
+      deprecated: false
   /webhook/appointment:
     post:
       tags:
         - Appointment Webhooks
-      summary: Appointment Events
+      summary: Appointment
       description: >-
 
         When an appointment is created/modified or completed, a webhook event is sent to registered
@@ -4168,9 +4037,9 @@ paths:
 
 
         **Example Webhook Event Payload**
+
         
-        
-        
+
         ``` json
 
         {
@@ -4248,7 +4117,7 @@ paths:
 
 
         **Method:** POST
-      operationId: AppointmentWebhook
+      operationId: AppointmentConfirmed
       parameters: [ ]
       requestBody:
         description: ''
@@ -4320,34 +4189,15 @@ paths:
          ```
 
 
-      operationId: PrescriptionWebhook
-      parameters: [ ]
-      requestBody:
-        description: ''
-        content:
-          text/plain:
-            schema:
-              type: string
-              example: |-
-                {
-                  "event_type": "prescription",
-                  "timestamp" : "2023-07-30T18:07:24.000Z",
-                  "partition_id" : "{{prescription_id}}-{{patient_id}}",
-                  "data": {
-                    "appointment_id": {{prescription_id}},
-                    "doctor_id":{{doctor_id}},
-                    "patient_id": {{patient_id}},
-                    "clinic_id": {{clinic_id}},
-                    "action" : "created",
-                    "created_at" : "2023-07-30T18:07:24.000Z",
-                    "modified_at" : "2023-07-30T18:07:24.000Z"
-                    "client_meta" : {
-                        "visit_id" : {{visit_id}}
-                    }
-                  }
-                }
-
-        required: true
+      operationId: Getprescriptiondetails
+      parameters:
+        - name: rx_id
+          in: path
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
       responses:
         '200':
           description: ''
@@ -5827,3 +5677,634 @@ components:
         landmark: ''
         areaOfResidance: Pune
         webhookId: 58
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      name: apikey
+      in: header
+security:
+  - apiKey: [ ]
+tags:
+  - name: Auth
+    description: >-
+      ## **API Authentication Guide for Third Parties**
+
+
+      **Overview**
+
+
+      To interact with our APIs securely, you must first authenticate and obtain
+      an access token. This token must be included in the headers of all
+      subsequent API requests. The token is valid for 30 minutes, after which
+      you will need to re-authenticate to obtain a new token. This guide will
+      walk you through the necessary steps and provide tips on managing token
+      expiration programmatically.
+
+
+      **Step 1: Obtain an Access Token**
+
+
+      The first step in interacting with our API is to authenticate using your
+      client credentials. This will provide you with an access token.
+
+
+      **Authentication Request**
+
+
+      Make a POST request to the authentication endpoint with your client
+      credentials:
+
+
+      ``` bash
+
+      curl --location '{{AUTH_HOST}}/connect-auth/v1/account/login' \
+
+      --header 'Content-Type: application/json' \
+
+      --data '{
+          "client_id": "<client_id_assigned>",
+          "client_secret": "<secret_key_assigned>"
+      }'
+
+       ```
+
+      **Response**
+
+
+      If the authentication is successful, you will receive a JSON response
+      containing the access token:
+
+
+      ``` json
+
+      {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5c1KlsXVCJ9.eyJleHAiOjE3MjMxMDk1NTIsImlhdCI6MTcyMzEwNzc1MiwiYy1pZCI6Im1ldHJvcG9saXMifQ.PdxjlgB3ZK4qGPdYwqfptAaZvBsGtSjqYLSN0wp1"
+      }
+
+       ```
+
+      The access_token is valid for 30 minutes.
+
+
+      **Step 2: Use the Access Token**
+
+
+      Include the access token in the `auth` header for all subsequent API
+      requests. This token is essential for the API gateway to authenticate your
+      requests and allow access.
+
+
+      **Example API Request**
+
+
+      Here’s how to include the access token in your API requests:
+
+
+      ``` bash
+
+      curl --location '{{HOST}}/api-suite/v1/any-endpoint' \
+
+      --header 'auth:
+      eyJhbGciOiJIUzI1NiIsInR5c1KlsXVCJ9.eyJleHAiOjE3MjMxMDk1NTIsImlhdCI6MTcyMzEwNzc1MiwiYy1pZCI6Im1ldHJvcG9saXMifQ.PdxjlgB3ZK4qGPdYwqfptAaZvBsGtSjqYLSN0wp1'
+      \
+
+      --header 'Content-Type: application/json'
+
+       ```
+
+      **Token Expiration and Renewal**
+
+
+      The access token is valid for **30 minutes.** After this period, you must
+      re-authenticate to obtain a new token. Failing to do so will result in
+      authentication errors for your API requests.
+
+
+      **Error Handling**
+
+
+      If the token is expired or not included in the `auth` header, all API
+      requests will return a **401 Unauthorized** status code. Ensure your
+      application handles this scenario by prompting re-authentication or
+      renewing the token as needed.
+
+
+      **Summary**
+
+
+      1\. **Authenticate:** Obtain an access token using your client
+      credentials.
+
+
+      2\. **Authorize:** Include the access token in the auth header for all API
+      requests.
+
+
+      3\. **Token Management:** Ensure the token is renewed every 30 minutes to
+      maintain continuous access. Implement token renewal logic in your
+      application to handle this automatically.
+
+
+      4.**Error Handling:** Handle 401 Unauthorized errors by re-authenticating
+      and obtaining a new token.
+  - name: Patient Registration API
+    description: >-
+      ### Overview
+
+
+      The Patient Directory API is designed to manage patient information within
+      a business' directory. This API allows for searching, adding, and editing
+      patient details in a specific doctor's directory. It facilitates efficient
+      patient management and ensures that all necessary information is
+      up-to-date and easily accessible.
+
+
+      ### Main Actors
+
+
+      - **Patient:** The individual whose information is being managed in the
+      doctor's directory. This includes personal details, contact information,
+      medical history, and other relevant data.
+      
+      
+      ### Functionality
+
+
+      1. **Search for Patients:**
+      
+          1. This functionality allows users to search for existing patients in a business' directory using various search criteria such as mobile number, name, etc. It helps in quickly locating patient records and retrieving relevant details.
+      
+      2. **Add a Patient:**
+      
+          1. This functionality enables the addition of new patient records to a business' directory. Users can provide necessary details such as personal information, contact details, and medical history to create a new patient profile.
+      
+      3. **Edit a Patient:**
+      
+          1. This functionality allows users to update existing patient records in a doctor's directory. Users can modify personal details, contact information, and other relevant data to ensure that the patient profile remains accurate and current.
+      
+      
+      ### Example Endpoints
+
+
+      - **Search for Patients:**
+      
+          - `GET {{HOST}}/v1/business/patients/search?mobile=`
+      
+      - **Add a Patient:**
+      
+          - `POST {{HOST}}/v1/business/doctor/{{doctor_id}}/patient/add`
+      
+      - **Edit a Patient:**
+      
+          - `PUT {{HOST}}/v1/business/doctor/{{doctor_id}}/patient/{{patient_id}}`
+      
+      
+      ### Usage
+
+
+      These APIs are crucial for maintaining an organized and comprehensive
+      patient directory within a business' practice. They ensure that patient
+      data is readily available, easily searchable, and always up-to-date, thus
+      enhancing the overall efficiency of patient management.
+
+
+      ### Notes
+
+
+      - Ensure that all required fields are provided when adding or editing
+      patient information.
+      
+      - Use appropriate search criteria to narrow down patient records
+      effectively.
+      
+      - Handle sensitive patient data with care and comply with relevant privacy
+      regulations.
+      
+      - Currently a patient can only be added in a reference to a doctor in a
+      business. This lets adding the patient to business directory as well as
+      searching on business level automatically.
+  - name: Doctor and clinic API
+    description: >-
+      ### Purpose
+
+
+      The Doctor and Clinic Details API serves the following main purposes:
+
+
+      1. **Retrieve Doctor Profile Details:**
+      
+          - This API provides detailed information about a doctor's profile, including their professional background, specialties, and contact information.
+      
+      2. **Fetch Associated Clinic Details\[WIP\]:**
+      
+          - In addition to the doctor's profile, this API retrieves information about the clinics associated with the doctor. This includes clinic locations, contact details, and available services.
+      
+      3. **Get Clinic and Doctor Details for a Business:**  
+          This API provides a comprehensive list of clinics and doctors associated with those clinics for a business, allowing for detailed information retrieval about the entire business entity.
+      
+      
+      ### **Basic Information**
+
+
+      **Endpoint 1: Get Doctor Details**
+
+
+      • **URL:** {{HOST}}/v1/business/doctor/{doctor_id}
+
+
+      • **Method:** GET
+
+
+      **Endpoint 2: Get Clinic and Doctor Details for a Business**
+
+
+      • **URL:** {{HOST}}/v1/business/entities
+
+
+      • **Method:** GET
+
+
+      ### Usage
+
+
+      This API is intended to be used by healthcare platforms, patient
+      management systems, and appointment booking systems to display
+      comprehensive information about doctors and their associated clinics. By
+      integrating this API, users can make informed decisions when selecting a
+      healthcare provider or booking an appointment.
+
+
+      ### Example Workflow
+
+
+      1. **Fetch Doctor Profile:**
+      
+          - Retrieve detailed information about a specific doctor using their unique identifier.
+      
+      2. **Fetch Clinic Details:**
+      
+          - Retrieve details of a clinics associated with the doctor.
+      
+      3. **Fetch Clinic and Doctor Details for a Business:**  
+          •Retrieve a list of clinics, each with associated doctors, and detailed profiles of the doctors using a single API call.
+  - name: Appointment API
+    description: >-
+      #### Appointment API allows a business to to the following actions:
+
+
+      - Search for all slots daywise for a doctor and clinic.
+      
+      - Book appointment on a particular slot.
+      
+      - Check in a patient with appointment.
+      
+      - Get details of an appointment.
+      
+      - Edit/Delete/Reschedule appointments.
+      
+      
+      ## Workflow for Booking an Appointment for a Patient
+
+
+      ### Step 1: Add Patient to Business' Directory (if not present)
+
+
+      Before booking an appointment, ensure that the patient is added to the
+      business' directory. Use the following API to add a patient.
+
+
+      _Note: You can also create an appointment without adding patient first.
+      Providing patient details while creating an appointment adds the patient
+      directory too._
+
+
+      **Endpoint:** `{{HOST}}/v1/business/doctor/{{doctor_id}}/patient/add`
+
+
+      **Method:** POST
+
+
+      ### Step 2: Search for Available Slots
+
+
+      Once the patient is added, select the doctor and clinic, and search for
+      the available slots for the desired dates.
+
+
+      **Endpoint:**
+      `{{HOST}}/v1/business/doctor/{doctor_id}/clinic/{clinic_id}/appointments/slots?start_date={{start_date}}&end_date={{end_date}}`
+
+
+      **Method:** GET
+
+
+      ### Step 3: Book an Appointment Slot
+
+
+      After finding an available slot, book the appointment for the desired date
+      and slot, including additional parameters like type of appointment and
+      payment mode. The appointment will be created in this step
+
+
+      **Endpoint:**
+      `{{HOST}}/v2/business/doctor/{doctor_id}/appointments/slots/book`
+
+
+      **Method:** POST
+
+
+      ### Step 4(Optional): Check-In Patient for Appointment
+
+
+      Check-in a patient for a previously created appointment using the
+      appointment ID.  
+
+      **Endpoint** :
+      `{{HOST}}/v2/business/appointments/{{appointment_id}}/check-in`  
+
+      **Method:** PUT
+
+
+      ### Step 5: Get Appointment Details
+
+
+      **Purpose**
+
+
+      Retrieve details of a specific appointment using the appointment ID.
+
+
+      **Endpoint :** `{{HOST}}/dr/v1/business/appointments/{appointment_id}`  
+
+      **Method:** GET
+
+
+      #### Request Parameters
+
+
+      - **business_id**: The unique identifier for the business.
+      
+      - **appointment_id**: The unique identifier for the appointment.
+      
+      
+      ### Step 6: Edit and Reschedule Appointments
+
+
+      **Purpose:** Edit and reschedule existing appointments. The current
+      process to reschedule an appointment is
+
+
+      1. Delete the current appointment using appointment_id
+      
+      2. Create a new appointment with new details/slots/timinga/
+      
+      
+      **Cancel Endpoint:**
+      `{{HOST}}/v2/business/appointments/{appointment_id}/cancel`
+
+
+      **Book Endppoint:**
+      `{{HOST}}/v2/business/doctor/{doctor_id}/appointments/slots/book`  
+
+      Method:** PUT  
+
+      **Description:** Modify details of an existing appointment or reschedule
+      it to a different slot.
+  - name: Prescription API
+    description: >-
+      The Prescription API allows a business to manage prescriptions, including
+      retrieving details of a specific prescription.
+
+
+      ## Workflow for Managing a Prescription
+
+
+      ### Step 1: Retrieve Prescription Details
+
+
+      Retrieve details of a specific prescription using the prescription ID.
+
+
+      **Endpoint:** `{{HOST}}/v1/business/prescription/{{rx_id}}`
+
+
+      **Method:** `GET`
+
+
+      **Request Parameters:**
+
+
+      - **rx_id**: The unique identifier for the prescription.
+      
+      
+      Response
+
+
+      ``` json
+
+      {
+          "data": {
+              "rx_id": "rx_id",
+              "visit_id": "appointment_id",
+              "date": "2024-03-08T05:50:37.059Z",
+              "doctor": {
+                  "id": "doctor_id"
+              },
+              "patient": {
+                  "id": "patient_id"
+              },
+              "selected_clinic": "clinic_id",
+              "rx_url": "pdf_url",
+              "visit_name": "Febrile illness, Dengue L",
+              "rx_entities": {
+                  "symptoms": [
+                      {
+                          "id": "s-1234",
+                          "name": "Fever With Chills",
+                          "properties": {
+                              "since": "5 days",
+                              "severity": "high",
+                              "abc": "xyz"
+                          }
+                      }
+                  ],
+                  "diagnosis": [
+                      {
+                          "id": "d-1345",
+                          "name": "Febrile illness"
+                      }
+                  ],
+                  "medications": [
+                      {
+                          "name": "Dolo 650",
+                          "id": "b-13456",
+                          "dosage_form": "tablet",
+                          "frequency": "1-1-1",
+                          "duration": "5 Days",
+                          "timing": "After Meal",
+                          "instruction": "drink with water",
+                          "dose": "1 tablet",
+                          "generic_name": "Paracetamol (650mg)",
+                          "tapering_dose": []
+                      }
+                  ],
+                  "labTests": [
+                      {
+                          "id": "lp-14567",
+                          "name": "Complete Blood Count (CBC)",
+                          "partner_id": "MP0101",
+                          "remark": null
+                      }
+                  ]
+              }
+          }
+      }
+
+       ```
+
+      ### Field Definitions
+
+
+      - **rx_id**: `string` - Unique identifier for the prescription.
+      
+      - **visit_id**: `string` - Unique identifier for the visit during which
+      the prescription was created.
+      
+      - **date**: `string` (ISO 8601) - Date and time when the prescription was
+      created.
+      
+      - **doctor**: `object` - Information about the doctor who created the
+      prescription.
+      
+          - **id**: `string` - Unique identifier for the doctor.
+      
+      - **patient**: `object` - Information about the patient for whom the
+      prescription was created.
+      
+          - **id**: `string` - Unique identifier for the patient.
+      
+      - **selected_clinic**: `string` - Unique identifier for the clinic where
+      the prescription was created.
+      
+      - **rx_url**: `string` - URL to download/view the prescription PDF.
+      
+      - **visit_name**: `string` - Description or name of the visit.
+      
+      - **rx_entities**: `object` - Contains detailed information about the
+      prescription entities.
+      
+          - **symptoms**: `array` - List of symptoms.
+      
+              - **id**: `string` - Unique identifier for the symptom.
+      
+              - **name**: `string` - Name of the symptom.
+      
+              - **properties**: `object` - Additional properties of the symptom.
+      
+                  - **since**: `string` - Duration of the symptom.
+      
+                  - **severity**: `string` - Severity of the symptom.
+      
+                  - **abc**: `string` - Other property (example).
+      
+          - **diagnosis**: `array` - List of diagnoses.
+      
+              - **id**: `string` - Unique identifier for the diagnosis.
+      
+              - **name**: `string` - Name of the diagnosis.
+      
+          - **medications**: `array` - List of medications.
+      
+              - **name**: `string` - Name of the medication.
+      
+              - **id**: `string` - Unique identifier for the medication.
+      
+              - **dosage_form**: `string` - Form of the dosage (e.g., tablet).
+      
+              - **frequency**: `string` - Frequency of taking the medication.
+      
+              - **duration**: `string` - Duration for taking the medication.
+      
+              - **timing**: `string` - Timing for taking the medication.
+      
+              - **instruction**: `string` - Additional instructions for taking the medication.
+      
+              - **dose**: `string` - Dose of the medication.
+      
+              - **generic_name**: `string` - Generic name of the medication.
+      
+              - **tapering_dose**: `array` - Tapering dose information if applicable.
+      
+          - **labTests**: `array` - List of lab tests.
+      
+              - **id**: `string` - Unique identifier for the lab test.
+      
+              - **name**: `string` - Name of the lab test.
+      
+              - **partner_id**: `string` - Identifier for the partner providing the lab test.
+      
+              - **remark**: `string` - Additional remarks for the lab test.
+  - name: Appointment Webhooks
+  - name: Prescription Webhooks
+    description: >-
+      A webhook event for a prescription being created would typically be a POST
+      request sent to the registered webhook URL. The payload of the request
+      would include the relevant details such as prescription ID, appointment
+      ID, doctor ID, patient ID, and the event type.
+
+
+      **Request Headers**
+
+
+      ```
+
+      Content-Type: application/json
+
+       ```
+
+      **Request Body**
+
+
+      ``` json
+
+      {
+        "event_type": "prescription_created",
+        "data": {
+          "rx_id": "P-AN-AAB74FCF-52ED-537E-8032-ED69CD1D5A76",
+          "appointment_id": "09779b1b-4b2a-453b-8854-2fc0af2f1d93",
+          "doctor_id": "168085238706770",
+          "patient_id": "170313939719215"
+        }
+      }
+
+       ```
+
+      **Field Definitions**
+
+
+      • **event_type**: string - Type of the event. For this example, it is
+      “prescription_created”.
+
+
+      • **data**: object - Contains the details of the prescription event.
+
+
+      • **rx_id**: string - Unique identifier for the prescription.
+
+
+      • **appointment_id**: string - Unique identifier for the appointment
+      during which the prescription was created.
+
+
+      • **doctor_id**: string - Unique identifier for the doctor who created the
+      prescription.
+
+
+      • **patient_id**: string - Unique identifier for the patient for whom the
+      prescription was created.
+
+
+      This JSON payload would be sent as the body of a POST request to the
+      registered webhook URL. The receiving system can then process this
+      information as needed.
+  - name: Patient Information Webhooks
