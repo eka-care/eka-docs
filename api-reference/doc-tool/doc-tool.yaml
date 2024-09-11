@@ -1092,7 +1092,7 @@ paths:
         
         ### Endpoint
         
-        **URL:** `{{HOST}}/v1/business/doctor/{{doctor_id}}`
+        **URL:** `{{HOST}}/dr/v1/business/doctor/{{doctor_id}}`
         
         
         **Method:** GET
@@ -1268,16 +1268,14 @@ paths:
         • 500: Wrong API URL/Token mismatched/Wrong JSON request.
       operationId: GetDoctorprofile
       parameters:
-        - name: Content-Type
+        - name: auth
           in: header
           description: ''
           required: true
           style: simple
           schema:
-            enum:
-              - application/json
             type: string
-            example: application/json
+            example: 'auth'
         - name: doctor_id
           in: path
           description: ''
@@ -1340,21 +1338,22 @@ paths:
                       id: '1234567890'
                       profile:
                         personal:
-                          first_name: doctor
+                          first_name: Rahul
                           middle_name: ''
-                          last_name: doctor
-                          dob: ''
+                          last_name: Kumar
+                          dob: '1970-01-01'
                           gender: M
+                          pic: "https://a.eka.care/doctor-avatar/170062845263102"
                         professional:
                           active: true
                           about: >-
-                            doctor doctor is a Cardiologist with 43 years of
+                            Dr. Rahul Kumar is a Cardiologist with 43 years of
                             experience.
                           language:
                             - code: en
                               language: English
                           degree:
-                            - name: MD
+                            - name: "MBBS,MD"
                               branch_name: ''
                               college_name: ''
                               start_year: ''
@@ -1382,52 +1381,6 @@ paths:
                                 state: Delhi
                                 pin: '110085'
                           default_clinic: '1234567899876'
-              example:
-                id: '1234567890'
-                profile:
-                  personal:
-                    first_name: doctor
-                    middle_name: ''
-                    last_name: doctor
-                    dob: ''
-                    gender: M
-                  professional:
-                    active: true
-                    about: >-
-                      doctor doctor is a Cardiologist with 43 years of
-                      experience.
-                    language:
-                      - code: en
-                        language: English
-                    degree:
-                      - name: MD
-                        branch_name: ''
-                        college_name: ''
-                        start_year: ''
-                        end_year: ''
-                    major_speciality:
-                      name: Cardiologist
-                      code: CA
-                    speciality:
-                      - name: General Physician
-                      - name: Diabetologist
-                      - name: Allergy Specialist
-                    clinics:
-                      - id: '1234567899876'
-                        name: Vagus Hospital & Health Services
-                        contacts:
-                          - name: Phone
-                            number: '+91999999999'
-                        address:
-                          line1: >-
-                            H No -122/a,, Pocket 2 back side of Yamaha 2 wheeler
-                            showroom., Pocket 2, Gate No :-2, nearest to
-                            Homeopathy clinic.
-                          city: Delhi
-                          country: India
-                          state: Delhi
-                          pin: '110085'
-                    default_clinic: '1234567899876'
         '403':
           description: Forbidden
           headers: { }
@@ -3666,6 +3619,14 @@ paths:
              - Examinations: Physical examinations performed during the visit.
 
           5. Prescription URL: A link to access the full prescription document in PDF format.
+        
+          6. Specialty Information:
+              - Ophthalmic Data: Detailed eye examination results including:
+                     * Current Spectacle Prescription
+                     * Final Prescription
+                     * Intraocular Pressure (IOP) Measurements
+                     * Subjective Refraction
+                     * Vision Assessment
 
           This API is designed to provide a holistic view of the patient's current medical situation and the doctor's prescribed treatment plan. It's particularly useful for follow-up care, referrals to specialists, and maintaining a comprehensive electronic health record.
 
@@ -3924,29 +3885,6 @@ paths:
                                 instruction:
                                   type: string
                                   example: "patient is advised to have medicines on time"
-                          #                          injections:
-                          #                            type: array
-                          #                            items:
-                          #                              type: object
-                          #                              properties:
-                          #                                id:
-                          #                                  type: string
-                          #                                name:
-                          #                                  type: string
-                          #                                generic_name:
-                          #                                  type: string
-                          #                                dosage_form:
-                          #                                  type: string
-                          #                                dose:
-                          #                                  type: string
-                          #                                frequency:
-                          #                                  type: string
-                          #                                duration:
-                          #                                  type: string
-                          #                                instruction:
-                          #                                  type: string
-                          #                                infusion_rate:
-                          #                                  type: object
                           lab_tests:
                             type: array
                             items:
@@ -4005,7 +3943,6 @@ paths:
                                 name:
                                   type: string
                                   example: "Tooth Chattering"
-
                           vitals:
                             type: array
                             example: [
@@ -4148,6 +4085,89 @@ paths:
                                         "status": ""
                                       }
                                     ]
+                          speciality:
+                            type: object
+                            properties:
+                              opthal:
+                                type: object
+                                properties:
+                                  op_current_spec:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        eye:
+                                          type: string
+                                          example: "RE"
+                                        id:
+                                          type: string
+                                          example: "ek-2676755484"
+                                        name:
+                                          type: string
+                                          example: "Right Eye"
+                                        sph:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        cyl:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        add:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        dva:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                  op_final_prescription:
+                                    type: array
+                                    items:
+                                      $ref: '#/components/schemas/OpthalPrescription'
+                                  op_iop:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        eye:
+                                          type: string
+                                          example: "RE"
+                                        id:
+                                          type: string
+                                          example: "ek-2676755484"
+                                        name:
+                                          type: string
+                                          example: "Right Eye"
+                                        cct:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        ciop:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        gat:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        nct:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                  op_subjective_refraction:
+                                    type: array
+                                    items:
+                                      $ref: '#/components/schemas/OpthalPrescription'
+                                  op_vision:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        eye:
+                                          type: string
+                                          example: "RE"
+                                        id:
+                                          type: string
+                                          example: "ek-2676755484"
+                                        name:
+                                          type: string
+                                          example: "Right Eye"
+                                        ucdva:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        bcdva:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        ucnva:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        bcnva:
+                                          $ref: '#/components/schemas/OpthalProperty'
+                                        ph:
+                                          $ref: '#/components/schemas/OpthalProperty'
+
 
         '403':
           description: Forbidden
@@ -5827,3 +5847,45 @@ components:
         landmark: ''
         areaOfResidance: Pune
         webhookId: 58
+    OpthalProperty:
+      type: object
+      properties:
+        custom:
+          type: string
+          example: "+1.00"
+        id:
+          type: string
+          example: "locale-997800190"
+        propertyId:
+          type: string
+          example: "ek-988162"
+        propertyName:
+          type: string
+          example: "ADD"
+        unit:
+          type: string
+          example: "+"
+        value:
+          type: string
+          example: "1.00"
+
+    OpthalPrescription:
+      type: object
+      properties:
+        eye:
+          type: string
+          example: "RE"
+        id:
+          type: string
+          example: "ek-2676755484"
+        name:
+          type: string
+          example: "Right Eye"
+        sph:
+          $ref: '#/components/schemas/OpthalProperty'
+        cyl:
+          $ref: '#/components/schemas/OpthalProperty'
+        add:
+          $ref: '#/components/schemas/OpthalProperty'
+        dva:
+          $ref: '#/components/schemas/OpthalProperty'
