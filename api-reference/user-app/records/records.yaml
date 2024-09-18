@@ -214,6 +214,66 @@ paths:
         '500':
           description: Internal Server Error
   /mr/api/v1/docs/{doc_id}:
+    patch:
+      summary: Link Document Record
+      description: This API is used to link a document record.
+      parameters:
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+            example: 2df9e795-d368-4ceb-be9d-b44281703827
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dt:
+                  type: string
+                  description: |
+                    The following values are allowed:
+                    - `ps`: Prescription
+                    - `lr`: Lab Report
+                    - `ot`: Other
+                    - `ds`: Discharge Summary
+                    - `vc`: Vaccine Certificate
+                    - `in`: Insurance
+                    - `iv`: Invoice
+                    - `sc`: Scan
+                  enum:
+                    - ps
+                    - lr
+                    - ot
+                    - ds
+                    - vc
+                    - in
+                    - iv
+                    - sc
+                  example: lr
+                ndhm:
+                  type: boolean
+                  description: If true, the record will be linked.
+                  example: true
+                oid:
+                  type: string
+                  description: OID associated with the document.
+                  example: "161847797963700"
+              required:
+                - dt
+                - ndhm
+                - oid
+      responses:
+        '200':
+          description: Document linked successfully.
+        '404':
+          description: No such document.
+        '5XX':
+           description: Unexpected error.
+      security:
+        - auth: []
+
     delete:
       summary: Delete a document.
       description : This API is used to delete a document using a document ID.
@@ -233,6 +293,7 @@ paths:
           description: Unexpected error.
       security:
         - auth: []
+
     get:
       summary: Describes a document.
       description: Once you get the list of all the documents with coresponding id's, you can this to know more details about the document.
