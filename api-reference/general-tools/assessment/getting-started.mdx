@@ -1,3 +1,7 @@
+---
+title: "🚀 Getting Started"
+---
+
 
 These are the steps to get perform assessment using Eka Care APIs.
     
@@ -15,66 +19,5 @@ These are the steps to get perform assessment using Eka Care APIs.
     This step is used to [submit the assessment](/api-reference/user-app/assessment/submit/submit-assessment). You need to send the answer of the last question in the request body. It will return the result and summary of the assessment.
   </Step>
 </Steps>
----
-### Error Response Format:
 
-The Assessment APIs returns custom error messages for invalid requests in
-addition to HTTPS codes.
-The failed response contains some properties. These properties and their
-values are more indicative of the underlying error.
-
-
-#### Error response Syntax:
-    
-``` json
-{
-    "error": [
-        {
-            "error_code": "unique_error_code",
-            "message":  "Actual error message from the server"
-        },
-        {
-            "error_code": "unique_error_code_2",
-            "message":  "Actual error message from the server for error 2"
-        }
-    ]
-}
-```
----
-### Error Fields:
-
-
-Here is the description of the error fields present in the error body
-
-
-| **Field** | **Description** | **Example** |
-| :--- | :--- | :--- |
-| `error` | This field represent an error occurred while processing the request. It contains a list of errors. Developers can identify the request is not succeeded based on this field. | `{"error": [{ "error_code": "missing_field", "message": {"user_info": {"gender": ["This field may not be null." ] }}}]}` |
-| `error_code` | This field represent a custom error code to distinguish between different kind of errors. These error codes are custom and are our platform specific. You can see more about `error_code` in next section. | `{"error_code": "missing_field"}` |
-| `message` | The actual error message from the server. | `"message":{"user_info": {"gender": ["This field may not be null."]}}` |
-
----
-### Error Codes:
-
-These are the custom error code field present in failure response body.
-There can be various factor that can cause the request to fail. Sometimes
-this kind of errors needs to be grouped according the the reason of failure.
-This allows developers to diagnose the errors faster.
-
-
-### List of Error Codes:  
-Here is the list of most common error codes that can be returned by the API.
-
-| **Error Code** | **Description** |
-| :--- | :--- |
-| `missing_field` | One or more fields is missing in the request body. |
-| `invalid_value` | Invalid value provided for one or more fields in request body.  Ex. User sends "01_Jan_2001" in `dob` field. |
-| `unsupported_value` | Unsupported value provided in a field in request body.  Ex. When user sends "other" in `gender` field. |
-| `missing_header` | One or more fields in header are missing |
-| `invalid_header_value` | One or more values in header is invalid.  Ex. User sends 123 in `locale` field. |
-| `unsupported_header_value` | One or more values in header is unsupported.  Ex. User sends "Farsi" in `locale` field. |
-| `auth_error` | Invalid or expired auth token provided. |
-| `auth_missing` | Auth token is missing in the request. |
-| `permission_not_granted` | User does not have permission to request. |
-| `method_not_allowed` | The request method is not allowed in the given API |
-| `rate_limit_exceeded` | User has reached the rate limit of the API. |
+You will get multiple error codes in case of any failure. You can refer to the [error codes](/api-reference/general-tools/assessment/error-codes) for more details.

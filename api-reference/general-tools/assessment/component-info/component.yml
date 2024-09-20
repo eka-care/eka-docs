@@ -14,51 +14,6 @@ paths:
       description: >-
         This API can be used by developers to get info about the components used throughout the assessment. This API is intended to provide knowledge about the Components that developers can use to display in their UI.
 
-        Here's a short description of each component:
-
-        <CardGroup cols={1}>
-          <Card title="Autosuggest Component (I-ASTG)" icon="square-1">
-            - **Description**: Provides real-time suggestions as the user types in the input field.
-            - **Properties**:
-                * `choices`: List of options.
-                * `url`: Data source URL.
-                * `static_items`: Predefined suggestions.
-                * `title`: Field title.
-                + `placeholder`: Input field hint.
-            - **Mandatory**: Yes
-          </Card>
-          <Card title="Single-Select Component (I-RADO)" icon="square-2">
-            - **Description**: Provides real-time suggestions as the user types in the input field.
-            - **Properties**:
-                * `choices`: List of options.
-                * `url`: Data source URL.
-                * `static_items`: Predefined suggestions.
-                * `title`: Field title.
-                + `placeholder`: Input field hint.
-            - **Mandatory**: Yes
-          </Card>
-          <Card title="Multi-Select Component (I-MULT)" icon="square-3">
-            - **Description**: Allows selection of multiple options from a list.
-            - **Properties**:
-                1. `choices`: List of options.
-                2. `url`: Data source URL.
-                3. `static_items`: Predefined suggestions.
-                4. `title`: Field title.
-                5. `placeholder`: Input field hint.
-                6. `nota`: "None of the above" option.
-            - **Mandatory**: Yes
-          </Card>
-          <Card title="Radio Group Component (I-RADG)" icon="square-4">
-            - **Properties**:
-                1. `choices`: List of options.
-                2. `url`: Data source URL.
-                3. `static_items`: Predefined suggestions.
-                4. `title`: Field title.
-                5. `placeholder`: Input field hint.
-            - **Mandatory**: Yes
-          </Card>
-        </CardGroup>
-
       parameters:
         - name: auth
           in: header
@@ -79,99 +34,364 @@ paths:
       responses:
         '200':
           description: OK
-          headers:
-            Date:
-              schema:
-                type: string
-                example: Mon, 12 Aug 2024 07:41:05 GMT
-            Server:
-              schema:
-                type: number
-                example: WSGIServer/0.2 CPython/3.9.17
-            Content-Type:
-              schema:
-                type: string
-                example: application/json
-            Vary:
-              schema:
-                type: string
-                example: Accept, Cookie, origin
-            Allow:
-              schema:
-                type: string
-                example: POST, OPTIONS
-            X-Frame-Options:
-              schema:
-                type: string
-                example: DENY
-            Content-Length:
-              schema:
-                type: integer
-                example: '51'
-            X-Content-Type-Options:
-              schema:
-                type: string
-                example: nosniff
-            Referrer-Policy:
-              schema:
-                type: string
-                example: same-origin
-            Cross-Origin-Opener-Policy:
-              schema:
-                type: string
-                example: same-origin
           content:
             application/json:
               schema:
                 type: object
               example:
-                components:
-                  - code: I-ASTG
-                    name: Autosuggest Component
-                    description: >-
-                      This component is used to provide suggestions to the user
-                      as they type in the input field.
-                    properties:
-                      choices: '[{”id”:””, “label”:””]'
-                      url: URL of the Autosuggest API
-                      static_items: Static Items to be shown
-                      title: Title of the question
-                      placeholder: ''
-                    is_mandatory: true
-                  - code: I-RADO
-                    name: Radio Component
-                    description: >-
-                      This component is used to provide a list of options to the
-                      user to select from.
-                    properties:
-                      choices: '[{”id”:””, “label”:””]'
-                      url: ''
-                      static_items: ''
-                      title: ''
-                      placeholder: ''
-                    is_mandatory: true
-                  - code: I-MULT
-                    name: Multiselect Component
-                    description: >-
-                      This component is used to provide a list of options to the
-                      user to select from.
-                    properties:
-                      choices: '[{”id”:””, “label”:””]'
-                      url: ''
-                      static_items: ''
-                      title: ''
-                      placeholder: ''
-                      nota: (None of the above) Only provided in Multiselect.
-                    is_mandatory: true
-                  - code: I-RADG
-                    name: Radio Group Component
-                    description: >-
-                      This component is used to provide a list of options to the
-                      user to select from.
-                    properties:
-                      choices: '[{”id”:””, “label”:””]'
-                      url: ''
-                      static_items: ''
-                      title: ''
-                      placeholder: ''
-                    is_mandatory: true
+                success: true
+                data:
+                  autosuggest:
+                    question:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        question:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              comp:
+                                type: string
+                              url:
+                                type: object
+                                properties:
+                                  base_url:
+                                    type: string
+                                    format: uri
+                                  query_params:
+                                    type: object
+                                    properties:
+                                      gen:
+                                        type: string
+                                    additionalProperties: true
+                                required:
+                                - base_url
+                              text:
+                                type: string
+                              resp:
+                                type: array
+                                items:
+                                  type: string
+                              details:
+                                type: object
+                                properties:
+                                  static sections:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        heading:
+                                          type: string
+                                        items:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              id:
+                                                type: string
+                                                format: uuid
+                                              label:
+                                                type: string
+                                            required:
+                                            - id
+                                            - label
+                                      required:
+                                      - heading
+                                      - items
+                            required:
+                            - id
+                            - comp
+                            - url
+                            - text
+                            - details
+                        is_mandantory:
+                          type: boolean
+                        progress:
+                          type:
+                          - 'null'
+                          - integer
+                      required:
+                      - question
+                      - is_mandantory
+                      - progress
+                    answer:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        response:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              qid:
+                                type: integer
+                              respid:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                  - id
+                            required:
+                            - qid
+                            - respid
+                      required:
+                      - response
+                  multi_select:
+                    question:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        questions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              text:
+                                type: string
+                              comp:
+                                type: string
+                              tip:
+                                type: string
+                              resp:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                    label:
+                                      type: string
+                                  required:
+                                  - id
+                                  - label
+                            required:
+                            - id
+                            - text
+                            - comp
+                            - tip
+                            - resp
+                        progress:
+                          type: number
+                        is_mandantory:
+                          type: boolean
+                        success:
+                          type: boolean
+                      required:
+                      - questions
+                      - progress
+                      - is_mandantory
+                      - success
+                    answer:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        response:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              qid:
+                                type: integer
+                              respid:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                  - id
+                            required:
+                            - qid
+                            - respid
+                      required:
+                      - response
+                  radio:
+                    question:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        questions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              text:
+                                type: string
+                              option_type:
+                                type:
+                                - string
+                                - 'null'
+                              icon:
+                                type:
+                                - string
+                                - 'null'
+                              comp:
+                                type: string
+                              tip:
+                                type: string
+                              resp:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                    label:
+                                      type: string
+                                    choices:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          id:
+                                            type: string
+                                          label:
+                                            type: string
+                                        required:
+                                        - id
+                                        - label
+                                  required:
+                                  - id
+                                  - label
+                                  - choices
+                            required:
+                            - id
+                            - text
+                            - option_type
+                            - icon
+                            - comp
+                            - tip
+                            - resp
+                        progress:
+                          type: number
+                        success:
+                          type: boolean
+                        is_mandantory:
+                          type: boolean
+                      required:
+                      - type
+                      - questions
+                      - progress
+                      - success
+                      - is_mandantory
+                    answer:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        response:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              qid:
+                                type: integer
+                              respid:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                  - id
+                            required:
+                            - qid
+                            - respid
+                      required:
+                      - response
+                  radio_group:
+                    question:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        questions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              text:
+                                type: string
+                              comp:
+                                type: string
+                              tip:
+                                type: string
+                              resp:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                    label:
+                                      type: string
+                                  required:
+                                  - id
+                                  - label
+                            required:
+                            - id
+                            - text
+                            - comp
+                            - tip
+                            - resp
+                        progress:
+                          type: number
+                        is_mandantory:
+                          type: boolean
+                        success:
+                          type: boolean
+                      required:
+                      - questions
+                      - progress
+                      - is_mandantory
+                      - success
+                    answer:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        response:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              qid:
+                                type: integer
+                              respid:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                  - id
+                            required:
+                            - qid
+                            - respid
+                      required:
+                      - response
+        '4XX':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error:
+                  error_code: bad_request
+                  display_message: "Something went wrong. Please try again."
+                  message: Bad Request

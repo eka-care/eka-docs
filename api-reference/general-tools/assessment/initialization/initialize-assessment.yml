@@ -6,16 +6,17 @@ servers:
   - url: https://api.eka.care
 
 paths:
-  /assessments/init/:
+  /assessment/api/v1/init/:
     post:
       tags:
         - Assessments > Initialization
-      summary: Initialize the assessments
+      summary: Initialization
       description: >-
         This API is used to initialize the assessment. It returns the hash that is used to continue the assessment.
         <Warning>This API must be called before starting the assessment</Warning>
 
       requestBody:
+        description: The request body must contain the user informationnnnnn.
         content:
           application/json:
             schema:
@@ -26,8 +27,10 @@ paths:
                   gender: M
               description: >-
                 The request body must contain the user information.
-                The format should be:
 
+
+                Users can either provide the date of birth or age using `dob` and `age` fields respectively inside `user_info`.
+                The format should be:
 
                 ```json
 
@@ -38,73 +41,35 @@ paths:
                   }
                 }
 
+
       parameters:
-        - name: locale
-          in: header
-          description: >-
-            The locale of the user. It is used to determine the language of the assessment.
-          schema:
-            type: string
-          example: en
         - name: auth
           in: header
+          required: True
           description: >-
             The auth token of the user. It is used to authenticate the user.
           schema:
             type: string
           example: >-
             eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
-        - name: Content-Type
+        - name: client_id
           in: header
+          required: True
           description: >-
-            The content type of the request. It is used to determine the type of data being sent.
+            The client id of the user. It is used to identify the user.
           schema:
             type: string
           example: application/json
+        - name: locale
+          in: header
+          description: >-
+            The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+          schema:
+            type: string
+          example: en
       responses:
         '200':
           description: OK
-          headers:
-            Date:
-              schema:
-                type: string
-                example: Mon, 12 Aug 2024 07:41:05 GMT
-            Server:
-              schema:
-                type: number
-                example: WSGIServer/0.2 CPython/3.9.17
-            Content-Type:
-              schema:
-                type: string
-                example: application/json
-            Vary:
-              schema:
-                type: string
-                example: Accept, Cookie, origin
-            Allow:
-              schema:
-                type: string
-                example: POST, OPTIONS
-            X-Frame-Options:
-              schema:
-                type: string
-                example: DENY
-            Content-Length:
-              schema:
-                type: integer
-                example: '51'
-            X-Content-Type-Options:
-              schema:
-                type: string
-                example: nosniff
-            Referrer-Policy:
-              schema:
-                type: string
-                example: same-origin
-            Cross-Origin-Opener-Policy:
-              schema:
-                type: string
-                example: same-origin
           content:
             application/json:
               schema:
@@ -112,58 +77,14 @@ paths:
               example:
                 data:
                   init_hash: sn_1212121212
-        '400':
+        '4XX':
           description: Bad Request
-          headers:
-            Date:
-              schema:
-                type: string
-                example: Mon, 12 Aug 2024 07:41:05 GMT
-            Server:
-              schema:
-                type: number
-                example: WSGIServer/0.2 CPython/3.9.17
-            Content-Type:
-              schema:
-                type: string
-                example: application/json
-            Vary:
-              schema:
-                type: string
-                example: Accept, Cookie, origin
-            Allow:
-              schema:
-                type: string
-                example: POST, OPTIONS
-            X-Frame-Options:
-              schema:
-                type: string
-                example: DENY
-            Content-Length:
-              schema:
-                type: integer
-                example: '51'
-            X-Content-Type-Options:
-              schema:
-                type: string
-                example: nosniff
-            Referrer-Policy:
-              schema:
-                type: string
-                example: same-origin
-            Cross-Origin-Opener-Policy:
-              schema:
-                type: string
-                example: same-origin
           content:
             application/json:
               schema:
                 type: object
               example:
                 error:
-                  - error_code: missing_field
-                    message:
-                      user_info:
-                        gender:
-                          - This field may not be null.
-  
+                  error_code: bad_request
+                  display_message: "Something went wrong. Please try again."
+                  message: Bad Request
