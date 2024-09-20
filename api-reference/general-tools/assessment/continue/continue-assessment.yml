@@ -6,8 +6,8 @@ servers:
   - url: https://api.eka.care
 
 paths:
-  /assessments/continue/:
-    post:
+  /assessment/api/v1/continue/{hash}/{qid}:
+    put:
       tags:
         - Assessments > Continue
       summary: Continue the assessment
@@ -26,22 +26,8 @@ paths:
                     id: 47258974-a65c-11eb-8d02-1e003a340630
                     choice: p
               description: >-
-                The request body must contain the response to the question.
-                The format should be:
-
-                ```json
-
-                {
-                  "response": {
-                    "qid": question_id (integer) from the previous response,
-                    "respid": {
-                      "id": "id of the option selected from previous response",
-                      "choice": "choice selected from previous response"
-                    }
-                  }
-                }
-
-                ```
+                The request body should contain the answer to the question depending on the type of question component.
+                It should be in format as explained in above dropdown.
 
       parameters:
         - name: auth
@@ -53,6 +39,21 @@ paths:
             type: string
           example: >-
             eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: client_id
+          in: header
+          required: True
+          description: >-
+            The client id of the user. It is used to identify the user.
+          schema:
+            type: string
+          example: application/json
+        - name: locale
+          in: header
+          description: >-
+            The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+          schema:
+            type: string
+          example: en
         - name: Content-Type
           in: header
           description: >-
@@ -60,15 +61,6 @@ paths:
           schema:
             type: string
           example: application/json
-        - name: hash
-          in: path
-          required: True
-          description: >-
-            The conversation id of the assessment. It is used to identify the assessment.
-          schema:
-            type: string
-          example: sn_2952355823833
-
       responses:
         '200':
           description: OK
