@@ -16,18 +16,14 @@ paths:
         <Warning>This API must be called before starting the assessment</Warning>
 
       requestBody:
-        description: The request body must contain the user informationnnnnn.
+        required: true
         content:
           application/json:
             schema:
+              title: Request Body
               type: object
-              example:
-                user_info:
-                  dob: '2001-01-01'
-                  gender: M
               description: >-
-                The request body must contain the user information.
-
+                The request body should contain the user information.
 
                 Users can either provide the date of birth or age using `dob` and `age` fields respectively inside `user_info`.
                 The format should be:
@@ -38,11 +34,32 @@ paths:
                   "user_info": {
                     "dob": "YYYY-MM-DD", // or "age": 20,
                     "gender": "M"/"F"
-                  }
+                  },
+                  "workflow_id": "1000",
                 }
-
                 ```
-
+              properties:
+                user_info:
+                  type: object
+                  title: User Information
+                  oneOf:
+                    - $ref: '#/components/schemas/Age'
+                    - $ref: '#/components/schemas/Dob'
+                practitioner_id:
+                  type: string
+                  description: >-
+                    A unique practitioner id to identify the practitioner to associate an assessment with, if applicable.
+                patient_id:
+                  type: string
+                  description: >-
+                    A unique patient id to identify the patient to associate as assessment with, if applicable.
+                workflow_id:
+                  type: integer
+                  description: >-
+                    A unique id to identify the assessment to be taken. Use the get-workflow-id API to get the workflow id. 1000 is for symptom checker
+                  default: 1000
+              required:
+                - user_info
       parameters:
         - name: auth
           in: header
@@ -67,6 +84,7 @@ paths:
             The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
           schema:
             type: string
+            enum: [en, hi, kn]
           example: en
       responses:
         '200':
@@ -89,3 +107,58 @@ paths:
                   error_code: bad_request
                   display_message: "Something went wrong. Please try again."
                   message: Bad Request
+
+components:
+  schemas:
+    Age:
+      description: >-
+        The user information should contain atleast the age of the user.
+      type: object
+      title: Gender and Age
+      properties:
+        gender:
+          type: string
+          enum: [M, F]
+          example: "M"
+        age:
+          type: integer
+          minimum: 0
+          maximum: 130
+          example: 23
+        dob:
+          type: string
+          format: date
+          example: "2001-01-01"
+      example:  # Example for the entire object
+        user_info:
+          gender: "M"
+          age: 25
+      required:
+        - age
+        - gender
+    Dob:
+      type: object
+      title: "Gender & Dob"
+      description: >-
+        The user information should contain atleast the dob of the user.
+      properties:
+        gender:
+          type: string
+          enum: [M, F]
+          example: "M"
+        dob:
+          type: string
+          format: date
+          example: "2001-01-01"
+        age:
+          type: integer
+          minimum: 0
+          maximum: 130
+          example: 23
+      required:
+        - dob
+        - gender
+      example:  # Example for the entire object
+        user_info:
+          gender: "M"
+          dob: "2001-01-01"
