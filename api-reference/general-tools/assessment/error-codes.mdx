@@ -25,15 +25,24 @@ values are more indicative of the underlying error.
 ### Error Fields
 ---
 
-Here is the description of the error fields present in the error body
+The Error field represent an error occurred while processing the request. It contains a list of errors. Developers can identify the request is not succeeded based on this field.
+Here is the the example of response in case of missing field in the request body.
 
+``` json
+{
+    "error": {
+        "error_code": "missing_field",
+        "display_message": "Uh huh, you missed a required field",
+        "message": "Missing required field - gender"
+}
+```
+Here is the description of each error fields present in above error body
 
-| **Field** | **Description** | **Example** |
-| :--- | :--- | :--- |
-| `error` | This field represent an error occurred while processing the request. It contains a list of errors. Developers can identify the request is not succeeded based on this field. | `{"error": { "error_code": "missing_field", "display_message": "gender field is required", "message": {"user_info": {"gender": ["This field may not be null." ] }}}]}` |
-| `error_code` | This field represent a custom error code to distinguish between different kind of errors. These error codes are custom and are our platform specific. You can see more about `error_code` in next section. | `{"error_code": "missing_field"}` |
-| `display_message` | Error display message for the user. | `"display_message": gender field is required` |
-| `message` | The actual error message from the server. | `"message":{"user_info": {"gender": ["This field may not be null."]}}` |
+| **Field** | **Description** |
+| ---: | --- |
+| `error_code` | This field represent a custom error code to distinguish between different kind of errors. These error codes are custom and are our platform specific. You can see more about `error_code` in next section. |
+| `display_message` | Error display message for the user. |
+| `message` | The actual error message from the server. |
 
 ### Error Codes
 ---
@@ -49,14 +58,12 @@ Here is the list of most common error codes that can be returned by the API.
 
 | **Error Code** | **Description** |
 | :--- | :--- |
-| `missing_field` | One or more fields is missing in the request body. |
-| `invalid_value` | Invalid value provided for one or more fields in request body.  Ex. User sends "01_Jan_2001" in `dob` field. |
-| `unsupported_value` | Unsupported value provided in a field in request body.  Ex. When user sends "other" in `gender` field. |
-| `missing_header` | One or more fields in header are missing |
-| `invalid_header_value` | One or more values in header is invalid.  Ex. User sends 123 in `locale` field. |
-| `unsupported_header_value` | One or more values in header is unsupported.  Ex. User sends "Farsi" in `locale` field. |
+| `missing_field` | a field is missing in the request body. |
+| `invalid_dob` | Invalid value provided for `dob` in request body.  Ex. User sends `01_Jan_2001` in `dob` field. |
+| `unsupported_age` | Unsupported value provided in a field in request body.  Ex. When user sends `1000` in `age` field or `1001-01-01` in `dob` field |
+| `unsupported_gender` | Unsupported value provided in a field in request body.  Ex. When user sends "unknown" in `gender` field. |
+| `unknown_error` | The error reason is unknown to the server |
 | `auth_error` | Invalid or expired auth token provided. |
 | `auth_missing` | Auth token is missing in the request. |
-| `permission_not_granted` | User does not have permission to request. |
 | `method_not_allowed` | The request method is not allowed in the given API |
 | `rate_limit_exceeded` | User has reached the rate limit of the API. |
