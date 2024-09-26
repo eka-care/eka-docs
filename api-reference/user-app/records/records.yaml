@@ -19,7 +19,7 @@ paths:
   /mr/api/v1/docs:
     get:
       summary: Fetch documents based on filters
-      description: To get the list of all the records for an given patient oid
+      description: To get the list of all the records for a given authenticated user.
       operationId: getDocuments
       parameters:
         - name: sort
@@ -36,6 +36,7 @@ paths:
           description: Please include the nextPageToken from the API response to enable pagination.
         - name: accept
           in: header
+          required: true
           schema:
             type: string
             enum:
@@ -219,7 +220,7 @@ paths:
                     HostId: "NjZf6f4Yo3LwikPHTwtyS02TEftaoWWvS8BmfRlQmA5pwllX6FHyMuO4hNVT0AIBOwKHFoEFkk8="
         '500':
           description: Internal Server Error
-  /mr/api/v1/docs/{doc_id}:
+  /mr/api/v1/docs/{document_id}:
     patch:
       summary: Update Document
       description: This API is used to update the document.
@@ -227,6 +228,7 @@ paths:
         - in: path
           name: doc_id
           required: true
+          description: Document ID to update the document details.
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
@@ -288,6 +290,7 @@ paths:
         - in: path
           name: doc_id
           required: true
+          description: Document ID to delete the document.
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
@@ -309,6 +312,7 @@ paths:
         - in: path
           name: doc_id
           required: true
+          description: Document ID to fetch the document details.
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
@@ -629,6 +633,9 @@ components:
           type: integer
           format: int64
           description: Unit of file size should be bytes
+      required:
+        contentType
+        file_size
 
     UpdateDocumentV3Request:
       type: object
@@ -657,7 +664,6 @@ components:
             $ref: '#/components/schemas/FileUploadRequest'
       required :
          -dt
-         -dd_e
          -files
     UploadResponse:
       type: object
