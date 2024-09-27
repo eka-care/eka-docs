@@ -37,8 +37,6 @@ paths:
             The auth token of the user. It is used to authenticate the user.
           schema:
             type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
         - name: client-id
           in: header
           required: True
@@ -67,29 +65,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-              example:
-                questions:
-                - id: 1
-                  text: Select all the symptoms you are experiencing
-                  comp: I-MULT
-                  tip: Select all option(s) that are applicable to you.
-                  resp:
-                  - id: s_b87e7437-1305-4973-b7f7-7b07f51fb80e
-                    label: Red skin rash
-                  - id: s_473b48a4-a65c-11eb-8d02-1e003a340630
-                    label: Throat pain
-                  - id: s_4720607a-a65c-11eb-8d02-1e003a340630
-                    label: Headache
-                  - id: s_477a119c-a65c-11eb-8d02-1e003a340630
-                    label: Stuffy or blocked nose
-                  - id: s_34410c44-b416-11eb-8c69-1e003a340631
-                    label: Skin rash
-                  - id: nota
-                    label: None of the above
-                progress: 7.69
-                is_mandantory: true
-                success: true
+                $ref: '#/components/schemas/MasterComponentResponse'
         '4XX':
           description: Bad Request
           content:
@@ -101,3 +77,70 @@ paths:
                   error_code: bad_request
                   display_message: Bad Request, please try again
                   message: Bad Request
+
+components:
+  schemas:
+    MasterComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: number
+                default: 0
+                example: 0.1
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+              component_code:
+                type: string
+                example: <component-code>
+              question_text:
+                type: string
+                example: <Question Text>
+              tip:
+                type: string
+                example: <Tip>
+              component_data:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: >-
+                      This is valid for an autosuggest component
+                  choices:
+                    type: array
+                    description: >-
+                      This is valid for a choice type components, multi, radio (single choice), radio group
+                    items:
+                      type: object
+                      properties:
+                        choice_id:
+                          type: string
+                          example: xyzjahaj
+                        choice_label:
+                          type: string
+                          example: I have Diabetes
+                  default_choice:
+                    type: string
+                    description: >-
+                      This will be a choice id in case of choice components else will be a string in case of user-input components
+              is_mandatory:
+                type: boolean
+                example: true
+                description: >-
+                  This is a boolean value, if true user has to answer this question
+        is_last_question:
+          type: boolean
+          example: false
+          description: >-
+            This is a boolean value, if true this is the last question of the assessment
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: >-
+            This is the progress of the assessment, it is a number between 0 and 100 
+    
