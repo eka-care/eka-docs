@@ -12,88 +12,128 @@ paths:
         - Assessments > Start
       summary: Start Assessment
       description: >-
-        This API is used to Start the assessment. It returns the first question of the assessment.
+        This API is used to start the assessment. It returns the first question of the assessment.
         <Tip>Use this API to get the first question.</Tip>
       parameters:
+        - name: hash
+          in: path
+          required: true
+          description: The unique identifier for the assessment.
+          schema:
+            type: string
         - name: auth
           in: header
-          required: True
+          required: true  # Use 'true' (lowercase)
           description: >-
             The auth token of the user. It is used to authenticate the user.
           schema:
             type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
         - name: client-id
           in: header
-          required: True
+          required: true
           description: >-
-            The client id of the user. It is used to identify the user.
+            The client ID of the user. It is used to identify the user.
           schema:
             type: string
-          example: application/json
         - name: locale
           in: header
           description: >-
-            The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+            The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for English, Hindi, and Kannada respectively. Default value is `en`.
           schema:
             type: string
+            enum: [en, hi, kn]
           example: en
         - name: Content-Type
           in: header
           description: >-
-            The content type of the request. It is used to determine the type of data being sent.
+            The content type of the request is `application/json`.
           schema:
             type: string
-          example: application/json
+            enum: [application/json]
+            default: application/json
+          required: true
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-              example:
-                question:
-                  id: 0
-                  comp: I-ATSG
-                  url:
-                    base_url: https://mdb.eka.care/v1/sa-terms
-                    query_params:
-                      gen: M
-                      age: 20
-                    text: Add all symptoms.
-                    resp: []
-                    details:
-                      static sections:
-                      - heading: Most Searched
-                        items:
-                        - id: 47258974-a65c-11eb-8d02-1e003a340630
-                          label: Fever
-                        - id: 473f9e54-a65c-11eb-8d02-1e003a340630
-                          label: Constipation
-                        - id: 471e8e62-a65c-11eb-8d02-1e003a340630
-                          label: Cough
-                        - id: 476efd70-a65c-11eb-8d02-1e003a340630
-                          label: Acidity
-                        - id: 4736971e-a65c-11eb-8d02-1e003a340630
-                          label: Diarrhoea
-                        - id: 4737ee0c-a65c-11eb-8d02-1e003a340630
-                          label: Vomiting
-                        - id: 4720607a-a65c-11eb-8d02-1e003a340630
-                          label: Headache
-                        - id: 47172c6c-a65c-11eb-8d02-1e003a340630
-                          label: Stomach ache
-                is_mandantory: true
-                progress: 0.0
-        '4XX':
+                $ref: '#/components/schemas/MasterComponentResponse'
+        '400':
           description: Bad Request
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/400-err'
+
+# Define your schemas here if needed
+components:
+  schemas:
+    MasterComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: number
+                default: 0
+                example: 0.1
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+              component_code:
+                type: string
+                example: <component-code>
+              question_text:
+                type: string
+                example: <Question Text>
+              tip:
+                type: string
+                example: <Tip>
+              component_data:
                 type: object
-              example:
-                error:
-                  error_code: bad_request
-                  display_message: "Something went wrong. Please try again."
-                  message: Bad Request
+                properties:
+                  url:
+                    type: string
+                    description: >-
+                      This is valid for an autosuggest component
+                  choices:
+                    type: array
+                    description: >-
+                      This is valid for a choice type components, multi, radio (single choice), radio group
+                    items:
+                      type: object
+                      properties:
+                        choice_id:
+                          type: string
+                          example: xyzjahaj
+                        choice_label:
+                          type: string
+                          example: I have Diabetes
+                  default_choice:
+                    type: string
+                    description: >-
+                      This will be a choice id in case of choice components else will be a string in case of user-input components
+              is_mandatory:
+                type: boolean
+                example: true
+                description: >-
+                  This is a boolean value, if true user has to answer this question
+        is_last_question:
+          type: boolean
+          example: false
+          description: >-
+            This is a boolean value, if true this is the last question of the assessment
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: >-
+            This is the progress of the assessment, it is a number between 0 and 100 
+    400-err:
+      type: object
+      properties:
+        message:
+          type: string
