@@ -43,8 +43,8 @@ paths:
                   type: object
                   title: User Information
                   oneOf:
-                    - $ref: '#/components/schemas/Age'
-                    - $ref: '#/components/schemas/Dob'
+                    - $ref: '#/components/schemas/AS-Age-Gender'
+                    - $ref: '#/components/schemas/AS-Dob-Gender'
                 practitioner_id:
                   type: string
                   description: >-
@@ -88,29 +88,21 @@ paths:
           example: en
       responses:
         '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-              example:
-                data:
-                  init_hash: sn_1212121212
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AS-init-200'
         '4XX':
           description: Bad Request
           content:
             application/json:
               schema:
-                type: object
-              example:
-                error:
-                  error_code: bad_request
-                  display_message: "Something went wrong. Please try again."
-                  message: Bad Request
+                $ref: '#/components/schemas/AS-init-400'
 
 components:
   schemas:
-    Age:
+    AS-Age-Gender:
       description: >-
         The user information should contain atleast the age of the user.
       type: object
@@ -136,7 +128,7 @@ components:
       required:
         - age
         - gender
-    Dob:
+    AS-Dob-Gender:
       type: object
       title: "Gender & Dob"
       description: >-
@@ -162,3 +154,32 @@ components:
         user_info:
           gender: "M"
           dob: "2001-01-01"
+    AS-init-200:
+      type: object
+      properties:
+        init_hash:
+          type: string
+      required:
+        - init_hash
+      example:  # Example for the entire object
+        init_hash: sn_121212121218718
+    AS-init-400:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            error_code:
+              type: string
+            display_message:
+              type: string
+            message:
+              type: string
+      required:
+        - error
+      example:  # Example for the entire object
+        error:
+          error_code: bad_request
+          display_message: "Something went wrong. Please try again."
+          message: Bad Request
+
