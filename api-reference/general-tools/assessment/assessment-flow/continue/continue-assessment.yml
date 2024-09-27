@@ -6,14 +6,29 @@ servers:
   - url: https://api.eka.care
 
 paths:
-  /assessments/api/v1/start/{hash}:
+  /assessment/api/v1/continue/{hash}/{qid}:
     put:
       tags:
-        - Assessments > Start
-      summary: Start the assessment
+        - Assessments > Continue
+      summary: Continue Assessment
       description: >-
-        This API is used to Start the assessment. It returns the first question of the assessment.
-        <Tip>Use this API to get the first question.</Tip>
+        This API is used to continue the assessment. It accepts answer in the request body and returns the next question of the assessment.
+        <Tip>Call this API multiple times until progress reaches 100%</Tip>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                response:
+                  qid: 0
+                  respid:
+                    id: 47258974-a65c-11eb-8d02-1e003a340630
+                    choice: p
+              description: >-
+                The request body should contain the answer to the question depending on the type of question component.
+                It should be in format as explained in above dropdown.
+
       parameters:
         - name: auth
           in: header
@@ -54,38 +69,27 @@ paths:
               schema:
                 type: object
               example:
-                question:
-                  id: 0
-                  comp: I-ATSG
-                  url:
-                    base_url: https://mdb.eka.care/v1/sa-terms
-                    query_params:
-                      gen: M
-                      age: 20
-                    text: Add all symptoms.
-                    resp: []
-                    details:
-                      static sections:
-                      - heading: Most Searched
-                        items:
-                        - id: 47258974-a65c-11eb-8d02-1e003a340630
-                          label: Fever
-                        - id: 473f9e54-a65c-11eb-8d02-1e003a340630
-                          label: Constipation
-                        - id: 471e8e62-a65c-11eb-8d02-1e003a340630
-                          label: Cough
-                        - id: 476efd70-a65c-11eb-8d02-1e003a340630
-                          label: Acidity
-                        - id: 4736971e-a65c-11eb-8d02-1e003a340630
-                          label: Diarrhoea
-                        - id: 4737ee0c-a65c-11eb-8d02-1e003a340630
-                          label: Vomiting
-                        - id: 4720607a-a65c-11eb-8d02-1e003a340630
-                          label: Headache
-                        - id: 47172c6c-a65c-11eb-8d02-1e003a340630
-                          label: Stomach ache
+                questions:
+                - id: 1
+                  text: Select all the symptoms you are experiencing
+                  comp: I-MULT
+                  tip: Select all option(s) that are applicable to you.
+                  resp:
+                  - id: s_b87e7437-1305-4973-b7f7-7b07f51fb80e
+                    label: Red skin rash
+                  - id: s_473b48a4-a65c-11eb-8d02-1e003a340630
+                    label: Throat pain
+                  - id: s_4720607a-a65c-11eb-8d02-1e003a340630
+                    label: Headache
+                  - id: s_477a119c-a65c-11eb-8d02-1e003a340630
+                    label: Stuffy or blocked nose
+                  - id: s_34410c44-b416-11eb-8c69-1e003a340631
+                    label: Skin rash
+                  - id: nota
+                    label: None of the above
+                progress: 7.69
                 is_mandantory: true
-                progress: 0.0
+                success: true
         '4XX':
           description: Bad Request
           content:
@@ -95,5 +99,5 @@ paths:
               example:
                 error:
                   error_code: bad_request
-                  display_message: "Something went wrong. Please try again."
+                  display_message: Bad Request, please try again
                   message: Bad Request
