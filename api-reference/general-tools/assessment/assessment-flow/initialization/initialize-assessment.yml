@@ -15,6 +15,13 @@ paths:
         This API is used to initialize the assessment. It returns the hash that uniquely identifies the assessment session.
         <Warning>This API must be called before starting the assessment</Warning>
 
+      security:
+        - authApiKey: []
+
+      parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
+
       requestBody:
         required: true
         content:
@@ -41,10 +48,11 @@ paths:
               properties:
                 user_info:
                   type: object
-                  title: User Information
                   oneOf:
                     - $ref: '#/components/schemas/AS-Age-Gender'
+                      title: AgeWithGender
                     - $ref: '#/components/schemas/AS-Dob-Gender'
+                      title: DobWithGender
                 practitioner_id:
                   type: string
                   description: >-
@@ -60,32 +68,7 @@ paths:
                   default: 1000
               required:
                 - user_info
-      parameters:
-        - name: auth
-          in: header
-          required: True
-          description: >-
-            The auth token of the user. It is used to authenticate the user.
-          schema:
-            type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
-        - name: client-id
-          in: header
-          required: True
-          description: >-
-            The client id of the user. It is used to identify the user.
-          schema:
-            type: string
-          example: application/json
-        - name: locale
-          in: header
-          description: >-
-            The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
-          schema:
-            type: string
-            enum: [en, hi, kn]
-          example: en
+
       responses:
         '200':
             description: OK
@@ -93,12 +76,18 @@ paths:
               application/json:
                 schema:
                   $ref: '#/components/schemas/AS-init-200'
-        '4XX':
+        '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AS-init-400'
+                $ref: '#/components/schemas/Error-400'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-500'
 
 components:
   schemas:
@@ -163,22 +152,57 @@ components:
         - init_hash
       example:  # Example for the entire object
         init_hash: sn_121212121218718
-    AS-init-400:
+    Generic-Error:
+      type: object
+      properties:
+        error_code:
+          type: string
+        display_message:
+          type: string
+        message:
+          type: string
+    Error-400:
       type: object
       properties:
         error:
-          type: object
-          properties:
-            error_code:
-              type: string
-            display_message:
-              type: string
-            message:
-              type: string
-      required:
-        - error
-      example:  # Example for the entire object
+          $ref: '#/components/schemas/Generic-Error'
+      example:
         error:
           error_code: bad_request
-          display_message: "Something went wrong. Please try again."
-          message: Bad Request
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+    Error-500:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: server_error
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+
+  parameters:
+    client-id: 
+      name: client-id
+      in: header
+      required: true
+      description: >-
+        The client id of the user. It is used to identify the user.
+      schema:
+        type: string
+    locale:
+      name: locale
+      in: header
+      description: >-
+        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+      schema:
+        type: string
+        enum: [en, hi, kn]
+        example: en
+
+  securitySchemes:
+    authApiKey:
+      in: header
+      name: auth
+      type: apiKey
