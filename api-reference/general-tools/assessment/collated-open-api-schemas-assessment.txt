@@ -9,50 +9,40 @@ paths:
   /assessment/api/v1/init/:
     post:
       tags:
-        - Assessments > Initialization
-      summary: Initialization
+        - Assessments
+      summary: Step 1. Initialization
       description: >-
-        This API is used to initialize the assessment. It returns the hash that uniquely identifies the assessment session.
-        <Warning>This API must be called before starting the assessment</Warning>
+        This API is used to initialize the assessment. It returns an assessment_id that uniquely identifies the assessment session.
+        <Warning>This API must be called to initiate a user assessment</Warning>
 
       security:
         - authApiKey: []
-
-      parameters:
-        - $ref: '#/components/parameters/client-id'
-        - $ref: '#/components/parameters/locale'
 
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              title: Request Body
               type: object
+              title: Request Body
               description: >-
                 The request body should contain the user information.
+                Users can either provide the date of birth or age using `dob` and `age` fields respectively, along with gender inside `user_info`.
 
-                Users can either provide the date of birth or age using `dob` and `age` fields respectively inside `user_info`.
-                The format should be:
-
-                ```json
-
-                {
-                  "user_info": {
-                    "dob": "YYYY-MM-DD", // or "age": 20,
-                    "gender": "M"/"F"
-                  },
-                  "workflow_id": "1000",
-                }
-                ```
               properties:
                 user_info:
                   type: object
                   oneOf:
                     - $ref: '#/components/schemas/AS-Age-Gender'
-                      title: AgeWithGender
+                      title: MandatoryAgeGender
                     - $ref: '#/components/schemas/AS-Dob-Gender'
-                      title: DobWithGender
+                      title: MandatoryDobGender
+                workflow_id:
+                  type: integer
+                  description: >-
+                    A unique id to identify the assessment to be taken. [Detailed list of Assessment Workflows](../../assessment-workflows)
+                  default: 1000
+                  example: 1000
                 practitioner_id:
                   type: string
                   description: >-
@@ -61,14 +51,10 @@ paths:
                   type: string
                   description: >-
                     A unique patient id to identify the patient to associate as assessment with, if applicable.
-                workflow_id:
-                  type: integer
-                  description: >-
-                    A unique id to identify the assessment to be taken. Use the get-workflow-id API to get the workflow id. 1000 is for symptom checker
-                  default: 1000
               required:
                 - user_info
-
+                - workflow_id
+      
       responses:
         '200':
             description: OK
@@ -89,22 +75,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error-500'
 
-  /assessments/api/v1/start/{hash}:
+  /assessments/api/v1/start/{assessment_id}:
     put:
       tags:
-        - Assessments > Start
-      summary: Start Assessment
+        - Assessments
+      summary: Step 2. Start Assessment
       description: >-
-        This API is used to start the assessment. It returns the first question of the assessment.
+        This API is used to start and get the first question of the assessment.
         <Tip>Use this API to get the first question.</Tip>
       
       security:
         - authApiKey: []
 
       parameters:
-        - $ref: '#/components/parameters/client-id'
-        - $ref: '#/components/parameters/locale'
-        - $ref: '#/components/parameters/content-type-json'
+        - $ref: '#/components/parameters/assessment_id'
       
       responses:
         '200':
@@ -112,7 +96,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MasterComponentResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/MasterComponentResponse'
+                    title: Master Response
+                  - $ref: '#/components/schemas/ATSGComponentResponse'
+                    title: ATSG Response
+                  - $ref: '#/components/schemas/RadioComponentResponse'
+                    title: Radio Response
+                  - $ref: '#/components/schemas/MultiComponentResponse'
+                    title: Multi Select Response
+                  - $ref: '#/components/schemas/RadioGroupComponentResponse'
+                    title: Radio Group Response           
         '400':
           description: Bad Request
           content:
@@ -120,21 +114,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error-400"
 
-  /assessment/api/v1/continue/{hash}/{qid}:
+  /assessment/api/v1/continue/{assessment_id}/{qid}:
     put:
       tags:
-        - Assessments > Continue
-      summary: Continue Assessment
+        - Assessments
+      summary: Step 3. Continue Assessment
       description: >-
-        This API is used to continue the assessment. It accepts answer in the request body and returns the next question of the assessment.
-        <Tip>Call this API multiple times until progress reaches 100%</Tip>
+        This API is used to submit user answers and get the next questions based on the answers.
+        <Tip>Call this API multiple times until the assessment is complete where `is_last_question` will be true </Tip>
       
       security:
         - authApiKey: []
 
       parameters:
-        - $ref: '#/components/parameters/client-id'
-        - $ref: '#/components/parameters/locale'
+        - $ref: '#/components/parameters/assessment_id'
+        - $ref: '#/components/parameters/qid'
 
       requestBody:
         content:
@@ -155,6 +149,8 @@ paths:
                         title: MultiRequest
                       - $ref: '#/components/schemas/RadioGroupRequest'
                         title: RadioGroupRequest
+                      - $ref: '#/components/schemas/SkippedRequest'
+                        title: SkippedRequest
               description: >-
                 The request body should contain the answer to the question depending on the type of question component.
                 It should be in format as explained in above dropdown.
@@ -165,7 +161,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MasterComponentResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/MasterComponentResponse'
+                    title: Master Response
+                  - $ref: '#/components/schemas/ATSGComponentResponse'
+                    title: ATSG Response
+                  - $ref: '#/components/schemas/RadioComponentResponse'
+                    title: Radio Response
+                  - $ref: '#/components/schemas/MultiComponentResponse'
+                    title: Multi Select Response
+                  - $ref: '#/components/schemas/RadioGroupComponentResponse'
+                    title: Radio Group Response
+                  - $ref: '#/components/schemas/LastQuestionResponse'
+                    title: Last Question Response 
         '400':
           description: Bad Request
           content:
@@ -173,14 +181,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error-400'
         '500':
-          description: Server Error
+          description: Bad Request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error-500'
 
+
 components:
   schemas:
+    gender:
+      type: string
+      enum: [M, F, O]
+      example: "M"
+    age:
+      type: integer
+      minimum: 0
+      maximum: 130
+      example: 23
+    dob:
+      type: string
+      format: date
+      example: "2001-01-01"
     AS-Age-Gender:
       description: >-
         The user information should contain atleast the age of the user.
@@ -188,18 +210,11 @@ components:
       title: Gender and Age
       properties:
         gender:
-          type: string
-          enum: [M, F]
-          example: "M"
+          $ref: '#/components/schemas/gender'
         age:
-          type: integer
-          minimum: 0
-          maximum: 130
-          example: 23
+          $ref: '#/components/schemas/age'
         dob:
-          type: string
-          format: date
-          example: "2001-01-01"
+          $ref: '#/components/schemas/dob'
       example:  # Example for the entire object
         user_info:
           gender: "M"
@@ -214,18 +229,11 @@ components:
         The user information should contain atleast the dob of the user.
       properties:
         gender:
-          type: string
-          enum: [M, F]
-          example: "M"
+          $ref: '#/components/schemas/gender'
         dob:
-          type: string
-          format: date
-          example: "2001-01-01"
+          $ref: '#/components/schemas/dob'
         age:
-          type: integer
-          minimum: 0
-          maximum: 130
-          example: 23
+          $ref: '#/components/schemas/age'
       required:
         - dob
         - gender
@@ -235,13 +243,19 @@ components:
           dob: "2001-01-01"
     AS-init-200:
       type: object
+      description: >-
+        The response object contains the assessment_id that uniquely identifies the assessment session.
       properties:
-        init_hash:
+        assessment_id:
           type: string
+          description: >-
+            A unique identifier for the assessment session.
       required:
-        - init_hash
+        - assessment_id
       example:  # Example for the entire object
-        init_hash: sn_121212121218718
+        assessment_id: sn_121212121218718
+    
+    # error details
     Generic-Error:
       type: object
       properties:
@@ -271,86 +285,43 @@ components:
           error_code: server_error
           display_message: (Generic User friendly message)
           message: (Server error message)
-    MasterComponentResponse:
+
+    # Request basics
+    Selected-Choice:
       type: object
       properties:
-        questions:
-          type: array
-          items:
-            type: object
-            properties:
-              qid:
-                type: integer
-                example: 1
-                description: >-
-                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
-              component_code:
-                type: string
-                example: <component-code>
-              question_text:
-                type: string
-                example: <Question Text>
-              tip:
-                type: string
-                example: <Tip>
-              component_data:
-                type: object
-                properties:
-                  url:
-                    type: string
-                    description: >-
-                      This is valid for an autosuggest component
-                  choices:
-                    type: array
-                    description: >-
-                      This is valid for a choice type components, multi, radio (single choice), radio group
-                    items:
-                      type: object
-                      properties:
-                        choice_id:
-                          type: string
-                          example: xyzjahaj
-                        choice_label:
-                          type: string
-                          example: I have Diabetes
-                  default:
-                    type: string
-                    description: >-
-                      This will be a choice id in case of choice components else will be a string in case of user-input components
-              is_mandatory:
-                type: boolean
-                example: true
-                description: >-
-                  This is a boolean value, if true user has to answer this question
-        is_last_question:
-          type: boolean
-          example: false
-          description: >-
-            This is a boolean value, if true this is the last question of the assessment
-        progress:
-          type: integer
-          minimum: 0
-          maximum: 100
-          description: >-
-            This is the progress of the assessment, it is a number between 0 and 100 
+        choice_id:
+          type: string
+        choice_label:
+          type: string
+      example:
+        choice_id: test
+        choice_label: fever
+    Selected-Choice-Qualifier:
+      type: object
+      properties:
+        choice_id:
+          type: string
+        choice_label:
+          type: string
+        qualifier_id:
+          type: string
+      example:
+        choice_id: test
+        choice_label: fever
+        qualifier_id: a
+    
+    # Request Component Based
     RadioRequest:
       type: object
       title: Radio Choice Request
-      description: >-
-        This is the request body for single select choice components
+      description: This is the request body for single select choice components
       properties:
         selected_choices:
           type: array
           maxItems: 1
           items:
-            type: object
-            properties:
-              choice_id:
-                type: string
-                example: <id of the choice>
-              choice_label:
-                type: string
-                example: <label of the choice>
+            $ref: '#/components/schemas/Selected-Choice'
             required:
               - choice_id
       required:
@@ -364,30 +335,16 @@ components:
         selected_choices:
           type: array
           items:
-            type: object
-            properties:
-              choice_id:
-                type: string
-                example: <id of the choice>
-              choice_label:
-                type: string
-                example: <label of the choice>
+            $ref: '#/components/schemas/Selected-Choice'
             required:
               - choice_id
       required:
-        - selected_choices
+        - selected_choices 
     ATSGRequest:
       type: object
       properties:
         selected_choices:
-          type: object
-          properties:
-            choice_id:
-              type: string
-              example: <id of the choice>
-            choice_label:
-              type: string
-              example: <label of the choice>
+          $ref: '#/components/schemas/Selected-Choice'
           required:
             - choice_id
             - choice_label
@@ -397,22 +354,350 @@ components:
       type: object
       properties:
         selected_choices:
-          type: object
-          properties:
-            choice_id:
-              type: string
-              example: <id of the choice>
-            choice_label:
-              type: string
-              example: <label of the choice>
-            qualifier_id:
-              type: string
-              example: a
+          $ref: '#/components/schemas/Selected-Choice-Qualifier'
           required:
             - choice_id
             - qualifier_id
       required:
         - selected_choices
+    SkippedRequest:
+      type: object
+
+    # Response basics
+    Question-Choice:
+      type: object
+      properties:
+        choice_id:
+          type: string
+          example: xyzjahaj
+        choice_label:
+          type: string
+          example: I have Diabetes
+        selected:
+          type: boolean
+          example: false
+      required:
+        - choice_id
+        - choice_label
+    Question-Choice-Qualifier:
+      type: object
+      properties:
+        choice_id:
+          type: string
+          example: xyzjahaj
+        choice_label:
+          type: string
+          example: I have Diabetes
+        qualifiers:
+          type: object
+          properties:
+            p:
+              type: string
+              example: Present
+            a:
+              type: string
+              example: Absent
+            u:
+              type: string
+              example: Don't Know
+            selected:
+              type: boolean
+              example: false
+      required:
+        - choice_id
+        - choice_label
+    Question-default:
+      type: string
+      description: >-
+        This will be a choice id in case of choice components else will be a string in case of user-input components
+    Question-mandatory:
+      type: boolean
+      example: true
+      description: >-
+        This is a boolean value, if true user has to answer this question
+    Assessment-last-question:
+      type: boolean
+      example: false
+      description: >-
+        This is a boolean value, if true this is the last question of the assessment
+    Assessment-progress:
+      type: integer
+      minimum: 0
+      maximum: 100
+      description: >-
+        This is the progress of the assessment, it is a number between 0 and 100 
+
+    #Response : component based
+    MasterComponentData:
+      type: object
+      properties:
+        url:
+          type: string
+          description: >-
+            This is valid for an autosuggest component
+        static_autosuggest_choices:
+          type: object
+          properties:
+            sections:
+              type: array
+              items:
+                type: object
+                properties:
+                  section_title:
+                    type: string
+                  choices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: unique identifier of choice
+                        common_name:
+                          type: string
+                          description: name of the autosuggest item being searched
+                required:
+                  - section_title
+                  - choices
+        choices:
+          type: array
+          description: >-
+            This is valid for a choice type components, multi, radio (single choice), radio group
+          items:
+            $ref: '#/components/schemas/Question-Choice-Qualifier'
+        default:
+          type: string
+          description: >-
+            This will be a choice id in case of choice components else will be a string in case of user-input components
+    BaseChoiceComponentData:         
+      type: object
+      properties:
+        choices:
+          type: array
+          description: >-
+            This is valid for a choice type components, multi, radio (single choice), radio group
+          items:
+            $ref: '#/components/schemas/Question-Choice'
+      required:
+        - choices
+    RadioGroupComponentData:         
+      type: object
+      properties:
+        choices:
+          type: array
+          description: >-
+            This is valid for a choice type components, multi, radio (single choice), radio group
+          items:
+            $ref: '#/components/schemas/Question-Choice-Qualifier'
+      required:
+        - choices
+    ATSGComponentData:         
+      type: object
+      properties:
+        url:
+          type: string
+        static_autosuggest_choices:
+          type: object
+          properties:
+            sections:
+              type: array
+              items:
+                type: object
+                properties:
+                  section_title:
+                    type: string
+                  choices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: unique identifier of choice
+                        common_name:
+                          type: string
+                          description: name of the autosuggest item being searched
+                required:
+                  - section_title
+                  - choices
+      required:
+        - url
+    
+    # Response Data
+    MasterComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: integer
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+                example: 1
+              component_code:
+                type: string
+              question_text:
+                type: string
+              tip:
+                type: string
+              component_data:
+                $ref: '#/components/schemas/MasterComponentData'
+              is_mandatory:
+                $ref: '#/components/schemas/Question-mandatory'
+        is_last_question:
+          $ref: '#/components/schemas/Assessment-last-question'
+        progress:
+          $ref: '#/components/schemas/Assessment-progress'
+    RadioComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: integer
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+                example: 1
+              component_code:
+                type: string
+                default: 'I-RADO'
+              question_text:
+                type: string
+              tip:
+                type: string
+              component_data:
+                $ref: '#/components/schemas/BaseChoiceComponentData'
+              is_mandatory:
+                $ref: '#/components/schemas/Question-mandatory'
+            required:
+              - qid
+              - component_code
+              - question_text
+              - component_data
+              - is_mandatory
+        progress:
+          $ref: '#/components/schemas/Assessment-progress'
+      required:
+        - questions
+    MultiComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: integer
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+                example: 1
+              component_code:
+                type: string
+                default: 'I-MULT'
+              question_text:
+                type: string
+              tip:
+                type: string
+              component_data:
+                $ref: '#/components/schemas/BaseChoiceComponentData'
+              is_mandatory:
+                $ref: '#/components/schemas/Question-mandatory'
+            required:
+              - qid
+              - component_code
+              - question_text
+              - component_data
+              - is_mandatory
+        progress:
+          $ref: '#/components/schemas/Assessment-progress'
+      required:
+        - questions
+    RadioGroupComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: integer
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+                example: 1
+              component_code:
+                type: string
+                default: 'I-RADG'
+              question_text:
+                type: string
+              tip:
+                type: string
+              component_data:
+                $ref: '#/components/schemas/RadioGroupComponentData'
+              is_mandatory:
+                $ref: '#/components/schemas/Question-mandatory'
+            required:
+              - qid
+              - component_code
+              - question_text
+              - component_data
+              - is_mandatory
+        progress:
+          $ref: '#/components/schemas/Assessment-progress'
+      required:
+        - questions
+    ATSGComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: integer
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+                example: 1
+              component_code:
+                type: string
+                default: 'I-ATSG'
+              question_text:
+                type: string
+              tip:
+                type: string
+              component_data:
+                $ref: '#/components/schemas/ATSGComponentData'
+              is_mandatory:
+                $ref: '#/components/schemas/Question-mandatory'
+            required:
+              - qid
+              - component_code
+              - question_text
+              - component_data
+              - is_mandatory
+        progress:
+          $ref: '#/components/schemas/Assessment-progress'
+      required:
+        - questions
+    LastQuestionResponse:
+      type: object
+      properties:
+        is_last_question:
+          $ref: '#/components/schemas/Assessment-last-question'
+          default: true
+          example: true
+        progress:
+          $ref: '#/components/schemas/Assessment-progress'
+          default: 100
+          example: 100
 
   parameters:
     client-id: 
@@ -420,30 +705,39 @@ components:
       in: header
       required: true
       description: >-
-        The client id of the user. It is used to identify the user.
+        Any unique string to identify the logged in developer.
       schema:
         type: string
     locale:
       name: locale
       in: header
       description: >-
-        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+        Locale is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively with default being `en`.
       schema:
         type: string
         enum: [en, hi, kn]
         example: en
-    content-type-json:
-      name: Content-Type
-      in: header
+    assessment_id:
+      name: assessment_id
+      in: path
       required: true
       description: >-
-        The content type of the request. It should be application/json
+        The hash that uniquely identifies the assessment session.
       schema:
         type: string
-        example: application/json
+    qid:
+      name: qid
+      in: path
+      required: true
+      description: >-
+        The question id that uniquely identifies the question.
+      schema:
+        type: integer
 
   securitySchemes:
     authApiKey:
       in: header
       name: auth
+      description: >-
+        The authentication token of the developer (generated using Authorization API).
       type: apiKey
