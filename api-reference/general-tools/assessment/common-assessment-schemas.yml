@@ -1,0 +1,63 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+
+components:
+  schemas:
+    Generic-Error:
+      type: object
+      properties:
+        error_code:
+          type: string
+        display_message:
+          type: string
+        message:
+          type: string
+    Error-400:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: bad_request
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+    Error-500:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: server_error
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+
+  parameters:
+    client-id: 
+      name: client-id
+      in: header
+      required: true
+      description: >-
+        The client id of the user. It is used to identify the user.
+      schema:
+        type: string
+    locale:
+      name: locale
+      in: header
+      description: >-
+        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+      schema:
+        type: string
+        enum: [en, hi, kn]
+        example: en
+
+  securitySchemes:
+    authApiKey:
+      in: header
+      name: auth
+      type: apiKey

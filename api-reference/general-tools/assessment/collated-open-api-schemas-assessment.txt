@@ -6,6 +6,75 @@ servers:
   - url: https://api.eka.care
 
 paths:
+  /assessment/api/v1/init/:
+    post:
+      tags:
+        - Assessments
+      summary: Step 1. Initialization
+      description: >-
+        This API is used to initialize the assessment. It returns an assessment_id that uniquely identifies the assessment session.
+        <Warning>This API must be called to initiate a user assessment</Warning>
+
+      security:
+        - authApiKey: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: Request Body
+              description: >-
+                The request body should contain the user information.
+                Users can either provide the date of birth or age using `dob` and `age` fields respectively, along with gender inside `user_info`.
+
+              properties:
+                user_info:
+                  type: object
+                  oneOf:
+                    - $ref: '#/components/schemas/AS-Age-Gender'
+                      title: MandatoryAgeGender
+                    - $ref: '#/components/schemas/AS-Dob-Gender'
+                      title: MandatoryDobGender
+                workflow_id:
+                  type: integer
+                  description: >-
+                    A unique id to identify the assessment to be taken. [Detailed list of Assessment Workflows](../../assessment-workflows)
+                  default: 1000
+                  example: 1000
+                practitioner_id:
+                  type: string
+                  description: >-
+                    A unique practitioner id to identify the practitioner to associate an assessment with, if applicable.
+                patient_id:
+                  type: string
+                  description: >-
+                    A unique patient id to identify the patient to associate as assessment with, if applicable.
+              required:
+                - user_info
+                - workflow_id
+      
+      responses:
+        '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AS-init-200'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-400'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-500'
+
   /assessments/api/v1/start/{assessment_id}:
     put:
       tags:
@@ -19,8 +88,6 @@ paths:
         - authApiKey: []
 
       parameters:
-        - $ref: '#/components/parameters/client-id'
-        - $ref: '#/components/parameters/locale'
         - $ref: '#/components/parameters/assessment_id'
       
       responses:
@@ -60,8 +127,6 @@ paths:
         - authApiKey: []
 
       parameters:
-        - $ref: '#/components/parameters/client-id'
-        - $ref: '#/components/parameters/locale'
         - $ref: '#/components/parameters/assessment_id'
         - $ref: '#/components/parameters/qid'
 
@@ -122,9 +187,75 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error-500'
 
-# Define your schemas here if needed
+
 components:
   schemas:
+    gender:
+      type: string
+      enum: [M, F, O]
+      example: "M"
+    age:
+      type: integer
+      minimum: 0
+      maximum: 130
+      example: 23
+    dob:
+      type: string
+      format: date
+      example: "2001-01-01"
+    AS-Age-Gender:
+      description: >-
+        The user information should contain atleast the age of the user.
+      type: object
+      title: Gender and Age
+      properties:
+        gender:
+          $ref: '#/components/schemas/gender'
+        age:
+          $ref: '#/components/schemas/age'
+        dob:
+          $ref: '#/components/schemas/dob'
+      example:  # Example for the entire object
+        user_info:
+          gender: "M"
+          age: 25
+      required:
+        - age
+        - gender
+    AS-Dob-Gender:
+      type: object
+      title: "Gender & Dob"
+      description: >-
+        The user information should contain atleast the dob of the user.
+      properties:
+        gender:
+          $ref: '#/components/schemas/gender'
+        dob:
+          $ref: '#/components/schemas/dob'
+        age:
+          $ref: '#/components/schemas/age'
+      required:
+        - dob
+        - gender
+      example:  # Example for the entire object
+        user_info:
+          gender: "M"
+          dob: "2001-01-01"
+    AS-init-200:
+      type: object
+      description: >-
+        The response object contains the assessment_id that uniquely identifies the assessment session.
+      properties:
+        assessment_id:
+          type: string
+          description: >-
+            A unique identifier for the assessment session.
+      required:
+        - assessment_id
+      example:  # Example for the entire object
+        assessment_id: sn_121212121218718
+    
+    # error details
     Generic-Error:
       type: object
       properties:
@@ -154,7 +285,7 @@ components:
           error_code: server_error
           display_message: (Generic User friendly message)
           message: (Server error message)
-    
+
     # Request basics
     Selected-Choice:
       type: object
@@ -574,22 +705,18 @@ components:
       in: header
       required: true
       description: >-
-        The client id of the user. It is used to identify the user.
+        Any unique string to identify the logged in developer.
       schema:
         type: string
-        default: hello
-      example: hello
     locale:
       name: locale
       in: header
       description: >-
-        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+        Locale is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively with default being `en`.
       schema:
         type: string
         enum: [en, hi, kn]
-        default: en
         example: en
-      example: en
     assessment_id:
       name: assessment_id
       in: path
