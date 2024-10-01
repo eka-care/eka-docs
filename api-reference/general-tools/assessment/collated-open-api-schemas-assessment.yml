@@ -1,0 +1,465 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+
+paths:
+  /assessment/api/v1/init/:
+    post:
+      tags:
+        - Assessments > Initialization
+      summary: Initialization
+      description: >-
+        This API is used to initialize the assessment. It returns the hash that uniquely identifies the assessment session.
+        <Warning>This API must be called before starting the assessment</Warning>
+
+      security:
+        - authApiKey: []
+
+      parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              title: Request Body
+              type: object
+              description: >-
+                The request body should contain the user information.
+
+                Users can either provide the date of birth or age using `dob` and `age` fields respectively inside `user_info`.
+                The format should be:
+
+                ```json
+
+                {
+                  "user_info": {
+                    "dob": "YYYY-MM-DD", // or "age": 20,
+                    "gender": "M"/"F"
+                  },
+                  "workflow_id": "1000",
+                }
+                ```
+              properties:
+                user_info:
+                  type: object
+                  oneOf:
+                    - $ref: '#/components/schemas/AS-Age-Gender'
+                      title: AgeWithGender
+                    - $ref: '#/components/schemas/AS-Dob-Gender'
+                      title: DobWithGender
+                practitioner_id:
+                  type: string
+                  description: >-
+                    A unique practitioner id to identify the practitioner to associate an assessment with, if applicable.
+                patient_id:
+                  type: string
+                  description: >-
+                    A unique patient id to identify the patient to associate as assessment with, if applicable.
+                workflow_id:
+                  type: integer
+                  description: >-
+                    A unique id to identify the assessment to be taken. Use the get-workflow-id API to get the workflow id. 1000 is for symptom checker
+                  default: 1000
+              required:
+                - user_info
+
+      responses:
+        '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AS-init-200'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-400'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-500'
+
+  /assessments/api/v1/start/{hash}:
+    put:
+      tags:
+        - Assessments > Start
+      summary: Start Assessment
+      description: >-
+        This API is used to start the assessment. It returns the first question of the assessment.
+        <Tip>Use this API to get the first question.</Tip>
+      
+      security:
+        - authApiKey: []
+
+      parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
+        - $ref: '#/components/parameters/content-type-json'
+      
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterComponentResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error-400"
+
+  /assessment/api/v1/continue/{hash}/{qid}:
+    put:
+      tags:
+        - Assessments > Continue
+      summary: Continue Assessment
+      description: >-
+        This API is used to continue the assessment. It accepts answer in the request body and returns the next question of the assessment.
+        <Tip>Call this API multiple times until progress reaches 100%</Tip>
+      
+      security:
+        - authApiKey: []
+
+      parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_response:
+                  type: array
+                  items:
+                    type: object
+                    oneOf:
+                      - $ref: '#/components/schemas/ATSGRequest'
+                        title: Autosuggest Request
+                      - $ref: '#/components/schemas/RadioRequest'
+                        title: RadioRequest
+                      - $ref: '#/components/schemas/MultiRequest'
+                        title: MultiRequest
+                      - $ref: '#/components/schemas/RadioGroupRequest'
+                        title: RadioGroupRequest
+              description: >-
+                The request body should contain the answer to the question depending on the type of question component.
+                It should be in format as explained in above dropdown.
+     
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterComponentResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-400'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-500'
+
+components:
+  schemas:
+    AS-Age-Gender:
+      description: >-
+        The user information should contain atleast the age of the user.
+      type: object
+      title: Gender and Age
+      properties:
+        gender:
+          type: string
+          enum: [M, F]
+          example: "M"
+        age:
+          type: integer
+          minimum: 0
+          maximum: 130
+          example: 23
+        dob:
+          type: string
+          format: date
+          example: "2001-01-01"
+      example:  # Example for the entire object
+        user_info:
+          gender: "M"
+          age: 25
+      required:
+        - age
+        - gender
+    AS-Dob-Gender:
+      type: object
+      title: "Gender & Dob"
+      description: >-
+        The user information should contain atleast the dob of the user.
+      properties:
+        gender:
+          type: string
+          enum: [M, F]
+          example: "M"
+        dob:
+          type: string
+          format: date
+          example: "2001-01-01"
+        age:
+          type: integer
+          minimum: 0
+          maximum: 130
+          example: 23
+      required:
+        - dob
+        - gender
+      example:  # Example for the entire object
+        user_info:
+          gender: "M"
+          dob: "2001-01-01"
+    AS-init-200:
+      type: object
+      properties:
+        init_hash:
+          type: string
+      required:
+        - init_hash
+      example:  # Example for the entire object
+        init_hash: sn_121212121218718
+    Generic-Error:
+      type: object
+      properties:
+        error_code:
+          type: string
+        display_message:
+          type: string
+        message:
+          type: string
+    Error-400:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: bad_request
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+    Error-500:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: server_error
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+    MasterComponentResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              qid:
+                type: integer
+                example: 1
+                description: >-
+                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+              component_code:
+                type: string
+                example: <component-code>
+              question_text:
+                type: string
+                example: <Question Text>
+              tip:
+                type: string
+                example: <Tip>
+              component_data:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: >-
+                      This is valid for an autosuggest component
+                  choices:
+                    type: array
+                    description: >-
+                      This is valid for a choice type components, multi, radio (single choice), radio group
+                    items:
+                      type: object
+                      properties:
+                        choice_id:
+                          type: string
+                          example: xyzjahaj
+                        choice_label:
+                          type: string
+                          example: I have Diabetes
+                  default:
+                    type: string
+                    description: >-
+                      This will be a choice id in case of choice components else will be a string in case of user-input components
+              is_mandatory:
+                type: boolean
+                example: true
+                description: >-
+                  This is a boolean value, if true user has to answer this question
+        is_last_question:
+          type: boolean
+          example: false
+          description: >-
+            This is a boolean value, if true this is the last question of the assessment
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: >-
+            This is the progress of the assessment, it is a number between 0 and 100 
+    RadioRequest:
+      type: object
+      title: Radio Choice Request
+      description: >-
+        This is the request body for single select choice components
+      properties:
+        qid:
+          type: integer
+          example: 0
+        selected_choices:
+          type: array
+          maxItems: 1
+          items:
+            type: object
+            properties:
+              choice_id:
+                type: string
+                example: <id of the choice>
+              choice_label:
+                type: string
+                example: <label of the choice>
+            required:
+              - choice_id
+      required:
+        - qid
+        - selected_choices
+    MultiRequest:
+      type: object
+      title: Multi Choice Request
+      description: >-
+        This is the request body for multi choice components
+      properties:
+        qid:
+          type: integer
+          example: 0
+        selected_choices:
+          type: array
+          items:
+            type: object
+            properties:
+              choice_id:
+                type: string
+                example: <id of the choice>
+              choice_label:
+                type: string
+                example: <label of the choice>
+            required:
+              - choice_id
+      required:
+        - qid
+        - selected_choices
+    ATSGRequest:
+      type: object
+      properties:
+        qid:
+          type: integer
+          example: 0
+        selected_choices:
+          type: object
+          properties:
+            choice_id:
+              type: string
+              example: <id of the choice>
+            choice_label:
+              type: string
+              example: <label of the choice>
+          required:
+            - choice_id
+            - choice_label
+      required:
+        - qid
+        - selected_choices
+    RadioGroupRequest:
+      type: object
+      properties:
+        qid:
+          type: integer
+          example: 0
+        selected_choices:
+          type: object
+          properties:
+            choice_id:
+              type: string
+              example: <id of the choice>
+            choice_label:
+              type: string
+              example: <label of the choice>
+            qualifier_id:
+              type: string
+              example: a
+          required:
+            - choice_id
+            - qualifier_id
+      required:
+        - qid
+        - selected_choices
+
+  parameters:
+    client-id: 
+      name: client-id
+      in: header
+      required: true
+      description: >-
+        The client id of the user. It is used to identify the user.
+      schema:
+        type: string
+    locale:
+      name: locale
+      in: header
+      description: >-
+        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+      schema:
+        type: string
+        enum: [en, hi, kn]
+        example: en
+    content-type-json:
+      name: Content-Type
+      in: header
+      required: true
+      description: >-
+        The content type of the request. It should be application/json
+      schema:
+        type: string
+        example: application/json
+
+  securitySchemes:
+    authApiKey:
+      in: header
+      name: auth
+      type: apiKey
