@@ -9,15 +9,15 @@ paths:
   /assessment/api/v1/init/:
     post:
       tags:
-        - Assessments > Initialization
-      summary: Initialization
+        - Assessments
+      summary: Step 1. Initialization
       description: >-
-        This API is used to initialize the assessment. It returns the hash that uniquely identifies the assessment session.
-        <Warning>This API must be called before starting the assessment</Warning>
+        This API is used to initialize the assessment. It returns an assessment_id that uniquely identifies the assessment session.
+        <Warning>This API must be called to initiate a user assessment</Warning>
 
       security:
         - authApiKey: []
-
+      
       parameters:
         - $ref: '#/components/parameters/client-id'
         - $ref: '#/components/parameters/locale'
@@ -27,32 +27,26 @@ paths:
         content:
           application/json:
             schema:
-              title: Request Body
               type: object
+              title: Request Body
               description: >-
                 The request body should contain the user information.
+                Users can either provide the date of birth or age using `dob` and `age` fields respectively, along with gender inside `user_info`.
 
-                Users can either provide the date of birth or age using `dob` and `age` fields respectively inside `user_info`.
-                The format should be:
-
-                ```json
-
-                {
-                  "user_info": {
-                    "dob": "YYYY-MM-DD", // or "age": 20,
-                    "gender": "M"/"F"
-                  },
-                  "workflow_id": "1000",
-                }
-                ```
               properties:
                 user_info:
                   type: object
                   oneOf:
                     - $ref: '#/components/schemas/AS-Age-Gender'
-                      title: AgeWithGender
+                      title: MandatoryAgeGender
                     - $ref: '#/components/schemas/AS-Dob-Gender'
-                      title: DobWithGender
+                      title: MandatoryDobGender
+                workflow_id:
+                  type: integer
+                  description: >-
+                    A unique id to identify the assessment to be taken. [Detailed list of Assessment Workflows](../../assessment-workflows)
+                  default: 1000
+                  example: 1000
                 practitioner_id:
                   type: string
                   description: >-
@@ -61,14 +55,10 @@ paths:
                   type: string
                   description: >-
                     A unique patient id to identify the patient to associate as assessment with, if applicable.
-                workflow_id:
-                  type: integer
-                  description: >-
-                    A unique id to identify the assessment to be taken. Use the get-workflow-id API to get the workflow id. 1000 is for symptom checker
-                  default: 1000
               required:
                 - user_info
-
+                - workflow_id
+      
       responses:
         '200':
             description: OK
@@ -91,6 +81,19 @@ paths:
 
 components:
   schemas:
+    gender:
+      type: string
+      enum: [M, F, O]
+      example: "M"
+    age:
+      type: integer
+      minimum: 0
+      maximum: 130
+      example: 23
+    dob:
+      type: string
+      format: date
+      example: "2001-01-01"
     AS-Age-Gender:
       description: >-
         The user information should contain atleast the age of the user.
@@ -98,18 +101,11 @@ components:
       title: Gender and Age
       properties:
         gender:
-          type: string
-          enum: [M, F]
-          example: "M"
+          $ref: '#/components/schemas/gender'
         age:
-          type: integer
-          minimum: 0
-          maximum: 130
-          example: 23
+          $ref: '#/components/schemas/age'
         dob:
-          type: string
-          format: date
-          example: "2001-01-01"
+          $ref: '#/components/schemas/dob'
       example:  # Example for the entire object
         user_info:
           gender: "M"
@@ -124,18 +120,11 @@ components:
         The user information should contain atleast the dob of the user.
       properties:
         gender:
-          type: string
-          enum: [M, F]
-          example: "M"
+          $ref: '#/components/schemas/gender'
         dob:
-          type: string
-          format: date
-          example: "2001-01-01"
+          $ref: '#/components/schemas/dob'
         age:
-          type: integer
-          minimum: 0
-          maximum: 130
-          example: 23
+          $ref: '#/components/schemas/age'
       required:
         - dob
         - gender
@@ -145,13 +134,17 @@ components:
           dob: "2001-01-01"
     AS-init-200:
       type: object
+      description: >-
+        The response object contains the assessment_id that uniquely identifies the assessment session.
       properties:
-        init_hash:
+        assessment_id:
           type: string
+          description: >-
+            A unique identifier for the assessment session.
       required:
-        - init_hash
+        - assessment_id
       example:  # Example for the entire object
-        init_hash: sn_121212121218718
+        assessment_id: sn_121212121218718
     Generic-Error:
       type: object
       properties:
@@ -188,14 +181,14 @@ components:
       in: header
       required: true
       description: >-
-        The client id of the user. It is used to identify the user.
+        Any unique string to identify the logged in developer.
       schema:
         type: string
     locale:
       name: locale
       in: header
       description: >-
-        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+        Locale is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively with default being `en`.
       schema:
         type: string
         enum: [en, hi, kn]
@@ -205,4 +198,6 @@ components:
     authApiKey:
       in: header
       name: auth
+      description: >-
+        The authentication token of the developer (generated using Authorization API).
       type: apiKey
