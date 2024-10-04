@@ -1,0 +1,85 @@
+openapi: 3.1.0
+info:
+  title: Transaction Status API
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+paths:
+  /dr/v1/payment/transaction_status/{transaction_id}:
+    get:
+      summary: Get Transaction Status
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  amount:
+                    type: number
+                    example: 15
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2024-10-01T11:41:24.000+0000"
+                  payment_gateway:
+                    type: string
+                    example: Ezetap
+                  payment_mode:
+                    type: string
+                    example: UPI
+                  payment_status:
+                    type: string
+                    example: PAYMENT_SUCCESS
+                  rrn:
+                    type: string
+                    example: 4275481
+                  transaction_id:
+                    type: string
+                    example: 54385bbc-823-bdjbjgwu-6d335
+        '404':
+          description: The specified transaction ID does not exist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: TRANSACTION_ID_NOT_FOUND
+                  message:
+                    type: string
+                    example: The specified transaction ID does not exist
+        '500':
+          description: An unexpected error occurred on the server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: SERVER_ERROR
+                  message:
+                    type: string
+                    example: An unexpected error occurred on the server
+      security:
+        - apiKeyAuth: []
+        - auth: []
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: auth
+    auth:
+      type: apiKey
+      in: header
+      name: auth

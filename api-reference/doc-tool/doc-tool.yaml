@@ -2829,7 +2829,7 @@ paths:
       tags:
         - Appointment API
       summary: Get Appointment Details
-      description: >-
+    description: >-
         
         
         ### Overview
@@ -2922,7 +2922,55 @@ paths:
         | data.service.service_name | string | Name of the service |
         
         | data.service.appointment_type | string | Type of appointment (`REGULAR`, etc.) |
-      
+        
+        | data.patient_profile | object | Details of the patient profile |
+        
+        | data.patient_profile.age | string | Age of the patient (nullable) |
+        
+        | data.patient_profile.dob | string | Date of birth of the patient |
+        
+        | data.patient_profile.email_id | string | Email ID of the patient |
+        
+        | data.patient_profile.first_name | string | First name of the patient |
+        
+        | data.patient_profile.gender | string | Gender of the patient |
+        
+        | data.patient_profile.last_name | string | Last name of the patient |
+        
+        | data.patient_profile.middle_name | string | Middle name of the patient (nullable) |
+        
+        | data.patient_profile.mobile | string | Mobile number of the patient |
+        
+        | data.patient_profile.patient_address | object | Address details of the patient |
+        
+        | data.patient_profile.patient_address.address_line1 | string | Address line 1 (nullable) |
+        
+        | data.patient_profile.patient_address.pincode | string | Pincode (nullable) |
+        
+        | data.patient_profile.salutation | string | Salutation (e.g. Mr., Ms.) |
+        
+        | data.prescription_url | string | URL to access the prescription |
+        
+        | data.receipts | array | List of receipt details |
+        
+        | data.receipts[].created_at | datetime | Receipt creation timestamp |
+        
+        | data.receipts[].net_amount | number | Net amount of the receipt |
+        
+        | data.receipts[].payment_id | string | Payment ID for the receipt (nullable) |
+        
+        | data.receipts[].receipt_amount | number | Receipt amount |
+        
+        | data.receipts[].receipt_id | integer | Receipt ID |
+        
+        | data.receipts[].receipt_payment | array | Payment details for the receipt |
+        
+        | data.receipts[].receipt_payment[].amount | number | Payment amount |
+        
+        | data.receipts[].receipt_payment[].paymode | string | Payment mode (`CASH`, etc.) |
+        
+        | data.receipts[].receipt_url | string | URL to access the receipt |
+
       
 
       operationId: GetappointmentDetails
@@ -3053,6 +3101,70 @@ paths:
                             type: string
                           allow_patient_booking:
                             type: boolean
+                      # New properties added
+                      patient_profile:
+                        type: object
+                        properties:
+                          age:
+                            type: string
+                            nullable: true
+                          dob:
+                            type: string
+                            format: date
+                          email_id:
+                            type: string
+                          first_name:
+                            type: string
+                          gender:
+                            type: string
+                          last_name:
+                            type: string
+                          middle_name:
+                            type: string
+                            nullable: true
+                          mobile:
+                            type: string
+                          patient_address:
+                            type: object
+                            properties:
+                              address_line1:
+                                type: string
+                                nullable: true
+                              pincode:
+                                type: string
+                                nullable: true
+                          salutation:
+                            type: string
+                      prescription_url:
+                        type: string
+                      receipts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            created_at:
+                              type: string
+                              format: date-time
+                            net_amount:
+                              type: number
+                            payment_id:
+                              type: string
+                              nullable: true
+                            receipt_amount:
+                              type: number
+                            receipt_id:
+                              type: integer
+                            receipt_payment:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  amount:
+                                    type: number
+                                  paymode:
+                                    type: string
+                            receipt_url:
+                              type: string
                 example:
                   status_code: 200
                   success: "true"
@@ -3084,6 +3196,40 @@ paths:
                       post_pay: false
                       service_name: consultation
                       appointment_type: REGULAR
+                      allow_patient_booking: true
+                    patient_profile:
+                      age: null
+                      dob: "1984-11-19"
+                      email_id: "xyz@eka.care"
+                      first_name: "Sanket"
+                      gender: "M"
+                      last_name: "Bansal"
+                      middle_name: ""
+                      mobile: "+918888888888"
+                      patient_address:
+                        address_line1: null
+                        pincode: ""
+                      salutation: "Mr."
+                    prescription_url: "https://prescription-store-s3.eka.care/P-DW-A1E115AA-D9D3-5443-BD82-2663F7D49298.pdf"
+                    receipts:
+                      - created_at: "2024-10-03T08:16:42.437Z"
+                        net_amount: 20
+                        payment_id: null
+                        receipt_amount: 20
+                        receipt_id: 2889705
+                        receipt_payment:
+                          - amount: 20
+                            paymode: "CASH"
+                        receipt_url: "https://doc-receipts.eka.care/v2/161467756044203/605367c0cb46901ba3a3e558/1727943402437.pdf"
+                      - created_at: "2024-10-03T08:16:58.377Z"
+                        net_amount: 1000
+                        payment_id: null
+                        receipt_amount: 1000
+                        receipt_id: 2889708
+                        receipt_payment:
+                          - amount: 1000
+                            paymode: "CASH"
+                        receipt_url: "https://doc-receipts.eka.care/v2/161467756044203/605367c0cb46901ba3a3e558/1727943418377.pdf"
         '400':
           description: Bad Request
           headers:
