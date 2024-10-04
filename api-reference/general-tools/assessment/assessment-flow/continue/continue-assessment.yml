@@ -9,7 +9,7 @@ servers:
     url: https://api.dev.eka.care
 
 paths:
-  /assessments/api/v1/start/{assessment_id}:
+  /assessment/api/v1/start/{assessment_id}:
     put:
       tags:
         - Assessments
@@ -158,17 +158,6 @@ components:
           display_message: (Generic User friendly message)
           message: (Server error message)
     
-    # Request basics
-    Selected-Choice:
-      type: object
-      properties:
-        choice_id:
-          type: string
-        choice_label:
-          type: string
-      example:
-        choice_id: test
-        choice_label: fever
     Selected-Choice-Qualifier:
       type: object
       properties:
@@ -178,10 +167,6 @@ components:
           type: string
         qualifier_id:
           type: string
-      example:
-        choice_id: test
-        choice_label: fever
-        qualifier_id: a
     
     # Request Component Based
     RadioRequest:
@@ -193,11 +178,16 @@ components:
           type: array
           maxItems: 1
           items:
-            $ref: '#/components/schemas/Selected-Choice'
+            $ref: '#/components/schemas/Selected-Choice-Qualifier'
             required:
               - choice_id
       required:
         - selected_choices
+      example:
+        selected_choices:
+          - choice_id: test-choice-1
+            choice_label: I have Diabetes
+            qualifier_id: p
     MultiRequest:
       type: object
       title: Multi Choice Request
@@ -207,21 +197,38 @@ components:
         selected_choices:
           type: array
           items:
-            $ref: '#/components/schemas/Selected-Choice'
+            $ref: '#/components/schemas/Selected-Choice-Qualifier'
             required:
               - choice_id
       required:
         - selected_choices 
+      example:
+        selected_choices:
+          - choice_id: test-choice-10
+            choice_label: Fever
+          - choice_id: test-choice-11
+            choice_label: Cold
+            qualifier_id: a
+          - choice_id: test-choice-12
+            choice_label: Cough
     ATSGRequest:
       type: object
       properties:
         selected_choices:
-          $ref: '#/components/schemas/Selected-Choice'
+          $ref: '#/components/schemas/Selected-Choice-Qualifier'
           required:
             - choice_id
             - choice_label
       required:
         - selected_choices
+      example:
+        selected_choices:
+          - choice_id: test-choice-20
+            choice_label: Hay Fever
+          - choice_id: test-choice-21
+            choice_label: Sneezing
+          - choice_id: test-choice-22
+            choice_label: Chills
     RadioGroupRequest:
       type: object
       properties:
@@ -232,6 +239,17 @@ components:
             - qualifier_id
       required:
         - selected_choices
+      example:
+        selected_choices:
+          - choice_id: test-choice-1
+            choice_label: I have Diabetes
+            qualifier_id: p
+          - choice_id: test-choice-1
+            choice_label: I have Hypertension
+            qualifier_id: a
+          - choice_id: test-choice-1
+            choice_label: I have Thyroid
+            qualifier_id: u
     SkippedRequest:
       type: object
 
@@ -248,6 +266,7 @@ components:
         is_selected:
           type: boolean
           example: false
+          default: false
       required:
         - choice_id
         - choice_label

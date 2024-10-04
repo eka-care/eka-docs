@@ -61,6 +61,14 @@ paths:
               required:
                 - user_info
                 - workflow_id
+              example:
+                user_info:
+                  dob: "2001-01-01"
+                  age: 25
+                  gender: "m"
+                workflow_id: 1000
+                practitioner_id: "TEST-DR-123"
+                patient_id: "TEST-PATIENT-123"
       
       responses:
         '200':
@@ -82,7 +90,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error-500'
 
-  /assessments/api/v1/start/{assessment_id}:
+  /assessment/api/v1/start/{assessment_id}:
     put:
       tags:
         - Assessments
@@ -226,10 +234,6 @@ components:
           $ref: '#/components/schemas/age'
         dob:
           $ref: '#/components/schemas/dob'
-      example:  # Example for the entire object
-        user_info:
-          gender: "M"
-          age: 25
       required:
         - age
         - gender
@@ -248,10 +252,6 @@ components:
       required:
         - dob
         - gender
-      example:  # Example for the entire object
-        user_info:
-          gender: "M"
-          dob: "2001-01-01"
     AS-init-200:
       type: object
       description: >-
@@ -294,18 +294,7 @@ components:
           error_code: server_error
           display_message: (Generic User friendly message)
           message: (Server error message)
-      
-    # Request basics
-    Selected-Choice:
-      type: object
-      properties:
-        choice_id:
-          type: string
-        choice_label:
-          type: string
-      example:
-        choice_id: test
-        choice_label: fever
+    
     Selected-Choice-Qualifier:
       type: object
       properties:
@@ -315,10 +304,6 @@ components:
           type: string
         qualifier_id:
           type: string
-      example:
-        choice_id: test
-        choice_label: fever
-        qualifier_id: a
     
     # Request Component Based
     RadioRequest:
@@ -330,11 +315,16 @@ components:
           type: array
           maxItems: 1
           items:
-            $ref: '#/components/schemas/Selected-Choice'
+            $ref: '#/components/schemas/Selected-Choice-Qualifier'
             required:
               - choice_id
       required:
         - selected_choices
+      example:
+        selected_choices:
+          - choice_id: test-choice-1
+            choice_label: I have Diabetes
+            qualifier_id: p
     MultiRequest:
       type: object
       title: Multi Choice Request
@@ -344,21 +334,38 @@ components:
         selected_choices:
           type: array
           items:
-            $ref: '#/components/schemas/Selected-Choice'
+            $ref: '#/components/schemas/Selected-Choice-Qualifier'
             required:
               - choice_id
       required:
         - selected_choices 
+      example:
+        selected_choices:
+          - choice_id: test-choice-10
+            choice_label: Fever
+          - choice_id: test-choice-11
+            choice_label: Cold
+            qualifier_id: a
+          - choice_id: test-choice-12
+            choice_label: Cough
     ATSGRequest:
       type: object
       properties:
         selected_choices:
-          $ref: '#/components/schemas/Selected-Choice'
+          $ref: '#/components/schemas/Selected-Choice-Qualifier'
           required:
             - choice_id
             - choice_label
       required:
         - selected_choices
+      example:
+        selected_choices:
+          - choice_id: test-choice-20
+            choice_label: Hay Fever
+          - choice_id: test-choice-21
+            choice_label: Sneezing
+          - choice_id: test-choice-22
+            choice_label: Chills
     RadioGroupRequest:
       type: object
       properties:
@@ -369,6 +376,17 @@ components:
             - qualifier_id
       required:
         - selected_choices
+      example:
+        selected_choices:
+          - choice_id: test-choice-1
+            choice_label: I have Diabetes
+            qualifier_id: p
+          - choice_id: test-choice-1
+            choice_label: I have Hypertension
+            qualifier_id: a
+          - choice_id: test-choice-1
+            choice_label: I have Thyroid
+            qualifier_id: u
     SkippedRequest:
       type: object
 
@@ -385,6 +403,7 @@ components:
         is_selected:
           type: boolean
           example: false
+          default: false
       required:
         - choice_id
         - choice_label
@@ -707,7 +726,6 @@ components:
           default: 100
           example: 100
 
-  
   parameters:
     client-id: 
       name: client-id
