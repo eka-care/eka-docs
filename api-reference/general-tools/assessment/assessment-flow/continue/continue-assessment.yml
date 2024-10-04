@@ -3,7 +3,10 @@ info:
   title: Assessment APIs
   version: 1.0.0
 servers:
-  - url: https://api.eka.care
+  - description: Production
+    url: https://api.eka.care
+  - description: Stage/Sandbox
+    url: https://api.dev.eka.care
 
 paths:
   /assessments/api/v1/start/{assessment_id}:
@@ -242,7 +245,7 @@ components:
         choice_label:
           type: string
           example: I have Diabetes
-        selected:
+        is_selected:
           type: boolean
           example: false
       required:
@@ -258,20 +261,19 @@ components:
           type: string
           example: I have Diabetes
         qualifiers:
-          type: object
-          properties:
-            p:
-              type: string
-              example: Present
-            a:
-              type: string
-              example: Absent
-            u:
-              type: string
-              example: Don't Know
-            selected:
-              type: boolean
-              example: false
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                enum: [p, a, u]
+              label:
+                type: string
+                enum: [Yes, No, Don't Know]
+              is_selected:
+                type: boolean
+                example: false
       required:
         - choice_id
         - choice_label

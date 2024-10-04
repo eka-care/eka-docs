@@ -3,7 +3,10 @@ info:
   title: Assessment APIs
   version: 1.0.0
 servers:
-  - url: https://api.eka.care
+  - description: Production
+    url: https://api.eka.care
+  - description: Stage/Sandbox
+    url: https://api.dev.eka.care
 
 paths:
   /assessment/api/v1/init/:
@@ -17,6 +20,10 @@ paths:
 
       security:
         - authApiKey: []
+      
+      parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
 
       requestBody:
         required: true
@@ -88,6 +95,8 @@ paths:
         - authApiKey: []
 
       parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
         - $ref: '#/components/parameters/assessment_id'
       
       responses:
@@ -127,6 +136,8 @@ paths:
         - authApiKey: []
 
       parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
         - $ref: '#/components/parameters/assessment_id'
         - $ref: '#/components/parameters/qid'
 
@@ -254,8 +265,6 @@ components:
         - assessment_id
       example:  # Example for the entire object
         assessment_id: sn_121212121218718
-    
-    # error details
     Generic-Error:
       type: object
       properties:
@@ -285,7 +294,7 @@ components:
           error_code: server_error
           display_message: (Generic User friendly message)
           message: (Server error message)
-
+      
     # Request basics
     Selected-Choice:
       type: object
@@ -373,7 +382,7 @@ components:
         choice_label:
           type: string
           example: I have Diabetes
-        selected:
+        is_selected:
           type: boolean
           example: false
       required:
@@ -389,20 +398,19 @@ components:
           type: string
           example: I have Diabetes
         qualifiers:
-          type: object
-          properties:
-            p:
-              type: string
-              example: Present
-            a:
-              type: string
-              example: Absent
-            u:
-              type: string
-              example: Don't Know
-            selected:
-              type: boolean
-              example: false
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                enum: [p, a, u]
+              label:
+                type: string
+                enum: [Yes, No, Don't Know]
+              is_selected:
+                type: boolean
+                example: false
       required:
         - choice_id
         - choice_label
@@ -699,24 +707,29 @@ components:
           default: 100
           example: 100
 
+  
   parameters:
     client-id: 
       name: client-id
       in: header
       required: true
       description: >-
-        Any unique string to identify the logged in developer.
+        The client id of the user. It is used to identify the user.
       schema:
         type: string
+        default: hello
+      example: hello
     locale:
       name: locale
       in: header
       description: >-
-        Locale is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively with default being `en`.
+        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
       schema:
         type: string
         enum: [en, hi, kn]
+        default: en
         example: en
+      example: en
     assessment_id:
       name: assessment_id
       in: path
