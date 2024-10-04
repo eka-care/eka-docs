@@ -582,6 +582,93 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/profile/kyc/init:
+    post:
+      description: Request otp to initialise the KYC flow
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycGenerateKycOtpRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycGenerateKycOtpResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/kyc/resend:
+    post:
+      description: Resend otp for KYC
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycResendKycOtp'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycResendKycOtp'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/kyc/verify:
+    post:
+      description: Verify OTP to complete KYC
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycVerifyKycOtpRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycVerifyKycOtpResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/profile/share:
     post:
       description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
@@ -1869,6 +1956,47 @@ components:
           description: Transaction ID for the session
           type: string
       type: object
+    KycGenerateKycOtpRequest:
+      properties:
+        identifier:
+          type: string
+        method:
+          enum:
+          - abha-number
+          type: string
+      type: object
+    KycGenerateKycOtpResponse:
+      properties:
+        skip_state:
+          enum:
+          - kyc_verify_abha_otp
+          - kyc_end
+          type: string
+        txn_id:
+          type: string
+      type: object
+    KycResendKycOtp:
+      properties:
+        txn_id:
+          type: string
+      type: object
+    KycVerifyKycOtpRequest:
+      properties:
+        otp:
+          type: string
+        txn_id:
+          type: string
+      type: object
+    KycVerifyKycOtpResponse:
+      properties:
+        skip_state:
+          enum:
+          - kyc_verify_abha_otp
+          - kyc_end
+          type: string
+        txn_id:
+          type: string
+      type: object
     ListsRequestDetail:
       properties:
         created_at:
@@ -2403,7 +2531,9 @@ components:
     VerifyResponseType4:
       properties:
         refresh_token:
-          type: string
+          type:
+          - "null"
+          - string
         token:
           description: Access token for the user
           type:
