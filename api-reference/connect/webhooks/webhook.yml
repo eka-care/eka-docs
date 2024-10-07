@@ -1,0 +1,252 @@
+openapi: 3.1.0
+info:
+  title: Webhook Service for the Connect Clients
+  description: |
+    The Webhook Service allows clients to register webhooks that are triggered based on specific events. Each webhook is associated with a business_id, connect_id, url, and a scope. The scope defines the type of events that will trigger the webhook.
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+components:
+  securitySchemes:
+    auth:
+      type: apiKey
+      in: header
+      name: auth
+      description: |
+        The API requires the following auth in headers for authentication.
+  schemas:
+    RegisterWebhookRequest:
+      type: object
+      properties:
+        scope:
+          type: string
+          description: Enum - all, appointment, sa
+          example: "all"
+        endpoint:
+          type: string
+          description: The URL where the webhook will send POST requests.
+          example: "https://example.com/webhook"
+        signing_key:
+          type: string
+          description: A secret key for securing the webhook.
+          example: "supersecretkey"
+        connect_id:
+          type: string
+          description: connect_id will only come here in hub.eka.care caller case
+          example: "connect_12345"
+        protocol:
+          type: string
+          description: Enum - http, https, SQS endpoint, Lambda function
+          example: "https"
+      required:
+        - endpoint
+
+    WebhookResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the webhook.
+          example: "7"
+        business_id:
+          type: string
+          description: The business identifier associated with the webhook.
+          example: "170142612985588"
+        scope:
+          type: string
+          description: The scope of events that will trigger the webhook.
+          example: "appointment"
+        endpoint:
+          type: string
+          description: The URL where the webhook will send POST requests.
+          example: "http://15.207.116.104/webapp/event"
+        signing_key:
+          type: string
+          description: A secret key for securing the webhook.
+          nullable: true
+          example: "supersecretkey"
+        connect_id:
+          type: string
+          description: The connect identifier associated with the webhook.
+          example: "testing"
+        protocol:
+          type: string
+          description: The protocol used for the webhook.
+          example: "http"
+        group_id:
+          type: string
+          description: The group identifier associated with the webhook.
+          example: "aid##pxid##connect_id"
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the webhook was created.
+          example: "2024-10-07T13:53:52Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the webhook was last updated.
+          example: "2024-10-07T13:53:52Z"
+        created_by:
+          type: string
+          description: The user who created the webhook.
+          example: "testing"
+        updated_by:
+          type: string
+          description: The user who last updated the webhook.
+          example: "testing"
+
+    WebhookResponseList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookResponse'
+        msg:
+          type: string
+          description: The message indicating the status of the response.
+          example: "success"
+
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        signing_key:
+          type: string
+          description: A new signing key for securing the webhook.
+          example: "newsecretkey"
+        endpoint:
+          type: string
+          description: A new URL where the webhook will send POST requests.
+          example: "https://newexample.com/webhook"
+      required:
+        - signing_key
+        - endpoint
+paths:
+  /notification/v1/connect/webhook/subscriptions:
+    post:
+      tags:
+        - Webhooks
+      summary: Register Webhook
+      description: Registers a new webhook.
+      security:
+        - auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterWebhookRequest'
+      responses:
+        '201':
+          description: Webhook registered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookResponse'
+                  msg:
+                    type: string
+                    example: "success"
+        '400':
+          description: Invalid input data.
+        '500':
+          description: Server error.
+    get:
+      tags:
+        - Webhooks
+      summary: Get Webhooks
+      description: Retrieves all registered webhooks.
+      security:
+        - auth: []
+      responses:
+        '200':
+          description: List of webhooks.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookResponse'
+                  msg:
+                    type: string
+                    example: "success"
+
+  /notification/v1/connect/webhook/subscriptions/{id}:
+    put:
+      tags:
+        - Webhooks
+      summary: Update Webhook
+      description: Updates an existing webhook's URL or event type based on its ID.
+      security:
+        - auth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+      responses:
+        '200':
+          description: Webhook updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "webhook updated successfully"
+                  msg:
+                    type: string
+                    example: "success"
+        '400':
+          description: Invalid request.
+        '404':
+          description: Webhook not found.
+        '500':
+          description: Server error.
+    delete:
+      tags:
+        - Webhooks
+      summary: Delete Webhook
+      description: Deletes a webhook by ID.
+      security:
+        - auth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Webhook deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "webhook deleted successfully"
+                  msg:
+                    type: string
+                    example: "success"
+        '404':
+          description: Webhook not found.
+        '500':
+          description: Server error.
