@@ -1,0 +1,655 @@
+openapi: 3.1.0
+info:
+  description: Vaults Api
+  title: Vaults Api
+  version: 1.0.0
+servers:
+- url: https://api.eka.care
+- url: https://api.dev.eka.care
+paths:
+  /health/api/v1/fhir/retrieve:
+    get:
+      description: Retrieve a health record based on the given identifier, hip_id,
+        and health_id in nrces FHIR json format.
+      parameters:
+      - description: The unique identifier for the health record.
+        in: query
+        name: identifier
+        required: true
+        schema:
+          description: The unique identifier for the health record.
+          examples:
+          - "170781696111222"
+          type: string
+      - description: The HIP (Health Information Provider) ID.
+        in: query
+        name: hip_id
+        required: true
+        schema:
+          description: The HIP (Health Information Provider) ID.
+          examples:
+          - eka
+          type: string
+      - description: The health ID associated with the record.
+        in: query
+        name: health_id
+        required: true
+        schema:
+          description: The health ID associated with the record.
+          examples:
+          - test@sbx
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthRecordsResponse'
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - authApiKey: []
+  /mr/api/v1/docs:
+    get:
+      description: To get the list of all the records for a given authenticated user.
+      parameters:
+      - description: Filters the documents by returning all documents that were updated
+          after the specified u_at__gt timestamp. The value should be a valid epoch
+          timestamp.
+        in: query
+        name: u_at__gt
+        schema:
+          description: Filters the documents by returning all documents that were
+            updated after the specified u_at__gt timestamp. The value should be a
+            valid epoch timestamp.
+          examples:
+          - "1614556800"
+          type:
+          - "null"
+          - string
+      - description: Please include the nextPageToken from the API response to enable
+          pagination.
+        in: query
+        name: offset
+        schema:
+          description: Please include the nextPageToken from the API response to enable
+            pagination.
+          type:
+          - "null"
+          - string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListRecordsResponse'
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - authApiKey: []
+    post:
+      description: Generate a presigned URL that allows you to securely upload a document
+        to the server. This URL can be used to upload the document directly without
+        needing additional authentication or authorization steps.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - authApiKey: []
+  /mr/api/v1/docs/{document_id}:
+    delete:
+      description: This API is used to delete a document using a document ID.
+      parameters:
+      - description: Document ID to delete the document.
+        in: path
+        name: document_id
+        required: true
+        schema:
+          description: Document ID to delete the document.
+          type: string
+      responses:
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - authApiKey: []
+    get:
+      description: Once you get the list of all the documents with corresponding id’s,
+        you can this to know more details about the document.
+      parameters:
+      - description: Document ID to fetch the document details.
+        in: path
+        name: document_id
+        required: true
+        schema:
+          description: Document ID to fetch the document details.
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescribeResponse'
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - authApiKey: []
+    patch:
+      description: This API is used to update the document.
+      parameters:
+      - description: Document ID to update the document details.
+        in: path
+        name: document_id
+        required: true
+        schema:
+          description: Document ID to update the document details.
+          examples:
+          - 6dc7a3d9-003b-45f6-b4bc-9c334e95b390
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRequest'
+      responses:
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - authApiKey: []
+  /mr/webhook/smart-report:
+    post:
+      description: When the records get uploaded, a webhook event is sent to register
+        to get the smart report of the record upload. If there are multiple records
+        upload in upload docs API we need to register web hook for all the document
+        id recevied in the reponse. Use the below request payload to register to webhook.
+        You can find here list of parsing capabilities we have as of now.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmartReportRequest'
+      responses:
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - authApiKey: []
+  /upload:
+    post:
+      description: Upload a records using the signed URL for each document requested
+        in obtain authorization API.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormDataUploadRequest'
+      responses:
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+components:
+  schemas:
+    DescribeFile:
+      properties:
+        asset_url:
+          examples:
+          - https://sample-lab-report.s3.ap-south-1.amazonaws.com/filename.jpg
+          type: string
+        file_type:
+          examples:
+          - IMG
+          type: string
+      type: object
+    DescribeResponse:
+      properties:
+        document_date:
+          examples:
+          - "2021-03-13T13:01:59Z"
+          type: string
+        document_type:
+          examples:
+          - TYPE_LAB_REPORT
+          type: string
+        files:
+          examples:
+          - - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/filename.jpg
+              file_type: IMG
+            - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/filename.pdf
+              file_type: PDF
+          items:
+            $ref: '#/components/schemas/DescribeFile'
+          type: array
+        source:
+          examples:
+          - androidp
+          type: string
+        tags:
+          examples:
+          - - covid
+          items:
+            type: string
+          type: array
+      type: object
+    FormDataUploadRequest:
+      properties:
+        file:
+          $ref: '#/components/schemas/MultipartFile'
+          description: The file to upload.
+      required:
+      - file
+      type: object
+    HealthRecordsAuthor:
+      properties:
+        reference:
+          type: string
+      type: object
+    HealthRecordsEntry:
+      properties:
+        resource:
+          $ref: '#/components/schemas/HealthRecordsResource'
+      type: object
+    HealthRecordsEntryReference:
+      properties:
+        reference:
+          type: string
+      type: object
+    HealthRecordsExtension:
+      properties:
+        url:
+          type: string
+        valueString:
+          type: string
+      type: object
+    HealthRecordsIdentifier:
+      properties:
+        system:
+          type: string
+        value:
+          type: string
+      type: object
+    HealthRecordsLink:
+      properties:
+        relation:
+          type: string
+        url:
+          type: string
+      type: object
+    HealthRecordsMeta:
+      properties:
+        lastUpdated:
+          format: date-time
+          type: string
+        profile:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        security:
+          items:
+            $ref: '#/components/schemas/HealthRecordsSecurity'
+          type:
+          - array
+          - "null"
+        versionId:
+          type: string
+      type: object
+    HealthRecordsResource:
+      properties:
+        author:
+          items:
+            $ref: '#/components/schemas/HealthRecordsAuthor'
+          type:
+          - array
+          - "null"
+        date:
+          format: date-time
+          type: string
+        extension:
+          items:
+            $ref: '#/components/schemas/HealthRecordsExtension'
+          type:
+          - array
+          - "null"
+        id:
+          type: string
+        identifier:
+          $ref: '#/components/schemas/HealthRecordsIdentifier'
+        meta:
+          $ref: '#/components/schemas/HealthRecordsMeta'
+        resourceType:
+          type: string
+        section:
+          items:
+            $ref: '#/components/schemas/HealthRecordsSection'
+          type:
+          - array
+          - "null"
+        status:
+          type: string
+        subject:
+          $ref: '#/components/schemas/HealthRecordsSubject'
+        title:
+          type: string
+        type:
+          $ref: '#/components/schemas/HealthRecordsType'
+      type: object
+    HealthRecordsResponse:
+      properties:
+        entry:
+          items:
+            $ref: '#/components/schemas/HealthRecordsEntry'
+          type:
+          - array
+          - "null"
+        id:
+          type: string
+        identifier:
+          $ref: '#/components/schemas/HealthRecordsIdentifier'
+        link:
+          items:
+            $ref: '#/components/schemas/HealthRecordsLink'
+          type:
+          - array
+          - "null"
+        meta:
+          $ref: '#/components/schemas/HealthRecordsMeta'
+        resourceType:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+        type:
+          type: string
+      type: object
+    HealthRecordsSection:
+      properties:
+        entry:
+          items:
+            $ref: '#/components/schemas/HealthRecordsEntryReference'
+          type:
+          - array
+          - "null"
+        title:
+          type: string
+      type: object
+    HealthRecordsSecurity:
+      properties:
+        code:
+          type: string
+        display:
+          type: string
+        system:
+          type: string
+      type: object
+    HealthRecordsSubject:
+      properties:
+        reference:
+          type: string
+      type: object
+    HealthRecordsType:
+      properties:
+        text:
+          type: string
+      type: object
+    ListRecordsAbha:
+      properties:
+        health_id:
+          type: string
+        link_status:
+          type: string
+      type: object
+    ListRecordsDocument:
+      properties:
+        documentId:
+          type: string
+        documentType:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ListRecordsMetadata'
+        patientOid:
+          type: integer
+        uploadDate:
+          format: date-time
+          type: string
+      type: object
+    ListRecordsItem:
+      properties:
+        record:
+          $ref: '#/components/schemas/ListRecordsRecord'
+      type: object
+    ListRecordsListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ListRecordsItem'
+          type:
+          - array
+          - "null"
+      type: object
+    ListRecordsMetadata:
+      properties:
+        abha:
+          $ref: '#/components/schemas/ListRecordsAbha'
+        documentDate:
+          format: date-time
+          type: string
+        tags:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        thumbnail:
+          type: string
+      type: object
+    ListRecordsRecord:
+      properties:
+        item:
+          $ref: '#/components/schemas/ListRecordsDocument'
+      type: object
+    ListRecordsResponse:
+      properties:
+        response:
+          $ref: '#/components/schemas/ListRecordsListResponse'
+      type: object
+    MultipartFile:
+      contentMediaType: application/octet-stream
+      format: binary
+      type: string
+    RequestBatchRequestItem:
+      properties:
+        dd_e:
+          description: Format should be in epoch time.
+          examples:
+          - 1.6145568e+09
+          type: integer
+        dt:
+          description: Specifies the type of document being uploaded.
+          enum:
+          - ps
+          - lr
+          - ot
+          - ds
+          - vc
+          - in
+          - iv
+          - sc
+          examples:
+          - ps
+          type: string
+        files:
+          description: A list of files to be uploaded, each with a specified content
+            type and size.
+          items:
+            $ref: '#/components/schemas/RequestFile'
+          type: array
+        sh:
+          description: Indicates if the record can be shared with a doctor.
+          examples:
+          - false
+          type: boolean
+        tg:
+          description: The tag array can contain a maximum of 10 tags. If more than
+            10 tags are provided in the request, only the first 10 tags will be considered
+            and each tag must be between 2 to 20 characters in length.
+          items:
+            type: string
+          type: array
+      required:
+      - dt
+      - files
+      type: object
+    RequestFile:
+      properties:
+        contentType:
+          description: The MIME type of the file (e.g., image/jpeg, application/pdf).
+          examples:
+          - image/jpeg
+          type: string
+        file_size:
+          description: Unit of file size should be bytes
+          examples:
+          - 110000
+          type: integer
+      required:
+      - contentType
+      - file_size
+      type: object
+    RequestRequest:
+      properties:
+        batch_request:
+          items:
+            $ref: '#/components/schemas/RequestBatchRequestItem'
+          type: array
+      type: object
+    RequestResponse:
+      properties:
+        batch_response:
+          items:
+            $ref: '#/components/schemas/RequestUploadResponseBody'
+          type:
+          - array
+          - "null"
+        error:
+          type: boolean
+        message:
+          type: string
+        token:
+          examples:
+          - "2023-11-07T05:31:56Z"
+          type:
+          - "null"
+          - string
+      type: object
+    RequestUploadResponseBody:
+      properties:
+        document_id:
+          examples:
+          - 6dc7a3d9-003b-45f6-b4bc-9c334e95b390
+          type: string
+        forms:
+          items:
+            $ref: '#/components/schemas/RequestUploadResponseBodyForms'
+          type:
+          - array
+          - "null"
+      type: object
+    RequestUploadResponseBodyForms:
+      properties:
+        fields:
+          additionalProperties:
+            type: string
+          type:
+          - object
+          - "null"
+        url:
+          type: string
+      type: object
+    SmartReportData:
+      properties:
+        document_id:
+          description: This is document_id which you have received Obtain a Presigned
+            URL for Document Upload response
+          type: string
+        webook_url:
+          description: This url we will use to send the payload upon successful parsing
+            of the record
+          type: string
+      type: object
+    SmartReportRequest:
+      properties:
+        data:
+          $ref: '#/components/schemas/SmartReportData'
+        event_type:
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+      type: object
+    UpdateRequest:
+      properties:
+        dt:
+          description: Specifies the type of document being updated.
+          enum:
+          - ps
+          - lr
+          - ot
+          - ds
+          - vc
+          - in
+          - iv
+          - sc
+          examples:
+          - ps
+          type: string
+        ndhm:
+          description: If true, the record will be linked.
+          examples:
+          - false
+          type:
+          - "null"
+          - boolean
+        oid:
+          description: OID associated with the document.
+          examples:
+          - "161847797963700"
+          type: string
+      required:
+      - dt
+      - ndhm
+      - oid
+      type: object
+  securitySchemes:
+    authApiKey:
+      description: The API requires the following auth in headers for authentication.
+      in: header
+      name: auth
+      type: apiKey
