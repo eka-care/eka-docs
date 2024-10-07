@@ -52,6 +52,7 @@ paths:
           description: Internal Server Error
       security:
       - authApiKey: []
+      summary: Retrieve health records
   /mr/api/v1/docs:
     get:
       description: To get the list of all the records for a given authenticated user.
@@ -93,6 +94,7 @@ paths:
           description: Internal Server Error
       security:
       - authApiKey: []
+      summary: Fetch documents based on filters
     post:
       description: Generate a presigned URL that allows you to securely upload a document
         to the server. This URL can be used to upload the document directly without
@@ -115,6 +117,7 @@ paths:
           description: Internal Server Error
       security:
       - authApiKey: []
+      summary: Obtain a Presigned URL for Document Upload
   /mr/api/v1/docs/{document_id}:
     delete:
       description: This API is used to delete a document using a document ID.
@@ -125,6 +128,8 @@ paths:
         required: true
         schema:
           description: Document ID to delete the document.
+          examples:
+          - 6dc7a3d9-003b-45f6-b4bc-9c334e95b390
           type: string
       responses:
         "400":
@@ -133,6 +138,7 @@ paths:
           description: Internal Server Error
       security:
       - authApiKey: []
+      summary: Delete a document.
     get:
       description: Once you get the list of all the documents with corresponding id’s,
         you can this to know more details about the document.
@@ -143,6 +149,8 @@ paths:
         required: true
         schema:
           description: Document ID to fetch the document details.
+          examples:
+          - 6dc7a3d9-003b-45f6-b4bc-9c334e95b390
           type: string
       responses:
         "200":
@@ -157,6 +165,7 @@ paths:
           description: Internal Server Error
       security:
       - authApiKey: []
+      summary: Describes a document.
     patch:
       description: This API is used to update the document.
       parameters:
@@ -181,13 +190,15 @@ paths:
           description: Internal Server Error
       security:
       - authApiKey: []
+      summary: Update Document
   /mr/webhook/smart-report:
     post:
       description: When the records get uploaded, a webhook event is sent to register
         to get the smart report of the record upload. If there are multiple records
         upload in upload docs API we need to register web hook for all the document
         id recevied in the reponse. Use the below request payload to register to webhook.
-        You can find here list of parsing capabilities we have as of now.
+        You can find  [here](https://ekacare.notion.site/726b13df13ea4409b0cd30c6f3a80315?v=dcd10c722d3149d880ae889b06f4820a)
+        list of parsing capabilities we have as of now.
       requestBody:
         content:
           application/json:
@@ -200,6 +211,7 @@ paths:
           description: Internal Server Error
       security:
       - authApiKey: []
+      summary: Smart Report Events
   /upload:
     post:
       description: Upload a records using the signed URL for each document requested
@@ -214,6 +226,7 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
+      summary: Upload Records
 components:
   schemas:
     DescribeFile:
@@ -492,7 +505,9 @@ components:
           - 1.6145568e+09
           type: integer
         dt:
-          description: Specifies the type of document being uploaded.
+          description: 'Specifies the type of document being uploaded. Allowed values:
+            ps (Prescription), lr (Lab Report), ot (Other), ds (Discharge Summary),
+            vc (Vaccine Certificate), in (Insurance), iv (Invoice), sc (Scan)'
           enum:
           - ps
           - lr
@@ -524,7 +539,6 @@ components:
             type: string
           type: array
       required:
-      - dt
       - files
       type: object
     RequestFile:
@@ -617,7 +631,9 @@ components:
     UpdateRequest:
       properties:
         dt:
-          description: Specifies the type of document being updated.
+          description: 'Specifies the type of document being uploaded. Allowed values:
+            ps (Prescription), lr (Lab Report), ot (Other), ds (Discharge Summary),
+            vc (Vaccine Certificate), in (Insurance), iv (Invoice), sc (Scan)'
           enum:
           - ps
           - lr
