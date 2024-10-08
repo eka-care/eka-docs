@@ -21,7 +21,7 @@ components:
         scope:
           type: string
           description: Enum - all, appointment, sa
-          example: "all"
+          example: "appointment"
         endpoint:
           type: string
           description: The URL where the webhook will send POST requests.
@@ -48,10 +48,6 @@ components:
           type: string
           description: The unique identifier for the webhook.
           example: "7"
-        business_id:
-          type: string
-          description: The business identifier associated with the webhook.
-          example: "170142612985588"
         scope:
           type: string
           description: The scope of events that will trigger the webhook.
@@ -59,7 +55,7 @@ components:
         endpoint:
           type: string
           description: The URL where the webhook will send POST requests.
-          example: "http://15.207.116.104/webapp/event"
+          example: "https://example.com/webhook"
         signing_key:
           type: string
           description: A secret key for securing the webhook.
@@ -72,11 +68,7 @@ components:
         protocol:
           type: string
           description: The protocol used for the webhook.
-          example: "http"
-        group_id:
-          type: string
-          description: The group identifier associated with the webhook.
-          example: "aid##pxid##connect_id"
+          example: "https"
         created_at:
           type: string
           format: date-time
@@ -119,9 +111,7 @@ components:
           type: string
           description: A new URL where the webhook will send POST requests.
           example: "https://newexample.com/webhook"
-      required:
-        - signing_key
-        - endpoint
+
 paths:
   /notification/v1/connect/webhook/subscriptions:
     post:
@@ -153,9 +143,37 @@ paths:
                     type: string
                     example: "success"
         '400':
-          description: Invalid input data.
+          description: endpoint is missing.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "endpoint is missing"
+                  code:
+                    type: integer
+                    example: 400
+                  error:
+                    type: string
+                    example: "Bad Request"
         '500':
           description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Internal Server Error"
+                  code:
+                    type: integer
+                    example: 500
+                  error:
+                    type: string
+                    example: "Internal Server Error"
     get:
       tags:
         - Webhooks
@@ -178,9 +196,41 @@ paths:
                   msg:
                     type: string
                     example: "success"
+        400:
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Invalid request"
+                  code:
+                    type: integer
+                    example: 400
+                  error:
+                    type: string
+                    example: "Bad Request"
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Internal Server Error"
+                  code:
+                    type: integer
+                    example: 500
+                  error:
+                    type: string
+                    example: "Internal Server Error"
 
   /notification/v1/connect/webhook/subscriptions/{id}:
-    put:
+    patch:
       tags:
         - Webhooks
       summary: Update Webhook
@@ -192,7 +242,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -215,23 +265,65 @@ paths:
                     example: "success"
         '400':
           description: Invalid request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Invalid request"
+                  code:
+                    type: integer
+                    example: 400
+                  error:
+                    type: string
+                    example: "Bad Request"
         '404':
           description: Webhook not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Webhook not found"
+                  code:
+                    type: integer
+                    example: 404
+                  error:
+                    type: string
+                    example: "Not Found"
         '500':
           description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Internal Server Error"
+                  code:
+                    type: integer
+                    example: 500
+                  error:
+                    type: string
+                    example: "Internal Server Error"
     delete:
       tags:
         - Webhooks
-      summary: Delete Webhook
-      description: Deletes a webhook by ID.
+      summary: Delete a Webhook
+      description: Deletes an existing webhook based on its ID.
       security:
-        - auth: []
+        - auth: [ ]
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         '200':
           description: Webhook deleted successfully.
@@ -246,7 +338,51 @@ paths:
                   msg:
                     type: string
                     example: "success"
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Invalid request"
+                  code:
+                    type: integer
+                    example: 400
+                  error:
+                    type: string
+                    example: "Bad Request"
         '404':
           description: Webhook not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Webhook not found"
+                  code:
+                    type: integer
+                    example: 404
+                  error:
+                    type: string
+                    example: "Not Found"
         '500':
           description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Internal Server Error"
+                  code:
+                    type: integer
+                    example: 500
+                  error:
+                    type: string
+                    example: "Internal Server Error"
