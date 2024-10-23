@@ -160,6 +160,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UploadResponse'
+          links:
+            GetDocumentByDocumentID:
+              operationId: getDocument
+              parameters:
+                document_id: ‘$response.body#/batch_response/0/document_id’
+              description: >
+                The `document_id` value returned in the response can be used as
+                the `document_id` parameter in `GET /mr/api/v1/docs/{document_id}`.
         '400':
           description: Bad Request
           content:
@@ -285,6 +293,10 @@ paths:
                   type: string
                   description: OID associated with the document.
                   example: "161847797963700"
+              anyOf:
+                - required: [ "dt" ]
+                - required: [ "ndhm" ]
+                - required: [ "oid" ]
       responses:
         '200':
           description: Document linked successfully.
@@ -296,7 +308,7 @@ paths:
         - auth: []
 
     delete:
-      summary: Delete a document.
+      summary: Delete a document
       description : This API is used to delete a document using a document ID.
       parameters:
         - in: path
@@ -317,7 +329,7 @@ paths:
         - auth: []
 
     get:
-      summary: Describes a document.
+      summary: Describes a document
       description: Once you get the list of all the documents with coresponding id's, you can this to know more details about the document.
       operationId: getDocument
       parameters:
@@ -393,7 +405,7 @@ paths:
         - name: identifier
           in: query
           required: true
-          description: The unique identifier for the health record.
+          description: The unique identifier for the health record is care_context_id.
           schema:
             type: string
         - name: hip_id
@@ -571,7 +583,9 @@ paths:
         - auth: []
   /mr/webhook/smart-report:
     post:
-      summary: Smart Report Events
+      tags:
+        - Webhooks
+      summary: Smart Report
       description: >-
         When the records get uploaded, a webhook event is sent to register to get the smart report of the record upload. If there are multiple records upload in upload docs API we need to register web hook for all the document id recevied in the reponse. Use the below request payload to register to webhook. You can find [here](https://ekacare.notion.site/726b13df13ea4409b0cd30c6f3a80315?v=dcd10c722d3149d880ae889b06f4820a) list of parsing capablities we have as of now.
       requestBody:
@@ -690,9 +704,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UploadResponseBody'
-        token:
-          type: string
-          format: date-time
+
 
     ErrorUploadResponse:
       type: object
