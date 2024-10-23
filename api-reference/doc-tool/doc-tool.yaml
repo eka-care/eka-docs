@@ -3188,7 +3188,7 @@ paths:
                   data:
                     type: object
                     properties:
-                      aid:
+                      appointment_id:
                         type: string
                       created_at:
                         type: string
@@ -3327,7 +3327,7 @@ paths:
                   status_code: 200
                   success: "true"
                   data:
-                    aid: example_appointment_id
+                    appointment_id: example_appointment_id
                     created_at: '2023-07-30T18:07:24.000Z'
                     doctor_id: "{{doctor_id}}"
                     patient_id: "{{patient_id}}"
@@ -4029,7 +4029,47 @@ paths:
         | data.rx_entities.advices | array | Array of medical advices given |
         
         | data.rx_entities.advices[].text | string | Advice text |
+
+        | data.rx_entities.dyform	| array	| Array of dynamic form fields |
+
+        | data.rx_entities.dyform[].id	| string	| Unique Dyform ID |
+
+        | data.rx_entities.dyform[].name |	string |	Name of the dynamic form |
+
+        | data.rx_entities.dyform[].elements |	array	| Array of elements in the dyform |
+
+        | data.rx_entities.dyform[].elements[].id	| string	| Unique Element ID |
+
+        | data.rx_entities.dyform[].elements[].name	| string |	Name of the element |
+
+        | data.rx_entities.dyform[].elements[].value |	string |	Value of the element |
         
+        | data.rx_entities.injections	| array	| Array of prescribed injections |
+
+        | data.rx_entities.injections[].id	| string |	Unique Injection ID |
+
+        | data.rx_entities.injections[].name	| string |	Name of the injection |
+
+        | data.rx_entities.injections[].generic_name | string |  Generic name of the injection |
+
+        | data.rx_entities.injections[].dosage_form	| string |  Dosage form (e.g., injection, IV) |
+
+        | data.rx_entities.injections[].dose	string |  Dose of the injection |
+
+        | data.rx_entities.injections[].frequency |	string |	Frequency of injection |
+
+        | data.rx_entities.injections[].duration |	string |	Duration for which injection should be administered |
+
+        | data.rx_entities.injections[].infusion_rate |	object |	Infusion rate details for IV medications |
+
+        | data.rx_entities.injections[].infusion_rate.iv_rate |	string |	IV rate (e.g., ml/min) |
+
+        | data.rx_entities.injections[].infusion_rate.iv_drop_rate |	string |	IV drop rate (e.g., drops/min) |
+
+        | data.rx_entities.injections[].infusion_rate.infusion_time |	string |	Time taken for infusion |
+
+        | data.rx_entities.injections[].instruction |	string|	Special instructions for the injection |
+
         | data.rx_entities.examinations | array | Array of examinations performed |
         
         | data.rx_entities.examinations[].name | string | Name of the examination |
@@ -4239,6 +4279,72 @@ paths:
                                 text:
                                   type: string
                                   example: "avoid spicy food"
+                          dyform:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  example: "41b7579c-a294-41e8-94b5-feb13ef61d87"
+                                name:
+                                  type: string
+                                  example: "GA"
+                                elements:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        type: string
+                                        example: "03a32c8a-d601-48b0-bd79-3e7a9117e00f"
+                                      name:
+                                        type: string
+                                        example: "dfd"
+                                      value:
+                                        type: string
+                                        example: "fgf"
+                          injections:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  example: "b-2388477052"
+                                name:
+                                  type: string
+                                  example: "Injectum 500mg Injection"
+                                dosage_form:
+                                  type: string
+                                  example: "injection"
+                                dose:
+                                  type: string
+                                  example: "2 iu"
+                                duration:
+                                  type: string
+                                  example: "3 Weeks"
+                                frequency:
+                                  type: string
+                                  example: "0-0-1"
+                                generic_name:
+                                  type: string
+                                  example: "Ceftriaxone (500mg)"
+                                infusion_rate:
+                                  type: object
+                                  properties:
+                                    infusion_time:
+                                      type: string
+                                      example: "1 min"
+                                    iv_drop_rate:
+                                      type: string
+                                      example: "2 drops/min"
+                                    iv_rate:
+                                      type: string
+                                      example: "3 ml/min"
+                                instruction:
+                                  type: string
+                                  example: ""
                           examinations:
                             type: array
                             items:
@@ -4247,42 +4353,6 @@ paths:
                                 name:
                                   type: string
                                   example: "Tooth Chattering"
-                          vitals:
-                            type: array
-                            example: [
-                              {
-                                "date": "2024-09-05T13:00:19.784Z",
-                                "id": "v-134568",
-                                "name": "Body height",
-                                "value": "23",
-                                "unit": "Cms"
-
-                              },
-                              {
-                                "date": "2024-09-05T13:00:23.705Z",
-                                "id": "v-091802101",
-                                "name": "Blood pressure",
-                                "value": "23",
-                                "unit": "mmHg"
-
-                              },
-                              {
-                                "date": "2024-09-05T13:00:27.337Z",
-                                "id": "v-6780897827",
-                                "name": "Respiratory rate",
-                                "value": "43",
-                                "unit": "/min"
-
-                              },
-                              {
-                                "date": "2024-09-05T13:00:21.867Z",
-                                "id": "v-820011111",
-                                "name": "Body Temperature",
-                                "value": "21",
-                                "unit": "F"
-
-                              }
-                            ]
                           medical_history:
                             type: object
                             properties:
@@ -4389,6 +4459,42 @@ paths:
                                         "status": ""
                                       }
                                     ]
+                              vitals:
+                                type: array
+                                example: [
+                                  {
+                                    "date": "2024-09-05T13:00:19.784Z",
+                                    "id": "v-134568",
+                                    "name": "Body height",
+                                    "value": "23",
+                                    "unit": "Cms"
+
+                                  },
+                                  {
+                                    "date": "2024-09-05T13:00:23.705Z",
+                                    "id": "v-091802101",
+                                    "name": "Blood pressure",
+                                    "value": "23",
+                                    "unit": "mmHg"
+
+                                  },
+                                  {
+                                    "date": "2024-09-05T13:00:27.337Z",
+                                    "id": "v-6780897827",
+                                    "name": "Respiratory rate",
+                                    "value": "43",
+                                    "unit": "/min"
+
+                                  },
+                                  {
+                                    "date": "2024-09-05T13:00:21.867Z",
+                                    "id": "v-820011111",
+                                    "name": "Body Temperature",
+                                    "value": "21",
+                                    "unit": "F"
+
+                                  }
+                                ]
                           speciality:
                             type: object
                             properties:
