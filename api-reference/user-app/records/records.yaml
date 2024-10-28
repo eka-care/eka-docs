@@ -193,57 +193,6 @@ paths:
       security:
         - auth: []
 
-  /upload:
-    post:
-      summary: "Step 2: Upload Record"
-      description: Upload a records using the signed URL for each document requested in obtain authorization API
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              additionalProperties:
-                type: string
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: The file to upload.
-              required:
-                - file
-      responses:
-        '204':
-          description: No Content - Successful Upload with No Response Body
-        '403':
-          description: Forbidden - Access Denied
-          content:
-            application/xml:
-              schema:
-                type: object
-                properties:
-                  Error:
-                    type: object
-                    properties:
-                      Code:
-                        type: string
-                        description: Error code.
-                      Message:
-                        type: string
-                        description: Error message.
-                      RequestId:
-                        type: string
-                        description: Request ID.
-                      HostId:
-                        type: string
-                        description: Host ID.
-                example:
-                  Error:
-                    Code: "AccessDenied"
-                    Message: "Invalid according to Policy: Extra input fields: content-type"
-                    RequestId: "JGD23XY93Z00Z2DB"
-                    HostId: "NjZf6f4Yo3LwikPHTwtyS02TEftaoWWvS8BmfRlQmA5pwllX6FHyMuO4hNVT0AIBOwKHFoEFkk8="
-        '500':
-          description: Internal Server Error
   /mr/api/v1/docs/{document_id}:
     patch:
       summary: Update Document

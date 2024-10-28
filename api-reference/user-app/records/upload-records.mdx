@@ -1,18 +1,28 @@
 ---
-openapi: POST /upload
+title: "Step 2: Upload Record"
 ---
-Upload a records using the signed URL for each document requested in obtain authorization API.
+## Uploading Records Using Signed URLs
 
-1. Obtain Authorization API Response:
-  The authorization API will respond with a batch containing an array of up to 10 files. Each file entry includes a URL and the necessary form fields required to upload the file.
+To upload records, follow these steps after receiving authorization:
 
-2. Iterate Over Files:
-  For each file in the batch, use its corresponding URL and form fields to create a multipart/form-data request. The fields are provided in the forms array of the batch response.
+<Step title="Step 1: Obtain File Entries">
+    After successful authorization (status code 200) from the [Step 1: Upload Record](/api-reference/user-app/records/obtain-authorization), the API responds with a batch of file entries requested by the client. Each entry includes:
+    - An upload URL for each file
+    - The required form fields necessary for secure upload
+</Step>
 
-3. Upload to the Specified URL:
-  Use the signed URL provided in the API response to upload the files. The form fields should be included in the request as part of the multipart-form-data.
+<Step title="Step 2: Iterate Over Files">
+    For each file entry in the batch, use the provided URL, the file to be uploaded, and the required form fields to construct a `multipart/form-data` request. The form fields, which are accessible in the `forms` array within the batch response.
+</Step>
 
-# Key Points:
-1. Batch Response: Contains multiple documents, each with a URL and associated form fields needed for upload.
-2. Multipart Form Data: Each file is uploaded as multipart/form-data with the necessary fields.
-3. Error Handling: The upload process stops if any file fails to upload, printing the error message.
+<Step title="Step 3: Upload to the Specified URL">
+    Use the signed URL from the API response to upload the files. Ensure that the form fields are included in the request as part of the `multipart/form-data`. This upload is typically done via a `POST` request.
+    <Note>
+        When making the request, include the actual file to be uploaded along with the required form data. Upon successful upload, the server will respond with a **204 No Content** status code, indicating that the file was uploaded successfully.
+    </Note>
+</Step>
+
+
+
+
+
