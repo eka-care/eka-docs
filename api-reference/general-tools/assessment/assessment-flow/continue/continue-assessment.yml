@@ -87,12 +87,14 @@ paths:
                         title: MultiRequest
                       - $ref: '#/components/schemas/RadioGroupRequest'
                         title: RadioGroupRequest
+                      - $ref: '#/components/schemas/UserInput'
+                        title: UserInput
                       - $ref: '#/components/schemas/SkippedRequest'
                         title: SkippedRequest
               description: >-
                 The request body should contain the answer to the question depending on the type of question component.
                 It should be in format as explained in above dropdown.
-     
+    
       responses:
         '200':
           description: OK
@@ -157,16 +159,36 @@ components:
           error_code: server_error
           display_message: (Generic User friendly message)
           message: (Server error message)
-    
+
+    Selected-Choices:
+      type: object
+      properties:
+        choice_id:
+          type: string
+          example: test-choice-1
+        choice_label:
+          type: string
+          example: Fever
+      required:
+        - choice_id
+
     Selected-Choice-Qualifier:
       type: object
       properties:
         choice_id:
           type: string
+          example: test-choice-1
         choice_label:
           type: string
-        qualifier_id:
+          example: Loss of taste
+        choice_qualifier:
           type: string
+          description: >-
+            This is the qualifier id. It is used to identify the qualifier. It is a string with values `p`, `a`, `u` for positive, negative and unknown respectively.
+          example: p
+      required:
+        - choice_id
+        - choice_qualifier
     
     # Request Component Based
     RadioRequest:
@@ -178,7 +200,7 @@ components:
           type: array
           maxItems: 1
           items:
-            $ref: '#/components/schemas/Selected-Choice-Qualifier'
+            $ref: '#/components/schemas/Selected-Choices'
             required:
               - choice_id
       required:
@@ -197,19 +219,17 @@ components:
         selected_choices:
           type: array
           items:
-            $ref: '#/components/schemas/Selected-Choice-Qualifier'
-            required:
-              - choice_id
+            $ref: '#/components/schemas/Selected-Choices'
       required:
         - selected_choices 
       example:
         selected_choices:
-          - choice_id: test-choice-10
+          - choice_id: 47258974-a65c-11eb-8d02-1e003a340630
             choice_label: Fever
-          - choice_id: test-choice-11
+          - choice_id: 473f9e54-a65c-11eb-8d02-1e003a340630
             choice_label: Cold
             qualifier_id: a
-          - choice_id: test-choice-12
+          - choice_id: 471e8e62-a65c-11eb-8d02-1e003a340630
             choice_label: Cough
     ATSGRequest:
       type: object
@@ -217,21 +237,9 @@ components:
         selected_choices:
           type: array
           items:
-            $ref: '#/components/schemas/Selected-Choice-Qualifier'
-            required:
-              - choice_id
-              - choice_label
+            $ref: '#/components/schemas/Selected-Choices'
       required:
         - selected_choices
-      example:
-        selected_choices:
-          - choice_id: test-choice-20
-            choice_label: Hay Fever
-            qualifier_id: p
-          - choice_id: test-choice-21
-            choice_label: Sneezing
-          - choice_id: test-choice-22
-            choice_label: Chills
     RadioGroupRequest:
       type: object
       properties:
@@ -239,9 +247,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Selected-Choice-Qualifier'
-            required:
-              - choice_id
-              - qualifier_id
       required:
         - selected_choices
       example:
@@ -258,6 +263,18 @@ components:
     SkippedRequest:
       type: object
 
+    UserInput:
+      type: object
+      properties:
+        user_input:
+          type: string
+          description: >-
+            The custom input provided as answer by user. It should be stringified- integer, string or date.
+          example:
+            "Rakesh"
+      required:
+        - user_input
+
     # Response basics
     Question-Choice:
       type: object
@@ -270,34 +287,39 @@ components:
           example: I have Diabetes
         is_selected:
           type: boolean
-          example: false
+          example: true
           default: false
       required:
         - choice_id
         - choice_label
+
     Question-Choice-Qualifier:
       type: object
       properties:
         choice_id:
           type: string
-          example: xyzjahaj
+          example: s_344147d6-b416-11eb-8c69-1sweet340631
         choice_label:
           type: string
           example: I have Diabetes
         qualifiers:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                enum: [p, a, u]
-              label:
-                type: string
-                enum: [Yes, No, Don't Know]
-              is_selected:
-                type: boolean
-                example: false
+          type: object
+          properties: 
+            id:
+              type: string
+              enum: [p, a, u]
+              example: p
+            label:
+              type: string
+              enum: [Yes, No, Don't Know]
+              example: "Yes"
+            is_selected:
+              type: boolean
+              default: False
+              example: False
+          required:
+            - id
+            - label
       required:
         - choice_id
         - choice_label
@@ -314,23 +336,46 @@ components:
       type: boolean
       example: false
       description: >-
-        This is a boolean value, if true this is the last question of the assessment
+        This is a **boolean value**. If true, this is the last question of the assessment and you can hit submit API.
     Assessment-progress:
-      type: integer
-      minimum: 0
-      maximum: 100
+      type: number
+      minimum: 00.00
+      maximum: 100.00
+      example: 50.00
       description: >-
-        This is the progress of the assessment, it is a number between 0 and 100 
-
+        This is the progress of the assessment in percentage format. It is a number **between 0.00 and 100.00**.
     #Response : component based
     MasterComponentData:
       type: object
       properties:
         url:
-          type: string
+          type: object
           description: >-
-            This is valid for an autosuggest component
-        static_autosuggest_choices:
+            Valid only for **autosuggest component**. This content should be used to get autosuggest choices for users. After combining all the requests, You can get a url like: `https://example.eka.care?gender=m&age=23&src=sn&q`
+          properties:
+            base_url:
+              type: string
+              description: Base URL for autosuggest API
+              example: "https://example.eka.care"
+            query_params:
+              type: object
+              description: These are the query params to be sent with URL to get autosuggest choices.
+              properties:
+                gender:
+                  type: string
+                  example: "m"
+                age: 
+                  type: string
+                  example: "21"
+                src:
+                  type: string
+                  example: "sn"
+            search_query_param:
+              type: string
+              example: "q"
+        autosuggest_static_choices:
+          description: >-
+            This is valid only for **autosuggest component**. It contains the section wise static choices to be shown to users at first.
           type: object
           properties:
             sections:
@@ -340,6 +385,9 @@ components:
                 properties:
                   section_title:
                     type: string
+                    description: >-
+                      This is the title of the section
+                    example: "Most Searched"
                   choices:
                     type: array
                     items:
@@ -348,22 +396,34 @@ components:
                         id:
                           type: string
                           description: unique identifier of choice
+                          example: "47258974-a65c-11eb-8d02-1e003a340630"
                         common_name:
                           type: string
                           description: name of the autosuggest item being searched
-                required:
-                  - section_title
-                  - choices
+                          example: "Fever"
+                        is_selected:
+                          type: boolean
+                          description: >-
+                            This is a boolean value, if true this choice is be selected by default
+                            example: false
+                      required:
+                        - id
+                        - common_name
         choices:
           type: array
           description: >-
-            This is valid for a choice type components, multi, radio (single choice), radio group
+            Valid only for **choice type components**- multi choice, radio (single choice) and radio group
           items:
-            $ref: '#/components/schemas/Question-Choice-Qualifier'
-        default:
-          type: string
-          description: >-
-            This will be a choice id in case of choice components else will be a string in case of user-input components
+            allOf:
+              - $ref: '#/components/schemas/Question-Choice-Qualifier'
+              - type: object
+                properties:
+                  is_selected:
+                    type: boolean
+                    example: True
+                    description: >-
+                      This is a boolean value, if `true` this choice is be selected by default
+            
     BaseChoiceComponentData:         
       type: object
       properties:
@@ -390,8 +450,33 @@ components:
       type: object
       properties:
         url:
-          type: string
-        static_autosuggest_choices:
+          description: >-
+            This is **only valid for an autosuggest component**. This content can be used to get autosuggest choices for users. After combining all the requests, You can get a url like: `https://example.eka.care?gender=m&age=23&src=sn&q`
+          type: object
+          properties:
+            base_url:
+              type: string
+              description: Base URL for autosuggest API
+              example: "https://example.eka.care"
+            query_params:
+              type: object
+              description: These are the query params to be sent with URL to get autosuggest choices.
+              properties:
+                gender:
+                  type: string
+                  example: "m"
+                age: 
+                  type: string
+                  example: "21"
+                src:
+                  type: string
+                  example: "sn"
+            search_query_param:
+              type: string
+              example: "q"
+        autosuggest_static_choices:
+          description: >-
+            This is valid only for **autosuggest component**. It contains the section wise static choices to be shown to users at first.
           type: object
           properties:
             sections:
@@ -401,6 +486,9 @@ components:
                 properties:
                   section_title:
                     type: string
+                    description: >-
+                      This is the title of the section
+                    example: "Most Searched"
                   choices:
                     type: array
                     items:
@@ -409,14 +497,22 @@ components:
                         id:
                           type: string
                           description: unique identifier of choice
+                          example: "47258974-a65c-11eb-8d02-1e003a340630"
                         common_name:
                           type: string
                           description: name of the autosuggest item being searched
-                required:
-                  - section_title
-                  - choices
+                          example: "Fever"
+                        is_selected:
+                          type: boolean
+                          description: >-
+                            This is a boolean value, if true this choice is be selected by default
+                            example: false
+                      required:
+                        - id
+                        - common_name
       required:
         - url
+        - autosuggest_static_choices
     
     # Response Data
     MasterComponentResponse:
@@ -430,22 +526,33 @@ components:
               qid:
                 type: integer
                 description: >-
-                  This is the question id. It is used to identify the question., its an integer, during start it will always be 0
+                  This is the question id. It is used to identify the question. its an integer, during start it will always be 0
                 example: 1
               component_code:
                 type: string
+                example: "I-ATSG"
               question_text:
                 type: string
+                example: Add all symptoms
               tip:
                 type: string
+                example: Type here to search for symptoms
               component_data:
                 $ref: '#/components/schemas/MasterComponentData'
               is_mandatory:
                 $ref: '#/components/schemas/Question-mandatory'
-        is_last_question:
-          $ref: '#/components/schemas/Assessment-last-question'
+            required:
+              - qid
+              - component_code
+              - component_data
         progress:
           $ref: '#/components/schemas/Assessment-progress'
+        is_last_question:
+          $ref: '#/components/schemas/Assessment-last-question'
+      required:
+        - questions
+        - progress
+        - is_last_question
     RadioComponentResponse:
       type: object
       properties:
@@ -473,13 +580,15 @@ components:
             required:
               - qid
               - component_code
-              - question_text
               - component_data
-              - is_mandatory
         progress:
           $ref: '#/components/schemas/Assessment-progress'
+        is_last_question:
+          $ref: '#/components/schemas/Assessment-last-question'
       required:
         - questions
+        - progress
+        - is_last_question
     MultiComponentResponse:
       type: object
       properties:
@@ -507,13 +616,15 @@ components:
             required:
               - qid
               - component_code
-              - question_text
               - component_data
-              - is_mandatory
         progress:
           $ref: '#/components/schemas/Assessment-progress'
+        is_last_question:
+          $ref: '#/components/schemas/Assessment-last-question'
       required:
         - questions
+        - progress
+        - is_last_question
     RadioGroupComponentResponse:
       type: object
       properties:
@@ -541,13 +652,15 @@ components:
             required:
               - qid
               - component_code
-              - question_text
               - component_data
-              - is_mandatory
         progress:
           $ref: '#/components/schemas/Assessment-progress'
+        is_last_question:
+          $ref: '#/components/schemas/Assessment-last-question'
       required:
         - questions
+        - progress
+        - is_last_question
     ATSGComponentResponse:
       type: object
       properties:
@@ -575,13 +688,15 @@ components:
             required:
               - qid
               - component_code
-              - question_text
               - component_data
-              - is_mandatory
         progress:
           $ref: '#/components/schemas/Assessment-progress'
+        is_last_question:
+          $ref: '#/components/schemas/Assessment-last-question'
       required:
         - questions
+        - progress
+        - is_last_question
     LastQuestionResponse:
       type: object
       properties:
@@ -600,22 +715,19 @@ components:
       in: header
       required: true
       description: >-
-        The client id of the user. It is used to identify the user.
+        Any unique string to identify the logged in developer.
       schema:
         type: string
-        default: hello
-      example: hello
+        example: test-client
     locale:
       name: locale
       in: header
       description: >-
-        The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+        Locale is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively with default being `en`.
       schema:
         type: string
         enum: [en, hi, kn]
-        default: en
         example: en
-      example: en
     assessment_id:
       name: assessment_id
       in: path
