@@ -3,17 +3,20 @@ info:
   title: Assessment APIs
   version: 1.0.0
 servers:
-  - url: https://api.eka.care
+  - description: Production
+    url: https://api.eka.care
+  - description: Stage/Sandbox
+    url: https://api.dev.eka.care
 
 paths:
-  /assessments/components:
+  /assessment/api/v1/component_list/:
     get:
       tags:
-        - Components
-      summary: List the components
+        - List all the components
+      summary: List all the components
       description: >-
-        This API can be used by developers to get info about the components used throughout the assessment. This API is intended to provide knowledge about the Components that developers can use to display in their UI.
-
+        This API is used to list all the components and the details about request and response format of each component.
+        It includes the json schema of the request and response format of each component.
       parameters:
         - name: auth
           in: header
@@ -38,6 +41,8 @@ paths:
             application/json:
               schema:
                 type: object
+                description: >-
+                  The response contains [json schema](https://json-schema.org/overview/what-is-jsonschema) for request and response format of each component.
               example:
                 success: true
                 data:
@@ -46,102 +51,118 @@ paths:
                       "$schema": http://json-schema.org/draft-07/schema#
                       type: object
                       properties:
-                        question:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id:
-                                type: integer
-                              comp:
-                                type: string
-                              url:
-                                type: object
-                                properties:
-                                  base_url:
-                                    type: string
-                                    format: uri
-                                  query_params:
-                                    type: object
-                                    properties:
-                                      gen:
-                                        type: string
-                                    additionalProperties: true
-                                required:
-                                - base_url
-                              text:
-                                type: string
-                              resp:
-                                type: array
-                                items:
-                                  type: string
-                              details:
-                                type: object
-                                properties:
-                                  static sections:
-                                    type: array
-                                    items:
-                                      type: object
-                                      properties:
-                                        heading:
-                                          type: string
-                                        items:
-                                          type: array
-                                          items:
-                                            type: object
-                                            properties:
-                                              id:
-                                                type: string
-                                                format: uuid
-                                              label:
-                                                type: string
-                                            required:
-                                            - id
-                                            - label
-                                      required:
-                                      - heading
-                                      - items
-                            required:
-                            - id
-                            - comp
-                            - url
-                            - text
-                            - details
-                        is_mandantory:
-                          type: boolean
-                        progress:
-                          type:
-                          - 'null'
-                          - integer
-                      required:
-                      - question
-                      - is_mandantory
-                      - progress
-                    answer:
-                      "$schema": http://json-schema.org/draft-07/schema#
-                      type: object
-                      properties:
-                        response:
+                        questions:
                           type: array
                           items:
                             type: object
                             properties:
                               qid:
-                                type: integer
-                              respid:
+                                type: number
+                              component_code:
+                                type: string
+                              question_text:
+                                type: string
+                              tip:
+                                type: string
+                              component_data:
+                                type: object
+                                properties:
+                                  url:
+                                    type: object
+                                    properties:
+                                      base_url:
+                                        type: string
+                                      query_params:
+                                        type: object
+                                        properties:
+                                          gender:
+                                            type: string
+                                          age:
+                                            type: string
+                                          src:
+                                            type: string
+                                        required:
+                                        - gender
+                                        - age
+                                      search_query_param:
+                                        type: string
+                                    required:
+                                    - base_url
+                                    - query_params
+                                    - search_query_param
+                                  autosuggest_static_choices:
+                                    type: object
+                                    properties:
+                                      sections:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            section_title:
+                                              type: string
+                                            choices:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  id:
+                                                    type: string
+                                                  common_name:
+                                                    type: string
+                                                  is_selected:
+                                                    type: boolean
+                                                required:
+                                                - id
+                                                - common_name
+                                          required:
+                                          - section_title
+                                          - choices
+                                    required:
+                                    - sections
+                                required:
+                                - url
+                                - autosuggest_static_choices
+                              is_mandatory:
+                                type: boolean
+                            required:
+                            - qid
+                            - component_code
+                            - question_text
+                            - tip
+                            - component_data
+                            - is_mandatory
+                        progress:
+                          type: string
+                        is_last_question:
+                          type: boolean
+                      required:
+                      - questions
+                      - progress
+                      - is_last_question
+                    answer:
+                      "$schema": http://json-schema.org/draft-07/schema#
+                      type: object
+                      properties:
+                        user_response:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              selected_choices:
                                 type: array
                                 items:
                                   type: object
                                   properties:
-                                    id:
+                                    choice_id:
+                                      type: string
+                                    choice_label:
                                       type: string
                                   required:
-                                  - id
+                                  - choice_id
                             required:
-                            - qid
-                            - respid
+                            - selected_choices
                       required:
-                      - response
+                      - user_response
                   multi_select:
                     question:
                       "$schema": http://json-schema.org/draft-07/schema#
@@ -152,166 +173,141 @@ paths:
                           items:
                             type: object
                             properties:
-                              id:
-                                type: integer
-                              text:
+                              qid:
+                                type: number
+                              component_code:
                                 type: string
-                              comp:
+                              question_text:
                                 type: string
                               tip:
                                 type: string
-                              resp:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    id:
-                                      type: string
-                                    label:
-                                      type: string
-                                  required:
-                                  - id
-                                  - label
+                              component_data:
+                                type: object
+                                properties:
+                                  choices:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        choice_id:
+                                          type: string
+                                        choice_label:
+                                          type: string
+                                      required:
+                                      - choice_id
+                                      - choice_label
+                                required:
+                                - choices
                             required:
-                            - id
-                            - text
-                            - comp
-                            - tip
-                            - resp
+                            - qid
+                            - component_code
+                            - component_data
+                            - question_text
                         progress:
-                          type: number
-                        is_mandantory:
-                          type: boolean
-                        success:
+                          type: string
+                        is_last_question:
                           type: boolean
                       required:
                       - questions
                       - progress
-                      - is_mandantory
-                      - success
+                      - is_last_question
                     answer:
                       "$schema": http://json-schema.org/draft-07/schema#
                       type: object
                       properties:
-                        response:
+                        user_response:
                           type: array
                           items:
                             type: object
                             properties:
-                              qid:
-                                type: integer
-                              respid:
+                              selected_choices:
                                 type: array
                                 items:
                                   type: object
                                   properties:
-                                    id:
+                                    choice_id:
+                                      type: string
+                                    choice_label:
                                       type: string
                                   required:
-                                  - id
+                                  - choice_id
                             required:
-                            - qid
-                            - respid
+                            - selected_choices
                       required:
-                      - response
+                      - user_response
                   radio:
                     question:
                       "$schema": http://json-schema.org/draft-07/schema#
                       type: object
                       properties:
-                        type:
-                          type: string
                         questions:
                           type: array
                           items:
                             type: object
                             properties:
-                              id:
-                                type: integer
-                              text:
+                              qid:
+                                type: number
+                              component_code:
                                 type: string
-                              option_type:
-                                type:
-                                - string
-                                - 'null'
-                              icon:
-                                type:
-                                - string
-                                - 'null'
-                              comp:
+                              question_text:
                                 type: string
                               tip:
                                 type: string
-                              resp:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    id:
-                                      type: string
-                                    label:
-                                      type: string
-                                    choices:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          id:
-                                            type: string
-                                          label:
-                                            type: string
-                                        required:
-                                        - id
-                                        - label
-                                  required:
-                                  - id
-                                  - label
-                                  - choices
+                              component_data:
+                                type: object
+                                properties:
+                                  choices:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        choice_id:
+                                          type: string
+                                        choice_label:
+                                          type: string
+                                      required:
+                                      - choice_id
+                                      - choice_label
+                                required:
+                                - choices
                             required:
-                            - id
-                            - text
-                            - option_type
-                            - icon
-                            - comp
-                            - tip
-                            - resp
+                            - qid
+                            - component_code
+                            - component_data
+                            - question_text
                         progress:
-                          type: number
-                        success:
-                          type: boolean
-                        is_mandantory:
+                          type: string
+                        is_last_question:
                           type: boolean
                       required:
-                      - type
                       - questions
                       - progress
-                      - success
-                      - is_mandantory
+                      - is_last_question
                     answer:
                       "$schema": http://json-schema.org/draft-07/schema#
                       type: object
                       properties:
-                        response:
+                        user_response:
                           type: array
                           items:
                             type: object
                             properties:
-                              qid:
-                                type: integer
-                              respid:
+                              selected_choices:
                                 type: array
                                 items:
                                   type: object
                                   properties:
-                                    id:
+                                    choice_id:
+                                      type: string
+                                    choice_label:
                                       type: string
                                   required:
-                                  - id
+                                  - choice_id
+                                maxItems: 1
                             required:
-                            - qid
-                            - respid
+                            - selected_choices
                       required:
-                      - response
+                      - user_response
                   radio_group:
                     question:
                       "$schema": http://json-schema.org/draft-07/schema#
@@ -322,68 +318,89 @@ paths:
                           items:
                             type: object
                             properties:
-                              id:
-                                type: integer
-                              text:
+                              qid:
+                                type: number
+                              component_code:
                                 type: string
-                              comp:
+                              question_text:
                                 type: string
                               tip:
                                 type: string
-                              resp:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    id:
-                                      type: string
-                                    label:
-                                      type: string
-                                  required:
-                                  - id
-                                  - label
+                              component_data:
+                                type: object
+                                properties:
+                                  choices:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        choice_id:
+                                          type: string
+                                        choice_label:
+                                          type: string
+                                        qualifier:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              id:
+                                                type: string
+                                              label:
+                                                type: string
+                                            required:
+                                            - id
+                                            - label
+                                      required:
+                                      - choice_id
+                                      - choice_label
+                                      - qualifier
+                                required:
+                                - choices
                             required:
-                            - id
-                            - text
-                            - comp
-                            - tip
-                            - resp
+                            - qid
+                            - component_code
+                            - component_data
+                            - question_text
                         progress:
-                          type: number
-                        is_mandantory:
-                          type: boolean
-                        success:
+                          type: string
+                        is_last_question:
                           type: boolean
                       required:
                       - questions
                       - progress
-                      - is_mandantory
-                      - success
+                      - is_last_question
                     answer:
                       "$schema": http://json-schema.org/draft-07/schema#
                       type: object
                       properties:
-                        response:
+                        user_response:
                           type: array
                           items:
                             type: object
                             properties:
-                              qid:
-                                type: integer
-                              respid:
+                              selected_choices:
                                 type: array
                                 items:
                                   type: object
                                   properties:
-                                    id:
+                                    choice_id:
                                       type: string
+                                    choice_label:
+                                      type: string
+                                    choice_qualifier:
+                                      type: string
+                                      enum:
+                                      - p
+                                      - a
+                                      - u
                                   required:
-                                  - id
+                                  - choice_id
+                                  - choice_qualifier
                             required:
-                            - qid
-                            - respid
+                            - selected_choices
                       required:
-                      - response
+                      - user_response
+
         '4XX':
           description: Bad Request
           content:

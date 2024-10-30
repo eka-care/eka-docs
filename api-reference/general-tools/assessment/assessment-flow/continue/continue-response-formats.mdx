@@ -1,133 +1,273 @@
 ---
-title: Continue Assessment Response Formats
+title: ↙️ Continue Assessment Response Format
 ---
 
-### request Format
+The Response of the Continue Assessment API contains the next question to be asked to the user. The response contains the fields based on question components:
+various components in the response are as follows:
+
+| Component Code  |  Description of the Component | 
+|-----------------|-------------------------------|
+| I-ATSG | An 'autosuggest group' component displays matching suggestions as the user types, allowing quick selections from possible options.  |
+| I-ATSS | An 'Autosuggest Single' component where only a single value can be selected by the user |
+| I-RADO | A 'single-select' component allows the user to choose one option from a predefined list. |
+| I-MULT | A 'multi-select' component allows the user to choose multiple options from a predefined list. |
+| I-RADG | A 'radiogroup' component is a group of sub questions where each question is mandatorily associated with a <Tooltip tip="A 'qualifier' uses 'p/a/u' to denote 'present', 'absent', or 'unknown' statuses in medical data when standard radio or multi-select components don't accommodate the 'unknown' option.">qualifier</Tooltip>  |
+
 ---
-The request body must contain the answer to the previous question.
-The format of response for different question component should be according to the following format for different question components.
+### Response Format
+The response contains the following fields:
 
-#### 1. Choice components
-<AccordionGroup>
-  <Accordion title="Autosuggest (I-ATSG)">
-```json
-{
-    "user_response": [
-        {
-            "selected_choices": [
-                {
-                    "choice_id": "s-2488272578", // id of the option selected from autosuggest (❗️required)
-                    "choice_label": "Cough"      // choice (text) selected from autosuggest (optional)
-                },
-                {
-                    "choice_id": "s-471e8e62-a65c", // id of the option selected from autosuggest (❗️required)
-                    "choice_label": "Fever"      // choice (text) selected from autosuggest (optional)
-                }
-            ]
-        }
-    ]
-}
-```
-  </Accordion>
+    - **questions**: List of questions
+        - **qid**: Question ID
+        - **component_code**: Component code
+        - **question_text**: Question text
+        - **tip**: Tip for the user
+        - **component_data**: Component specific data. Refer to the [below section](#component-data-for-each-component-types) for more details
+        - **is_mandatory**: True/False to show whether the question is mandatory to answer or not
+    - **progress**: Progress of the assessment
+    - **is_last_question**: True/False to show whether the question is the last question or not
 
-  <Accordion title="Single Select Radio (I-RADO)">
-```json
-{   
-    "user_response": [
+---
+### Component Data For Each Component Types
+<Tabs id="component_data">
+  <Tab title="🔍 I-ATSG">
+    <Card title="component_data for I-ATSG">
+        ```yaml
+            - url: URL to fetch the autosuggest data
+                - base_url: Base URL
+                - query_params: Query parameters
+                - search_query_param: Search query parameter
+            - autosuggest_static_choices: List of static choices
+                - sections: Sections of the autosuggest static choices
+                    - section_title: Title of the section
+                    - choices: List of choices
+                        - id: Unique choice identifier for the choice
+                        - common_name: Choice label to be displayed on the UI
+                        - is_selected: True/False to show whether the choice is pre-selected or not
+            ```
+        </Card>
+    #### Example of entire question for I-ATSG
+        ```json
         {
-            "selected_choices": [
+            "questions": [
                 {
-                    "choice_id":  "s_4725efa4-a65c-11eb-8d02-1e003a340630", // id of the option selected from previous response (❗️required)
-                    "choice_label": "Over a period of time"      // choice (text) selected from autosuggest (optional)
+                    "qid": 0,
+                    "component_code": "I-ATSG",
+                    "question_text": "Add all symptoms",
+                    "tip": "Type here to search for symptoms.",
+                    "component_data": {
+                        "url": {
+                            "base_url": "https://mdb.dev.eka.care/v1/sa-terms",
+                            "query_params": {
+                                "gender": "m",
+                                "age": "23",
+                                "src": "sn"
+                            },
+                            "search_query_param": "q"
+                        },
+                        "autosuggest_static_choices": {
+                            "sections": [
+                                {
+                                    "section_title": "Most Searched",
+                                    "choices": [
+                                        {
+                                            "id": "47258974-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Fever"
+                                        },
+                                        {
+                                            "id": "473f9e54-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Constipation"
+                                        },
+                                        {
+                                            "id": "471e8e62-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Cough"
+                                        },
+                                        {
+                                            "id": "476efd70-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Acidity"
+                                        },
+                                        {
+                                            "id": "4736971e-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Diarrhoea"
+                                        },
+                                        {
+                                            "id": "4737ee0c-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Vomiting"
+                                        },
+                                        {
+                                            "id": "4720607a-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Headache",
+                                            "is_selected": true
+                                        },
+                                        {
+                                            "id": "47172c6c-a65c-11eb-8d02-1e003a340630",
+                                            "common_name": "Stomach ache"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "is_mandatory": true
                 }
-            ]
+            ],
+            "progress": "0.00",
+            "is_last_question": false
         }
-    ]
-}
-```
-  </Accordion>
-  <Accordion title="Multi-Select (I-MULT)">
-```json
-{
-    "user_response": [
-        {
-            "selected_choices": [
-                {
-                    "choice_id": "s_b87e7437-1305-4973-b7f7-7b07f51fb80e",  // (❗️required)
-                    "choice_label": "Red skin rash"  // (optional)
-                },
-                {
-                    "choice_id": "s_4720607a-a65c-11eb-8d02-1e003a340630",  // (❗️required)
-                    "choice_label": "Headache"   // (optional)
-                }
-            ]
-        }
-    ]
-}
-// 📌 NOTE THE MULTIPLE ENTRIES FOR `SELECTED_CHOICES` IN MULTIPLE CHOICES COMPONENT
-```
-  </Accordion>
-  <Accordion title="Radio Group (I-RADG)">
-```json
-{
-    "user_response": [
-        {
-            "selected_choices": [
-                {
-                    "choice_id": "s_4726a78c-a65c-11eb-8d02-1e003a340630",  //(❗️required)
-                    "choice_label": "Medication"  // (optional)
-                    "qualifier": "p",     // p/a/u for present/absent/unknown (❗️required)
-                },
-                {
-                    "choice_id": "s_4720607a-a65c-11eb-8d02-1e003a340630",  // (❗️required)
-                    "choice_label": "Headache",   // (optional)
-                    "qualifier": "u"     // p/a/u for present/absent/unknown (❗️required)
-                }
-            ]
-        }
-    ]
-}
-```
-  </Accordion>
-</AccordionGroup>
+        ```
 
-#### 2. Non Choice components
-<AccordionGroup>
-  <Accordion title="Number (I-NUMR)">
-```json
-{   
-    "user_response": [
+  </Tab>
+  <Tab title="☑️ Single-Select(I-RADO)">
+    <Card title="component_data for I-RADO">
+        ```yaml
+        - choices: List of choices
+            - choice_id: Unique choice identifier for the choice
+            - choice_label: Choice label to be displayed on the UI
+            - is_selected: True/False to show whether the choice is pre-selected or not
+        ```
+    </Card>
+    #### Example of entire question for I-RADO
+        ```json
         {
-            "user_input": "25"      // (❗️required)
+            "questions": [
+                {
+                    "qid": 2,
+                    "component_code": "I-RADO",
+                    "question_text": "Since when have you been experiencing fever",
+                    "tip": "Select one of the options",
+                    "component_data": {
+                        "choices": [
+                            {
+                                "choice_id": "s_47259d92-a65c-11eb-8d02-1e003a340630",
+                                "choice_label": "Less than 1 day"
+                            },
+                            {
+                                "choice_id": "s_4725b232-a65c-11eb-8d02-1e003a340630",
+                                "choice_label": "1 day to 4 days"
+                            },
+                            {
+                                "choice_id": "s_4725c6a0-a65c-11eb-8d02-1e003a340630",
+                                "choice_label": "More than 4 days"
+                            },
+                            {
+                                "choice_id": "d_0e1592a4-e8c5-11eb-a89e-1e003a340631",
+                                "choice_label": "I am not sure"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "progress": "15.38",
+            "is_last_question": false
         }
-    ]
-}
-```
-  </Accordion>
-   <Accordion title="Text (I-TEXT)">
-```json
-{   
-    "user_response": [
+        ```
+  </Tab>
+  <Tab title="🔢 Multi-Select(I-MULT)">
+    <Card title="component_data for I-MULT">
+        ```yaml
+        - choices: List of choices
+            - choice_id: Unique choice identifier for the choice
+            - choice_label: Choice label to be displayed on the UI
+            - is_selected: True/False to show whether the choice is pre-selected or not
+        ```
+    </Card>
+    #### Example of entire question for I-MULT
+        ```json
         {
-            "user_input": "This is a text response"     // (❗️required)
+            "questions": [
+                {
+                    "qid": 1,
+                    "component_code": "I-MULT",
+                    "question_text": "Select all the symptoms you are experiencing",
+                    "tip": "Select all option(s) that are applicable to you.",
+                    "component_data": {
+                        "choices": [
+                            {
+                                "choice_id": "s_473b48a4-a65c-11eb-8d02-1e003a340630",
+                                "choice_label": "Throat pain"
+                            },
+                            {
+                                "choice_id": "s_475b7ca0-a65c-11eb-8d02-1e003a340630",
+                                "choice_label": "Body aches"
+                            },
+                            {
+                                "choice_id": "s_4739c8bc-a65c-11eb-8d02-1e003a340630",
+                                "choice_label": "Loss of weight"
+                            },
+                            {
+                                "choice_id": "s_1fd50722-af36-11eb-8fc3-1e003a340631",
+                                "choice_label": "Runny nose or discharge from nose"
+                            },
+                            {
+                                "choice_id": "s_4784e554-a65c-11eb-8d02-1e003a340630",
+                                "choice_label": "Loss of sense of smell"
+                            },
+                            {
+                                "choice_id": "nota",
+                                "choice_label": "None of the above"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "progress": "7.69",
+            "is_last_question": false
         }
-    ]
-}
-```
-  </Accordion>
-   <Accordion title="DatePicker (I-DTPK)">
-```json
-{   
-    "user_response": [
+        ```
+  </Tab>
+  <Tab title="◉ Radio Group(I-RADG)">
+    <Card title="component_data for I-RADG">
+        ```yaml
+        - choices: List of choices
+            - choice_id: Unique choice identifier for the choice
+            - choice_label: Choice label to be displayed on the UI
+            - qualifier: Qualifier for the choice
+                - id: Qualifier ID (p/a/u)
+                - label: Qualifier label to be displayed on the UI
+                - is_selected: True/False to show whether the choice is pre-selected or not
+        ```
+    </Card>
+
+    #### Example of entire question for I-RADG
+        ```json
         {
-            "user_input": "2001-03-14"     // (❗️required)
+            "questions": [
+                {
+                    "qid": 11,
+                    "component_code": "I-RADG",
+                    "question_text": "Have you lost your sense of taste and feel like you can't get the taste of food that you are consuming?\"",
+                    "tip": "Select one answer in each row.",
+                    "component_data": {
+                        "choices": [
+                            {
+                                "choice_id": "s_344147d6-b416-11eb-8c69-1e003a340631",
+                                "choice_label": "Loss of taste",
+                                "qualifier": [
+                                    {
+                                        "id": "p",
+                                        "label": "Yes"
+                                    },
+                                    {
+                                        "id": "a",
+                                        "label": "No"
+                                    },
+                                    {
+                                        "id": "u",
+                                        "label": "Don't Know"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ],
+            "progress": "84.62",
+            "is_last_question": false
         }
-    ]
-}
-```
-  </Accordion>
-</AccordionGroup>
+        ```
+  </Tab>
+</Tabs>
 
 <Tip>
-Refer to the [list component](/api-reference/general-tools/assessment/component-info/list-all-components) documentation for different question compoent response format. 
+Please refer to the [List Component API](/api-reference/general-tools/assessment/component-info/list-all-components) to get the request and response formats of each component with their json schema to validate your data against.
 </Tip>
