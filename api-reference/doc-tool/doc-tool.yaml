@@ -2200,37 +2200,20 @@ paths:
         ### Request Parameters
 
 
-        #### Patient Information
-
-
         | Parameter | Type | Expected Values | Description |
         Required/Optional/Not Required |
 
         | --- | --- | --- | --- | --- |
         
-        | patient_id | string | 1234567890 | Patient's id on Eka | Optional |
+        | partner_appointment_id | string | 1234567890 | Partner's appointment ID | Optional |
 
-        | designation | string | Mr./Miss/Mrs. | Patient's designation |
-        Optional |
+        | partner_patient_id | string | 1234567890 | Partner's patient ID | Optional |
 
-        | first_name | string | Test | Patient's first name | Required |
+        | patient_id | string | 1234567890 | Eka's patient ID | Optional |
 
-        | middle_name | string |  | Patient's middle name | Optional |
+        | partner_meta | object | | Metadata Object (Set of key-value pairs) | Optional |
 
-        | last_name | string | Test | Patient's last name | Required |
-
-        | dob | Date | 1987-01-06 | Patient's date of birth | Required |
-
-        | mobile | string | +919999999999 | Patient's mobile number with country code |
-        Required |
-
-        | gender | string | M/F/O | Patient's gender | Required |
-
-        | email | string | [abc@eka.care](https://mailto:pp@orbi.health)
-        | Patient's email address | Optional |
-
-
-        #### Slot Information
+        #### Appointment Information
 
 
         | Parameter | Type | Expected Values | Description |
@@ -2238,16 +2221,13 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | start_time | datetime | 2024-06-11T09:00:00+05:30 | Start time of the
+        | start_time | datetime | 1730189586 | Start time of the
         appointment slot | Required |
 
-        | end_time | datetime | 2024-06-11T09:30:00+05:30 | End time of the
+        | end_time | datetime | 1730189586 | End time of the
         appointment slot | Required |
 
-        | service_conf_id | string |
-        904eec0a73d9b02d9145898db44e628bcb18e7a11cd92852be5a2d6f65159a04 |
-        Configuration ID for the service | Required |
-        
+    
         
         #### Doctor and Clinic Information
         
@@ -2256,9 +2236,13 @@ paths:
         
         | --- | --- | --- | --- | --- |
         
-        | doctor_id | string | 1234567890 | Doctor's ID | Required |
+        | partner_clinic_id | string | 1234567890 | Partner's clinic ID | Optional |
 
-        | clinic_id | string | 1234567890 | Clinic's ID | Required |
+        | clinic_id | string | 1234567890 | Eka's clinic ID | Optional |
+
+        | partner_doc_id | string | 1234567890 | Partner's doctor ID | Optional |
+
+        | doc_id | string | 1234567890 | Eka's doctor ID | Optional |
 
 
         **Response Parameters**
@@ -2283,7 +2267,7 @@ paths:
 
         **Status Codes**  
 
-        • 200: Success
+        • 201: Success
 
 
         • 403: Forbidden access
@@ -2299,59 +2283,44 @@ paths:
             schema:
               type: object
               properties:
-                patient:
-                  type: object
-                  properties:
-                    designation:
-                      type: string
-                    first_name:
-                      type: string
-                    middle_name:
-                      type: string
-                    last_name:
-                      type: string
-                    dob:
-                      type: string
-                      format: date
-                    mobile:
-                      type: string
-                    gender:
-                      type: string
-                      enum: [ M, F, O ]
-                slot:
-                  type: object
-                  properties:
-                    start_time:
-                      type: string
-                      format: date-time
-                    end_time:
-                      type: string
-                      format: date-time
-                    service_conf_id:
-                      type: string
-                doctor_id:
+                partner_appointment_id:
+                  type: string
+                partner_clinic_id:
                   type: string
                 clinic_id:
                   type: string
+                partner_doc_id:
+                  type: string
+                doc_id:
+                  type: string
+                partner_patient_id:
+                  type: string
+                patient_id:
+                  type: string
+                appointment_details:
+                  type: object
+                  properties:
+                    mode:
+                      type: string
+                      enum: [ INCLINIC, PHONE, VIDEO ]
+                    filters:
+                      type: object
+                partner_meta:
+                  type: object
             example:
-              patient:
-                patient_id: "098765434567890" # Optional
-                designation: "Mr." #Optional
-                first_name: "Test"
-                middle_name: ""   #Optional
-                last_name: "Patient"
-                dob: "1987-01-06"
-                mobile: "+919999999999"
-                gender: "M"
-              slot:
-                start_time: "2024-06-11T09:00:00+05:30"
-                end_time: "2024-06-11T09:30:00+05:30"
-                service_conf_id: "904eec0a73d9b02d9145898db44e628bcb18e7a11cd92852be5a2d6f65159a04"
-              doctor_id: "{{doctor_id}}"
-              clinic_id: "{{clinic_id}}"
+              partner_appointment_id: "098765434567890"
+              partner_clinic_id: "642783"
+              partner_doc_id: "8423994"
+              partner_patient_id: "6742984"
+              appointment_details:
+                start_time: 1730189586
+                end_time: 1730189586
+                mode: "INCLINIC"
+                filters:
+                  payment_status: ["PAID"]
         required: true
       responses:
-        '200':
+        '201':
           description: OK
           headers:
             Date:
@@ -2401,28 +2370,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      start_time:
-                        type: string
-                        format: date-time
-                      message:
-                        type: string
-                      appointment_id:
-                        type: string
+                  appointment_id:
+                    type: string
               example:
-                status_code: 200
-                success: "true"
-                data:
-                  start_time: "2024-06-11T09:00:00+05:30"
-                  end_time: "2024-06-11T09:30:00+05:30"
-                  appointment_id: "{{appointment_id}}"
-                  patient_id: "{{patient_id}}"
-                  doctor_id: "{{doctor_id}}"
-                  clinic_id: "{{clinic_id}}"
-                  message: "Appointment has been confirmed"
-                  created_at: "2024-06-10T09:00:00+05:30"
+                status_code: 201
+                appointment_id: "{{appointment_id}}"
+                  
         '400':
           description: Bad Request
           headers:
