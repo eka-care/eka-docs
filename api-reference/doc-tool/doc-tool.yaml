@@ -42,8 +42,6 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
-        | patient_id | string |  | In case Eka patient_id already exists use this
-        - no need for profile metadata |
 
         | designation | string | Mr./Miss/Mrs. | Patient Designation | Optional |
 
@@ -77,16 +75,7 @@ paths:
 
         | address.country | string | India | Country | Optional |
 
-        | metadata | object | | Metadata Object (Set of key-value pairs) | Optional |
-
-        | metadata.blood_group | string | B+ | Blood Group | Optional |
-
-        | metadata.aadhar_number | string | 123456789012 | Aadhar Number | Optional |
-
-        | metadata.UHID | string | MH2024001 | Unique Health ID | Optional |
-
-        | doctor_id (to_be_deprecated) | string | DOC12345 | doctor_id | Required |
-
+        | partner_meta | object | | Metadata Object (Set of key-value pairs) | Optional |
 
         ### Response Parameters
 
@@ -99,21 +88,11 @@ paths:
 
         | response.patient_id | string | 1234567890 | Generated Patient ID |
 
-        | response.profile | object |  | Profile Object |
-
-        | response.profile.id | string | 1234567890 | Profile ID |
-
-        | response.profile.created_at | datetime | 2024-06-12T21:55:51.593Z |
-        Profile Creation Timestamp |
-
-        | response.profile.updated_at | datetime | 2024-06-17T09:52:55.257Z |
-        Profile Update Timestamp |
-
 
         **Status Codes**
 
 
-        • 200: Success
+        • 201: Success
 
 
         • 404: Patient data missing
@@ -139,7 +118,6 @@ paths:
             schema:
               type: string
             example:
-              patient_id: "123456789"
               designation: "Mr."
               first_name: "Test"
               middle_name: ""
@@ -147,7 +125,6 @@ paths:
               dob: "1987-01-06"
               mobile: "+919999999999"
               gender: "M"
-              doctor_id: "{{doctor_id}}"
               address:
                 city: "Bangalore"
                 line1: "ABC"
@@ -155,13 +132,13 @@ paths:
                 pincode: 560049
                 state: "Karnataka"
                 country: "India"
-              metadata:
+              partner_meta:
                 blood_group: "AB+"
                 aadhar_number: "12345"
                 notes: "Has a history of HTN"
         required: true
       responses:
-        '200':
+        '201':
           description: OK
           headers:
             Date:
@@ -221,10 +198,6 @@ paths:
               example:
                 data:
                   patient_id: '123456789'
-                  profile:
-                    id: '123456789'
-                    created_at: '2024-06-12T21:55:51.593Z'
-                    updated_at: '2024-06-17T09:52:55.257Z'
         '403':
           description: Forbidden
           headers: { }
