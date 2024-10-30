@@ -1,0 +1,144 @@
+---
+title: ↗️ Continue Assessment Request Format
+---
+
+In order to get next question, the request body must contain the answer to the previous question for different question components as shown below.
+There are mainly 2 types of components:
+1. **Choice components**:
+    These are the components where the user has to select one or more options from the given list of options from the question.
+    * Autosuggest (I-ATSG)
+    * Single Select Radio (I-RADO)
+    * Multi-Select (I-MULT)
+    * Radio Group (I-RADG)
+2. **Non Choice components**:
+    These are the components where the user has to enter the response in the form of text, number, date, etc.
+    - Number (I-NUMR)
+    - Text (I-TEXT)
+    - DatePicker (I-DTPK)
+---
+
+### Request Formats for different question components
+#### 1. Choice components
+<AccordionGroup>
+  <Accordion title="Autosuggest (I-ATSG)">
+```json
+{
+    "user_response": [
+        {
+            "selected_choices": [
+                {
+                    "choice_id": "s-2488272578", // id of the option selected from autosuggest (❗️required)
+                    "choice_label": "Cough"      // choice (text) selected from autosuggest (optional)
+                },
+                {
+                    "choice_id": "s-471e8e62-a65c", // id of the option selected from autosuggest (❗️required)
+                    "choice_label": "Fever"      // choice (text) selected from autosuggest (optional)
+                }
+            ]
+        }
+    ]
+}
+```
+  </Accordion>
+
+  <Accordion title="Single Select Radio (I-RADO)">
+```json
+{   
+    "user_response": [
+        {
+            "selected_choices": [
+                {
+                    "choice_id":  "s_4725efa4-a65c-11eb-8d02-1e003a340630", // id of the option selected from previous response (❗️required)
+                    "choice_label": "Over a period of time"      // choice (text) selected from autosuggest (optional)
+                }
+            ]
+        }
+    ]
+}
+```
+  </Accordion>
+  <Accordion title="Multi-Select (I-MULT)">
+```json
+{
+    "user_response": [
+        {
+            "selected_choices": [
+                {
+                    "choice_id": "s_b87e7437-1305-4973-b7f7-7b07f51fb80e",  // (❗️required)
+                    "choice_label": "Red skin rash"  // (optional)
+                },
+                {
+                    "choice_id": "s_4720607a-a65c-11eb-8d02-1e003a340630",  // (❗️required)
+                    "choice_label": "Headache"   // (optional)
+                }
+            ]
+        }
+    ]
+}
+// 📌 NOTE THE MULTIPLE ENTRIES FOR `SELECTED_CHOICES` IN MULTIPLE CHOICES COMPONENT
+```
+  </Accordion>
+  <Accordion title="Radio Group (I-RADG)">
+```json
+{
+    "user_response": [
+        {
+            "selected_choices": [
+                {
+                    "choice_id": "s_4726a78c-a65c-11eb-8d02-1e003a340630",  //(❗️required)
+                    "choice_label": "Medication"  // (optional)
+                    "qualifier": "p",     // p/a/u for present/absent/unknown (❗️required)
+                },
+                {
+                    "choice_id": "s_4720607a-a65c-11eb-8d02-1e003a340630",  // (❗️required)
+                    "choice_label": "Headache",   // (optional)
+                    "qualifier": "u"     // p/a/u for present/absent/unknown (❗️required)
+                }
+            ]
+        }
+    ]
+}
+```
+  </Accordion>
+</AccordionGroup>
+
+#### 2. Non Choice components
+<AccordionGroup>
+  <Accordion title="Number (I-NUMR)">
+```json
+{   
+    "user_response": [
+        {
+            "user_input": "25"      // (❗️required)
+        }
+    ]
+}
+```
+  </Accordion>
+   <Accordion title="Text (I-TEXT)">
+```json
+{   
+    "user_response": [
+        {
+            "user_input": "This is a text response"     // (❗️required)
+        }
+    ]
+}
+```
+  </Accordion>
+   <Accordion title="DatePicker (I-DTPK)">
+```json
+{   
+    "user_response": [
+        {
+            "user_input": "2001-03-14"     // (❗️required)
+        }
+    ]
+}
+```
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+Please refer to the [List Component API](/api-reference/general-tools/assessment/component-info/list-all-components) to get the request and response formats of each component with their json schema to validate your data against.
+</Tip>
