@@ -78,7 +78,7 @@ paths:
                                     document_type:
                                       type: string
                                       description: Type of the document.
-                                      example: TYPE_LAB_REPORT
+                                      example: lr
                                     metadata:
                                       type: object
                                       properties:
@@ -98,6 +98,9 @@ paths:
                                             type: string
                                             description: Tags associated with the document.
                                             example: TYPE_TAG_SMART
+                                        title:
+                                          type: string
+                                          description: Title associated with the document.
                                         abha:
                                           type: object
                                           nullable: true
@@ -325,14 +328,14 @@ paths:
                   dt:
                     type: string
                     enum:
-                      - TYPE_LAB_REPORT
-                      - TYPE_PRESCRIPTION
-                      - TYPE_DISCHARGE_SUMMARY
-                      - TYPE_VACCINE_CERTIFICATE
-                      - TYPE_INSURANCE
-                      - TYPE_INVOICE
-                      - TYPE_SCAN
-                      - TYPE_OTHER
+                      - lr
+                      - ps
+                      - ds
+                      - vc
+                      - in
+                      - iv
+                      - sc
+                      - ot
                   files:
                     type: array
                     items:
@@ -349,7 +352,7 @@ paths:
               example:
                 source: "androidp"
                 document_date_epoch: 1614556800
-                document_type: TYPE_LAB_REPORT
+                document_type: lr
                 tags: ["covid"]
                 files:
                   - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/161494290947153/2df9e795-d368-4ceb-be9d-b44281703827/0cb1277e-1c4d-42cc-acd1-9630497e4f9d.jpeg
@@ -654,6 +657,9 @@ components:
           description: A list of files to be uploaded, each with a specified content type and size.
           items:
             $ref: '#/components/schemas/FileUploadRequest'
+        title:
+          type: string
+          description: Title of the document. Max length of 256 characters.
       required :
          - files
     UploadResponse:
@@ -693,11 +699,12 @@ components:
       properties:
         document_id:
           type: string
+        title:
+          type: string
         forms:
           type: array
           items:
             $ref: '#/components/schemas/UploadResponseBodyForms'
-
     UploadResponseBodyForms:
       type: object
       properties:
