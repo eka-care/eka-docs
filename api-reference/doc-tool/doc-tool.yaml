@@ -2272,25 +2272,16 @@ paths:
             type: string
             example: 'auth'
       requestBody:
-        description: ''
+        required: true
         content:
           application/json:
             schema:
               type: object
+              description: >-
+                The request body should contain either partner-specific fields or non-partner-specific fields for clinic and doctor identification.
+
               properties:
                 partner_appointment_id:
-                  type: string
-                partner_clinic_id:
-                  type: string
-                clinic_id:
-                  type: string
-                partner_doc_id:
-                  type: string
-                doc_id:
-                  type: string
-                partner_patient_id:
-                  type: string
-                patient_id:
                   type: string
                 appointment_details:
                   type: object
@@ -2306,6 +2297,43 @@ paths:
                       type: object
                 partner_meta:
                   type: object
+
+              oneOf:
+                - title: PartnerIds
+                  properties:
+                    partner_clinic_id:
+                      type: string
+                      description: 'Identifier for the partner’s clinic.'
+                    partner_doc_id:
+                      type: string
+                      description: 'Identifier for the partner’s doctor.'
+                    partner_patient_id:
+                      type: string
+                      description: 'Identifier for the partner’s patient.'
+                  required:
+                    - partner_clinic_id
+                    - partner_doc_id
+                    - partner_patient_id
+
+                - title: EkaIds
+                  properties:
+                    clinic_id:
+                      type: string
+                      description: 'Identifier for the clinic in Eka.'
+                    doc_id:
+                      type: string
+                      description: 'Identifier for the doctor in Eka.'
+                    patient_id:
+                      type: string
+                      description: 'Identifier for the patient in Eka.'
+                  required:
+                    - clinic_id
+                    - doc_id
+                    - patient_id
+
+              required:
+                - appointment_details
+                
             example:
               partner_appointment_id: "098765434567890"
               partner_clinic_id: "642783"
@@ -2317,7 +2345,7 @@ paths:
                 mode: "INCLINIC"
                 custom_attributes:
                   payment_status: ["PAID"]
-        required: true
+
       responses:
         '201':
           description: OK
