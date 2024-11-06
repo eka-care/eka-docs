@@ -2108,7 +2108,6 @@ paths:
                       type: object
                   required:
                     - start_time
-                    - end_time
                 partner_meta:
                   type: object
 
@@ -2159,7 +2158,6 @@ paths:
                 mode: "INCLINIC"
                 custom_attributes:
                   labels: ["vitals_submitted"]
-                  payment_status: ["PAID"]
               partner_meta:
                 encounter_id: "123"
 
@@ -2275,9 +2273,6 @@ paths:
                         code: INVALID_REQUEST_PARAMETERS
                         message: The request contains invalid parameters
               example:
-                status_code: 400
-                success: "false"
-                data: { }
                 error:
                   code: INVALID_REQUEST_PARAMETERS
                   message: The request contains invalid parameters
@@ -2776,7 +2771,6 @@ paths:
         
         Appointment_statuses:
           - BK    : Booked
-          - CK    : Checked In
           - OG    : Ongoing
           - CM	  : Completed with Prescription
           - CMNP  : Completed without a Prescription
@@ -2920,69 +2914,12 @@ paths:
                           allow_patient_booking:
                             type: boolean
                       # New properties added
-                      patient_profile:
-                        type: object
-                        properties:
-                          age:
-                            type: string
-                            nullable: true
-                          dob:
-                            type: string
-                            format: date
-                          email_id:
-                            type: string
-                          first_name:
-                            type: string
-                          gender:
-                            type: string
-                          last_name:
-                            type: string
-                          middle_name:
-                            type: string
-                            nullable: true
-                          mobile:
-                            type: string
-                          patient_address:
-                            type: object
-                            properties:
-                              address_line1:
-                                type: string
-                                nullable: true
-                              pincode:
-                                type: string
-                                nullable: true
-                          salutation:
-                            type: string
                       prescription_url:
                         type: string
-                      receipts:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            created_at:
-                              type: string
-                              format: date-time
-                            net_amount:
-                              type: number
-                            payment_id:
-                              type: string
-                              nullable: true
-                            receipt_amount:
-                              type: number
-                            receipt_id:
-                              type: integer
-                            receipt_payment:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  amount:
-                                    type: number
-                                  paymode:
-                                    type: string
-                            receipt_url:
-                              type: string
+                      custom_attributes:
+                        type: object  
+                      partner_meta:
+                        type: object
                 example:
                   status_code: 200
                   success: "true"
@@ -3015,39 +2952,11 @@ paths:
                       service_name: consultation
                       appointment_type: REGULAR
                       allow_patient_booking: true
-                    patient_profile:
-                      age: null
-                      dob: "1984-11-19"
-                      email_id: "xyz@eka.care"
-                      first_name: "Sanket"
-                      gender: "M"
-                      last_name: "Bansal"
-                      middle_name: ""
-                      mobile: "+918888888888"
-                      patient_address:
-                        address_line1: null
-                        pincode: ""
-                      salutation: "Mr."
                     prescription_url: "https://prescription-store-s3.eka.care/P-DW-A1E115AA-D9D3-5443-BD82-2663F7D49298.pdf"
-                    receipts:
-                      - created_at: "2024-10-03T08:16:42.437Z"
-                        net_amount: 20
-                        payment_id: null
-                        receipt_amount: 20
-                        receipt_id: 2889705
-                        receipt_payment:
-                          - amount: 20
-                            paymode: "CASH"
-                        receipt_url: "https://doc-receipts.eka.care/v2/161467756044203/605367c0cb46901ba3a3e558/1727943402437.pdf"
-                      - created_at: "2024-10-03T08:16:58.377Z"
-                        net_amount: 1000
-                        payment_id: null
-                        receipt_amount: 1000
-                        receipt_id: 2889708
-                        receipt_payment:
-                          - amount: 1000
-                            paymode: "CASH"
-                        receipt_url: "https://doc-receipts.eka.care/v2/161467756044203/605367c0cb46901ba3a3e558/1727943418377.pdf"
+                    custom_attributes:
+                      labels: ["vitals_submitted"]
+                    partner_meta:
+                      key1: "value1"
         '400':
           description: Bad Request
           headers:
@@ -3072,17 +2981,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  status_code:
-                    type: integer
-                  success:
-                    type: string
-                  message:
-                    type: string
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
-                status_code: 400
-                success: "false"
-                message: "Invalid request parameters. Please check your input and try again."
-
+                error:
+                  code: INVALID_REQUEST_PARAMETERS
+                  message: The request contains invalid parameters
         '403':
           description: Forbidden
           headers:
@@ -3107,17 +3016,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  status_code:
-                    type: integer
-                  success:
-                    type: string
-                  message:
-                    type: string
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
-                status_code: 403
-                success: "false"
-                message: "Access denied. You do not have permission to view this appointment."
-
+                error:
+                  code: ACCESS_DENIED
+                  message: "Access denied. You do not have permission to view this appointment." 
         '404':
           description: Not Found
           headers:
@@ -3142,17 +3051,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  status_code:
-                    type: integer
-                  success:
-                    type: string
-                  message:
-                    type: string
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
-                status_code: 404
-                success: "false"
-                message: "Appointment not found. Please check the provided appointment ID."
-
+                error:
+                  code: NOT_FOUND
+                  message: "Appointment not found. Please check the provided appointment ID."
         '500':
           description: Internal Server Error
           headers:
@@ -3177,16 +3086,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  status_code:
-                    type: integer
-                  success:
-                    type: string
-                  message:
-                    type: string
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
               example:
-                status_code: 500
-                success: "false"
-                message: "An unexpected error occurred while processing your request. Please try again later."
+                error:
+                  code: SERVER_ERROR
+                  message: An unexpected error occurred while processing your request. Please try again later.
       deprecated: false
   /dr/v1/business/doctor/appointments/{appointment_id}:
     patch:
@@ -3843,6 +3753,40 @@ paths:
           schema:
             type: string
             example: '1'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                start_time:
+                  type: string
+                end_time:
+                  type: string
+              oneOf:
+                - title: PartnerIds
+                  properties:
+                    partner_clinic_id:
+                      type: string
+                      description: 'Identifier for the partner’s clinic.'
+                    partner_doc_id:
+                      type: string
+                      description: 'Identifier for the partner’s doctor.'
+                
+                - title: EkaIds
+                  properties:
+                    clinic_id:
+                      type: string
+                      description: 'Identifier for the clinic in Eka.'
+                    doc_id:
+                      type: string
+                      description: 'Identifier for the doctor in Eka.'
+            example:
+              start_time: 1730189586
+              end_time: 1730189586
+              partner_clinic_id: "54672347823"
+              partner_doctor_id: "58hjbfiugfqw8778"
       responses:
         '204':
           description: OK
