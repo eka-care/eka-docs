@@ -23,81 +23,6 @@ paths:
 
         > _In case the patient is already registered with Eka care, then
         passing the patient eka id will be enough_
-        
-        
-        <Warning> Right now adding a patient is done wrt to a specific doctor,
-        which automatically adds the patient to the business directory as well. 
-        This will be `deprecated` soon by adding patient directly to a business (WIP). </Warning>
-        
-        
-        
-        ### Request Parameters
-
-
-        Parameter
-
-
-        | Param | Type | Expected Values | Description | Required/Optional/Not Required
-        |
-
-        | --- | --- | --- | --- | --- |
-
-        | designation | string | Mr./Miss/Mrs. | Patient Designation | Optional |
-
-        | first_name | string | Rahul | First Name | Required |
-
-        | middle_name | string | Kumar | Middle Name | Optional |
-
-        | last_name | string | Sharma | Last Name | Optional |
-
-        | dob | Date | 1987-01-06 | Patient DOB | Required |
-
-        | age | string | 36 | Patient Age | Optional |
-
-        | mobile | string | +919876543210 | Mobile Number with country code | Required |
-
-        | gender | string | M/F/O | Patient Gender | Required |
-
-        | email | string | rahul.sharma@example.com | Patient Email Address | Optional |
-
-        | address | object | | Address Object | Optional |
-
-        | address.city | string | Mumbai | City | Optional |
-
-        | address.line1 | string | 123, Shanti Nagar | Address Line 1 | Optional |
-
-        | address.line2 | string | Near City Hospital | Address Line 2 | Optional |
-
-        | address.pincode | int | 400001 | Pincode | Optional |
-
-        | address.state | string | Maharashtra | State | Optional |
-
-        | address.country | string | India | Country | Optional |
-
-        | partner_meta | object | | Metadata Object (Set of key-value pairs) | Optional |
-
-        ### Response Parameters
-
-
-        | Parameter | Type | Expected Values | Description |
-
-        | --- | --- | --- | --- |
-
-        | response | object |  | Response Object |
-
-        | response.patient_id | string | 1234567890 | Generated Patient ID |
-
-
-        **Status Codes**
-
-
-        • 201: Success
-
-
-        • 404: Patient data missing
-
-
-        • 500: Something went wrong
 
       operationId: AddPatienttoDirectory
       parameters:
@@ -115,123 +40,123 @@ paths:
         content:
           application/json:
             schema:
-              type: string
-            example:
-              designation: "Mr."
-              first_name: "Test"
-              middle_name: ""
-              last_name: "Patient"
-              dob: "1987-01-06"
-              mobile: "+919999999999"
-              gender: "M"
-              address:
-                city: "Bangalore"
-                line1: "ABC"
-                line2: "XYZ"
-                pincode: 560049
-                state: "Karnataka"
-                country: "India"
-              partner_meta:
-                key1: "value1"
-        required: true
+              type: object
+              required: ["first_name", "dob", "mobile", "gender"]
+              properties:
+                designation:
+                  type: string
+                  example: "Mr."
+                  description: "Title or designation of the patient"
+                first_name:
+                  type: string
+                  example: "Test"
+                  description: "First name of the patient"
+                partner_patient_id:
+                  type: string
+                  example: "6742984"
+                  description: "Identifier for the partner’s patient."
+                middle_name:
+                  type: string
+                  example: ""
+                  description: "Middle name of the patient (if any)"
+                last_name:
+                  type: string
+                  example: "Patient"
+                  description: "Last name of the patient"
+                dob:
+                  type: string
+                  format: date
+                  example: "1987-01-06"
+                  description: "Date of birth of the patient (YYYY-MM-DD)"
+                mobile:
+                  type: string
+                  example: "+919999999999"
+                  description: "Mobile number of the patient, including country code"
+                gender:
+                  type: string
+                  example: "M"
+                  description: "Gender of the patient (e.g., 'M' for male, 'F' for female, 'O' for others)"
+                address:
+                  type: object
+                  properties:
+                    city:
+                      type: string
+                      example: "Bangalore"
+                    line1:
+                      type: string
+                      example: "ABC"
+                    line2:
+                      type: string
+                      example: "XYZ"
+                    pincode:
+                      type: integer
+                      example: 560049
+                    state:
+                      type: string
+                      example: "Karnataka"
+                    country:
+                      type: string
+                      example: "India"
+                  description: "Address details of the patient"
+                partner_meta:
+                  type: object
+                  properties:
+                    key1:
+                      type: string
+                      example: "value1"
       responses:
         '201':
           description: OK
           headers:
             Date:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: Tue, 24 Mar 2020 06:26:06 GMT
+              schema:
+                type: string
+                example: Tue, 24 Mar 2020 06:26:06 GMT
             Content-Length:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: '380'
+              schema:
+                type: string
+                example: '380'
             Connection:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: keep-alive
+              schema:
+                type: string
+                example: keep-alive
             Server:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: nginx/1.10.3 (Ubuntu)
+              schema:
+                type: string
+                example: nginx/1.10.3 (Ubuntu)
             Vary:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: Cookie, Accept-Encoding
+              schema:
+                type: string
+                example: Cookie, Accept-Encoding
             Content-Encoding:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: gzip
+              schema:
+                type: string
+                example: gzip
             Strict-Transport-Security:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: max-age=15768000
+              schema:
+                type: string
+                example: max-age=15768000
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/200OK'
-                  - example:
-                      data:
-                        patient_id: '123456789'
-                        profile:
-                          id: '123456789'
-                          created_at: '2024-06-12T21:55:51.593Z'
-                          updated_at: '2024-06-17T09:52:55.257Z'
-              example:
-                patient_id: '123456789'
+                type: object
+                properties:
+                  patient_id:
+                    type: string
+                    example: "123456789"
+
         '403':
           description: Forbidden
-          headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/403ForbiddenBusinessPatientDetailsMissing1
-                  - example:
-                      data: { }
-                      error:
-                        code: NOT_ALLOWED
-                        message: You are not allowed to add resource
-              example:
-                data: { }
-                error:
-                  code: NOT_ALLOWED
-                  message: You are not allowed to add resource
+                $ref: '#/components/schemas/403ForbiddenFinal'
         '500':
           description: Internal Server Error
-          headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/500WrongAPIURLTokenmismatchedWrongJSONrequest.1
-                  - example:
-                      data: { }
-                      error:
-                        code: INVALID_DATA
-                        message: Data entered in incorrect
-              example:
-                data: { }
-                error:
-                  code: INVALID_DATA
-                  message: Data entered in incorrect
+                $ref: '#/components/schemas/500InternalServerFinal'
       deprecated: false
   /dr/v1/business/patients/{patient_id}:
     get:
@@ -4838,9 +4763,9 @@ paths:
               type: string
               example: |-
                 {
-                  "event_type": "appointment",
-                  "timestamp" : "2023-07-30T18:07:24.000Z",
-                  "partition_id" : "{{appointment_id}}-{{patient_id}}",
+                  "event_type": "appointment.created",
+                  "timestamp" : 1730189586,
+                  "business_id" : "{{business_id}}",
                   "data": {
                     "appointment_id": {{appointment_id}},
                     "partner_appointment_id": "{{partner_appointment_id}}",
@@ -4919,9 +4844,9 @@ paths:
               type: string
               example: |-
                 {
-                  "event_type": "prescription",
-                  "timestamp" : "2023-07-30T18:07:24.000Z",
-                  "partition_id" : "{{prescription_id}}-{{patient_id}}",
+                  "event_type": "prescription.created",
+                  "timestamp" : 1730189586,
+                  "business_id" : "{{business_id}}",
                   "data": {
                     "appointment_id": {{prescription_id}},
                     "doctor_id":{{doctor_id}},
@@ -6458,3 +6383,27 @@ components:
           $ref: '#/components/schemas/OpthalProperty'
         dva:
           $ref: '#/components/schemas/OpthalProperty'
+    403ForbiddenFinal:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "NOT_ALLOWED"
+            message:
+              type: string
+              example: "You are not allowed to add resource"
+    500InternalServerFinal:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "INTERNAL_SERVER_ERROR"
+            message:
+              type: string
+              example: "Internal server error"
