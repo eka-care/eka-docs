@@ -106,99 +106,78 @@ paths:
           description: OK
           headers:
             Date:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: Tue, 24 Mar 2020 06:26:06 GMT
+              schema:
+                type: string
+                example: Tue, 24 Mar 2020 06:26:06 GMT
             Content-Length:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: '380'
+              schema:
+                type: string
+                example: '380'
             Connection:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: keep-alive
+              schema:
+                type: string
+                example: keep-alive
             Server:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: nginx/1.10.3 (Ubuntu)
+              schema:
+                type: string
+                example: nginx/1.10.3 (Ubuntu)
             Vary:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: Cookie, Accept-Encoding
+              schema:
+                type: string
+                example: Cookie, Accept-Encoding
             Content-Encoding:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: gzip
+              schema:
+                type: string
+                example: gzip
             Strict-Transport-Security:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: max-age=15768000
+              schema:
+                type: string
+                example: max-age=15768000
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/200OK'
-                  - example:
-                      data:
-                        patient_id: '123456789'
-                        profile:
-                          id: '123456789'
-                          created_at: '2024-06-12T21:55:51.593Z'
-                          updated_at: '2024-06-17T09:52:55.257Z'
-              example:
-                patient_id: '123456789'
+                type: object
+                properties:
+                  patient_id:
+                    type: string
+                    example: "123456789"
+
         '403':
           description: Forbidden
           headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/403ForbiddenBusinessPatientDetailsMissing1
-                  - example:
-                      data: { }
-                      error:
-                        code: NOT_ALLOWED
-                        message: You are not allowed to add resource
-              example:
-                data: { }
-                error:
-                  code: NOT_ALLOWED
-                  message: You are not allowed to add resource
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "NOT_ALLOWED"
+                      message:
+                        type: string
+                        example: "You are not allowed to add resource"
+
         '500':
           description: Internal Server Error
           headers: { }
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: >-
-                      #/components/schemas/500WrongAPIURLTokenmismatchedWrongJSONrequest.1
-                  - example:
-                      data: { }
-                      error:
-                        code: INVALID_DATA
-                        message: Data entered in incorrect
-              example:
-                data: { }
-                error:
-                  code: INVALID_DATA
-                  message: Data entered in incorrect
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "INVALID_DATA"
+                      message:
+                        type: string
+                        example: "Data entered in incorrect"
+
       deprecated: false
   /dr/v1/business/patients/{patient_id}:
     get:
