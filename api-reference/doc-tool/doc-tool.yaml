@@ -23,81 +23,6 @@ paths:
 
         > _In case the patient is already registered with Eka care, then
         passing the patient eka id will be enough_
-        
-        
-        <Warning> Right now adding a patient is done wrt to a specific doctor,
-        which automatically adds the patient to the business directory as well. 
-        This will be `deprecated` soon by adding patient directly to a business (WIP). </Warning>
-        
-        
-        
-        ### Request Parameters
-
-
-        Parameter
-
-
-        | Param | Type | Expected Values | Description | Required/Optional/Not Required
-        |
-
-        | --- | --- | --- | --- | --- |
-
-        | designation | string | Mr./Miss/Mrs. | Patient Designation | Optional |
-
-        | first_name | string | Rahul | First Name | Required |
-
-        | middle_name | string | Kumar | Middle Name | Optional |
-
-        | last_name | string | Sharma | Last Name | Optional |
-
-        | dob | Date | 1987-01-06 | Patient DOB | Required |
-
-        | age | string | 36 | Patient Age | Optional |
-
-        | mobile | string | +919876543210 | Mobile Number with country code | Required |
-
-        | gender | string | M/F/O | Patient Gender | Required |
-
-        | email | string | rahul.sharma@example.com | Patient Email Address | Optional |
-
-        | address | object | | Address Object | Optional |
-
-        | address.city | string | Mumbai | City | Optional |
-
-        | address.line1 | string | 123, Shanti Nagar | Address Line 1 | Optional |
-
-        | address.line2 | string | Near City Hospital | Address Line 2 | Optional |
-
-        | address.pincode | int | 400001 | Pincode | Optional |
-
-        | address.state | string | Maharashtra | State | Optional |
-
-        | address.country | string | India | Country | Optional |
-
-        | partner_meta | object | | Metadata Object (Set of key-value pairs) | Optional |
-
-        ### Response Parameters
-
-
-        | Parameter | Type | Expected Values | Description |
-
-        | --- | --- | --- | --- |
-
-        | response | object |  | Response Object |
-
-        | response.patient_id | string | 1234567890 | Generated Patient ID |
-
-
-        **Status Codes**
-
-
-        • 201: Success
-
-
-        • 404: Patient data missing
-
-
-        • 500: Something went wrong
 
       operationId: AddPatienttoDirectory
       parameters:
@@ -115,25 +40,71 @@ paths:
         content:
           application/json:
             schema:
-              type: string
-            example:
-              designation: "Mr."
-              first_name: "Test"
-              middle_name: ""
-              last_name: "Patient"
-              dob: "1987-01-06"
-              mobile: "+919999999999"
-              gender: "M"
-              address:
-                city: "Bangalore"
-                line1: "ABC"
-                line2: "XYZ"
-                pincode: 560049
-                state: "Karnataka"
-                country: "India"
-              partner_meta:
-                key1: "value1"
-        required: true
+              type: object
+              required: ["designation", "first_name", "dob", "mobile", "gender", "address"]
+              properties:
+                designation:
+                  type: string
+                  example: "Mr."
+                  description: "Title or designation of the patient"
+                first_name:
+                  type: string
+                  example: "Test"
+                  description: "First name of the patient"
+                  required: True
+                middle_name:
+                  type: string
+                  example: ""
+                  description: "Middle name of the patient (if any)"
+                last_name:
+                  type: string
+                  example: "Patient"
+                  description: "Last name of the patient"
+                dob:
+                  type: string
+                  format: date
+                  example: "1987-01-06"
+                  description: "Date of birth of the patient (YYYY-MM-DD)"
+                  required: True
+                mobile:
+                  type: string
+                  example: "+919999999999"
+                  description: "Mobile number of the patient, including country code"
+                  required: true
+                gender:
+                  type: string
+                  example: "M"
+                  description: "Gender of the patient (e.g., 'M' for male, 'F' for female)"
+                  required: true
+                address:
+                  type: object
+                  properties:
+                    city:
+                      type: string
+                      example: "Bangalore"
+                    line1:
+                      type: string
+                      example: "ABC"
+                    line2:
+                      type: string
+                      example: "XYZ"
+                    pincode:
+                      type: integer
+                      example: 560049
+                    state:
+                      type: string
+                      example: "Karnataka"
+                    country:
+                      type: string
+                      example: "India"
+                  description: "Address details of the patient"
+                  required: true
+                partner_meta:
+                  type: object
+                  properties:
+                    key1:
+                      type: string
+                      example: "value1"
       responses:
         '201':
           description: OK
