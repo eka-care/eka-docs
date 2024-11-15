@@ -1,0 +1,104 @@
+---
+title: "Webhook Signature"
+---
+
+## Overview
+
+Ensure the security and authenticity of your webhooks with a webhook signing key. This shared secret between your application and Eka Care allows you to verify that incoming events are legitimate and have not been tampered with. Eka Care includes an `Eka-Webhook-Signature` in each request, which you can validate against your expected signature to confirm the webhook's origin and integrity.
+
+## Using Signing Keys with Personal Access Tokens
+
+To enhance the security of your webhooks, you can configure a signing key when setting up your webhook subscription with personal access tokens. Depending on your integration setup, you can choose to use:
+
+- **Same Signing Key**: A shared signing key across all webhooks simplifies verification, making it easier to confirm the authenticity of events from your endpoints.
+- **Unique Signing Key**: Assigning a unique signing key to each webhook provides enhanced security, particularly beneficial when managing multiple integrations.
+
+Although optional, signing keys are highly recommended to protect the integrity of the data delivered to your endpoints.
+
+## Steps to Verify Webhook Signature
+
+1. **Retrieve the Signature**: Retrieve the `Eka-Webhook-Signature` header from the incoming webhook request. This header contains the signature and a timestamp.
+2. **Generate the Expected Signature**: Use the shared secret key and the received payload to compute the expected signature.
+3. **Compare Signatures**: Compare the extracted `Eka-Webhook-Signature` with the generated signature to confirm the authenticity of the webhook request.
+
+## Example Code
+
+### Generating the Expected Signature
+
+```python
+import hmac
+import hashlib
+
+def generate_signature(secret_key, payload):
+    """
+        Generate an HMAC SHA-256 signature.
+
+        Parameters:
+        - secret_key: The shared secret key (string).
+        - payload: The webhook payload (string).
+
+        Returns:
+        - The hexadecimal signature string.
+    """
+    return hmac.new(secret_key.encode(), payload.encode(), hashlib.sha256).hexdigest()
+```
+
+### Comparing the Signatures
+
+```python
+def verify_signature(secret_key, payload, signature):
+    """
+        Verify if the provided signature matches the expected signature.
+
+        Parameters:
+        - secret_key: The shared secret key (string).
+        - payload: The webhook payload (string).
+        - signature: The received signature to verify (string).
+
+        Returns:
+        - bool: True if signatures match, False otherwise.
+    """
+    expected_signature = generate_signature(secret_key, payload)
+    return hmac.compare_digest(expected_signature, signature)
+```
+
+## Verifying Signatures
+
+When Eka Care sends your app a webhook, it will include the `Eka-Webhook-Signature` header in the following format:
+```
+Eka-Webhook-Signature: t=1492774577,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8bd
+```
+Compare the `Eka-Webhook-Signature`, prefixed by `v1=`, to the expected signature. If they match, then you can trust that the event payload was issued by Eka Care and has not been tampered with.
+
+## Prevent Replay Attacks
+
+To prevent replay attacks, Eka Care includes a timestamp in the `Eka-Webhook-Signature` header, prefixed by `t=`. Reject webhooks if the timestamp is too old based on a defined tolerance zone (e.g., 3 minutes).
+
+In the example below, the tolerance zone is set to 3 minutes, so any webhooks received that are older than 3 minutes will be rejected.
+
+### Example Code to Prevent Replay Attacks
+
+```python
+import time
+
+def is_within_tolerance(timestamp, tolerance=180):
+    current_time = int(time.time())
+    return abs(current_time - timestamp) <= tolerance
+
+def verify_webhook_signature_with_replay_protection(secret_key, payload, received_signature, tolerance=180):
+    parts = received_signature.split(',')
+    timestamp = int(parts[0].split('=')[1])
+    signature = parts[1].split('=')[1]
+
+    if not is_within_tolerance(timestamp, tolerance):
+        return False
+
+    expected_signature = generate_signature(secret_key, payload)
+    return hmac.compare_digest(expected_signature, signature)
+```
+
+### Best Practices
+
+1. Use HTTPS to encrypt webhook traffic for added security.
+2. Rotate signing keys periodically to reduce exposure risk.
+3. Log verification failures for debugging or security auditing.

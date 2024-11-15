@@ -1,3 +1,7 @@
+---
+title: "Getting Started"
+---
+
 ## What are Webhooks?
 
 A webhook (also called a web callback or HTTP push API) is a way for an app to provide other applications with real-time information. A webhook delivers data to other applications as it happens, meaning you get data immediately. Unlike typical APIs where you would need to poll for data very frequently in order to get it real-time. This makes webhooks much more efficient for both provider and consumer.
@@ -25,9 +29,7 @@ At Eka Care, we've chosen to implement webhooks by sending minimal information i
 
 3. **Audit Trail:** By requiring API calls for detailed information, we can maintain a comprehensive audit trail of data access, enhancing security and compliance efforts.
 
-4. **Future Security Enhancements:** We are committed to continuously improving the security of our webhook system. In the future, we plan to implement the following security measure:
-
-   - **Digital Signature:** We will implement measures to secure message transmission and data integrity. We will add a digital signature (not encryption) to the payload if the developer has provided a key. If a developer does not provide a key, we will still send the payload, but it will be unsigned. This will allow developers to verify the authenticity and integrity of the webhooks they receive.
+4. **Digital Signature:** We have implemented measures to secure message transmission and data integrity. We will add a [Digital Signature](./webhook-signature) (not encryption) to the payload if the developer has provided a key while registering the webhook. If a developer does not provide a key, we will still send the payload, but it will be unsigned. This will allow developers to verify the authenticity and integrity of the webhooks they receive.
 
 ### Developer Experience
 
@@ -38,7 +40,7 @@ At Eka Care, we've chosen to implement webhooks by sending minimal information i
 3. **Flexibility in Data Retrieval:** Developers can choose which appointment details they need and when to fetch them, optimizing their application's performance and resource usage.
 
 
-These are the steps to handle webhook events for appointments and prescriptions:
+These are the steps to get your application set up to receive webhook events from Eka Care:
 
 <Steps>
 
@@ -51,32 +53,77 @@ Ensure your endpoint is publicly accessible and can handle the expected load of 
 </Step>
 
 <Step title="Register Webhook URL">
-Register your webhook URL with Eka Care. This is typically done through a settings or configuration page in your Eka Care account.
+[Register](./register-webhook) your webhook URL with Eka Care.
+
+- To register a new webhook, send a POST request to the appropriate endpoint.
+- Include the URL endpoint where you want to receive the webhook events.
+- Specify the types of events you are interested in.
+- Provide a secret key for security purposes.
+- Once registered, the system will start sending webhook events to the registered endpoint whenever the specified events occur.
 
 **Note:** Make sure to keep your webhook URL up to date if it changes.
 </Step>
 
-<Step title="Receive Appointment Webhook">
+
+<Step title="Get All Registered Webhooks">
+[Get](./get-webhooks) a list of all registered webhooks.
+- To retrieve the details of registered webhooks, send a GET request to the webhook endpoint.
+- This request will return information about the webhook, including its ID, Endpoint, Scope, secret key, and timestamps for when it was created and last updated.
+- This is useful for verifying the current configuration of a webhook.
+
+</Step>
+
+<Step title="Update Registered Webhook">
+[Update](./update-webhook) your webhook with Eka Care.
+
+- To update an existing webhook, send a PATCH request to the appropriate endpoint.
+- You can only update the secret key, or the scope of registered events.
+- Include the updated endpoint or scope in the request body.
+- This allows you to change the configuration of an existing webhook without having to delete and re-register it.
+
+</Step>
+
+
+<Step title="Delete Registered Webhook">
+[Delete](./delete-webhook) a registered webhook.
+
+- To delete a webhook, send a DELETE request to the appropriate endpoint.
+- This request will remove the webhook from our system.
+- It stops any further events from being sent to the previous endpoint.
+- This is useful for cleaning up webhooks that are no longer needed or were configured incorrectly.
+
+</Step>
+</Steps>
+
+
+These are the samples of the webhook payloads that you will receive from Eka Care:
+
+<Steps>
+
+<Step title="Appointment Webhook">
 When an appointment is created, modified, or completed, Eka Care will send a webhook event to your registered URL.
 
 **Example Payload:**
 ```json
 {
-      "event_type": "appointment",
-      "timestamp": "2023-07-30T18:07:24.000Z",
-      "partition_id": "{{appointment_id}}-{{patient_id}}",
+      "service": "dr",
+      "event_type": "appointment.created",
+      "event_time": 1730189586,
+      "timestamp": 1730189588,
+      "client_id": "{{client_id}}",
+      "business_id": "{{business_id}}",
       "data": {
-        "appointment_id": "12345-abcde-67890-fghij",
-        "doctor_id": "0910731080189",
-        "patient_id": "54321098809",
-        "clinic_id": "09876345768790",
-        "status": "BK",
-        "action": "create",
-        "created_at": "2023-07-30T18:07:24.000Z",
-        "modified_at": "2023-07-30T18:07:24.000Z",
-        "client_meta": {
-            "visit_id": "Client_visit_id_123"
-        }
+            "appointment_id": "12345-abcde-67890-fghij",
+            "doctor_id": "0910731080189",
+            "patient_id": "54321098809",
+            "clinic_id": "09876345768790",
+            "status": "BK",
+            "action": "create",
+            "created_at": "2023-07-30T18:07:24.000Z",
+            "modified_at": "2023-07-30T18:07:24.000Z",
+            "client_meta": {
+                "visit_id": "Client_visit_id_123"
+            }
       }
 }
 ```
@@ -90,27 +137,30 @@ After receiving the appointment webhook, use the appointment ID to fetch full de
 This step allows you to retrieve comprehensive information about the appointment, including any additional details not included in the webhook payload.
 </Step>
 
-<Step title="Receive Prescription Webhook">
+<Step title="Prescription Webhook">
 When a prescription is created, Eka Care will send a webhook event to your registered URL.
 
 **Example Payload:**
 ```json
 {
-  "event_type": "prescription_created",
-  "timestamp": "2023-07-30T18:07:24.000Z",
-  "partition_id": "{{prescription_id}}-{{patient_id}}",
-  "data": {
-    "status" : "created",
-    "action" : "created",
-    "rx_id": "{{rx_id}}",
-    "appointment_id": "{{appointment_id}}",
-    "doctor_id": "{{doctor_id}}",
-    "patient_id": "{{patient_id}}",
-    "clinic_id": "{{clinic_id}}",
-    "created_at": "2023-07-30T18:07:24.000Z"
-    },
-    "client_meta": {
-      "visit_id": "98765-zyxwv-43210-utsrq"
+    "service": "dr",
+    "event_type": "prescription.created",
+    "event_time": 1730189586,
+    "timestamp": 1730189588,
+    "client_id": "{{client_id}}",
+    "business_id": "{{business_id}}",
+    "data": {
+        "status" : "created",
+        "action" : "created",
+        "rx_id": "{{rx_id}}",
+        "appointment_id": "{{appointment_id}}",
+        "doctor_id": "{{doctor_id}}",
+        "patient_id": "{{patient_id}}",
+        "clinic_id": "{{clinic_id}}",
+        "created_at": "2023-07-30T18:07:24.000Z"
+        },
+        "client_meta": {
+          "visit_id": "98765-zyxwv-43210-utsrq"
     }
 }
 ```
