@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Webhook Service for the Connect Clients
+  title: Webhook Service for the Clients
   description: |
-    The Webhook Service allows clients to register webhooks that are triggered based on specific events. Each webhook is associated with a business_id, connect_id, url, and a scope. The scope defines the type of events that will trigger the webhook.
+    The Webhook Service allows clients to register webhooks that are triggered based on specific events. Each webhook is associated with a business_id, client_id, url, and a scope. The scope defines the type of events that will trigger the webhook.
   version: 1.0.0
 servers:
   - url: https://api.eka.care
@@ -20,23 +20,37 @@ components:
       properties:
         scope:
           type: string
-          description: Enum - all, appointment, sa
+          description: |
+            Specifies the type of events that will trigger the webhook.
+            - "all": Trigger on all events.
+            - "appointment.*": Trigger on appointment-related events.
+            - "prescription.*": Trigger on appointment-related events.
           example: "appointment"
         endpoint:
           type: string
-          description: The URL where the webhook will send POST requests.
+          description: |
+            The fully qualified URL where the webhook will send POST requests.
+            The URL must be reachable by the webhook service.
           example: "https://example.com/webhook"
         signing_key:
           type: string
-          description: A secret key for securing the webhook.
+          description: |
+            A secret key provided by the client for verifying the authenticity of webhook payloads.
+            It should be a securely generated, random string.
           example: "supersecretkey"
-        connect_id:
+        client_id:
           type: string
-          description: connect_id will only come here in hub.eka.care caller case
-          example: "connect_12345"
+          description: |
+            Identifier unique to the client, used only for cases involving `hub.eka.care`.
+          example: "client_12345"
         protocol:
           type: string
-          description: Enum - http, https, SQS endpoint, Lambda function
+          description: |
+            Specifies the protocol or delivery mechanism used for the webhook.
+            - "http": Plain HTTP endpoint.
+            - "https": Secure HTTPS endpoint.
+            - "SQS endpoint": AWS SQS queue URL for message delivery.
+            - "Lambda function": AWS Lambda function ARN for direct invocation.
           example: "https"
       required:
         - endpoint
@@ -50,24 +64,27 @@ components:
           example: "7"
         scope:
           type: string
-          description: The scope of events that will trigger the webhook.
+          description: |
+            The type of events triggering the webhook, based on the `scope` defined in the request.
           example: "appointment"
         endpoint:
           type: string
-          description: The URL where the webhook will send POST requests.
+          description: The URL where the webhook sends POST requests.
           example: "https://example.com/webhook"
         signing_key:
           type: string
-          description: A secret key for securing the webhook.
+          description: |
+            A secret key used for securing the webhook. This key is optional and may be `null` if not required.
           nullable: true
           example: "supersecretkey"
-        connect_id:
+        client_id:
           type: string
-          description: The connect identifier associated with the webhook.
+          description: The client-specific identifier for the webhook.
           example: "testing"
         protocol:
           type: string
-          description: The protocol used for the webhook.
+          description: |
+            The protocol used for the webhook communication, defined in the `protocol` field of the request.
           example: "https"
         created_at:
           type: string
@@ -81,11 +98,11 @@ components:
           example: "2024-10-07T13:53:52Z"
         created_by:
           type: string
-          description: The user who created the webhook.
+          description: The identifier of the user or service that created the webhook.
           example: "testing"
         updated_by:
           type: string
-          description: The user who last updated the webhook.
+          description: The identifier of the user or service that last updated the webhook.
           example: "testing"
 
     WebhookResponseList:
@@ -97,7 +114,7 @@ components:
             $ref: '#/components/schemas/WebhookResponse'
         msg:
           type: string
-          description: The message indicating the status of the response.
+          description: A message indicating the status of the response, typically `"success"`.
           example: "success"
 
     UpdateWebhookRequest:
@@ -105,11 +122,16 @@ components:
       properties:
         signing_key:
           type: string
-          description: A new signing key for securing the webhook.
+          description: |
+            A new signing key for securing webhook payloads. This should replace the existing signing key securely.
           example: "newsecretkey"
-        endpoint:
+        scope:
           type: string
-          description: A new URL where the webhook will send POST requests.
+          description: |
+            Specifies the type of events that will trigger the webhook.
+            - "all": Trigger on all events.
+            - "appointment.*": Trigger on appointment-related events.
+            - "prescription.*": Trigger on appointment-related events.
           example: "https://newexample.com/webhook"
 
 paths:
@@ -118,7 +140,8 @@ paths:
       tags:
         - Webhooks
       summary: Register Webhook
-      description: Registers a new webhook.
+      description: |
+        Registers a new webhook triggered by specific events. Each webhook is linked to a `business_id`, `client_id`, `url`, and a `scope` defining the events that trigger it. The service sends POST requests to the specified URL for these events. The URL must be reachable and preferably secure (HTTPS). Optionally, a signing key can be provided to verify webhook payload authenticity.
       security:
         - auth: []
       requestBody:
@@ -143,21 +166,37 @@ paths:
                     type: string
                     example: "success"
         '400':
-          description: endpoint is missing.
+          description: Bad request.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "endpoint is missing"
-                  code:
-                    type: integer
-                    example: 400
                   error:
-                    type: string
-                    example: "Bad Request"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "requested endpoint is already registered"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '401':
+          description: Unauthorized request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Unauthorized request"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
         '500':
           description: Server error.
           content:
@@ -165,20 +204,21 @@ paths:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Internal Server Error"
-                  code:
-                    type: integer
-                    example: 500
                   error:
-                    type: string
-                    example: "Internal Server Error"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Internal Server Error"
+                      code:
+                        type: string
+                        example: "SERVER_ERROR"
     get:
       tags:
         - Webhooks
       summary: Get Webhooks
-      description: Retrieves all registered webhooks.
+      description: |
+        Retrieves all registered webhooks. This endpoint allows clients to fetch a list of all webhooks that have been registered. Each webhook in the list includes details such as the unique identifier, the scope of events that trigger the webhook, the endpoint URL, the signing key (if provided), the client ID, the protocol used, and timestamps for when the webhook was created and last updated. This information helps clients manage and audit their webhook configurations.
       security:
         - auth: []
       responses:
@@ -196,45 +236,46 @@ paths:
                   msg:
                     type: string
                     example: "success"
-        400:
-          description: Invalid request.
+        '401':
+          description: Unauthorized request.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Invalid request"
-                  code:
-                    type: integer
-                    example: 400
                   error:
-                    type: string
-                    example: "Bad Request"
-        500:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Unauthorized request"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '500':
           description: Server error.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Internal Server Error"
-                  code:
-                    type: integer
-                    example: 500
                   error:
-                    type: string
-                    example: "Internal Server Error"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Internal Server Error"
+                      code:
+                        type: string
+                        example: "SERVER_ERROR"
 
   /notification/v1/connect/webhook/subscriptions/{id}:
     patch:
       tags:
         - Webhooks
-      summary: Update Webhook
-      description: Updates an existing webhook's URL or event type based on its ID.
+      summary: Update a Webhook
+      description: |
+        Updates an existing webhook's signing key or scope based on its ID. This endpoint allows clients to modify the scope of events for whom the webhook sends data or update the signing key used for verifying the authenticity of webhook payloads. The `id` parameter in the path specifies the webhook to be updated. The request body should include the new scope or signing key. This operation helps clients maintain the accuracy and security of their webhook configurations.
       security:
         - auth: []
       parameters:
@@ -264,21 +305,37 @@ paths:
                     type: string
                     example: "success"
         '400':
-          description: Invalid request.
+          description: Bad request.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Invalid request"
-                  code:
-                    type: integer
-                    example: 400
                   error:
-                    type: string
-                    example: "Bad Request"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "requested webhook is not registered"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '401':
+          description: Unauthorized request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Unauthorized request"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
         '404':
           description: Webhook not found.
           content:
@@ -286,15 +343,15 @@ paths:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Webhook not found"
-                  code:
-                    type: integer
-                    example: 404
                   error:
-                    type: string
-                    example: "Not Found"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Webhook not found"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
         '500':
           description: Server error.
           content:
@@ -302,20 +359,21 @@ paths:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Internal Server Error"
-                  code:
-                    type: integer
-                    example: 500
                   error:
-                    type: string
-                    example: "Internal Server Error"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Internal Server Error"
+                      code:
+                        type: string
+                        example: "SERVER_ERROR"
     delete:
       tags:
         - Webhooks
       summary: Delete a Webhook
-      description: Deletes an existing webhook based on its ID.
+      description: |
+        Deletes an existing webhook based on its ID. This endpoint allows clients to remove a previously registered webhook by specifying its unique identifier in the path parameter. The `id` parameter is required and must match the ID of the webhook to be deleted. Upon successful deletion, the service will no longer send POST requests to the webhook's URL. This operation helps clients manage and clean up their webhook configurations.
       security:
         - auth: [ ]
       parameters:
@@ -339,21 +397,37 @@ paths:
                     type: string
                     example: "success"
         '400':
-          description: Invalid request.
+          description: Bad request.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Invalid request"
-                  code:
-                    type: integer
-                    example: 400
                   error:
-                    type: string
-                    example: "Bad Request"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "requested webhook is not registered"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '401':
+          description: Unauthorized request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Unauthorized request"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
         '404':
           description: Webhook not found.
           content:
@@ -361,15 +435,15 @@ paths:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Webhook not found"
-                  code:
-                    type: integer
-                    example: 404
                   error:
-                    type: string
-                    example: "Not Found"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Webhook not found"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
         '500':
           description: Server error.
           content:
@@ -377,12 +451,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
-                    example: "Internal Server Error"
-                  code:
-                    type: integer
-                    example: 500
                   error:
-                    type: string
-                    example: "Internal Server Error"
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Internal Server Error"
+                      code:
+                        type: string
+                        example: "SERVER_ERROR"
