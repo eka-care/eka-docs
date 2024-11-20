@@ -169,7 +169,8 @@ paths:
       tags:
         - Notifications
       summary: Add Device
-      description: Call to add or register a device for notifications.
+      description: |
+        Call to add or register a device for notifications. This endpoint allows clients to register a device by providing its details such as device ID, FCM ID, app version, and other relevant information. The registered device will be used to send notifications. The request body must contain the device payload information.
       requestBody:
         required: true
         content:
@@ -208,7 +209,8 @@ paths:
       tags:
         - Notifications
       summary: Delete Device
-      description: To be called when the device is logged out or uninstalled.
+      description: |
+        To be called when the device is logged out or uninstalled. This endpoint allows clients to remove a registered device by specifying its device ID in the header. Upon successful deletion, the device will no longer receive notifications. The `device-id` parameter in the header is required.
       parameters:
         - name: device-id
           in: header
@@ -250,7 +252,8 @@ paths:
       tags:
         - Notifications
       summary: Add FCM Credentials
-      description: Store FCM credentials
+      description: |
+        Store FCM credentials. This endpoint allows clients to store Firebase Cloud Messaging (FCM) credentials by providing the service account key details. The stored credentials will be used for sending notifications to the registered devices. The request body must contain the FCM payload information.
       requestBody:
         required: true
         content:
@@ -266,117 +269,6 @@ paths:
                 type: object
               example:
                 message: FCM token added successfully
-        '400':
-          description: Client error response
-          content:
-            application/json:
-              schema:
-                type: object
-              example:
-                message: Unauthorized access.
-                error_code: 401
-        '500':
-          description: Server error response
-          content:
-            application/json:
-              schema:
-                type: object
-              example:
-                message: Internal server error.
-                error_code: 500
-  /notification/message:
-    post:
-      tags:
-        - Notifications
-      summary: Send Notification
-      description: Send a notification message using the specified template and channels.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                template_id:
-                  type: string
-                  description: The ID of the notification template to use.
-                language:
-                  type: string
-                  description: The language of the notification.
-                to:
-                  type: object
-                  description: The recipient of the notification.
-                  properties:
-                    uuid:
-                      type: string
-                c-id:
-                  type: string
-                  description: Connect ID for partners.
-                configs:
-                  type: object
-                  description: Notification configuration details
-                  properties:
-                    pn_legacy:
-                      type: object
-                      properties:
-                        data_raw:
-                          type: object
-                          properties:
-                            sender:
-                              type: string
-                            receiver:
-                              type: string
-                            type:
-                              type: string
-                            title:
-                              type: string
-                            body:
-                              type: string
-                            action_type:
-                              type: string
-                            action:
-                              type: string
-                  required:
-                    - pn_legacy
-              required:
-                - template_id
-                - language
-                - c-id
-                - to
-                - configs
-              example:
-                template_id: samsung_test##1
-                language: en
-                to:
-                  uuid: "556cfd07-90fb-4aa8-8120-689a4133c69a"
-                c-id: samsung_health
-                configs:
-                  pn_legacy:
-                    data_raw:
-                      sender: "eka.care"
-                      receiver: "phr"
-                      type: "new_consent"
-                      title: "Consent Request pending"
-                      body: "Click here to view the consent request"
-                      action_type: "deeplink"
-                      action: "samsung_health_deep_link_"
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    description: The status of the notification request.
-                  id:
-                    type: string
-                    description: The unique identifier for the notification request.
-              example:
-                status: queued
-                id: c7188ac6-d91c-4ace-8b10-a8c1bcfd403e
         '400':
           description: Client error response
           content:
