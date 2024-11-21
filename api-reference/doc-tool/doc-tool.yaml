@@ -711,7 +711,7 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
-  /v1/business/patient/edit:
+  /v1/patient/{patient_id}:
     patch:
       tags:
         - Patient Registration API
@@ -736,6 +736,15 @@ paths:
             type: string
             example: >-
               eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: partner_id
+          in: query
+          description: 'If set to 1 then appointment_id in path parameter should be partner_appointment_id else eka apppointment_id'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '1'
       requestBody:
         description: ''
         content:
@@ -2079,6 +2088,61 @@ paths:
                               type: string
                   required:
                     - start_time
+                patient_details:
+                  type: object
+                  properties:
+                    first_name:
+                      type: string
+                      example: "Test"
+                      description: "First name of the patient"
+                    middle_name:
+                      type: string
+                      example: ""
+                      description: "Middle name of the patient (if any)"
+                    last_name:
+                      type: string
+                      example: "Patient"
+                      description: "Last name of the patient"
+                    mobile:
+                      type: string
+                      example: "+919999999999"
+                      description: "Mobile number of the patient, including country code"
+                    gender:
+                      type: string
+                      example: "M"
+                      description: "Gender of the patient (e.g., 'M' for male, 'F' for female, 'O' for others)"
+                      enum:
+                        - "M"
+                        - "F"
+                        - "O"
+                    address:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                          example: "Bangalore"
+                        line1:
+                          type: string
+                          example: "ABC"
+                        line2:
+                          type: string
+                          example: "XYZ"
+                        pincode:
+                          type: integer
+                          example: 560049
+                        state:
+                          type: string
+                          example: "Karnataka"
+                        country:
+                          type: string
+                          example: "India"
+                      description: "Address details of the patient"
+                    partner_meta:
+                      type: object
+                      properties:
+                        key1:
+                          type: string
+                          example: "value1"
                 partner_meta:
                   type: object
                   description: This field is a set of `key-value pair` very specific to our partner and not visible in appointment queue. These key-value pairs are just stored at our end and echoed back in appointment related apis. We dont use it for any computation.
@@ -3105,6 +3169,66 @@ paths:
                 end_time:
                   type: integer
                   description: 'End time of new appointment in epoch. To be used in order to reschedule appointment.'
+                patient_details:
+                  type: object
+                  properties:
+                    partner_patient_id:
+                      type: string
+                      example: "145367"
+                      description: "Patient id of the partner"
+                    first_name:
+                      type: string
+                      example: "Test"
+                      description: "First name of the patient"
+                    middle_name:
+                      type: string
+                      example: ""
+                      description: "Middle name of the patient (if any)"
+                    last_name:
+                      type: string
+                      example: "Patient"
+                      description: "Last name of the patient"
+                    mobile:
+                      type: string
+                      example: "+919999999999"
+                      description: "Mobile number of the patient, including country code"
+                    gender:
+                      type: string
+                      example: "M"
+                      description: "Gender of the patient (e.g., 'M' for male, 'F' for female, 'O' for others)"
+                      enum:
+                        - "M"
+                        - "F"
+                        - "O"
+                    address:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                          example: "Bangalore"
+                        line1:
+                          type: string
+                          example: "ABC"
+                        line2:
+                          type: string
+                          example: "XYZ"
+                        pincode:
+                          type: integer
+                          example: 560049
+                        state:
+                          type: string
+                          example: "Karnataka"
+                        country:
+                          type: string
+                          example: "India"
+                      description: "Address details of the patient"
+                    partner_meta:
+                      type: object
+                      properties:
+                        key1:
+                          type: string
+                          example: "value1"
+                
             example:
               custom_attributes:
                 label: ["vital_submitted"]
@@ -5239,6 +5363,8 @@ components:
         mobile:
           type: string
         email:
+          type: string
+        partner_patient_id:
           type: string
         address:
           $ref: '#/components/schemas/Address1'
