@@ -550,6 +550,253 @@ paths:
                     example: Unauthorized
       security:
         - auth: []
+  
+  /stateless/mr/api/v1/docs:
+    post:
+      operationId: uploadDocument
+      tags:
+        - Records
+      summary: "Upload Record"
+      description: Upload the image or PDF file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to be uploaded.
+              required:
+                - file
+      responses:
+        '200':
+          description: File uploaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document_id:
+                    type: string
+                    format: uuid
+                    description: The unique identifier for the uploaded document.
+                    example: "8570e23d-ee57-4948-95a7-370f0f113db8"
+        '400':
+          description: Bad request, typically due to missing or invalid fields.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Invalid form data.
+        '403':
+          description: Forbidden Access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Forbidden"
+        '500':
+          description: Internal Server Error. No response body is expected.
+        '502':
+          description: Bad Gateway. No response body is expected.
+        '503':
+          description: Service Unavailable. No response body is expected.
+        '504':
+          description: Gateway Timeout. No response body is expected.
+      security:
+        - auth: []
+
+  /stateless/health/api/v1/fhir/retrieve:
+    get:
+      summary: Retrieve health records
+      description: Retrieve a health record based on the given identifier, hip_id, and health_id in nrces FHIR json format.
+      parameters:
+        - name: identifier
+          in: query
+          required: true
+          description: The unique identifier for the health record is care_context_id.
+          schema:
+            type: string
+        - name: hip_id
+          in: query
+          required: true
+          description: The HIP (Health Information Provider) ID.
+          schema:
+            type: string
+        - name: health_id
+          in: query
+          required: true
+          description: The health ID associated with the record.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of health records.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: Bundle
+                  type:
+                    type: string
+                    example: document
+                  link:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        relation:
+                          type: string
+                  entry:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        resource:
+                          type: object
+                          properties:
+                            author:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  reference:
+                                    type: string
+                            date:
+                              type: string
+                              format: date-time
+                            extension:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  url:
+                                    type: string
+                                  valueString:
+                                    type: string
+                            id:
+                              type: string
+                            identifier:
+                              type: object
+                              properties:
+                                system:
+                                  type: string
+                                value:
+                                  type: string
+                            meta:
+                              type: object
+                              properties:
+                                lastUpdated:
+                                  type: string
+                                  format: date-time
+                            resourceType:
+                              type: string
+                            section:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  entry:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        reference:
+                                          type: string
+                                  title:
+                                    type: string
+                            status:
+                              type: string
+                            subject:
+                              type: object
+                              properties:
+                                reference:
+                                  type: string
+                            title:
+                              type: string
+                            type:
+                              type: object
+                              properties:
+                                text:
+                                  type: string
+                  id:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      versionId:
+                        type: string
+                      lastUpdated:
+                        type: string
+                        format: date-time
+                      profile:
+                        type: array
+                        items:
+                          type: string
+                      security:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                            display:
+                              type: string
+                            system:
+                              type: string
+                  identifier:
+                    type: object
+                    properties:
+                      system:
+                        type: string
+                      value:
+                        type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          description: when request identifier, hip_id, health_id has no data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: Bundle
+                  type:
+                    type: string
+                    example: document
+                  meta:
+                    type: object
+                    properties:
+                      lastUpdated:
+                        type: string
+                        format: date-time
+        '401':
+          description: Unauthorized. Invalid or missing authentication.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Unauthorized
+      security:
+        - auth: []
+  
   /mr/webhook/smart-report:
     post:
       tags:
