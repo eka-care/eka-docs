@@ -550,6 +550,75 @@ paths:
                     example: Unauthorized
       security:
         - auth: []
+  
+  /mr/api/v2/docs:
+    post:
+      operationId: uploadDocument
+      tags:
+        - Records
+      summary: "Upload Record"
+      description: Upload the image or PDF file
+      parameters:
+        - in: query
+          name: dt
+          required: true
+          schema:
+            $ref: '#/components/schemas/DocumentTypeQueryParam'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: base64
+                  title: file
+                  description: The file to be uploaded.
+              required:
+                - file
+      responses:
+        '200':
+          description: File uploaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document_id:
+                    type: string
+                    format: uuid
+                    description: The unique identifier for the uploaded document.
+                    example: "8570e23d-ee57-4948-95a7-370f0f113db8"
+        '400':
+          description: Bad request, typically due to missing or invalid fields.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Invalid form data.
+        '403':
+          description: Forbidden Access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Forbidden"
+        '500':
+          description: Internal Server Error. No response body is expected.
+        '502':
+          description: Bad Gateway. No response body is expected.
+        '503':
+          description: Service Unavailable. No response body is expected.
+        '504':
+          description: Gateway Timeout. No response body is expected.
+      security:
+        - auth: []
+
   /mr/webhook/smart-report:
     post:
       tags:
