@@ -12,6 +12,40 @@ components:
       name: auth
       description: |
         The API requires the following auth in headers for authentication.
+  schemas:
+    SuccessNotificationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+          description: "The status of the notification."
+        message:
+          type: string
+          example: "Notification sent successfully."
+          description: "The message for the notification."
+    BadRequestResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+          description: "The status of the request."
+        message:
+          type: string
+          example: "Bad request."
+          description: "The error message for the bad request."
+    InternalServerErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+          description: "The status of the request."
+        message:
+          type: string
+          example: "Internal server error."
+          description: "The error message for the internal server error."
 paths:
   /notification/v1/notify:
     post:
@@ -111,8 +145,20 @@ paths:
                   description: "The platform on which the notification is allowed."
       responses:
         '200':
-          description: Notification sent successfully.
+          description: Webhook registered successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessNotificationResponse'
         '400':
           description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
         '500':
           description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
