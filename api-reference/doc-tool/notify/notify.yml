@@ -64,85 +64,81 @@ paths:
             schema:
               type: object
               required:
-                - partner_doctor_id
-                - message
-                - landing_page
+                - partner_payload
               properties:
-                partner_doctor_id:
-                  type: string
-                  example: "test-p1"
-                  description: "The unique partner ID for the business."
-                message:
+                partner_payload:
                   type: object
                   required:
-                    - title
-                    - body
+                    - partner_doctor_id
+                    - message
+                    - landing_page
                   properties:
-                    title:
+                    partner_doctor_id:
                       type: string
-                      example: "test title"
-                      description: "The title of the notification."
-                    body:
+                      example: "test-p1"
+                      description: "The unique partner ID for the business."
+                    message:
+                      type: object
+                      required:
+                        - title
+                        - body
+                      properties:
+                        title:
+                          type: string
+                          example: "test title"
+                          description: "The title of the notification."
+                        body:
+                          type: string
+                          example: "test body"
+                          description: "The content that should be displayed in the notification."
+                        img:
+                          type: string
+                          example: "img url"
+                          description: "The image URL for the notification."
+                    landing_page:
                       type: string
-                      example: "test body"
-                      description: "The content that should be displayed in the notification."
-                    img:
-                      type: string
-                      example: "img url"
-                      description: "The image URL for the notification."
-                landing_page:
-                  type: string
-                  enum:
-                    - "h"
-                    - "q"
-                    - "p"
-                  example: "q"
-                  description: |-
-                    The page where the user should land upon opening the notification.
-                    - "h" is for homepage.
-                    - "q" is for appointments queue.
-                    - "p" is for patient directory.
-                params:
-                  type: object
-                  example:
-                    action: "move"
-                    aid: "12345"
-                    status: "confirmed"
-                  description: |-
-                    Additional parameters to be added to the link for navigation, if provided.
-                    Required for appointments ("a"), not required for homepage ("h") and patient directory ("p").
-                    Here are some of the samples:
-                    - Move appointment:
-                      ```json
-                      {
-                        "action": "move",
-                        "aid": "<appointment id>",
-                        "status": "<status to be set on appointment>",
-                      }
-                      ```
-                    - Book slot:
-                      ```json
-                      {
-                        "action": "book-slot",
-                        "patientOid": "<patient oid>"
-                      }
-                      ```
-                    - Create appointment and bill patients:
-                      ```json
-                      {
-                        "action": "create-appointment-and-bill-patient",
-                        "patientOid": "<patient oid>"
-                      }
-                      ```
-                flavour:
-                  type: string
-                  enum:
-                    - "android"
-                    - "ios"
-                    - "ipad"
-                    - "web"
-                  example: "android"
-                  description: "The platform on which the notification is allowed."
+                      enum:
+                        - "h"
+                        - "q"
+                        - "p"
+                      example: "q"
+                      description: |-
+                        The page where the user should land upon opening the notification.
+                        - "h" is for homepage.
+                        - "q" is for appointments queue.
+                        - "p" is for patient directory.
+                    params:
+                      type: object
+                      example:
+                        action: "move"
+                        aid: "12345"
+                        status: "confirmed"
+                      description: |-
+                        Additional parameters to be added to the link for navigation, if provided.
+                        Required for appointments queue ("q"), not required for homepage ("h") and patient directory ("p").
+                        Here are some of the samples for "q":
+                        - Move appointment:
+                          ```json
+                          {
+                            "action": "move",
+                            "aid": "<appointment id>",
+                            "status": "<status to be set on appointment>",
+                          }
+                          ```
+                        - Book slot:
+                          ```json
+                          {
+                            "action": "book-slot",
+                            "patientOid": "<patient oid>"
+                          }
+                          ```
+                        - Create appointment and bill patients:
+                          ```json
+                          {
+                            "action": "create-appointment-and-bill-patient",
+                            "patientOid": "<patient oid>"
+                          }
+                          ```
       responses:
         '200':
           description: Webhook registered successfully.
