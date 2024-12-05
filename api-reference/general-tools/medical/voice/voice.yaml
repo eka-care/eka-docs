@@ -12,29 +12,29 @@ paths:
     post:
       description: |-
         This API accepts audio files as input, transcribes the spoken content into text using advanced speech-to-text processing, and converts the transcribed data into a structured FHIR-compliant JSON format.
-        
+
         The generated FHIR JSON can be used for seamless integration with healthcare applications, ensuring compliance with healthcare data standards.
       parameters:
-      - name: txnid
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: mode
-        in: path
-        required: true
-        schema:
-          type: string
-          enum:
-            - dictation
-            - consultation
+        - name: txnid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - dictation
+              - consultation
       requestBody:
         content:
           multipart/form-data:
             schema:
               type: string
               format: binary
-                    
+
       responses:
         "200":
           description: "200 response"
@@ -62,7 +62,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Successful retrieval of health records.
           content:
             application/json:
@@ -191,7 +191,7 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        '404':
+        "404":
           description: when request identifier, hip_id, health_id has no data
           content:
             application/json:
@@ -218,7 +218,7 @@ paths:
                 $ref: "#/components/schemas/Unauthorized"
       security:
         - auth: []
-  
+
 components:
   schemas:
     Success:
@@ -244,8 +244,6 @@ components:
       type: "object"
   securitySchemes:
     auth:
-      type: apiKey
-      in: header
-      name: auth
-      description: |
-        The API requires the following auth in headers for authentication.
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
