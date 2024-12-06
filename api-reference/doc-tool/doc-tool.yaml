@@ -189,7 +189,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/500InternalServerFinal'
       deprecated: false
-  /dr/v1/business/patients/{patient_id}:
+  /dr/v1/patient/{patient_id}:
     get:
       tags:
         - Patient Registration API
@@ -211,70 +211,6 @@ paths:
 
         | patient_id | string | Patient's Eka profile id | Patient's eka profile id | Required |
 
-
-        ### **Response parameter**
-
-
-        | Parameter | Type | Expected Values | Description |
-        
-        | --- |  --- |  --- |  --- |
-        
-        | data                                | object    |                                           | Response data object                                      |
-        
-        | data.name                           | string    | "Amit Kumar"                                | Patient's full name                                       |
-        
-        | data.patient_id                     | string    | "987654321012345"                         | Unique identifier for the patient                         |
-        
-        | data.patient_profile                | object    |                                           | Detailed patient profile information                      |
-        
-        | data.patient_profile.address        | object    |                                           | Patient's address information                             |
-        
-        | data.patient_profile.address.city   | string    | "Bengaluru"                               | City of residence                                         |
-        
-        | data.patient_profile.address.line1  | string    | "ABC, B Grade Metropolis"              | Address line 1                                            |
-        
-        | data.patient_profile.address.pincode| string    | "560048"                                  | Pincode                                                   |
-        
-        | data.patient_profile.created_at     | datetime  | "2024-06-20T10:17:33.242Z"                | Timestamp of profile creation                             |
-        
-        | data.patient_profile.dob            | date      | "1990-05-17"                              | Patient's date of birth                                   |
-        
-        | data.patient_profile.email          | string    | "amit.kumar@example.com"                    | Patient's email address                                   |
-        
-        | data.patient_profile.first_name     | string    | "Amit"                                    | Patient's first name                                      |
-        
-        | data.patient_profile.middle_name    | string    | ""                                        | Patient's middle name (can be empty)                      |
-        
-        | data.patient_profile.last_name      | string    | "Kumar"                                     | Patient's last name                                       |
-        
-        | data.patient_profile.gender         | string    | "M"/"F"/"O"                                    | Patient's gender                                          |
-        
-        | data.patient_profile.metadata       | object    |                                           | Metadata related to the patient                           |
-        
-        | data.patient_profile.metadata.blood_group | string | "AB+"                                    | Patient's blood group                                     |
-        
-        | data.patient_profile.metadata.uhid  | string    | "DESK-177"                                | Unique Health Identifier (UHID)                           |
-        
-        | data.patient_profile.mobile         | string    | "+919876543210"                           | Patient's mobile number                                   |
-        
-        | data.patient_profile.patient_id     | string | "987654321012345"                               | Unique identifier for the patient        |
-        
-        | status_code                         | integer   | 200                                       | HTTP status code of the response                          |
-        
-        | success                             | boolean   | true                                      | Indicates if the request was successful                   |
-        
-        
-        
-        **Status Codes**
-
-
-        • 200: Success
-
-
-        • 403: Patient/Business data missing
-
-
-        • 500: Wrong API URL/Wrong JSON request/ Something went wrong
       operationId: Getpatientdetailsbyid
       parameters:
         - name: auth
@@ -345,31 +281,24 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/200OK1'
                   - example:
-                      data:
-                        name: Raj Sharma
-                        patient_id: '189673451298376'
-                        patient_profile:
-                          patient_id: '189673451298376'
-                          first_name: Raj
-                          middle_name: ''
-                          last_name: Sharma
-                          gender: "M"
-                          dob: '1988-11-30'
-                          email: raj.sharma@example.com
-                          mobile: '+919876543210'
-                          address:
-                            line1: 'B504, Seabreeze Heights,'
-                            city: Mumbai
-                            pincode: '400001'
-                          metadata:
-                            blood_group: B+
-                            uhid: HOSP-291
-                            alternate_phone: '+919876543211'
-                            marital_status: "Married"
-                            tag: "tag#1"
-                          created_at: '2024-08-12T09:23:45.678Z'
-                      status_code: 200
-                      success: true
+                      patient_id: '189673451298376'
+                      partner_patient_id: 'MO1298376'
+                      first_name: Raj
+                      middle_name: ''
+                      last_name: Sharma
+                      gender: "M"
+                      dob: '1988-11-30'
+                      email: raj.sharma@example.com
+                      mobile: '+919876543210'
+                      address:
+                        line1: 'B504, Seabreeze Heights,'
+                        city: Mumbai
+                        pincode: '400001'
+                      tag: "tag#1"
+                      partner_meta:
+                        key1: value1
+                      created_at: 1732607432
+                      
         '404':
           description: Not Found
           content:
@@ -711,18 +640,15 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
-  /v1/business/patient/edit:
+  /v1/patient/{patient_id}:
     patch:
       tags:
         - Patient Registration API
-      summary: Update Patient Details  [WIP]
+      summary: Update Patient Details
       description: >-
         Thi API provides functionality to update patient details for the
         registered patients.
         
-        
-        WIP: This API is currently under development and will be available soon.
-
 
       operationId: UpdatePatientDetailsAPI
       parameters:
@@ -736,6 +662,15 @@ paths:
             type: string
             example: >-
               eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: partner_id
+          in: query
+          description: 'If set to 1 then appointment_id in path parameter should be partner_appointment_id else eka apppointment_id'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '1'
       requestBody:
         description: ''
         content:
@@ -756,7 +691,7 @@ paths:
                       pincode: 560049
                       state: Karnataka
                       country: India
-                    metadata:
+                    partner_meta:
                       blood_group: AB+
                       aadhar_number: '12345'
             example:
@@ -772,7 +707,7 @@ paths:
                 pincode: 560049
                 state: Karnataka
                 country: India
-              metadata:
+              partner_meta:
                 blood_group: AB+
                 aadhar_number: '12345'
         required: true
@@ -2070,6 +2005,8 @@ paths:
                         vendor:
                           type: string
                           enum: [ 100ms ]
+                        url:
+                          type: string
                         conf:
                           type: object
                           properties:
@@ -2079,6 +2016,61 @@ paths:
                               type: string
                   required:
                     - start_time
+                patient_details:
+                  type: object
+                  properties:
+                    first_name:
+                      type: string
+                      example: "Test"
+                      description: "First name of the patient"
+                    middle_name:
+                      type: string
+                      example: ""
+                      description: "Middle name of the patient (if any)"
+                    last_name:
+                      type: string
+                      example: "Patient"
+                      description: "Last name of the patient"
+                    mobile:
+                      type: string
+                      example: "+919999999999"
+                      description: "Mobile number of the patient, including country code"
+                    gender:
+                      type: string
+                      example: "M"
+                      description: "Gender of the patient (e.g., 'M' for male, 'F' for female, 'O' for others)"
+                      enum:
+                        - "M"
+                        - "F"
+                        - "O"
+                    address:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                          example: "Bangalore"
+                        line1:
+                          type: string
+                          example: "ABC"
+                        line2:
+                          type: string
+                          example: "XYZ"
+                        pincode:
+                          type: integer
+                          example: 560049
+                        state:
+                          type: string
+                          example: "Karnataka"
+                        country:
+                          type: string
+                          example: "India"
+                      description: "Address details of the patient"
+                    partner_meta:
+                      type: object
+                      properties:
+                        key1:
+                          type: string
+                          example: "value1"
                 partner_meta:
                   type: object
                   description: This field is a set of `key-value pair` very specific to our partner and not visible in appointment queue. These key-value pairs are just stored at our end and echoed back in appointment related apis. We dont use it for any computation.
@@ -2088,13 +2080,13 @@ paths:
                   properties:
                     partner_clinic_id:
                       type: string
-                      description: 'Identifier for the partner’s clinic.'
+                      description: 'Identifier for the partner’s clinic. Please ensure the clinic is registered on the hub'
                     partner_doctor_id:
                       type: string
-                      description: 'Identifier for the partner’s doctor.'
+                      description: 'Identifier for the partner’s doctor. Please ensure the doctor is registered on the hub'
                     partner_patient_id:
                       type: string
-                      description: 'Identifier for the partner’s patient.'
+                      description: 'Identifier for the partner’s patient. Please ensure the patient is registered beforehand using the "Add Patient" API.'
                   required:
                     - partner_clinic_id
                     - partner_doctor_id
@@ -2133,9 +2125,14 @@ paths:
                   tags: ["paid", "in_consult"]
                 video_connect:
                   vendor: "100ms"
+                  url: "https://xyz.com"
                   conf:
                     room_id: "r1"
                     room_sid: "rs1"
+              patient_details:
+                first_name: "Test"
+                mobile: "+919999999999"
+                gender: "M"
               partner_meta:
                 encounter_id: "123"
       responses:
@@ -3105,11 +3102,73 @@ paths:
                 end_time:
                   type: integer
                   description: 'End time of new appointment in epoch. To be used in order to reschedule appointment.'
+                patient_details:
+                  type: object
+                  properties:
+                    partner_patient_id:
+                      type: string
+                      example: "145367"
+                      description: "Patient id of the partner"
+                    first_name:
+                      type: string
+                      example: "Test"
+                      description: "First name of the patient"
+                    middle_name:
+                      type: string
+                      example: ""
+                      description: "Middle name of the patient (if any)"
+                    last_name:
+                      type: string
+                      example: "Patient"
+                      description: "Last name of the patient"
+                    mobile:
+                      type: string
+                      example: "+919999999999"
+                      description: "Mobile number of the patient, including country code"
+                    gender:
+                      type: string
+                      example: "M"
+                      description: "Gender of the patient (e.g., 'M' for male, 'F' for female, 'O' for others)"
+                      enum:
+                        - "M"
+                        - "F"
+                        - "O"
+                    address:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                          example: "Bangalore"
+                        line1:
+                          type: string
+                          example: "ABC"
+                        line2:
+                          type: string
+                          example: "XYZ"
+                        pincode:
+                          type: integer
+                          example: 560049
+                        state:
+                          type: string
+                          example: "Karnataka"
+                        country:
+                          type: string
+                          example: "India"
+                      description: "Address details of the patient"
+                    partner_meta:
+                      type: object
+                      properties:
+                        key1:
+                          type: string
+                          example: "value1"
+                
             example:
               custom_attributes:
                 label: ["vital_submitted"]
                 tags: ["in_consult", "paid"]
               partner_meta: {}
+              patient_details:
+                first_name: "updated_name"
       responses:
         '204':
           description: OK
@@ -4050,220 +4109,13 @@ paths:
                     ]
                 }
       deprecated: false
-  /dr/v1/business/prescription/{rx_id}:
+  /dr/v1/prescription/{prescription_id}:
     get:
       tags:
         - Prescription API
       summary: Get Prescription details
       description: >-
         This API retrieves comprehensive details of a prescription created by a doctor. It provides a rich set of data encompassing patient history, diagnosis, medications, lab tests, and various other clinical elements. The response includes:
-
-          1. Basic Prescription Info: Includes unique identifiers (rx_id, visit_id), creation timestamp, and associated doctor and patient details.
-
-          2. Clinical Data:
-             - Symptoms: Detailed symptom information including severity and duration.
-             - Diagnosis: Primary diagnoses made by the doctor.
-             - Medications: Comprehensive medication details including dosage, frequency, duration, and special instructions. Both oral medications and injections are covered.
-             - Lab Tests: Prescribed laboratory tests with testing dates and types (e.g., routine, urgent).
-             - Vitals: Any recorded vital signs or lab results, including their interpretations.
-
-          3. Patient History:
-             - Current Medications: Ongoing treatments the patient is undergoing.
-             - Allergies: Both drug and food/environmental allergies.
-             - Medical Conditions: Pre-existing and newly diagnosed conditions.
-             - Family History: Relevant medical history of family members.
-             - Lifestyle Factors: Information on habits like smoking, alcohol consumption, etc.
-             - Past Procedures: Previous surgeries or significant medical procedures.
-             - Travel History: Recent travel information relevant to the diagnosis.
-
-          4. Treatment Plan:
-             - Advices: General medical advice given by the doctor.
-             - Examinations: Physical examinations performed during the visit.
-
-          5. Prescription URL: A link to access the full prescription document in PDF format.
-        
-          6. Specialty Information:
-              - Ophthalmic Data: Detailed eye examination results including:
-                     * Current Spectacle Prescription
-                     * Final Prescription
-                     * Intraocular Pressure (IOP) Measurements
-                     * Subjective Refraction
-                     * Vision Assessment
-
-          This API is designed to provide a holistic view of the patient's current medical situation and the doctor's prescribed treatment plan. It's particularly useful for follow-up care, referrals to specialists, and maintaining a comprehensive electronic health record.
-
-        **Response Parameters**
-
-        | Parameter | Type | Description |
-        
-        | --- | --- | --- |
-        
-        | data | object | Response data object |
-        
-        | data.rx_id | string | Unique Prescription ID |
-        
-        | data.visit_id | string | Associated Appointment ID |
-        
-        | data.created_at | datetime | Timestamp of prescription creation |
-        
-        | data.doctor | object | Object containing doctor details |
-        
-        | data.doctor.id | string | Unique Doctor ID |
-        
-        | data.patient | object | Object containing patient details |
-        
-        | data.patient.id | string | Unique Patient ID |
-        
-        | data.selected_clinic | string | ID of the selected clinic |
-        
-        | data.rx_url | string | URL to access the prescription PDF |
-        
-        | data.visit_name | string | Name or purpose of the visit |
-        
-        | data.rx_entities | object | Comprehensive object containing prescription details |
-        
-        | data.rx_entities.symptoms | array | Array of patient symptoms |
-        
-        | data.rx_entities.symptoms[].id | string | Unique Symptom ID |
-        
-        | data.rx_entities.symptoms[].name | string | Name of the symptom |
-        
-        | data.rx_entities.symptoms[].properties | object | Properties of the symptom (e.g., severity, duration) |
-        
-        | data.rx_entities.diagnosis | array | Array of diagnoses |
-        
-        | data.rx_entities.diagnosis[].id | string | Unique Diagnosis ID |
-        
-        | data.rx_entities.diagnosis[].name | string | Name of the diagnosis |
-        
-        | data.rx_entities.diagnosis[].properties | object | Additional properties of the diagnosis |
-        
-        | data.rx_entities.medications | array | Array of prescribed medications |
-        
-        | data.rx_entities.medications[].id | string | Unique Medication ID |
-        
-        | data.rx_entities.medications[].name | string | Name of the medication |
-        
-        | data.rx_entities.medications[].generic_name | string | Generic name of the medication |
-        
-        | data.rx_entities.medications[].dosage_form | string | Form of the medication (e.g., tablet, syrup) |
-        
-        | data.rx_entities.medications[].dose | string | Dosage of the medication |
-        
-        | data.rx_entities.medications[].frequency | string | Frequency of medication intake |
-        
-        | data.rx_entities.medications[].duration | string | Duration for which medication should be taken |
-        
-        | data.rx_entities.medications[].timing | string | Timing of medication intake |
-        
-        | data.rx_entities.medications[].instruction | string | Additional instructions for medication |
-        
-        | data.rx_entities.medications[].tapering_dose | array | Tapering dosage instructions, if applicable |
-        
-        | data.rx_entities.lab_tests | array | Array of prescribed lab tests |
-        
-        | data.rx_entities.lab_tests[].id | string | Unique Lab Test ID |
-        
-        | data.rx_entities.lab_tests[].name | string | Name of the lab test |
-        
-        | data.rx_entities.lab_tests[].test_on | datetime | Date when the test should be performed |
-        
-        | data.rx_entities.lab_tests[].repeat_on | datetime | Date when the test should be repeated, if applicable |
-        
-        | data.rx_entities.lab_tests[].testing_type | string | Type of testing (e.g., ROUTINE) |
-        
-        | data.rx_entities.lab_vitals | array | Array of lab vitals recorded |
-        
-        | data.rx_entities.lab_vitals[].id | string | Unique Lab Vital ID |
-        
-        | data.rx_entities.lab_vitals[].name | string | Name of the lab vital |
-        
-        | data.rx_entities.lab_vitals[].value | string | Recorded value of the vital |
-        
-        | data.rx_entities.lab_vitals[].unit | object | Unit of measurement for the vital |
-        
-        | data.rx_entities.lab_vitals[].date | datetime | Date when the vital was recorded |
-        
-        | data.rx_entities.advices | array | Array of medical advices given |
-        
-        | data.rx_entities.advices[].text | string | Advice text |
-
-        | data.rx_entities.dynamic_form	| array	| Array of dynamic form fields |
-
-        | data.rx_entities.dynamic_form[].id	| string	| Unique Dyform ID |
-
-        | data.rx_entities.dynamic_form[].name |	string |	Name of the dynamic form |
-
-        | data.rx_entities.dynamic_form[].elements |	array	| Array of elements in the dynamic_form |
-
-        | data.rx_entities.dynamic_form[].elements[].id	| string	| Unique Element ID |
-
-        | data.rx_entities.dynamic_form[].elements[].name	| string |	Name of the element |
-
-        | data.rx_entities.dynamic_form[].elements[].value |	string |	Value of the element |
-        
-        | data.rx_entities.injections	| array	| Array of prescribed injections |
-
-        | data.rx_entities.injections[].id	| string |	Unique Injection ID |
-
-        | data.rx_entities.injections[].name	| string |	Name of the injection |
-
-        | data.rx_entities.injections[].generic_name | string |  Generic name of the injection |
-
-        | data.rx_entities.injections[].dosage_form	| string |  Dosage form (e.g., injection, IV) |
-
-        | data.rx_entities.injections[].dose	string |  Dose of the injection |
-
-        | data.rx_entities.injections[].frequency |	string |	Frequency of injection |
-
-        | data.rx_entities.injections[].duration |	string |	Duration for which injection should be administered |
-
-        | data.rx_entities.injections[].infusion_rate |	object |	Infusion rate details for IV medications |
-
-        | data.rx_entities.injections[].infusion_rate.iv_rate |	string |	IV rate (e.g., ml/min) |
-
-        | data.rx_entities.injections[].infusion_rate.iv_drop_rate |	string |	IV drop rate (e.g., drops/min) |
-
-        | data.rx_entities.injections[].infusion_rate.infusion_time |	string |	Time taken for infusion |
-
-        | data.rx_entities.injections[].instruction |	string|	Special instructions for the injection |
-
-        | data.rx_entities.examinations | array | Array of examinations performed |
-        
-        | data.rx_entities.examinations[].name | string | Name of the examination |
-        
-        | data.rx_entities.medical_history | object | Comprehensive medical history of the patient |
-        
-        | data.rx_entities.medical_history.patient_history | object | Detailed patient history |
-        
-        | data.rx_entities.medical_history.patient_history.current_medications | array | Current medications of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.drug_allergy | array | Drug allergies of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.food_other_allergy | array | Food and other allergies of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.family_history | array | Family medical history |
-        
-        | data.rx_entities.medical_history.patient_history.lifestyle_habits | array | Patient's lifestyle habits |
-        
-        | data.rx_entities.medical_history.patient_history.past_procedures | array | Past medical procedures of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.patient_medical_conditions | array | Existing medical conditions of the patient |
-        
-        | data.rx_entities.medical_history.patient_history.recent_travel_history | array | Recent travel history of the patient |
-        
-        | data.rx_entities.medical_history.vitals | array | Recorded vitals of the patient |
-
-        **Status Codes**
-
-        • 200: Success
-        
-        • 403: Forbidden
-        
-        • 404: Rx id/Business data missing
-        
-        • 500: Wrong API URL/Wrong JSON request/ Something went wrong
-      
 
       operationId: GetPrescriptionDetails
       parameters:
@@ -4275,7 +4127,7 @@ paths:
           schema:
             type: string
           example: '{{auth_token}}'
-        - name: rx_id
+        - name: prescription_id
           in: path
           description: 'Prescription ID'
           required: true
@@ -4290,452 +4142,538 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      rx_id:
-                        type: string
-                        example: "PRES-ID-8B54-5F19-B3DA-58599191F931"
-                      visit_id:
-                        type: string
-                        example: "VISIT_ID-26347907-161615972631847-LFZC"
-                      created_at:
-                        type: string
-                        format: date-time
-                        example: "2024-09-05T08:52:27.908Z"
-                      doctor:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            example: "111615972631847"
-                      patient:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            example: "111493263420736"
-                      selected_clinic:
-                        type: string
-                        example: "0104a3fcba83b848f9c9f679"
-                      rx_url:
-                        type: string
-                        example: "<web_pdf_url>"
-                      visit_name:
-                        type: string
-                        example: "blood pressure high"
-                      rx_entities:
-                        type: object
-                        properties:
-                          symptoms:
-                            type: array
-                            items:
+                  prescription_id:
+                    type: string
+                    example: "{{prescription_id}}"
+                  doctor_id:
+                    type: string
+                    example: "171266028552522"
+                  partner_doctor_id:
+                    type: string
+                    example: "1712660285igfewifwe"
+                  doctor_name:
+                    type: string
+                    example: "Sanjana"
+                  patient_name:
+                    type: string
+                    example: "Sanjana"
+                  patient_id:
+                    type: string
+                    example: "161435344380774"
+                  partner_patient_id:
+                    type: string
+                    example: "ghjkf9e"
+                  appointment_id:
+                    type: string
+                    example: "V-DW-1730717340935-171266028552522-8JR9"
+                  partner_appointment_id:
+                    type: string
+                    example: "guyfwe8f34ni34o"
+                  clinic_id:
+                    type: string
+                    example: "6615195c289dd3001d3c0b31"
+                  partner_clinic_id:
+                    type: string
+                    example: "07528934jferiugh"
+                  prescription_details:
+                    type: array
+                    items:
+                      anyOf:
+                        - title: Appointment Details
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["appointment"]
+                              title: "Appointment Details"
+                            follow_up:
+                              type: string
+                              example: "2024-11-10T18:30:00+00:00"
+                            note:
+                              type: array
+                              items:
+                                type: string
+                              example: []
+                        - title: Condition History
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["condition_history"]
+                              title: "Condition History"
+                            condition:
                               type: object
                               properties:
-                                id:
+                                code:
                                   type: string
-                                  example: "s-12345"
-                                name:
+                                  example: "38341003"
+                                display:
                                   type: string
-                                  example: "Fever with chills"
+                                  example: "High blood pressure"
+                            severity:
+                              type: string
+                              example: "active"
+                            onset:
+                              type: string
+                              example: null
+                            clinical_status:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "active"
+                                display:
+                                  type: string
+                                  example: "active"
+                            verification_status:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "confirmed"
+                                display:
+                                  type: string
+                                  example: "confirmed"
+                        - title: Condition
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["condition"]
+                              title: "Condition"
+                            condition:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "194828000"
+                                display:
+                                  type: string
+                                  example: "Angina"
+                            severity:
+                              type: string
+                              example: null
+                            onset:
+                              type: string
+                              example: null
+                            clinical_status:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "active"
+                                display:
+                                  type: string
+                                  example: "active"
+                            verification_status:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "confirmed"
+                                display:
+                                  type: string
+                                  example: "confirmed"
+                        - title: Advices
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["advices"]
+                              title: "Advices"
+                            advices:
+                              type: string
+                              example: "Need to consider further treatment of AS > TAVR or Surgical AVR"
+                            status:
+                              type: string
+                              example: "active"
+                            intent:
+                              type: string
+                              example: "plan"
+                        - title: Admission Advised
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["admission_advised"]
+                              title: "Admission Advised"
+                            reason:
+                              type: string
+                              example: "Surgery"
+                            note:
+                              type: string
+                              example: "Bone facture"
+                        - title: Custom Section
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["custom_section"]
+                            title:
+                              type: string
+                              example: ""
+                            note:
+                              type: array
+                              items:
+                                type: object
                                 properties:
-                                  type: object
-                                  example: { "since": "5 Days", "severity": "High", "body temperature": "98 degrees F", "key1": "value1" }
-                          diagnosis:
-                            type: array
-                            items:
+                                  name:
+                                    type: string
+                                    example: ""
+                                  value:
+                                    type: string
+                                    example: ""
+                              example:
+                                - name: ""
+                                  value: ""
+                        - title: Service Request
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["servicerequest"]
+                              title: "Service Request"
+                            lab_id:
+                              type: string
+                              example: "medanta2958577545"
+                            status:
+                              type: string
+                              example: "active"
+                            lab_name:
+                              type: string
+                              example: "ECG"
+                            note:
+                              type: array
+                              items:
+                                type: string
+                              example: []
+                        - title: Observation
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["observation"]
+                              title: "Observation"
+                            status:
+                              type: string
+                              example: "final"
+                            observation:
                               type: object
                               properties:
-                                id:
+                                code:
                                   type: string
-                                  example: "d-12345"
-                                name:
+                                  example: "29857009"
+                                display:
                                   type: string
-                                  example: "Covid -19"
-                                properties:
-                                  type: object
-                                  example: { "since": "5 Days", "status": "Confirmed", "details": "patient was diagnosed with covid yesterday.", "key1": "value1" }
-                          medications:
-                            type: array
-                            items:
+                                  example: "chest pain"
+                            severity:
                               type: object
                               properties:
-                                id:
-                                  type: string
-                                  example: "b-12345"
-                                name:
-                                  type: string
-                                  example: "Benadryl Dr"
-                                generic_name:
-                                  type: string
-                                  example: "Dextromethorphan Hydrobromide (15mg/5ml)"
-                                dosage_form:
-                                  type: string
-                                  example: "syrup"
-                                dose:
-                                  type: string
-                                  example: "5 ml"
-                                frequency:
-                                  type: string
-                                  example: "1-1-1"
-                                duration:
-                                  type: string
-                                  example: "5 Days"
-                                timing:
-                                  type: string
-                                  example: "After Meal"
-                                instruction:
-                                  type: string
-                                  example: "patient is advised to have medicines on time"
-                          lab_tests:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  example: "l-2493983"
-                                name:
-                                  type: string
-                                  example: "CBC"
-                                test_on:
-                                  type: string
-                                  format: date-time
-                                  example: "2024-09-05T06:30:00.000Z"
-                                repeat_on:
-                                  type: string
-                                  format: date-time
-                                  example: "2024-09-10T06:30:00.000Z"
-                                testing_type:
-                                  type: string
-                                  example: "ROUTINE"
-                          lab_vitals:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  example: "l-8156869"
-                                name:
-                                  type: string
-                                  example: "Calcium"
-                                value:
-                                  type: string
-                                  example: 10
-                                unit:
-                                  type: object
-                                  example: "mg/dL"
-                                date:
-                                  type: string
-                                  format: date-time
-                          advices:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                text:
-                                  type: string
-                                  example: "avoid spicy food"
-                          dynamic_form:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  example: "41b7579c-a294-41e8-94b5-feb13ef61d87"
-                                name:
-                                  type: string
-                                  example: "GA"
-                                elements:
-                                  type: array
-                                  items:
-                                    type: object
-                                    properties:
-                                      id:
-                                        type: string
-                                        example: "03a32c8a-d601-48b0-bd79-3e7a9117e00f"
-                                      name:
-                                        type: string
-                                        example: "dfd"
-                                      value:
-                                        type: string
-                                        example: "fgf"
-                          injections:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  example: "b-2388477052"
-                                name:
-                                  type: string
-                                  example: "Injectum 500mg Injection"
-                                dosage_form:
-                                  type: string
-                                  example: "injection"
-                                dose:
-                                  type: string
-                                  example: "2 iu"
-                                duration:
-                                  type: string
-                                  example: "3 Weeks"
-                                frequency:
-                                  type: string
-                                  example: "0-0-1"
-                                generic_name:
-                                  type: string
-                                  example: "Ceftriaxone (500mg)"
-                                infusion_rate:
-                                  type: object
-                                  properties:
-                                    infusion_time:
-                                      type: string
-                                      example: "1 min"
-                                    iv_drop_rate:
-                                      type: string
-                                      example: "2 drops/min"
-                                    iv_rate:
-                                      type: string
-                                      example: "3 ml/min"
-                                instruction:
+                                code:
                                   type: string
                                   example: ""
-                          examinations:
-                            type: array
-                            items:
+                                display:
+                                  type: string
+                                  example: ""
+                            category:
                               type: object
                               properties:
-                                name:
+                                code:
                                   type: string
-                                  example: "Tooth Chattering"
-                          medical_history:
-                            type: object
-                            properties:
-                              patient_history:
+                                  example: "symptom"
+                                display:
+                                  type: string
+                                  example: "symptom"
+                            note:
+                              type: array
+                              items:
+                                type: string
+                              example: []
+                        - title: Vitals
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["vitals"]
+                              title: "Vitals"
+                            status:
+                              type: string
+                              example: "final"
+                            observation:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "lb-1201285132"
+                                display:
+                                  type: string
+                                  example: "Pulse rate"
+                            since:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  example: "datetime"
+                                start:
+                                  type: string
+                                  example: "2024-11-04T10:49:00.936000+00:00"
+                            severity:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: ""
+                                display:
+                                  type: string
+                                  example: ""
+                            category:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "vital-signs"
+                                display:
+                                  type: string
+                                  example: "Vital Signs"
+                            valueQuantity:
+                              type: object
+                              properties:
+                                system:
+                                  type: string
+                                  example: "http://eka.care/mdb/technical"
+                                unit:
+                                  type: string
+                                  example: "/min"
+                                value:
+                                  type: number
+                                  example: 45.0
+                            component:
+                              type: array
+                              items:
+                                type: object
+                              example: []
+                        - title: Lifestyle
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["lifestyle"]
+                              title: "Lifestyle"
+                            status:
+                              type: string
+                              example: "Active"
+                            observation:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "3"
+                                display:
+                                  type: string
+                                  example: "Alcohol"
+                            severity:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "status"
+                                display:
+                                  type: string
+                                  example: "Active"
+                            category:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  example: "social-history"
+                                display:
+                                  type: string
+                                  example: "Social History"
+                            note:
+                              type: array
+                              items:
+                                type: string
+                              example: []
+                        - title: Medication Request
+                          properties:
+                            resource_type:
+                              type: string
+                              enum: ["medicationrequest"]
+                              title: "Medication Request"
+                            drug_id:
+                              type: string
+                              example: "medanta3806727491"
+                            drug_status:
+                              type: string
+                              example: "active"
+                            med_name:
+                              type: string
+                              example: "Olmezest 40 Tablet"
+                            dose:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  example: "du-5550260779"
+                                value:
+                                  type: number
+                                  example: 1.0
+                                unit:
+                                  type: string
+                                  example: "tablet"
+                                custom:
+                                  type: string
+                                  example: "1.0 tablet"
+                            additional_instructions:
+                              type: array
+                              items:
                                 type: object
                                 properties:
-                                  current_medications:
-                                    type: array
-                                    example: { "frequency": "6 time in a Hour",
-                                               "id": "b-1098320",
-                                               "name": "D3-Zen 60K Soft Gelatin Capsule",
-                                               "reported_at": "2024-09-05T08:55:44.456Z",
-                                               "since": "5 Months",
-                                               "status": "Active"
-                                    }
-                                  drug_allergy:
-                                    type: array
-                                    example: { "id": "b-901010",
-                                               "name": "Dolo 650 Tablet",
-                                               "reported_at": "2024-09-05T08:54:48.023Z",
-                                               "since": "4 Weeks",
-                                               "status": "Active"
-                                    }
-                                  food_other_allergy:
-                                    type: array
-                                    example: {
-                                      "id": "a-614222324",
-                                      "name": "allergy to animal hair",
-                                      "reported_at": "2024-09-05T08:55:13.590Z",
-                                      "since": "5 Years",
-                                      "status": "Active"
-                                    }
-                                  family_history:
-                                    type: array
-                                    example: {
-                                      "id": "d-1329201",
-                                      "name": "Diabetes mellitus type 2",
-                                      "reported_at": "2024-09-05T08:55:23.854Z",
-                                      "status": "Active",
-                                      "who": "Mother"
-                                    }
-                                  lifestyle_habits:
-                                    type: array
-                                    example: [
-                                      {
-                                        "id": "3",
-                                        "name": "Alcohol",
-                                        "reported_at": "2024-09-05T08:54:20.406Z",
-                                        "since": null,
-                                        "status": "Active"
-                                      },
-                                      {
-                                        "frequency": "Twice a day",
-                                        "id": "1",
-                                        "name": "Tobacco",
-                                        "reported_at": "2024-09-05T08:54:24.287Z",
-                                        "since": "11 Years",
-                                        "status": "Active"
-                                      },
-                                      {
-                                        "frequency": "5 times a day",
-                                        "id": "2",
-                                        "name": "Smoke",
-                                        "reported_at": "2024-09-05T08:54:28.258Z",
-                                        "since": "5 Years",
-                                        "status": "Active"
-                                      }
-                                    ]
-                                  past_procedures:
-                                    type: array
-                                    example: {
-                                      "id": "p-123456",
-                                      "name": "Vasectomy",
-                                      "on": "05-2024",
-                                      "reported_at": "2024-09-05T08:55:00.056Z",
-                                      "status": "Active"
-                                    }
-                                  patient_medical_conditions:
-                                    type: array
-                                    example: [
-                                      {
-                                        "id": "d-12576387902",
-                                        "name": "Diabetes mellitus",
-                                        "reported_at": "2024-09-05T08:54:19.057Z",
-                                        "since": null,
-                                        "status": "Active"
-                                      },
-                                      {
-                                        "id": "d-12980110",
-                                        "name": "Hypothyroidism",
-                                        "reported_at": "2024-09-05T08:54:27.108Z",
-                                        "since": null,
-                                        "status": "Active"
-                                      }
-                                    ]
-                                  recent_travel_history:
-                                    type: array
-                                    example: [
-                                      {
-                                        "id": "locale-recentTravelHistory-1725526477738",
-                                        "name": "Travel History",
-                                        "notes": "china",
-                                        "reported_at": "2024-09-05T08:54:37.738Z",
-                                        "status": ""
-                                      }
-                                    ]
-                              vitals:
-                                type: array
-                                example: [
-                                  {
-                                    "date": "2024-09-05T13:00:19.784Z",
-                                    "id": "v-134568",
-                                    "name": "Body height",
-                                    "value": "23",
-                                    "unit": "Cms"
-
-                                  },
-                                  {
-                                    "date": "2024-09-05T13:00:23.705Z",
-                                    "id": "v-091802101",
-                                    "name": "Blood pressure",
-                                    "value": "23",
-                                    "unit": "mmHg"
-
-                                  },
-                                  {
-                                    "date": "2024-09-05T13:00:27.337Z",
-                                    "id": "v-6780897827",
-                                    "name": "Respiratory rate",
-                                    "value": "43",
-                                    "unit": "/min"
-
-                                  },
-                                  {
-                                    "date": "2024-09-05T13:00:21.867Z",
-                                    "id": "v-820011111",
-                                    "name": "Body Temperature",
-                                    "value": "21",
-                                    "unit": "F"
-
-                                  }
-                                ]
-                          speciality:
-                            type: object
-                            properties:
-                              opthal:
-                                type: object
-                                properties:
-                                  op_current_spec:
-                                    type: array
-                                    items:
-                                      type: object
-                                      properties:
-                                        eye:
-                                          type: string
-                                          example: "RE"
-                                        id:
-                                          type: string
-                                          example: "ek-2676755484"
-                                        name:
-                                          type: string
-                                          example: "Right Eye"
-                                        sph:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        cyl:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        add:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        dva:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                  op_final_prescription:
-                                    type: array
-                                    items:
-                                      $ref: '#/components/schemas/OpthalPrescription'
-                                  op_iop:
-                                    type: array
-                                    items:
-                                      type: object
-                                      properties:
-                                        eye:
-                                          type: string
-                                          example: "RE"
-                                        id:
-                                          type: string
-                                          example: "ek-2676755484"
-                                        name:
-                                          type: string
-                                          example: "Right Eye"
-                                        cct:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        ciop:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        gat:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        nct:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                  op_subjective_refraction:
-                                    type: array
-                                    items:
-                                      $ref: '#/components/schemas/OpthalPrescription'
-                                  op_vision:
-                                    type: array
-                                    items:
-                                      type: object
-                                      properties:
-                                        eye:
-                                          type: string
-                                          example: "RE"
-                                        id:
-                                          type: string
-                                          example: "ek-2676755484"
-                                        name:
-                                          type: string
-                                          example: "Right Eye"
-                                        ucdva:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        bcdva:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        ucnva:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        bcnva:
-                                          $ref: '#/components/schemas/OpthalProperty'
-                                        ph:
-                                          $ref: '#/components/schemas/OpthalProperty'
-
+                                  custom:
+                                    type: string
+                                    example: null
+                                  type:
+                                    type: string
+                                    example: "timing"
+                            duration:
+                              type: object
+                              properties:
+                                unit:
+                                  type: string
+                                  example: null
+                                value:
+                                  type: string
+                                  example: null
+                                custom:
+                                  type: string
+                                  example: null
+                            dosage_instruction:
+                              type: object
+                              properties:
+                                custom:
+                                  type: string
+                                  example: "1-0-0"
+                                when:
+                                  type: string
+                                  example: null
+                                period:
+                                  type: string
+                                  example: null
+                                period_unit:
+                                  type: string
+                                  example: null
+                                frequency:
+                                  type: string
+                                  example: null
+                            note:
+                              type: string
+                              example: null
+                    example:
+                      - resource_type: "appointment"
+                        follow_up: "2024-11-10T18:30:00+00:00"
+                        note: []
+                      - resource_type: "condition_history"
+                        condition:
+                          code: "38341003"
+                          display: "High blood pressure"
+                        note: []
+                        severity: null
+                        onset: null
+                        clinical_status:
+                          code: "active"
+                          display: "active"
+                        verification_status:
+                          code: "confirmed"
+                          display: "confirmed"
+                      - resource_type: "condition"
+                        condition:
+                          code: "194828000"
+                          display: "Angina"
+                        note: []
+                        severity: null
+                        onset: null
+                        clinical_status:
+                          code: "active"
+                          display: "active"
+                        verification_status:
+                          code: "confirmed"
+                          display: "confirmed"
+                      - resource_type: "advices"
+                        advices: "Need to consider further treatment of AS > TAVR or Surgical AVR"
+                        status: "active"
+                        intent: "plan"
+                      - resource_type: "admission_advised"
+                        reason: "Surgery"
+                        note: "Bone facture"
+                      - resource_type: "custom_section"
+                        title: "{custom_title}"
+                        note:
+                          - name: "{custom_name}"
+                            value: "{custom_value}"
+                      - resource_type: "servicerequest"
+                        lab_id: "medanta2958577545"
+                        status: "active"
+                        lab_name: "ECG"
+                        note: []
+                      - resource_type: "observation"
+                        status: "final"
+                        observation:
+                          code: "29857009"
+                          display: "chest pain"
+                        since: {}
+                        severity:
+                          code: ""
+                          display: ""
+                        category:
+                          code: "symptom"
+                          display: "symptom"
+                        note: []
+                      - resource_type: "vitals"
+                        status: "final"
+                        observation:
+                          code: "lb-1201285132"
+                          display: "Pulse rate"
+                        since:
+                          type: "datetime"
+                          start: "2024-11-04T10:49:00.936000+00:00"
+                        severity:
+                          code: ""
+                          display: ""
+                        category:
+                          code: "vital-signs"
+                          display: "Vital Signs"
+                        note: []
+                        valueQuantity:
+                          system: "http://eka.care/mdb/technical"
+                          unit: "/min"
+                          value: 45.0
+                        component: []
+                      - resource_type: "lifestyle"
+                        status: "Active"
+                        observation:
+                          code: "3"
+                          display: "Alcohol"
+                        since: {}
+                        severity:
+                          code: "status"
+                          display: "Active"
+                        category:
+                          code: "social-history"
+                          display: "Social History"
+                        note: []
+                      - resource_type: "medicationrequest"
+                        drug_id: "medanta3806727491"
+                        drug_status: "active"
+                        med_name: "Olmezest 40 Tablet"
+                        dose:
+                          id: "du-5550260779"
+                          value: 1.0
+                          unit: "tablet"
+                          custom: "1.0 tablet"
+                        additional_instructions:
+                          - custom: null
+                            type: "timing"
+                        duration:
+                          unit: null
+                          value: null
+                          custom: null
+                        dosage_instruction:
+                          custom: "1-0-0"
+                          when: null
+                          period: null
+                          period_unit: null
+                          frequency: null
+                        note: null
 
         '403':
           description: Forbidden
@@ -4887,33 +4825,25 @@ components:
         data:
           $ref: '#/components/schemas/Data1'
       example:
-        data:
-          patient_id: '123456789'
-          name: Test Patient
-          clinic_id: '12345678'
-          patient_profile:
-            patient_id: '123456789'
-            first_name: Test
-            middle_name: ''
-            last_name: Patient
-            dob: '1984-11-11'
-            email: ekademo@gmail.com
-            gen: M
-            mobile: '+919999999999'
-            created_at: '2021-03-19T13:15:26.318Z'
-            address:
-              city: Bangalore
-              line1: ABC
-              line2: XYZ
-              pincode: 560049
-              state: Karnataka
-              country: India
-              district: Bangalore Urban
-            metadata:
-              blood_group: AB+
-              aadhar_number: '12345'
-              notes: Has a history of HTN
-              father_name: Test Father
+        patient_id: '123456789'
+        partner_patient_id: '123456789'
+        first_name: Test
+        middle_name: ''
+        last_name: Patient
+        dob: '1984-11-11'
+        email: ekademo@gmail.com
+        mobile: '+919999999999'
+        created_at: '2021-03-19T13:15:26.318Z'
+        address:
+          city: Bangalore
+          line1: ABC
+          line2: XYZ
+          pincode: 560049
+          state: Karnataka
+          country: India
+          district: Bangalore Urban
+        partner_meta:
+          key1: value1
     Data1:
       title: Data1
       required:
@@ -5406,9 +5336,11 @@ components:
           type: string
         email:
           type: string
+        partner_patient_id:
+          type: string
         address:
           $ref: '#/components/schemas/Address1'
-        metadata:
+        partner_meta:
           $ref: '#/components/schemas/Metadata1'
       example:
         firstName: John

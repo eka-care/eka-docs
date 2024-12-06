@@ -45,7 +45,7 @@ paths:
           example: application/json
           description: To get response in json format
       responses:
-        '200':
+        "200":
           description: A list of documents matching the query.
           content:
             application/json:
@@ -120,11 +120,11 @@ paths:
                     type: string
                     description: Token used for pagination to retrieve the next set of results in a paginated response.
 
-        '400':
+        "400":
           description: Bad Request. Invalid or missing parameters.
-        '401':
+        "401":
           description: Unauthorized. Invalid JWT token or client ID.
-        '500':
+        "500":
           description: Internal Server Error.
       security:
         - auth: []
@@ -144,25 +144,23 @@ paths:
                 batch_request:
                   type: array
                   items:
-                    $ref: '#/components/schemas/UpdateDocumentV3Request'
+                    $ref: "#/components/schemas/UpdateDocumentV3Request"
             example:
               batch_request:
-                -
-                  dt: "ps"
+                - dt: "ps"
                   sh: false
                   dd_e: 1614556800
                   tg: ["tag1", "tag2"]
                   files:
-                    -
-                      contentType: "image/jpeg"
+                    - contentType: "image/jpeg"
                       file_size: 110000
       responses:
-        '200':
+        "200":
           description: Presigned URL successfully retrieved
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UploadResponse'
+                $ref: "#/components/schemas/UploadResponse"
           links:
             GetDocumentByDocumentID:
               operationId: getDocument
@@ -171,27 +169,27 @@ paths:
               description: >
                 The `document_id` value returned in the response can be used as
                 the `document_id` parameter in `GET /mr/api/v1/docs/{document_id}`.
-        '400':
+        "400":
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorUploadResponse'
+                $ref: "#/components/schemas/ErrorUploadResponse"
               examples:
                 ErrorUploadResponse:
                   summary: Example of an error response with an empty batch_request
                   value:
                     error: true
                     message: "Invalid document type."
-                    batch_response: []  # Empty array for batch_request
+                    batch_response: [] # Empty array for batch_request
                     upload_time: null
-        '500':
+        "500":
           description: Internal Server Error. No response body is expected.
-        '502':
+        "502":
           description: Bad Gateway. No response body is expected.
-        '503':
+        "503":
           description: Service Unavailable. No response body is expected.
-        '504':
+        "504":
           description: Gateway Timeout. No response body is expected.
       security:
         - auth: []
@@ -257,28 +255,28 @@ paths:
                   type: array
                   nullable: true
                   description: Tags associated with the uploaded documents. The rules for tags are the same as the upload API.
-                  example: [ "covid" ]
+                  example: ["covid"]
                   items:
                     type: string
               anyOf:
-                - required: [ "dt" ]
-                - required: [ "ndhm" ]
-                - required: [ "oid" ]
+                - required: ["dt"]
+                - required: ["ndhm"]
+                - required: ["oid"]
                 - required: ["dd_e"]
                 - required: ["tg"]
       responses:
-        '200':
+        "200":
           description: Document linked successfully.
-        '404':
+        "404":
           description: No such document.
-        '5XX':
-           description: Unexpected error.
+        "5XX":
+          description: Unexpected error.
       security:
         - auth: []
 
     delete:
       summary: Delete a document
-      description : This API is used to delete a document using a document ID.
+      description: This API is used to delete a document using a document ID.
       parameters:
         - in: path
           name: document_id
@@ -288,11 +286,11 @@ paths:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
       responses:
-        '200':
+        "200":
           description: Document deleted successfully.
-        '404':
+        "404":
           description: No such document.
-        '5XX':
+        "5XX":
           description: Unexpected error.
       security:
         - auth: []
@@ -310,7 +308,7 @@ paths:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
       responses:
-        '200':
+        "200":
           description: Description of a document.
           content:
             application/json:
@@ -320,7 +318,7 @@ paths:
                   source:
                     type: string
                   document_date_epoch:
-                      type: integer
+                    type: integer
                   tags:
                     type: array
                     items:
@@ -359,9 +357,9 @@ paths:
                     file_type: IMG
                   - asset_url: https://sample-lab-report.s3.ap-south-1.amazonaws.com/161494290947153/2df9e795-d368-4ceb-be9d-b44281703827/0cb1277e-1c4d-42cc-acd1-9630497e4f9d.pdf
                     file_type: PDF
-        '5XX':
+        "5XX":
           description: Unexpected error.
-        '404':
+        "404":
           description: No such document.
       security:
         - auth: []
@@ -390,7 +388,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Successful retrieval of health records.
           content:
             application/json:
@@ -519,7 +517,7 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        '404':
+        "404":
           description: when request identifier, hip_id, health_id has no data
           content:
             application/json:
@@ -538,7 +536,7 @@ paths:
                       lastUpdated:
                         type: string
                         format: date-time
-        '401':
+        "401":
           description: Unauthorized. Invalid or missing authentication.
           content:
             application/json:
@@ -550,6 +548,75 @@ paths:
                     example: Unauthorized
       security:
         - auth: []
+
+  /mr/api/v2/docs:
+    post:
+      operationId: uploadDocument
+      tags:
+        - Records
+      summary: "Upload Record"
+      description: Upload the image or PDF file
+      parameters:
+        - in: query
+          name: dt
+          required: true
+          schema:
+            $ref: "#/components/schemas/DocumentTypeQueryParam"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: base64
+                  title: file
+                  description: The file to be uploaded.
+              required:
+                - file
+      responses:
+        "200":
+          description: File uploaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document_id:
+                    type: string
+                    format: uuid
+                    description: The unique identifier for the uploaded document.
+                    example: "8570e23d-ee57-4948-95a7-370f0f113db8"
+        "400":
+          description: Bad request, typically due to missing or invalid fields.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Invalid form data.
+        "403":
+          description: Forbidden Access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Forbidden"
+        "500":
+          description: Internal Server Error. No response body is expected.
+        "502":
+          description: Bad Gateway. No response body is expected.
+        "503":
+          description: Service Unavailable. No response body is expected.
+        "504":
+          description: Gateway Timeout. No response body is expected.
+      security:
+        - auth: []
+
   /mr/webhook/smart-report:
     post:
       tags:
@@ -581,15 +648,15 @@ paths:
                       description: This url we will use to send the payload upon successful parsing of the record
 
       responses:
-        '200':
+        "200":
           description: Event registered successfully
-        '204':
+        "204":
           description: Event created successfully
-        '400':
+        "400":
           description: Bad request
-        '403':
+        "403":
           description: Forbidden - Access Denied
-        '500':
+        "500":
           description: Something went wrong
       security:
         - auth: []
@@ -636,7 +703,7 @@ components:
       type: object
       properties:
         dt:
-          $ref: '#/components/schemas/DocumentTypeQueryParam'
+          $ref: "#/components/schemas/DocumentTypeQueryParam"
         dd_e:
           type: integer
           format: int64
@@ -656,13 +723,13 @@ components:
           type: array
           description: A list of files to be uploaded, each with a specified content type and size.
           items:
-            $ref: '#/components/schemas/FileUploadRequest'
+            $ref: "#/components/schemas/FileUploadRequest"
         title:
           type: string
           description: Title of the document. Max length of 256 characters.
           nullable: true
-      required :
-         - files
+      required:
+        - files
     UploadResponse:
       type: object
       properties:
@@ -675,8 +742,7 @@ components:
         batch_response:
           type: array
           items:
-            $ref: '#/components/schemas/UploadResponseBody'
-
+            $ref: "#/components/schemas/UploadResponseBody"
 
     ErrorUploadResponse:
       type: object
@@ -690,7 +756,7 @@ components:
         batch_response:
           type: array
           items:
-            $ref: '#/components/schemas/UploadResponseBody'
+            $ref: "#/components/schemas/UploadResponseBody"
         token:
           type: string
           format: date-time
@@ -703,7 +769,7 @@ components:
         forms:
           type: array
           items:
-            $ref: '#/components/schemas/UploadResponseBodyForms'
+            $ref: "#/components/schemas/UploadResponseBodyForms"
     UploadResponseBodyForms:
       type: object
       properties:
@@ -715,8 +781,6 @@ components:
             type: string
   securitySchemes:
     auth:
-      type: apiKey
-      in: header
-      name: auth
-      description: |
-        The API requires the following auth in headers for authentication.
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

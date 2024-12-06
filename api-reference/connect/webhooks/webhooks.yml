@@ -38,11 +38,6 @@ components:
             A secret key provided by the client for verifying the authenticity of webhook payloads.
             It should be a securely generated, random string.
           example: "supersecretkey"
-        client_id:
-          type: string
-          description: |
-            Identifier unique to the client, used only for cases involving `hub.eka.care`.
-          example: "client_12345"
         protocol:
           type: string
           description: |
@@ -55,6 +50,19 @@ components:
       required:
         - endpoint
 
+    RegisterWebhookResponse:
+      type: object
+      properties:
+          id:
+            type: string
+            description: The unique identifier for the webhook.
+            example: "7"
+          status:
+            type: string
+            description: |
+              description: A message indicating the status of the response.
+            example: "success"
+    
     WebhookResponse:
       type: object
       properties:
@@ -156,15 +164,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/WebhookResponse'
-                  msg:
-                    type: string
-                    example: "success"
+                $ref: '#/components/schemas/RegisterWebhookResponse'
         '400':
           description: Bad request.
           content:

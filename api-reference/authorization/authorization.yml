@@ -67,6 +67,102 @@ paths:
           description: OK
       security:
       - authApiKey: []
+
+  /connect-auth/v1/oidc-client/{client_id}/login:
+    get:
+      description: OIDC Client Login
+      parameters:
+        - $ref: '#/components/parameters/client_id'
+
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcLoginResponse'
+          description: OK
+      tags:
+      - Auth (OIDC Token APIs)
+  /connect-auth/v1/oidc-client/{client_id}/refresh:
+    post:
+      description: Auth Refresh
+      parameters:
+        - $ref: '#/components/parameters/client_id'
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcOIDCRefreshRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsUserSession'
+          description: OK
+      security:
+      - authApiKey: []
+      tags:
+      - Auth (OIDC Token APIs)
+  /connect-auth/v1/oidc-client/{client_id}/verify:
+    post:
+      description: Auth Verify and Eka Token
+      parameters:
+        - $ref: '#/components/parameters/client_id'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcVerifyRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsOIDCCallbackResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      tags:
+      - Auth (OIDC Token APIs)
+  
 components:
   schemas:
     AccountLoginRequest:
@@ -112,6 +208,67 @@ components:
         refresh_token:
           type: string
       type: object
+    OidcLoginResponse:
+      properties:
+        oauth_state:
+          type: string
+        redirect_url:
+          type: string
+      type: object
+    OidcOIDCRefreshRequest:
+      properties:
+        refresh_token:
+          type: string
+      type: object
+    ModelsUserSession:
+      properties:
+        access_token:
+          type: string
+        expires_at:
+          format: date-time
+          type: string
+        id_token:
+          type: string
+        refresh_token:
+          type: string
+        user_info:
+          $ref: '#/components/schemas/ModelsUserInfo'
+      type: object
+    ModelsUserInfo:
+      properties:
+        department:
+          type: string
+        doctor_id:
+          type: string
+        guid:
+          type: string
+        name:
+          type: string
+        sub:
+          type: string
+      type: object
+    OidcVerifyRequest:
+      properties:
+        code:
+          type: string
+        id_token:
+          type: string
+        token:
+          type: string
+      type: object
+    ModelsOIDCCallbackResponse:
+      properties:
+        access_token:
+          type: string
+        expires_in:
+          type: integer
+        redirect_url:
+          type: string
+        refresh_token:
+          type: string
+        refresh_token_expires_in:
+          type: integer
+      type: object
     GenericError:
       properties:
         code:
@@ -119,3 +276,11 @@ components:
         error:
           type: string
       type: object
+
+  parameters:
+    client_id:
+      name: client_id
+      in: path
+      required: true
+      schema:
+        type: string

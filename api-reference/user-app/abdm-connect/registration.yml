@@ -101,10 +101,12 @@ paths:
   /abdm/v1/care-contexts/linked:
     get:
       parameters:
-      - in: query
+      - description: Unique identifier for the Health Information Provider (HIP).
+        in: query
         name: hip_id
         required: true
         schema:
+          description: Unique identifier for the Health Information Provider (HIP).
           type: string
       responses:
         4XX:
@@ -703,10 +705,12 @@ paths:
   /abdm/v1/provider/{hip_id}:
     get:
       parameters:
-      - in: path
+      - description: Identifier for the Health Information Provider (HIP).
+        in: path
         name: hip_id
         required: true
         schema:
+          description: Identifier for the Health Information Provider (HIP).
           type: string
       responses:
         4XX:
@@ -732,9 +736,14 @@ paths:
   /abdm/v1/providers:
     get:
       parameters:
-      - in: query
+      - description: Name of the Health Information Provider (HIP), required with
+          a minimum length of 3 characters.
+        in: query
         name: name
+        required: true
         schema:
+          description: Name of the Health Information Provider (HIP), required with
+            a minimum length of 3 characters.
           minLength: 3
           type: string
       responses:
@@ -1123,10 +1132,12 @@ paths:
     get:
       description: This API endpoint is used to fetch pincode details.
       parameters:
-      - in: path
+      - description: Pincode to fetch its details.
+        in: path
         name: pincode
         required: true
         schema:
+          description: Pincode to fetch its details.
           type: string
       responses:
         4XX:
@@ -1186,6 +1197,7 @@ paths:
       - description: Consent/Subscription/Authorization ID
         in: query
         name: id
+        required: true
         schema:
           description: Consent/Subscription/Authorization ID
           type: string
@@ -1236,9 +1248,12 @@ paths:
     get:
       description: API to list all the Subscriptions / Authorization and Consent requests
       parameters:
-      - in: query
+      - description: status of the request
+        in: query
         name: status
+        required: true
         schema:
+          description: status of the request
           enum:
           - requested
           - granted
@@ -1248,9 +1263,12 @@ paths:
           examples:
           - granted
           type: string
-      - in: query
+      - description: Specifies the type of request being queried.
+        in: query
         name: type
+        required: true
         schema:
+          description: Specifies the type of request being queried.
           enum:
           - consent
           - subscription
@@ -1369,22 +1387,32 @@ components:
     ApproveRequest:
       properties:
         consent_artefacts:
+          description: List of consent artefacts.
           items:
             $ref: '#/components/schemas/ApproveConsent'
           type:
           - array
           - "null"
         id:
+          description: Unique identifier of a consent, also called the consent ID.
           type: string
         pin_detail:
           $ref: '#/components/schemas/CommonsPinDetail'
+      required:
+      - id
+      - consent_artefacts
       type: object
     ChangeRequest:
       properties:
         new:
+          description: The new PIN to replace the old one
           type: string
         old:
+          description: The current PIN to be updated
           type: string
+      required:
+      - old
+      - new
       type: object
     CommonsCareContext:
       properties:
@@ -1459,7 +1487,7 @@ components:
     CommonsPinDetail:
       properties:
         pin:
-          description: PIN for the consent request
+          description: 4 digit pin used for consent requests
           examples:
           - "1234"
           type: string
@@ -1482,15 +1510,19 @@ components:
     ConfirmRequest:
       properties:
         otp:
+          description: OTP received on the mobile number.
           type: string
         txn_id:
+          description: Transaction ID received in the previous API response.
           type: string
       required:
       - txn_id
+      - otp
       type: object
     ConfirmResponse:
       properties:
         cc_ref_id:
+          description: Unique identifier for the care context.
           type: string
         txn_id:
           type: string
@@ -1498,23 +1530,30 @@ components:
     CreateRequest:
       properties:
         abha_address:
-          description: ABHA Address to be linked with the ABHA Number, example sudo@abdm
+          description: ABHA Address to be linked with the ABHA Number
           examples:
           - shyam.eka@abdm
           type: string
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID received in the previous API response.
           type: string
+      required:
+      - txn_id
+      - abha_address
       type: object
     CreateRequestType2:
       properties:
         abha_address:
+          description: The ABHA address to be created for the user.
           type: string
         profile:
           $ref: '#/components/schemas/DetailsRequestType2'
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID received in the previous API response.
           type: string
+      required:
+      - txn_id
+      - abha_address
       type: object
     CreateResponse:
       properties:
@@ -1545,7 +1584,6 @@ components:
           - "null"
           - string
         txn_id:
-          description: Transaction ID received in the /init API
           type: string
       type: object
     CreateResponseType2:
@@ -1568,6 +1606,7 @@ components:
           - abha_create
           type: string
         success:
+          description: Indicates whether the API response is successful
           type: boolean
         token:
           description: Access token for the user, will be present if SkipState is
@@ -1579,11 +1618,13 @@ components:
     DenyRequest:
       properties:
         id:
-          description: Consent ID
+          description: Unique identifier of a consent, also called the consent ID.
           type: string
         reason:
           description: Users reason for denial in plain text
           type: string
+      required:
+      - id
       type: object
     DetailsCareContext:
       properties:
@@ -1613,63 +1654,67 @@ components:
     DetailsRequestType2:
       properties:
         address:
+          description: Address of the user.
           examples:
           - 123, ABC Street
           type:
           - "null"
           - string
         day_of_birth:
+          description: Day of birth of the user.
           examples:
           - 1
-          type:
-          - "null"
-          - integer
+          type: integer
         first_name:
+          description: First name of the user.
           examples:
           - Shyam
-          type:
-          - "null"
-          - string
+          type: string
         gender:
+          description: Gender of the user ('M' for male, 'F' for female, 'O' for other).
           enum:
           - M
           - F
           - O
           examples:
           - M
-          type:
-          - "null"
-          - string
+          type: string
         last_name:
+          description: Last name of the user.
           examples:
           - Singh
           type:
           - "null"
           - string
         middle_name:
+          description: Middle name of the user.
           examples:
           - Kumar
           type:
           - "null"
           - string
         month_of_birth:
+          description: Month of birth of the user.
           examples:
           - 1
-          type:
-          - "null"
-          - integer
+          type: integer
         pincode:
+          description: Pincode of the user's address.
           examples:
           - "110001"
-          type:
-          - "null"
-          - string
+          type: string
         year_of_birth:
+          description: Year of birth of the user.
           examples:
           - 1990
-          type:
-          - "null"
-          - integer
+          type: integer
+      required:
+      - first_name
+      - gender
+      - year_of_birth
+      - month_of_birth
+      - day_of_birth
+      - pincode
       type: object
     DetailsResponse:
       properties:
@@ -1745,6 +1790,7 @@ components:
     DiscoverRequest:
       properties:
         hip_id:
+          description: Unique identifier for the Health Information Provider (HIP).
           type: string
         ref_id:
           description: The unique identifier for the patient within the Healthcare
@@ -1763,12 +1809,16 @@ components:
           - array
           - "null"
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     ExistRequest:
       properties:
         abha_address:
+          description: ABHA address to check if it's already present in the system.
           type: string
+      required:
+      - abha_address
       type: object
     ExistResponse:
       properties:
@@ -1779,6 +1829,7 @@ components:
     ExistResponseType2:
       properties:
         exist:
+          description: Indicates if the user has already set the consent PIN.
           type: boolean
       type: object
     GenericError:
@@ -1844,6 +1895,7 @@ components:
     HipQRScanShareProfileResponseV2:
       properties:
         address:
+          description: Address associated with the HIP.
           type: string
         created_at:
           format: date-time
@@ -1851,10 +1903,13 @@ components:
         footer:
           type: string
         hip_id:
+          description: Health Information Provider (HIP) identifier
           type: string
         hip_name:
+          description: Name of the Health Information Provider (HIP)
           type: string
         request_id:
+          description: Unique identifier for the request
           type: string
         show_token_screen:
           type: boolean
@@ -1867,22 +1922,32 @@ components:
     InitRequest:
       properties:
         aadhaar_number:
+          description: Aadhaar Number for the abha registration
           examples:
           - "123456789012"
           type: string
+      required:
+      - aadhaar_number
       type: object
     InitRequestType2:
       properties:
         mobile_number:
+          description: mobile number for the abha registration
           type: string
+      required:
+      - mobile_number
       type: object
     InitRequestType3:
       properties:
         cc_ref_id:
+          description: Unique Identifier for the care context.
           type: string
         patient_ref_id:
+          description: The unique identifier for the patient within the Healthcare
+            Information Provider (HIP).
           type: string
         txn_id:
+          description: Transaction ID received in the previous API response.
           type: string
       required:
       - txn_id
@@ -1892,6 +1957,7 @@ components:
     InitRequestType4:
       properties:
         abha_address:
+          description: Abha Address to generate user session token.
           examples:
           - sudo@abdm
           type: string
@@ -1908,7 +1974,7 @@ components:
           - "null"
           - string
         txn_id:
-          description: ' Transaction id for the abha registration'
+          description: Transaction ID required for the next API call.
           examples:
           - 5d060cad-a93b-4edf-p3ef-bd412f69s400
           type: string
@@ -1923,7 +1989,7 @@ components:
           - "null"
           - string
         txn_id:
-          description: Transaction id received in the /init API
+          description: Transaction ID required for the next API call.
           examples:
           - 5d060cad-a93b-4edf-p3ef-bd412f69s400
           type: string
@@ -1943,27 +2009,37 @@ components:
           - "9225828688"
           type: string
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     InitResponseType4:
       properties:
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     InitResponseType5:
       properties:
         txn_id:
-          description: Transaction ID for the session
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     KycGenerateKycOtpRequest:
       properties:
         identifier:
+          description: The identifier, which will be the 14-digit ABHA number for
+            the 'abha-number' method or the 12-digit Aadhaar number for the 'aadhaar'
+            method.
           type: string
         method:
+          description: The method used for KYC, such as ABHA number or Aadhaar.
           enum:
           - abha-number
+          - aadhaar
           type: string
+      required:
+      - method
+      - identifier
       type: object
     KycGenerateKycOtpResponse:
       properties:
@@ -1973,19 +2049,28 @@ components:
           - kyc_end
           type: string
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     KycResendKycOtp:
       properties:
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
+      required:
+      - txn_id
       type: object
     KycVerifyKycOtpRequest:
       properties:
         otp:
+          description: OTP received on the mobile number.
           type: string
         txn_id:
+          description: Transaction ID received in the previous API response.
           type: string
+      required:
+      - txn_id
+      - otp
       type: object
     KycVerifyKycOtpResponse:
       properties:
@@ -2009,7 +2094,7 @@ components:
           $ref: '#/components/schemas/CommonsHiu'
           description: Health Information User,the requesting entity Clinic hospital
         id:
-          description: Unique identifier for the consent/authorization/subsripition
+          description: Unique identifier for the consent/authorization/subscription
           type: string
         purpose:
           $ref: '#/components/schemas/CommonsPurpose'
@@ -2043,10 +2128,14 @@ components:
     LoginRequest:
       properties:
         abha_address:
+          description: ABHA address used for login.
           type: string
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID received in the previous API response.
           type: string
+      required:
+      - txn_id
+      - abha_address
       type: object
     LoginResponse:
       properties:
@@ -2081,22 +2170,27 @@ components:
     PincodeResolvedPincodeData:
       properties:
         dist_code:
+          description: Unique code representing the district
           examples:
           - "339"
           type: string
         dist_name:
+          description: Name of the district
           examples:
           - Ranchi
           type: string
         pincode:
+          description: Postal code of the area
           examples:
           - "834001"
           type: string
         state_code:
+          description: Unique code representing the state
           examples:
           - "20"
           type: string
         state_name:
+          description: Name of the state
           examples:
           - Jharkhand
           type: string
@@ -2104,28 +2198,34 @@ components:
     ProfileResponse:
       properties:
         abha_address:
+          description: ABHA address associated with the user.
           examples:
           - shyam@abdm
           type: string
         abha_number:
+          description: ABHA number assigned to the user.
           examples:
           - 12-3456-7856-8912
           type:
           - "null"
           - string
         address:
+          description: Address of the user.
           type:
           - "null"
           - string
         day_of_birth:
+          description: Day of birth of the user.
           type:
           - "null"
           - integer
         first_name:
+          description: User's first name.
           type:
           - "null"
           - string
         gender:
+          description: Gender of the user (M - Male, F - Female, O - Other).
           enum:
           - M
           - F
@@ -2134,30 +2234,37 @@ components:
           - M
           type: string
         kyc_verified:
+          description: Indicates whether the user’s KYC is verified.
           type:
           - "null"
           - boolean
         last_name:
+          description: User's last name.
           type:
           - "null"
           - string
         middle_name:
+          description: User's middle name.
           type:
           - "null"
           - string
         mobile:
+          description: Mobile number of the user.
           type:
           - "null"
           - string
         month_of_birth:
+          description: Month of birth of the user.
           type:
           - "null"
           - integer
         pincode:
+          description: Pincode of the user's address.
           type:
           - "null"
           - string
         year_of_birth:
+          description: Year of birth of the user.
           type:
           - "null"
           - integer
@@ -2165,8 +2272,10 @@ components:
     ProviderHipDetail:
       properties:
         hip_id:
+          description: Identifier for the Health Information Provider (HIP).
           type: string
         hip_name:
+          description: Name of the Health Information Provider (HIP).
           type:
           - "null"
           - string
@@ -2183,16 +2292,20 @@ components:
     ProviderResponseType2:
       properties:
         city:
+          description: City where the Health Information Provider (HIP) is located.
           type:
           - "null"
           - string
         hip_id:
+          description: Identifier for the Health Information Provider (HIP).
           type: string
         hip_name:
+          description: Name of the Health Information Provider (HIP).
           type:
           - "null"
           - string
         state:
+          description: State where the Health Information Provider (HIP) is located.
           type:
           - "null"
           - string
@@ -2200,6 +2313,7 @@ components:
     RecordsCareContext:
       properties:
         care_context_id:
+          description: Unique identifier for the care context.
           type: string
         created_at:
           type: string
@@ -2243,14 +2357,17 @@ components:
     ResendRequest:
       properties:
         txn_id:
+          description: Transaction ID received in the previous API response.
           examples:
           - 5d060cad-a93b-4edf-p3ef-bd412f69s400
           type: string
+      required:
+      - txn_id
       type: object
     ResendRequestType2:
       properties:
         txn_id:
-          description: Transaction ID received in the init API
+          description: Transaction ID received in the previous API response.
           type: string
       required:
       - txn_id
@@ -2258,8 +2375,10 @@ components:
     ResendRequestType3:
       properties:
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID received in the previous API response.
           type: string
+      required:
+      - txn_id
       type: object
     ResendResponse:
       properties:
@@ -2271,7 +2390,7 @@ components:
           - "null"
           - string
         txn_id:
-          description: Transaction ID received in the init API
+          description: Transaction ID required for the next API call.
           examples:
           - 5d060cad-a93b-4edf-p3ef-bd412f69s400
           type: string
@@ -2283,6 +2402,7 @@ components:
           - "null"
           - string
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     ResendResponseType3:
@@ -2290,6 +2410,7 @@ components:
         hint:
           type: string
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     RevokeRequest:
@@ -2307,7 +2428,7 @@ components:
     ScanandshareRequest:
       properties:
         counter_id:
-          description: Counter ID
+          description: Counter ID from QR Code
           type: string
         hip_id:
           description: HIP ID from QR Code
@@ -2315,19 +2436,25 @@ components:
         location:
           $ref: '#/components/schemas/HipLocation'
           description: Location of the user
+      required:
+      - counter_id
+      - hip_id
       type: object
     SetRequest:
       properties:
         pin:
+          description: Pin to authorize consent.
+          examples:
+          - "1234"
           type: string
+      required:
+      - pin
       type: object
     SettingsRequest:
       properties:
         enable:
           description: Auto approval enable/disable
-          type:
-          - "null"
-          - boolean
+          type: boolean
         pin:
           description: Consent pin for auto approval
           type: string
@@ -2354,15 +2481,19 @@ components:
     SuggestRequest:
       properties:
         flow:
+          description: Specifies the method for suggesting ABHA addresses.
           enum:
           - aadhaar
           - mobile
           type: string
         txn_id:
-          description: Transaction ID received in /init api
+          description: Transaction ID received in the previous API response.
           type: string
         user_detail:
           $ref: '#/components/schemas/SuggestUserDetail'
+      required:
+      - txn_id
+      - flow
       type: object
     SuggestResponse:
       properties:
@@ -2376,16 +2507,21 @@ components:
     SuggestUserDetail:
       properties:
         day_of_birth:
+          description: Day of birth date.
           type: string
         first_name:
+          description: First Name of the user.
           examples:
           - John
           type: string
         last_name:
+          description: Last Name of the user.
           type: string
         month_of_birth:
+          description: Month of birth date.
           type: string
         year_of_birth:
+          description: Year of birth date.
           type: string
       type: object
     VerifyAbhaProfile:
@@ -2398,58 +2534,76 @@ components:
     VerifyRequest:
       properties:
         mobile:
-          description: Mobile number to be linked with ABHA, this mobile number can
-            be different from the mobile number linked with the Aadhaar. ABHA Created
-            will be linked with this mobile number.
-          type:
-          - "null"
-          - string
-        otp:
-          type:
-          - "null"
-          - string
-        txn_id:
+          description: 10 digit mobile number to be linked with ABHA, this mobile
+            number can be different from the mobile number linked with the Aadhaar.
+            ABHA Created will be linked with this mobile number.
           type: string
+        otp:
+          description: OTP received on the mobile number.
+          type: string
+        txn_id:
+          description: Transaction ID received in the previous api response.
+          type: string
+      required:
+      - txn_id
+      - otp
+      - mobile
       type: object
     VerifyRequestType2:
       properties:
         otp:
           description: OTP received on the mobile number
-          type:
-          - "null"
-          - string
-        txn_id:
-          description: Transaction ID received in the /init API
           type: string
+        txn_id:
+          description: Transaction ID received in the previous API response.
+          type: string
+      required:
+      - txn_id
+      - otp
       type: object
     VerifyRequestType3:
       properties:
         otp:
+          description: OTP received on the mobile number
           type: string
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID received in the previous API response.
           type: string
+      required:
+      - txn_id
+      - otp
       type: object
     VerifyRequestType4:
       properties:
         pin:
+          description: PIN to authorize consent.
+          examples:
+          - "1234"
           type: string
         scope:
           type: string
+      required:
+      - pin
       type: object
     VerifyRequestType5:
       properties:
         otp:
+          description: OTP received on the mobile number.
           type: string
         txn_id:
+          description: Transaction ID received in the previous API response.
           type: string
+      required:
+      - otp
+      - txn_id
       type: object
     VerifyRequestType6:
       properties:
         otp:
+          description: OTP received on the mobile number.
           type: string
         txn_id:
-          description: Transaction ID for the session
+          description: Transaction ID received in the session/init API response.
           type: string
       required:
       - txn_id
@@ -2481,7 +2635,7 @@ components:
           - "null"
           - string
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     VerifyResponseType2:
@@ -2506,7 +2660,7 @@ components:
           - "null"
           - string
         txn_id:
-          description: Transaction ID received in the /init API
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     VerifyResponseType3:
@@ -2526,22 +2680,25 @@ components:
           - abha_create
           type: string
         txn_id:
+          description: Transaction ID required for the next API call.
           type: string
       type: object
     VerifyResponseType4:
       properties:
         refresh_token:
+          description: Token used to obtain a new access token.
           type:
           - "null"
           - string
         token:
-          description: Access token for the user
+          description: Access token for the user.
           type:
           - "null"
           - string
       type: object
   securitySchemes:
     authApiKey:
+      description: The API requires the following auth in headers for authentication.
       in: header
       name: auth
       type: apiKey

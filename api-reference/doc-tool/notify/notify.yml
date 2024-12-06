@@ -1,0 +1,160 @@
+openapi: 3.1.0
+info:
+  title: Notification Connect
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+components:
+  securitySchemes:
+    auth:
+      type: apiKey
+      in: header
+      name: auth
+      description: |
+        The API requires the following auth in headers for authentication.
+  schemas:
+    SuccessNotificationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+          description: "The status of the notification."
+        message:
+          type: string
+          example: "Notification sent successfully."
+          description: "The message for the notification."
+    BadRequestResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+          description: "The status of the request."
+        message:
+          type: string
+          example: "Bad request."
+          description: "The error message for the bad request."
+    InternalServerErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+          description: "The status of the request."
+        message:
+          type: string
+          example: "Internal server error."
+          description: "The error message for the internal server error."
+paths:
+  /notification/v1/notify:
+    post:
+      tags:
+        - Notifications
+      summary: Send Notification
+      description: This API allows partners to send notifications to users. The notifications can include a title, body, image URL, link, and a param if provided. The API supports different platform flavors such as Android, iOS, iPad and Web.
+      security:
+        - auth: [ ]
+      operationId: sendNotification
+      requestBody:
+        description: Notification payload
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - partner_payload
+              properties:
+                partner_payload:
+                  type: object
+                  required:
+                    - partner_doctor_id
+                    - message
+                    - landing_page
+                  properties:
+                    partner_doctor_id:
+                      type: string
+                      example: "test-p1"
+                      description: "The unique partner ID for the business."
+                    message:
+                      type: object
+                      required:
+                        - title
+                        - body
+                      properties:
+                        title:
+                          type: string
+                          example: "test title"
+                          description: "The title of the notification."
+                        body:
+                          type: string
+                          example: "test body"
+                          description: "The content that should be displayed in the notification."
+                        img:
+                          type: string
+                          example: "img url"
+                          description: "The image URL for the notification."
+                    landing_page:
+                      type: string
+                      enum:
+                        - "h"
+                        - "q"
+                        - "p"
+                      example: "q"
+                      description: |-
+                        The page where the user should land upon opening the notification.
+                        - "h" is for homepage.
+                        - "q" is for appointments queue.
+                        - "p" is for patient directory.
+                    params:
+                      type: object
+                      example:
+                        action: "move"
+                        aid: "12345"
+                        status: "confirmed"
+                      description: |-
+                        Additional parameters to be added to the link for navigation, if provided.
+                        Required for appointments queue ("q"), not required for homepage ("h") and patient directory ("p").
+                        Here are some of the samples for "q":
+                        - Move appointment:
+                          ```json
+                          {
+                            "action": "move",
+                            "aid": "<appointment id>",
+                            "status": "<status to be set on appointment>",
+                          }
+                          ```
+                        - Book slot:
+                          ```json
+                          {
+                            "action": "book-slot",
+                            "patientOid": "<patient oid>"
+                          }
+                          ```
+                        - Create appointment and bill patients:
+                          ```json
+                          {
+                            "action": "create-appointment-and-bill-patient",
+                            "patientOid": "<patient oid>"
+                          }
+                          ```
+      responses:
+        '200':
+          description: Webhook registered successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessNotificationResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
