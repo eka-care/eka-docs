@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Webhook Service for the Clients
   description: |
-    The Webhook Service allows clients to register webhooks that are triggered based on specific events. Each webhook is associated with a business_id, client_id, url, and a scope. The scope defines the type of events that will trigger the webhook.
+    The Webhook Service allows clients to register webhooks that are triggered based on specific events. Each webhook is associated with a business_id, client_id, endpoint, and scopes. The scopes defines the type of events that will trigger the webhook.
   version: 1.0.0
 servers:
   - url: https://api.eka.care
@@ -18,14 +18,18 @@ components:
     RegisterWebhookRequest:
       type: object
       properties:
-        scope:
-          type: string
+        scopes:
+          type: array
+          items:
+            type: string
           description: |
             Specifies the type of events that will trigger the webhook.
             - "all": Trigger on all events.
-            - "appointment.*": Trigger on appointment-related events.
-            - "prescription.*": Trigger on appointment-related events.
-          example: "appointment"
+            - "appointment.create": Trigger on appointment create events.
+            - "user.delete": Trigger on user delete events.
+          example:
+            - "appointment.create"
+            - "prescription.update"
         endpoint:
           type: string
           description: |
@@ -53,16 +57,16 @@ components:
     RegisterWebhookResponse:
       type: object
       properties:
-          id:
-            type: string
-            description: The unique identifier for the webhook.
-            example: "7"
-          status:
-            type: string
-            description: |
-              description: A message indicating the status of the response.
-            example: "success"
-    
+        id:
+          type: string
+          description: The unique identifier for the webhook.
+          example: "7"
+        status:
+          type: string
+          description: |
+            A message indicating the status of the response.
+          example: "success"
+
     WebhookResponse:
       type: object
       properties:
@@ -71,10 +75,14 @@ components:
           description: The unique identifier for the webhook.
           example: "7"
         scope:
-          type: string
+          type: array
+          items:
+            type: string
           description: |
-            The type of events triggering the webhook, based on the `scope` defined in the request.
-          example: "appointment"
+            The type of events triggering the webhook, based on the `scopes` defined in the request.
+          example:
+            - "appointment.create"
+            - "prescription.update"
         endpoint:
           type: string
           description: The URL where the webhook sends POST requests.
@@ -133,14 +141,6 @@ components:
           description: |
             A new signing key for securing webhook payloads. This should replace the existing signing key securely.
           example: "newsecretkey"
-        scope:
-          type: string
-          description: |
-            Specifies the type of events that will trigger the webhook.
-            - "all": Trigger on all events.
-            - "appointment.*": Trigger on appointment-related events.
-            - "prescription.*": Trigger on appointment-related events.
-          example: "https://newexample.com/webhook"
 
 paths:
   /notification/v1/connect/webhook/subscriptions:
@@ -149,7 +149,7 @@ paths:
         - Webhooks
       summary: Register Webhook
       description: |
-        Registers a new webhook triggered by specific events. Each webhook is linked to a `business_id`, `client_id`, `url`, and a `scope` defining the events that trigger it. The service sends POST requests to the specified URL for these events. The URL must be reachable and preferably secure (HTTPS). Optionally, a signing key can be provided to verify webhook payload authenticity.
+        Registers a new webhook triggered by specific events. Each webhook is linked to a `business_id`, `client_id`, `endpoint`, and `scopes` defining the events that trigger it. The service sends POST requests to the specified URL for these events. The URL must be reachable and preferably secure (HTTPS). Optionally, a signing key can be provided to verify webhook payload authenticity.
       security:
         - auth: []
       requestBody:
@@ -218,7 +218,7 @@ paths:
         - Webhooks
       summary: Get Webhooks
       description: |
-        Retrieves all registered webhooks. This endpoint allows clients to fetch a list of all webhooks that have been registered. Each webhook in the list includes details such as the unique identifier, the scope of events that trigger the webhook, the endpoint URL, the signing key (if provided), the client ID, the protocol used, and timestamps for when the webhook was created and last updated. This information helps clients manage and audit their webhook configurations.
+        Retrieves all registered webhooks. This endpoint allows clients to fetch a list of all webhooks that have been registered. Each webhook in the list includes details such as the unique identifier, the scopes of events that trigger the webhook, the endpoint URL, the signing key (if provided), the client ID, the protocol used, and timestamps for when the webhook was created and last updated. This information helps clients manage and audit their webhook configurations.
       security:
         - auth: []
       responses:
@@ -235,6 +235,7 @@ paths:
                       $ref: '#/components/schemas/WebhookResponse'
                   msg:
                     type: string
+                    description: A message indicating the status of the response, typically `"success"`.
                     example: "success"
         '401':
           description: Unauthorized request.
@@ -275,13 +276,14 @@ paths:
         - Webhooks
       summary: Update a Webhook
       description: |
-        Updates an existing webhook's signing key or scope based on its ID. This endpoint allows clients to modify the scope of events for whom the webhook sends data or update the signing key used for verifying the authenticity of webhook payloads. The `id` parameter in the path specifies the webhook to be updated. The request body should include the new scope or signing key. This operation helps clients maintain the accuracy and security of their webhook configurations.
+        Updates an existing webhook's signing key based on its ID. This endpoint allows clients to modify the signing key used for verifying the authenticity of webhook payloads. The `id` parameter in the path specifies the webhook to be updated. The request body should include the new signing key. This operation helps clients maintain the accuracy and security of their webhook configurations.
       security:
         - auth: []
       parameters:
         - name: id
           in: path
           required: true
+          description: The unique identifier of the webhook to be updated.
           schema:
             type: string
       requestBody:
@@ -300,9 +302,11 @@ paths:
                 properties:
                   status:
                     type: string
+                    description: A message indicating the status of the response.
                     example: "webhook updated successfully"
                   msg:
                     type: string
+                    description: A message indicating the status of the response`.
                     example: "success"
         '400':
           description: Bad request.
@@ -373,13 +377,20 @@ paths:
         - Webhooks
       summary: Delete a Webhook
       description: |
-        Deletes an existing webhook based on its ID. This endpoint allows clients to remove a previously registered webhook by specifying its unique identifier in the path parameter. The `id` parameter is required and must match the ID of the webhook to be deleted. Upon successful deletion, the service will no longer send POST requests to the webhook's URL. This operation helps clients manage and clean up their webhook configurations.
+        Deletes an existing webhook based on its ID. This endpoint allows clients to remove a previously registered webhook by specifying its unique identifier in the path parameter. The `id` parameter is required and must match the ID of the webhook to be deleted. Optionally, a `scope` query parameter can be provided to delete only a specific scope from the registered webhook. Upon successful deletion, the service will no longer send POST requests to the webhook's URL for the specified scope. This operation helps clients manage and clean up their webhook configurations.
       security:
         - auth: [ ]
       parameters:
         - name: id
           in: path
           required: true
+          description: The unique identifier of the webhook to be deleted.
+          schema:
+            type: string
+        - name: scope
+          in: query
+          required: false
+          description: The specific scope to be deleted from the registered webhook.
           schema:
             type: string
       responses:
@@ -392,9 +403,11 @@ paths:
                 properties:
                   status:
                     type: string
+                    description: A message indicating the status of the response.
                     example: "webhook deleted successfully"
                   msg:
                     type: string
+                    description: A message indicating the status of the response.
                     example: "success"
         '400':
           description: Bad request.
