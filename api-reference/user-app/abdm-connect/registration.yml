@@ -620,7 +620,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/KycResendKycOtp'
+              $ref: '#/components/schemas/KycResendKycOtpRequest'
       responses:
         4XX:
           content:
@@ -638,7 +638,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KycResendKycOtp'
+                $ref: '#/components/schemas/KycGenerateKycOtpResponse'
           description: OK
       security:
       - authApiKey: []
@@ -1548,12 +1548,14 @@ components:
           type: string
         profile:
           $ref: '#/components/schemas/DetailsRequestType2'
+          description: Profile details of the user.
         txn_id:
           description: Transaction ID received in the previous API response.
           type: string
       required:
       - txn_id
       - abha_address
+      - profile
       type: object
     CreateResponse:
       properties:
@@ -2037,25 +2039,23 @@ components:
           - abha-number
           - aadhaar
           type: string
+        user_x_token:
+          description: user authorization token
+          type: string
       required:
       - method
       - identifier
       type: object
     KycGenerateKycOtpResponse:
       properties:
-        skip_state:
-          enum:
-          - kyc_verify_abha_otp
-          - kyc_end
-          type: string
         txn_id:
           description: Transaction ID required for the next API call.
           type: string
       type: object
-    KycResendKycOtp:
+    KycResendKycOtpRequest:
       properties:
         txn_id:
-          description: Transaction ID required for the next API call.
+          description: Transaction ID received in the previous API request.
           type: string
       required:
       - txn_id
@@ -2068,17 +2068,15 @@ components:
         txn_id:
           description: Transaction ID received in the previous API response.
           type: string
+        user_x_token:
+          description: user authorization token
+          type: string
       required:
       - txn_id
       - otp
       type: object
     KycVerifyKycOtpResponse:
       properties:
-        skip_state:
-          enum:
-          - kyc_verify_abha_otp
-          - kyc_end
-          type: string
         txn_id:
           type: string
       type: object
@@ -2321,15 +2319,15 @@ components:
           type: string
         status:
           enum:
-          - Consent raised to HIP
-          - Consent granted from HIP
-          - Consent error by HIP
-          - Data request from HIP
-          - Data received from HIP
-          - Data is being processed
-          - Data processed
-          - Invalid data received from HIP
-          - No Data Available from HIP
+          - ConsentRaised
+          - ConsentGranted
+          - ConsentError
+          - DataRequested
+          - DataReceived
+          - DataProcessing
+          - DataProcessed
+          - InvalidDataReceived
+          - NoDataAvailable
           type: string
       type: object
     RecordsResponse:
@@ -2345,6 +2343,8 @@ components:
       type: object
     RegistrationEkaIds:
       properties:
+        min_token:
+          type: string
         oid:
           type:
           - "null"
@@ -2491,6 +2491,8 @@ components:
           type: string
         user_detail:
           $ref: '#/components/schemas/SuggestUserDetail'
+          description: Details of the user. Required if 'flow' is 'mobile'; optional
+            if 'flow' is 'aadhaar'.
       required:
       - txn_id
       - flow
@@ -2510,7 +2512,7 @@ components:
           description: Day of birth date.
           type: string
         first_name:
-          description: First Name of the user.
+          description: First Name of the user. Required if 'flow' is 'mobile'.
           examples:
           - John
           type: string
@@ -2521,7 +2523,9 @@ components:
           description: Month of birth date.
           type: string
         year_of_birth:
-          description: Year of birth date.
+          description: Year of birth date. Required if 'flow' is 'mobile'.
+          examples:
+          - "2001"
           type: string
       type: object
     VerifyAbhaProfile:
@@ -2621,6 +2625,12 @@ components:
           - string
         profile:
           $ref: '#/components/schemas/ProfileResponse'
+        refresh_token:
+          description: Refresh token for the user, will be present if SkipState is
+            abha_end
+          type:
+          - "null"
+          - string
         skip_state:
           enum:
           - abha_end
@@ -2648,6 +2658,10 @@ components:
           - string
         profile:
           $ref: '#/components/schemas/ProfileResponse'
+        refresh_token:
+          type:
+          - "null"
+          - string
         skip_state:
           enum:
           - abha_end
@@ -2692,9 +2706,7 @@ components:
           - string
         token:
           description: Access token for the user.
-          type:
-          - "null"
-          - string
+          type: string
       type: object
   securitySchemes:
     authApiKey:
