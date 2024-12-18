@@ -8,12 +8,12 @@ servers:
   - url: https://api.eka.care
 components:
   securitySchemes:
-    auth:
-      type: apiKey
-      in: header
-      name: auth
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
       description: |
-        The API requires the following auth in headers for authentication.
+        The API requires a Bearer token in the Authorization header for authentication.
   schemas:
     RegisterWebhookRequest:
       type: object
@@ -151,7 +151,7 @@ paths:
       description: |
         Registers a new webhook triggered by specific events. Each webhook is linked to a `business_id`, `client_id`, `endpoint`, and `scopes` defining the events that trigger it. The service sends POST requests to the specified URL for these events. The URL must be reachable and preferably secure (HTTPS). Optionally, a signing key can be provided to verify webhook payload authenticity.
       security:
-        - auth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -220,7 +220,7 @@ paths:
       description: |
         Retrieves all registered webhooks. This endpoint allows clients to fetch a list of all webhooks that have been registered. Each webhook in the list includes details such as the unique identifier, the scopes of events that trigger the webhook, the endpoint URL, the signing key (if provided), the client ID, the protocol used, and timestamps for when the webhook was created and last updated. This information helps clients manage and audit their webhook configurations.
       security:
-        - auth: []
+        - bearerAuth: []
       responses:
         '200':
           description: List of webhooks.
@@ -278,7 +278,7 @@ paths:
       description: |
         Updates an existing webhook's signing key based on its ID. This endpoint allows clients to modify the signing key used for verifying the authenticity of webhook payloads. The `id` parameter in the path specifies the webhook to be updated. The request body should include the new signing key. This operation helps clients maintain the accuracy and security of their webhook configurations.
       security:
-        - auth: []
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -379,7 +379,7 @@ paths:
       description: |
         Deletes an existing webhook based on its ID. This endpoint allows clients to remove a previously registered webhook by specifying its unique identifier in the path parameter. The `id` parameter is required and must match the ID of the webhook to be deleted. Optionally, a `scope` query parameter can be provided to delete only a specific scope from the registered webhook. Upon successful deletion, the service will no longer send POST requests to the webhook's URL for the specified scope. This operation helps clients manage and clean up their webhook configurations.
       security:
-        - auth: [ ]
+        - bearerAuth: [ ]
       parameters:
         - name: id
           in: path
