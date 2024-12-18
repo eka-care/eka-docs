@@ -11,12 +11,12 @@ servers:
   - url: https://api.dev.eka.care
 components:
   securitySchemes:
-    auth:
-      type: apiKey
-      in: header
-      name: auth
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
       description: |
-        The API requires the following auth in headers for authentication.
+        The API requires a Bearer token in the Authorization header for authentication.
   schemas:
     AddDeviceRequest:
       type: object
@@ -162,7 +162,7 @@ components:
           client_x509_cert_url: https://www.googleapis.com/robot/v1/metadata/x509/example@example.iam.gserviceaccount.com
           universal_domain: example.com
 security:
-  - auth: []
+  - bearerAuth: []
 paths:
   /notification/add-device:
     post:
@@ -171,6 +171,8 @@ paths:
       summary: Add Device
       description: |
         Call to add or register a device for notifications. This endpoint allows clients to register a device by providing its details such as device ID, FCM ID, app version, and other relevant information. The registered device will be used to send notifications. The request body must contain the device payload information.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -211,6 +213,8 @@ paths:
       summary: Delete Device
       description: |
         To be called when the device is logged out or uninstalled. This endpoint allows clients to remove a registered device by specifying its device ID in the header. Upon successful deletion, the device will no longer receive notifications. The `device-id` parameter in the header is required.
+      security:
+        - bearerAuth: []
       parameters:
         - name: device-id
           in: header
@@ -254,6 +258,8 @@ paths:
       summary: Add FCM Credentials
       description: |
         Store FCM credentials. This endpoint allows clients to store Firebase Cloud Messaging (FCM) credentials by providing the service account key details. The stored credentials will be used for sending notifications to the registered devices. The request body must contain the FCM payload information.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
