@@ -1,0 +1,51 @@
+openapi: 3.1.0
+info:
+  title: Document Upload API
+  description: API to pre-sign the URL for uploading documents.
+  version: 1.0.0
+  license:
+    name: Proprietary License
+    url: https://developer.eka.care/license
+
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+tags:
+  - name: Records
+    description: API related to records document management.
+
+components:
+  securitySchemes:
+    authToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /privacy/v1/user-data:
+    post:
+      summary: Prepare User Data
+      description: This endpoint prepares the user data. After a 202 response from this API, the client will receive the user data via a webhook.
+      security:
+        - authToken: []
+      responses:
+        '202':
+          description: User data processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_info:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                        example: "test_uid"
+                        description:  guid of user.
+        '409':
+          description: "Conflict: Request already in progress."
+        '500':
+          description: Internal server error.
