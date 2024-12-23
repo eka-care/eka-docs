@@ -1,0 +1,51 @@
+openapi: 3.1.0
+info:
+  title: User Privacy API
+  description: API for managing user privacy and data.
+  version: 1.0.0
+  license:
+    name: Proprietary License
+    url: https://developer.eka.care/license
+
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+tags:
+  - name:  Privacy
+    description: API for managing user privacy and related data.
+
+components:
+  securitySchemes:
+    authToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /privacy/v1/user-data:
+    post:
+      summary: Request User Data
+      description: This endpoint prepares the user data. After a 202 response from this API, the client will receive the user data via a webhook.
+      security:
+        - authToken: []
+      responses:
+        '202':
+          description: User data processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_info:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                        example: "test_uid"
+                        description:  user identifier.
+        '409':
+          description: "Conflict: Request already in progress."
+        '500':
+          description: Internal server error.
