@@ -1,3 +1,59 @@
 ---
-openapi: post /mr/api/v2/docs
+title: Upload Record
+method: GET
 ---
+Upload an image or PDF file that meets the following specifications. Upon successful upload, a document_id will be returned.
+## Accepted Document Types:
+    * PDF documents
+    * Images
+        * Preferred DPI: 150 or higher
+        * Images should be clear (no blurring)
+        * Avoid images with excessive non-linear distortion or rotation
+
+## Query Parameters
+Specifies the type of document being uploaded.
+The following values are allowed:
+    * **ps**: Prescription
+    * **lr**: Lab Report
+    * **ot**: Other
+    * **ds**: Discharge Summary
+    * **vc**: Vaccine Certificate
+    * **in**: Insurance
+    * **iv**: Invoice
+    * **sc**: Scan
+
+
+## Task Parameters
+Specifies the type of tasks need done in report.
+The following values are allowed:
+    * **smart**: Smart Report
+    * **pii**: Personal Identification Information
+    * **classification**: classify report type
+
+## Request
+```curl
+
+curl --request POST \
+  --url 'https://api.eka.care/mr/api/v2/docs?dt=lr&task=smart&task=pii&task=classification' \
+  --header 'Accept: */*' \
+  --header 'Content-Type: multipart/form-data; boundary=MfnBoundry' \
+  --header 'User-Agent: httpyac' \
+  --header 'auth: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIiLCJjLWlkIjoiYWRzaW5kaWFzdGFnaW5nIiwiZXhwIjoxNzM3MDI2MTg5LCJpYXQiOjE3MzcwMjQzODksImlzcyI6ImFnbyJ9.Qe8m8MWRnJRSxX8c8_dOgUCfwl1z0NNINobJCl6od8E' \
+  --form "file=@"
+```
+
+## Response
+```json
+{
+    "document_id": "25f4452c-b072-4997-b51e-544219144e3c",
+    "forms": [
+        {
+            "url": "https://s3.ap-south-1.amazonaws.com/m-prod-eka-vault/",
+            "fields": {
+                "Content-Type": "application/pdf",
+                "key": "eka/25f4452c-b072-4997-b51e-544219144e3c/eka-0.pdf"
+            }
+        }
+    ]
+}
+```
