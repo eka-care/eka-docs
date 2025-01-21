@@ -614,6 +614,36 @@ paths:
       security:
         - auth: []
 
+  /mr/api/v1/docs/{document_id}/result:
+    get:
+      operationId: getResult
+      tags:
+        - Records
+      description: This API is check the parsing status of the uploaded document
+      parameters:
+        - in: path
+          name: document_id
+          required: true
+          description: Document ID to update the document details.
+          schema:
+            type: string
+            example: 2df9e795-d368-4ceb-be9d-b44281703827
+      
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileProcessingResponse'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+      
+      security:
+        - auth: []
+
   /mr/webhook/smart-report:
     post:
       tags:
@@ -773,6 +803,149 @@ components:
           type: object
           additionalProperties:
             type: string
+    FileProcessingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ["queued", "inprogress", "completed", "deleted", "error"]
+          description: The current status of the request.
+        error:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: integer
+                description: Error code.
+              message:
+                type: string
+                description: Error message.
+        data:
+          type: object
+          properties:
+            fhir:
+              type: string
+              format: byte
+              description: Base64 encoded FHIR data.
+            output:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      test_name:
+                        type: string
+                        description: Name of the test.
+                      data:
+                        type: object
+                        properties:
+                          value:
+                            type: number
+                            description: Measured value of the test.
+                          unit:
+                            type: string
+                            description: Original unit.
+                          unit_processed:
+                            type: string
+                            description: Processed unit.
+                          normal_range_report:
+                            type: string
+                            description: JSON string of normal range as reported.
+                          normal_range_eka:
+                            type: string
+                            description: JSON string of normal range for Eka.
+                          unit_eka_id:
+                            type: string
+                            description: Eka ID for the unit.
+                          display_range:
+                            type: string
+                            description: Displayed range.
+                      normalised_data:
+                        type: object
+                        properties:
+                          value:
+                            type: number
+                            description: Normalized value.
+                          unit:
+                            type: string
+                            description: Normalized unit.
+                          normal_range_report:
+                            type: string
+                            description: JSON string of normalized range as reported.
+                          normal_range_eka:
+                            type: string
+                            description: JSON string of normalized range for Eka.
+                          unit_eka_id:
+                            type: string
+                            description: Eka ID for the normalized unit.
+                      confidence:
+                        type: number
+                        description: Confidence level in the test data.
+                      test_eka_id:
+                        type: string
+                        description: Eka ID for the test.
+                      loinc_id:
+                        type: string
+                        description: LOINC ID of the test.
+                pii:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        PageNum:
+                          type: integer
+                          description: Page number in the document.
+                        DocumentDate:
+                          type: integer
+                          format: int64
+                          description: Epoch timestamp of the document date.
+                        Patient:
+                          type: object
+                          properties:
+                            Age:
+                              type: object
+                              properties:
+                                Years:
+                                  type: integer
+                                  description: Age in years.
+                                Months:
+                                  type: integer
+                                  description: Age in months.
+                                Days:
+                                  type: integer
+                                  description: Age in days.
+                            Gender:
+                              type: string
+                              description: Gender of the patient.
+                            Name:
+                              type: string
+                              description: Name of the patient.
+                        Report:
+                          type: object
+                          properties:
+                            SampleCollectionDate:
+                              type: string
+                              format: date-time
+                              description: Date and time of sample collection.
+                            SampleReceivedDate:
+                              type: string
+                              format: date-time
+                              description: Date and time the sample was received.
+                            GeneratedDate:
+                              type: string
+                              format: date-time
+                              description: Date and time the report was generated.
+                            Doctor:
+                              type: string
+                              description: Name of the doctor associated with the report.
+                            Facility:
+                              type: string
+                              description: Name of the facility generating the report.  
   securitySchemes:
     auth:
       type: http
