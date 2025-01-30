@@ -1,0 +1,177 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  version: 1.0.0
+servers:
+  - description: Production
+    url: https://api.eka.care
+  - description: Stage/Sandbox
+    url: https://api.dev.eka.care
+
+paths:
+  /assessment/api/v1/questionnaire_data/{assessment_id}/:
+    get:
+      tags:
+        - Get Questionnaire Data
+      summary: Get Questionnaire Data
+      description: >-
+        This API retrieves the questionnaire data for a given assessment ID. The questionnaire data includes all the available information about `practitioner`, `patient` and `questionnaire`.
+      
+      security:
+        - authApiKey: []
+
+      parameters:
+        - $ref: '#/components/parameters/assessment_id'
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/content-type'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Questionnaire-200'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-400'
+        "500":
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-500'
+
+components:
+  securitySchemes:
+    authApiKey:
+      in: header
+      name: auth
+      description: >-
+        The authentication token of the developer (generated using Authorization API).
+      type: apiKey
+  parameters:
+    assessment_id:
+      name: assessment_id
+      in: path
+      required: true
+      description: >-
+        The hash that uniquely identifies the assessment session.
+      schema:
+        type: string
+      example: sn_121212121218718
+    client-id: 
+      name: client-id
+      in: header
+      required: true
+      description: >-
+        Any unique string to identify the logged in developer.
+      schema:
+        type: string
+      example: test-client
+    content-type:
+      name: content-type
+      in: header
+      description: ''
+      required: true
+      style: simple
+      schema:
+        enum:
+          - application/json
+        type: string
+        example: application/json
+
+  schemas:
+    Questionnaire-200:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            practitioner:
+              type: object
+              properties:
+                practitioner_uuid:
+                  type: string
+                  example: "TEST-DR-123"
+            patient:
+              type: object
+              properties:
+                unique_identifier:
+                  type: string
+                  example: "TEST-PATIENT-UNIQUE-123"
+                patient_uuid:
+                  type: string
+                  example: "TEST-PATIENT-123"
+                age:
+                  type: string
+                  nullable: true
+                  example: 24
+                gender:
+                  type: string
+                  nullable: true
+                  example: "m"
+            questionnaire:
+              type: array
+              items:
+                type: object
+                properties:
+                  question:
+                    type: string
+                    example: "What symptoms are you facing?"
+                  answer:
+                    type: string
+                    example: "Fever, Cough"
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        question:
+                          type: string
+                          example: "Fever"
+                        answer:
+                          type: string
+                          example: "99.5"
+                        items:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              question:
+                                type: string
+                                example: "When did the fever start?"
+                              answer:
+                                type: string
+                                example: "2 days ago"
+    Generic-Error:
+      type: object
+      properties:
+        error_code:
+          type: string
+        display_message:
+          type: string
+        message:
+          type: string
+    Error-400:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: bad_request
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+    Error-500:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: server_error
+          display_message: (Generic User friendly message)
+          message: (Server error message)
