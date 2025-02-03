@@ -1,59 +1,64 @@
----
-title: Upload Record
-method: GET
----
-Upload an image or PDF file that meets the following specifications. Upon successful upload, a document_id will be returned.
-## Accepted Document Types:
-    * PDF documents
-    * Images
-        * Preferred DPI: 150 or higher
-        * Images should be clear (no blurring)
-        * Avoid images with excessive non-linear distortion or rotation
+Upload the image or PDF file following the document specifications below. Ensure you define the document type and tasks you want to process in the query parameters.
+**Document Specifications**
+- **PDF Documents**: Ensure the file is complete and legible.
+- **Images**:
+    - Preferred DPI: **150+**
+    - Images must be **non-blurred**
+    - **Avoid** images with a high degree of **non-linear warping** or **rotation** for optimal processing accuracy.
 
-## Query Parameters
-Specifies the type of document being uploaded.
-The following values are allowed:
-    * **ps**: Prescription
-    * **lr**: Lab Report
-    * **ot**: Other
-    * **ds**: Discharge Summary
-    * **vc**: Vaccine Certificate
-    * **in**: Insurance
-    * **iv**: Invoice
-    * **sc**: Scan
-
-
-## Task Parameters
-Specifies the type of tasks need done in report.
-The following values are allowed:
-    * **smart**: Smart Report
-    * **pii**: Personal Identification Information
-    * **classification**: classify report type
-
-## Request
-```curl
-
-curl --request POST \
-  --url 'https://api.eka.care/mr/api/v2/docs?dt=lr&task=smart&task=pii&task=classification' \
-  --header 'Accept: */*' \
-  --header 'Content-Type: multipart/form-data; boundary=MfnBoundry' \
-  --header 'User-Agent: httpyac' \
-  --header 'auth: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIiLCJjLWlkIjoiYWRzaW5kaWFzdGFnaW5nIiwiZXhwIjoxNzM3MDI2MTg5LCJpYXQiOjE3MzcwMjQzODksImlzcyI6ImFnbyJ9.Qe8m8MWRnJRSxX8c8_dOgUCfwl1z0NNINobJCl6od8E' \
-  --form "file=@"
+**cURL/API to upload medical record**
+```bash
+curl --location 'https://api.eka.care/mr/api/v2/docs' \
+--header 'Accept: */*' \
+--header 'User-Agent: YourAppName' \
+--header 'auth: <YOUR_ACCESS_TOKEN>' \
+--form 'file=@"/path/to/your/file.pdf"' \
+--form 'dt=lr' \
+--form 'task=smart' \
+--form 'task=pii' \
+--form 'task=classification'
 ```
 
-## Response
-```json
+- **Sample Request**    
+```bash
+curl --location 'https://api.eka.care/mr/api/v2/docs?dt=lr&task=smart&task=pii&task=classification' \
+--header 'Accept: */*' \
+--header 'User-Agent: httpyac' \
+--header 'auth: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIiLCJjLWlkIjoiZWthIiwiZXhwIjoxNzM3MDI3ODQ2LCJpYXQiOjE3MzcwMjYwNDYsImlzcyI6ImFnbyJ9.IQkafKQBkdiVjH_fp5upprvRez3Djh_ZdwswiUiFF00' \
+--form 'file=@"/Users/user1/Downloads/Lab_Report_Sample.pdf"'
+```
+
+- **Authorizations (string | header | required)**
+    - Bearer authentication header of the form **`Bearer <token>`**, where **`<token>`** is your auth access token.
+- **Query Parameters**
+    - **dt** (enum \<string\> | required)
+        Specifies the type of document being uploaded. The following values are allowed:
+        - **`ps`**: Prescription
+        - **`lr`**: Lab Report
+        - **`ot`**: Other
+        - **`ds`**: Discharge Summary
+        - **`vc`**: Vaccine Certificate
+        - **`in`**: Insurance
+        - **`iv`**: Invoice
+        - **`sc`**: Scan
+    - **task (required)**
+        
+        Specify the tasks you want to perform. 
+        
+        - `smart`: Smart
+        - `pii`: PII
+        - `classification`: Document Classification
+    - **file (required)**
+        
+        Upload the image or PDF file you want to process.
+        
+- **Response**
+**document_id (string)**
+The unique identifier for the uploaded document.
+
+**Sample Response:**
+```bash
 {
-    "document_id": "25f4452c-b072-4997-b51e-544219144e3c",
-    "forms": [
-        {
-            "url": "https://s3.ap-south-1.amazonaws.com/m-prod-eka-vault/",
-            "fields": {
-                "Content-Type": "application/pdf",
-                "key": "eka/25f4452c-b072-4997-b51e-544219144e3c/eka-0.pdf"
-            }
-        }
-    ]
+  "document_id": "8570e23d-ee57-4948-95a7-370f0f113db8"
 }
 ```
