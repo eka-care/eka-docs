@@ -1,147 +1,97 @@
-Retrieve a parsed health record data based on the given document_id in FHIR json format. Use same API to check parsing status too. 
-- **Authorizations (string | header | required)**
-Bearer authentication header of the form **`Bearer <token>`**, where **`<token>`** is your auth access token.
+Use the `https://api.eka.care/health/api/v1/fhir/retrieve?identifier={identifier}` endpoint along with the identifier which you have recieved in webhook events to fetch results. This endpoint returns a FHIR response.
 
+- **Authorizations (string | header | required)**
+    
+    Bearer authentication header of the form **`Bearer <token>`**, where **`<token>`** is your auth access token.
+    
 - **cURL/API to retrieve parsed data:**
 ```bash
 curl --request GET \
-  --url https://api.eka.care/mr/api/v1/docs/{document_id}/result \
+  --url --url 'https://api.eka.care/health/api/v1/fhir/retrieve?identifier=unique_identifier' \
   --header 'Authorization: Bearer <token>'
 ```
-- **Query Parameters**
-    - **document_id (enum \<string\> | required)**
-        A unique identifier for the uploaded medical record.
-        
-
-- **Sample Response**
+    
+    - **Query Parameters**
+        - **identifier (string> | required)**
+            A unique identifier for the uploaded medical record recieved in webhook
+    
+- **Sample Response (JSON)**
 ```json
 {
-    "status": "queued" | "inprogress"| "completed" | "deleted" | "error",
-    "error": [{"code": "int","message": "str"}]
-    "data": {
-        "fhir": <base64encoded>,
-        "output": {
-            "data":[{
-                "test_name": "Amylase Serum,Twopoint-Rate-Dyed",
-                "data": {
-                    "value": 71,
-                    "unit": "U/L",
-                    "unit_processed": "U/l",
-                    "normal_range_report": "{\"h\":110,\"l\":30,\"t\":\"30.0 - 110.0\",\"s\":2}",
-                    "normal_range_eka": "{\"h\":100,\"l\":0,\"t\":\"0.0 - 100.0\"}",
-                    "unit_eka_id": "lu-1006739",
-                    "display_range": "30.0 - 110.0"
-                },
-                "normalised_data": {
-                    "value": 71,
-                    "unit": "U/L",
-                    "normal_range_report": "{\"h\":110,\"l\":30,\"t\":\"30.0 - 110.0\"}",
-                    "normal_range_eka": "{\"h\":100,\"l\":0,\"t\":\"0.0 - 100.0\"}",
-                    "unit_eka_id": "lu-1006739"
-                },
-                "confidence": 1,
-                "test_eka_id": "lb-9272407360",
-                "loinc_id": "1798-8"
-            }],
-            "pii": {
-                "<unique_file_path>": [{
-                    "PageNum": 1,
-                    "DocumentDate": 1715106600,
-                    "Patient": {
-                        "Age": {
-                            "Years": 25,
-                            "Months": 0,
-                            "Days": 0
-                        },
-                        "Gender": "male",
-                        "Name": "Patient name"
-                    },
-                    "Report": {
-                        "SampleCollectionDate": "01/05/2024 10:03:00",
-                        "SampleReceivedDate": "01/05/2024 11:34:00",
-                        "GeneratedDate": "01/05/2024 12:48:00",
-                        "Doctor": "",
-                        "Facility": "LalPath Labs"
-                    }
-                }]
-            }
-        }
+  "resourceType": "Bundle",
+  "type": "document",
+  "link": [
+    {
+      "url": "<string>",
+      "relation": "<string>"
     }
+  ],
+  "entry": [
+    {
+      "resource": {
+        "author": [
+          {
+            "reference": "<string>"
+          }
+        ],
+        "date": "2023-11-07T05:31:56Z",
+        "extension": [
+          {
+            "url": "<string>",
+            "valueString": "<string>"
+          }
+        ],
+        "id": "<string>",
+        "identifier": {
+          "system": "<string>",
+          "value": "<string>"
+        },
+        "meta": {
+          "lastUpdated": "2023-11-07T05:31:56Z"
+        },
+        "resourceType": "<string>",
+        "section": [
+          {
+            "entry": [
+              {
+                "reference": "<string>"
+              }
+            ],
+            "title": "<string>"
+          }
+        ],
+        "status": "<string>",
+        "subject": {
+          "reference": "<string>"
+        },
+        "title": "<string>",
+        "type": {
+          "text": "<string>"
+        }
+      }
+    }
+  ],
+  "id": "<string>",
+  "meta": {
+    "versionId": "<string>",
+    "lastUpdated": "2023-11-07T05:31:56Z",
+    "profile": [
+      "<string>"
+    ],
+    "security": [
+      {
+        "code": "<string>",
+        "display": "<string>",
+        "system": "<string>"
+      }
+    ]
+  },
+  "identifier": {
+    "system": "<string>",
+    "value": "<string>"
+  },
+  "timestamp": "2023-11-07T05:31:56Z"
 }
 ```
 - **Status**: "queued" | "inprogress"| "completed" | "deleted" | "error"
 - **Processing Time:** Record parsing typically takes 1–2 minutes for documents up to 10 pages and 2–4 minutes for those exceeding 10 pages, depending on the document size.
-- **Components of Response**
-    - ## Lab Report
-        ### Lab test
-        Every lab test will have: 
-        - `test_name` : Verbatim as written in the lab report
-        - `test_eka_id` : Eka identifier for the test
-        - `loinc_id` : LOINC identifier for the test
-        
-        - NOTE: we use method agnostic LOINC identifiers in majority of the lab tests. Mapping of all Eka identifiers with LOINC identifiers can be obtained from [here](https://www.notion.so/EkaCare-Lab-report-parsing-details-16f28b1d375d8002918efa88d0d46567?pvs=21).
-        
-        ### Lab test data (value | unit | range)
-        Lab test observation is parsed and shared in two variants
-
-        ### Non unit-normalised data (`data` )
-        
-        This data is not unit-normalised, meaning this is verbatim as written in the report. The keys comprise
-        
-        - `value` : value of the test as given in the report
-        - `unit` : unit of the test as given in the report, parsed by OCR (Non post processed). NOTE: at times OCR reads 10^3 u/ml as 103u/ml
-        - `unit_processed` : unit of the test as given in the report, parsed by OCR and then processed by eka. In the above example 103u/ml  is converted back to 10*3u/ml after applying post processing
-        - `normal_range_report` : normal range parsed object basis the low-high values given in the report
-        - `normal_range_eka` : normal range parsed object basis EkaCare’s database considering age / gender information of the person from the report.
-        - `unit_eka_id` : Eka id for unit
-        - `display_range` : Verbatim range display text (string) parsed from the report.
-        
-        ### Unit-Normalised data (`normalised_data` )
-        
-        This object contains unit normalised data for Value, Unit and range objects mentioned above. Normalisation is explained in detailed in the subsequent section.
-        
-        This object contains all the fields mentioned above except `display_range` and `unit_processed`since that is verbatim and normalisation does not make sense.
-        
-        # Normalisation process
-        
-        In order to create longitudinal lab investigation trends across lab reports across time, one needs to convert lab values and ranges to a standard unit. For every lab test, EkaCare defines a standard unit (basis highest frequency across millions of records). List of standard units for every test can be found [here](https://www.notion.so/EkaCare-Lab-report-parsing-details-16f28b1d375d8002918efa88d0d46567?pvs=21). Normalisation is process of multiplying values and normal ranges with a factor that converts the numerical results in the report to EkaCare standard unit for that lab test. 
-        
-        # Range-object
-        
-        Range objects contain structured low and high values of the normal range. 
-        
-        Note that our parsers only structured low-high normal range format. Any other formats such as:
-        
-        normal: < 200
-        borderline high: 200-240
-        high: 240+
-        
-        While this data is available in “display_range” field in non unit-normalised object as string, we do not parse and structure this kind of structure.
-        
-        However, EkaCare ranges in structured formats are available for someone to still interpret the results if need be.
-        
-        # PII data
-        
-        This section outlines the structure and components of Personally Identifiable Information (PII) as provided within medical documentation. The information captured includes page number, document dates, patient details, and report specifics.
-        
-        ### Components of PII Data
-        
-        `<unique_file_path>`: A unique identifier representing the file path is utilized to group related PII information. Each file path is mapped to a collection of PII data for different pages in the document..
-        
-        - `PageNum`**:** Represents the page number within the document where relevant PII data is found.
-        - `DocumentDate`**:** Captures the document date in Unix timestamp format for consistent time-related operations.
-        
-        ### **Patient Details**
-        
-        - `Name`**:** Verbatim representation of the patient's name as found in the document.
-        - `Age`**:** The patient's age is detailed in years, months, and days, providing a comprehensive age identification.
-        - `Gender`**:** Captures the patient's gender, e.g., "male" or "female".
-        
-        ### **Report Details**
-        
-        - `SampleCollectionDate`**:** (only for Lab-reports) The date and time when the sample was collected, in "dd/mm/yyyy hh:mm:ss" format.
-        - `SampleReceivedDate`**:** (only for Lab-reports) The date and time when the sample was received, in "dd/mm/yyyy hh:mm:ss" format.
-        - `GeneratedDate`**:** (only for Lab-reports) The report generation date and time in "dd/mm/yyyy hh:mm:ss" format.
-        - `Doctor`**:** The doctor's name, if available.
-        - `Facility`**:** The name of the facility or laboratory where the test was conducted, e.g., "LalPath Labs".
-
