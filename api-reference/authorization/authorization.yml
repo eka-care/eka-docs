@@ -36,8 +36,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountConnectLoginResponse'
           description: OK
-      security:
-      - authApiKey: []
       tags:
       - Connect APIs
   /connect-auth/v1/account/refresh:
@@ -67,8 +65,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountConnectRefreshResponse'
           description: OK
-      security:
-      - authApiKey: []
       tags:
       - Connect APIs
   /connect-auth/v1/oidc-client/{client_id}/refresh:
@@ -98,8 +94,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/OidcVerifyPhrResponse'
           description: OK
-      security:
-      - authApiKey: []
       tags:
       - Auth (OIDC Token APIs)
   /connect-auth/v1/oidc-client/{client_id}/verify:
@@ -129,8 +123,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/OidcVerifyPhrResponse'
           description: OK
-      security:
-      - authApiKey: []
       tags:
       - Auth (OIDC Token APIs)
 components:
@@ -140,7 +132,6 @@ components:
         api_key:
           description: Optional, API Token for business id
           type: string
-          nullable: true  # Fixed type declaration
         client_id:
           type: string
         client_secret:
@@ -148,7 +139,9 @@ components:
         user_token:
           description: Optional, User token for user id
           type: string
-          nullable: true  # Fixed type declaration
+      required:
+        - client_id
+        - client_secret
       type: object
     AccountConnectLoginResponse:
       properties:
@@ -169,6 +162,8 @@ components:
           type: string
         refresh_token:
           type: string
+      required:
+        - refresh_token
       type: object
     AccountConnectRefreshResponse:
       properties:
@@ -189,11 +184,16 @@ components:
           type: string
         refresh_token:
           type: string
+      required:
+        - refresh_token
+        - access_token
       type: object
     OidcVerifyPhrRequest:
       properties:
         id_token:
           type: string
+      required:
+        - id_token
       type: object
     OidcVerifyPhrResponse:
       properties:
@@ -212,13 +212,13 @@ components:
       properties:
         code:
           type: integer
-        error:
+        message:
           type: string
       type: object
   securitySchemes:  # Added security scheme definition
     authApiKey:
       type: apiKey
-      name: X-API-Key  # Example header name; adjust as needed
+      name: Authorization  # Example header name; adjust as needed
       in: header
 tags:
 - description: APIs used for connect Authentication exposed through api.eka.care
