@@ -28,38 +28,62 @@ Although optional, signing keys are highly recommended to protect the integrity 
 ```python
 import hmac
 import hashlib
+import time
 
-def generate_signature(secret_key, payload):
+def generate_signature_header(secret_key, payload):
     """
-        Generate an HMAC SHA-256 signature.
-
-        Parameters:
-        - secret_key: The shared secret key (string).
-        - payload: The webhook payload (string).
-
-        Returns:
-        - The hexadecimal signature string.
+    Generate a signature header in the format t=timestamp,v1=signature
+    Parameters:
+    - secret_key: The shared secret key (string)
+    - payload: The webhook payload (string)
+    Returns:
+    - The signature header string in format "t=timestamp,v1=signature"
     """
-    return hmac.new(secret_key.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    if not secret_key:
+        raise ValueError("secret_key is not set")
+
+    timestamp = str(int(time.time()))
+    signed_payload = f"{timestamp}.{payload}"
+
+    signature = hmac.new(
+        key=secret_key.encode(),
+        msg=signed_payload.encode(),
+        digestmod=hashlib.sha256
+    ).hexdigest()
+
+    return f"t={timestamp},v1={signature}"
 ```
 
 ### Comparing the Signatures
 
 ```python
-def verify_signature(secret_key, payload, signature):
+def verify_signature(secret_key, payload, signature_header):
     """
-        Verify if the provided signature matches the expected signature.
-
-        Parameters:
-        - secret_key: The shared secret key (string).
-        - payload: The webhook payload (string).
-        - signature: The received signature to verify (string).
-
-        Returns:
-        - bool: True if signatures match, False otherwise.
+    Verify if the provided signature matches the expected signature.
+    Parameters:
+    - secret_key: The shared secret key (string)
+    - payload: The webhook payload (string)
+    - signature_header: The full signature header (string) in format "t=timestamp,v1=signature"
     """
-    expected_signature = generate_signature(secret_key, payload)
-    return hmac.compare_digest(expected_signature, signature)
+    # Parse the signature header
+    try:
+        signature_parts = dict(item.split('=') for item in signature_header.split(','))
+        timestamp = signature_parts['t']
+        received_signature = signature_parts['v1']
+    except Exception:
+        return False
+
+    # Construct signed payload same way as Go code
+    signed_payload = f"{timestamp}.{payload}"
+
+    # Generate expected signature
+    expected_signature = hmac.new(
+        key=secret_key.encode(),
+        msg=signed_payload.encode(),
+        digestmod=hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(expected_signature, received_signature)
 ```
 
 ## Verifying Signatures
