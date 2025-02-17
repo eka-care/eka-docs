@@ -11,30 +11,20 @@ servers:
 -  url: https://api.eka.care
    description: Production Server
 paths:
-   /healthcheck:
-      get:
-         summary: Healthcheck
-         operationId: healthcheck_healthcheck_get
-         responses:
-            '200':
-               description: Successful Response
-               content:
-                  application/json:
-                     schema: {}
    /prompt_runner/v1/run_prompt_stream:
       post:
          summary: Run Prompt Stream
          description: Run a prompt with streaming response
          operationId: run_prompt_stream_prompt_runner_v1_run_prompt_stream_post
          parameters:
-         -  name: jwt-payload
+         -  name: Authorization
             in: header
             required: false
             schema:
                anyOf:
                -  type: string
                -  type: 'null'
-               title: Jwt-Payload
+               title: Authorization
          requestBody:
             required: true
             content:
@@ -56,14 +46,14 @@ paths:
          description: Run a prompt with streaming response
          operationId: run_chat_stream_prompt_runner_v1_run_chat_stream_post
          parameters:
-         -  name: jwt-payload
+         -  name: Authorization
             in: header
             required: false
             schema:
                anyOf:
                -  type: string
                -  type: 'null'
-               title: Jwt-Payload
+               title: Authorization
          requestBody:
             required: true
             content:
@@ -85,14 +75,14 @@ paths:
          description: Run a prompt with streaming response
          operationId: run_prompt_prompt_runner_v1_run_prompt_post
          parameters:
-         -  name: jwt-payload
+         -  name: Authorization
             in: header
             required: false
             schema:
                anyOf:
                -  type: string
                -  type: 'null'
-               title: Jwt-Payload
+               title: Authorization
          requestBody:
             required: true
             content:
@@ -105,6 +95,40 @@ paths:
                content:
                   application/json:
                      schema: {}
+            '422':
+               description: Validation Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/HTTPValidationError'
+   /llm_router/v1/chat:
+      post:
+         summary: Stream Chat
+         operationId: stream_chat_llm_router_v1_chat_post
+         parameters:
+         -  name: session_id
+            in: query
+            required: true
+            schema:
+               type: string
+               title: Session Id
+         -  name: model_id
+            in: query
+            required: false
+            schema:
+               default: anthropic.claude-3-5-sonnet-20241022-v2:0
+               title: Model Id
+         -  name: Authorization
+            in: header
+            required: false
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Authorization
+         responses:
+            '200':
+               description: Successful Response
             '422':
                description: Validation Error
                content:
