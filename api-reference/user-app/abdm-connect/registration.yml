@@ -9,6 +9,391 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/na/v1/profile/login/init:
+    post:
+      description: Generates an OTP for login. Supports login via Aadhaar number,
+        mobile number, ABHA number, and ABHA address.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhrLoginOTPRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhrLoginOTPResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/profile/login/phr:
+    post:
+      description: Handles login via Aadhaar number, ABHA number, or mobile number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhrPhrAddressLoginRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhrVerifyLoginOTPResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/profile/login/verify:
+    post:
+      description: Verifies the login OTP. If logging in via ABHA address, this endpoint
+        also completes the login process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhrVerifyLoginOTPRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhrVerifyLoginOTPResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/aadhaar/create-phr:
+    post:
+      description: This API is used to create a new ABHA address
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/aadhaar/init:
+    post:
+      description: This endpoint is used to initiate the Aadhaar registration process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/aadhaar/mobile/resend:
+    post:
+      description: This endpoint is used to resend the mobile otp for aadhaar registration
+        process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/aadhaar/mobile/verify:
+    post:
+      description: This API operates on a skip logic basis. If the mobile number provided
+        in the second step differs from the one linked to the Aadhaar, this API will
+        be used to verify the new mobile number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/aadhaar/resend:
+    post:
+      description: This endpoint is used to resend a otp for aadhaar registration
+        process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/aadhaar/verify:
+    post:
+      description: This endpoint is used to verify Aadhaar otp generated for registration
+        using Aadhaar.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/mobile/create-phr:
+    post:
+      description: This API is used to create a new ABHA address for the user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/mobile/init:
+    post:
+      description: This endpoint is used to initiate the registration process for
+        a mobile number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/mobile/resend:
+    post:
+      description: This endpoint is used to resend a mobile registration request.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponseType3'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/mobile/verify:
+    post:
+      description: This endpoint allows  to verify a mobile otp.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponseType3'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/care-contexts/discover:
     post:
       description: "ABDM allows a user to find their health records from any health
@@ -771,185 +1156,6 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/v1/registration/aadhaar/create:
-    post:
-      description: This API is used to create a new ABHA address
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/aadhaar/init:
-    post:
-      description: This endpoint is used to initiate the Aadhaar registration process.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InitRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InitResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/aadhaar/mobile/resend:
-    post:
-      description: This endpoint is used to resend the mobile otp for aadhaar registration
-        process.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResendRequestType2'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResendResponseType2'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/aadhaar/mobile/verify:
-    post:
-      description: This API operates on a skip logic basis. If the mobile number provided
-        in the second step differs from the one linked to the Aadhaar, this API will
-        be used to verify the new mobile number.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyRequestType2'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VerifyResponseType2'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/aadhaar/resend:
-    post:
-      description: This endpoint is used to resend a otp for aadhaar registration
-        process.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResendRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResendResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/aadhaar/verify:
-    post:
-      description: This endpoint is used to verify Aadhaar otp generated for registration
-        using Aadhaar.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VerifyResponse'
-          description: OK
-      security:
-      - authApiKey: []
   /abdm/v1/registration/abha/check:
     post:
       description: This API endpoint allows to check whether provided health id is
@@ -977,154 +1183,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExistResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/mobile/create:
-    post:
-      description: This API is used to create a new ABHA address for the user.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateRequestType2'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateResponseType2'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/mobile/init:
-    post:
-      description: This endpoint is used to initiate the registration process for
-        a mobile number.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InitRequestType2'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InitResponseType2'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/mobile/login:
-    post:
-      description: If the user already has an existing ABHA address, use this API
-        to select that ABHA address and proceed to log the user in using the chosen
-        address.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/mobile/resend:
-    post:
-      description: This endpoint is used to resend a mobile registration request.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResendRequestType3'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResendResponseType3'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/mobile/verify:
-    post:
-      description: This endpoint allows  to verify a mobile otp.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyRequestType3'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VerifyResponseType3'
           description: OK
       security:
       - authApiKey: []
@@ -1890,9 +1948,13 @@ components:
     HipLocation:
       properties:
         latitude:
-          type: string
+          type:
+          - "null"
+          - string
         longitude:
-          type: string
+          type:
+          - "null"
+          - string
       type: object
     HipQRScanShareProfileResponseV2:
       properties:
@@ -2123,45 +2185,63 @@ components:
           - array
           - "null"
       type: object
-    LoginRequest:
+    PhrLoginOTPRequest:
       properties:
-        abha_address:
-          description: ABHA address used for login.
+        identifier:
+          description: The identifier for the selected login method.
+          examples:
+          - "9876543210"
+          type: string
+        method:
+          description: The method used for login.
+          enum:
+          - phr_address
+          - aadhaar_number
+          - abha_number
+          - mobile
+          examples:
+          - mobile
+          type: string
+      type: object
+    PhrLoginOTPResponse:
+      properties:
+        hint:
           type: string
         txn_id:
-          description: Transaction ID received in the previous API response.
           type: string
-      required:
-      - txn_id
-      - abha_address
       type: object
-    LoginResponse:
+    PhrPhrAddressLoginRequest:
       properties:
+        phr_address:
+          description: Abha address used to login
+          type: string
+        txn_id:
+          description: Transaction id received in the previous api response
+          type: string
+      type: object
+    PhrVerifyLoginOTPRequest:
+      properties:
+        otp:
+          description: Otp received in the user mobile no.
+          type: string
+        txn_id:
+          description: Transaction id received in the previous api response
+          type: string
+      type: object
+    PhrVerifyLoginOTPResponse:
+      properties:
+        abha_profiles:
+          items:
+            $ref: '#/components/schemas/VerifyAbhaProfile'
+          type: array
         eka:
           $ref: '#/components/schemas/RegistrationEkaIds'
-          description: Eka IDs, will be present if SkipState is abha_end
+        hint:
+          type: string
         profile:
           $ref: '#/components/schemas/ProfileResponse'
-          description: Profile of the user, will be present if SkipState is abha_end
-        refresh_token:
-          description: Refresh token for the user, will be present if SkipState is
-            abha_end
-          type:
-          - "null"
-          - string
         skip_state:
-          enum:
-          - abha_end
-          - confirm_mobile_otp
-          - abha_select
-          - abha_create
           type: string
-        token:
-          description: Access token for the user, will be present if SkipState is
-            abha_end
-          type:
-          - "null"
-          - string
         txn_id:
           type: string
       type: object
@@ -2457,7 +2537,9 @@ components:
           type: boolean
         pin:
           description: Consent pin for auto approval
-          type: string
+          type:
+          - "null"
+          - string
       required:
       - pin
       - enable
@@ -2686,6 +2768,9 @@ components:
           type:
           - array
           - "null"
+        eka:
+          $ref: '#/components/schemas/RegistrationEkaIds'
+          description: Eka IDs, will be present if SkipState is abha_end
         skip_state:
           enum:
           - abha_end
