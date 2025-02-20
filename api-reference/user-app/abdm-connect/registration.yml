@@ -394,6 +394,108 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/na/v1/registration/phr/check:
+    post:
+      description: This API endpoint allows to check whether provided health id is
+        already present in system.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExistRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsDoesHealthIdExistResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/na/v1/registration/suggest:
+    get:
+      description: This API endpoint is used to fetch some suggested abha id that
+        are available on the basis of user details.
+      parameters:
+      - description: Middle Name
+        in: query
+        name: mn
+        schema:
+          description: Middle Name
+          examples:
+          - Singh
+          type: string
+      - description: Last Name
+        in: query
+        name: ln
+        schema:
+          description: Last Name
+          examples:
+          - Kumar
+          type: string
+      - description: First Name
+        in: query
+        name: fn
+        schema:
+          description: First Name
+          examples:
+          - Raj
+          type: string
+      - description: Date of Birth (YYYY-MM-DD)
+        in: query
+        name: dob
+        schema:
+          description: Date of Birth (YYYY-MM-DD)
+          examples:
+          - "1990-05-15"
+          type: string
+      - description: Registered Mobile Number
+        in: query
+        name: mobile
+        schema:
+          description: Registered Mobile Number
+          examples:
+          - "9876543210"
+          type: string
+      - description: Transaction id received in the previous api.
+        in: query
+        name: transactionId
+        schema:
+          description: Transaction id received in the previous api.
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsSuggestHealthIdResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/care-contexts/discover:
     post:
       description: "ABDM allows a user to find their health records from any health
@@ -682,7 +784,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExistResponseType2'
+                $ref: '#/components/schemas/ExistResponse'
           description: OK
       security:
       - authApiKey: []
@@ -1156,36 +1258,6 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/v1/registration/abha/check:
-    post:
-      description: This API endpoint allows to check whether provided health id is
-        already present in system.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ExistRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExistResponse'
-          description: OK
-      security:
-      - authApiKey: []
   /abdm/v1/registration/pincode/{pincode}:
     get:
       description: This API endpoint is used to fetch pincode details.
@@ -1215,36 +1287,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PincodeResolvedPincodeData'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/registration/suggest:
-    post:
-      description: This API endpoint is used to fetch some suggested abha id that
-        are available on the basis of user details.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SuggestRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuggestResponse'
           description: OK
       security:
       - authApiKey: []
@@ -1883,12 +1925,6 @@ components:
     ExistResponse:
       properties:
         exist:
-          description: True if the ABHA Address already exists
-          type: boolean
-      type: object
-    ExistResponseType2:
-      properties:
-        exist:
           description: Indicates if the user has already set the consent PIN.
           type: boolean
       type: object
@@ -2181,6 +2217,22 @@ components:
           description: List of subscriptions
           items:
             $ref: '#/components/schemas/ListsRequestDetail'
+          type:
+          - array
+          - "null"
+      type: object
+    ModelsDoesHealthIdExistResponse:
+      properties:
+        exists:
+          description: Indicates whether the health ID exist.
+          type: boolean
+      type: object
+    ModelsSuggestHealthIdResponse:
+      properties:
+        suggestions:
+          description: List of suggested abha addresses
+          items:
+            type: string
           type:
           - array
           - "null"
@@ -2558,56 +2610,6 @@ components:
         code:
           type: string
         message:
-          type: string
-      type: object
-    SuggestRequest:
-      properties:
-        flow:
-          description: Specifies the method for suggesting ABHA addresses.
-          enum:
-          - aadhaar
-          - mobile
-          type: string
-        txn_id:
-          description: Transaction ID received in the previous API response.
-          type: string
-        user_detail:
-          $ref: '#/components/schemas/SuggestUserDetail'
-          description: Details of the user. Required if 'flow' is 'mobile'; optional
-            if 'flow' is 'aadhaar'.
-      required:
-      - txn_id
-      - flow
-      type: object
-    SuggestResponse:
-      properties:
-        suggestions:
-          items:
-            type: string
-          type:
-          - array
-          - "null"
-      type: object
-    SuggestUserDetail:
-      properties:
-        day_of_birth:
-          description: Day of birth date.
-          type: string
-        first_name:
-          description: First Name of the user. Required if 'flow' is 'mobile'.
-          examples:
-          - John
-          type: string
-        last_name:
-          description: Last Name of the user.
-          type: string
-        month_of_birth:
-          description: Month of birth date.
-          type: string
-        year_of_birth:
-          description: Year of birth date. Required if 'flow' is 'mobile'.
-          examples:
-          - "2001"
           type: string
       type: object
     VerifyAbhaProfile:
