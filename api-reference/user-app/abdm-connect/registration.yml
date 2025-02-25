@@ -39,6 +39,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Generate OTP
   /abdm/na/v1/profile/login/phr:
     post:
       description: Handles login via Aadhaar number, ABHA number, or mobile number.
@@ -68,6 +69,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Login
   /abdm/na/v1/profile/login/verify:
     post:
       description: Verifies the login OTP. If logging in via ABHA address, this endpoint
@@ -98,6 +100,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Verify OTP
   /abdm/na/v1/registration/aadhaar/create-phr:
     post:
       description: This API is used to create a new ABHA address
@@ -127,6 +130,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Create
   /abdm/na/v1/registration/aadhaar/init:
     post:
       description: This endpoint is used to initiate the Aadhaar registration process.
@@ -156,6 +160,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Generate OTP
   /abdm/na/v1/registration/aadhaar/mobile/resend:
     post:
       description: This endpoint is used to resend the mobile otp for aadhaar registration
@@ -186,6 +191,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Mobile Resend OTP
   /abdm/na/v1/registration/aadhaar/mobile/verify:
     post:
       description: This API operates on a skip logic basis. If the mobile number provided
@@ -217,6 +223,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Mobile Verify OTP
   /abdm/na/v1/registration/aadhaar/resend:
     post:
       description: This endpoint is used to resend a otp for aadhaar registration
@@ -247,6 +254,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Resend OTP
   /abdm/na/v1/registration/aadhaar/verify:
     post:
       description: This endpoint is used to verify Aadhaar otp generated for registration
@@ -277,6 +285,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Verify OTP
   /abdm/na/v1/registration/mobile/create-phr:
     post:
       description: This API is used to create a new ABHA address for the user.
@@ -306,6 +315,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Create
   /abdm/na/v1/registration/mobile/init:
     post:
       description: This endpoint is used to initiate the registration process for
@@ -336,6 +346,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Generate OTP
   /abdm/na/v1/registration/mobile/resend:
     post:
       description: This endpoint is used to resend a mobile registration request.
@@ -365,6 +376,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Resend OTP
   /abdm/na/v1/registration/mobile/verify:
     post:
       description: This endpoint allows  to verify a mobile otp.
@@ -394,6 +406,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Verify OTP
   /abdm/na/v1/registration/phr/check:
     post:
       description: This API endpoint allows to check whether provided health id is
@@ -424,6 +437,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Does Abha Address Exist
   /abdm/na/v1/registration/suggest:
     get:
       description: This API endpoint is used to fetch some suggested abha id that
@@ -496,6 +510,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
+      summary: Suggest Abha Address
   /abdm/v1/care-contexts/discover:
     post:
       description: "ABDM allows a user to find their health records from any health
@@ -2248,7 +2263,6 @@ components:
           description: The method used for login.
           enum:
           - phr_address
-          - aadhaar_number
           - abha_number
           - mobile
           examples:
@@ -2260,10 +2274,13 @@ components:
         hint:
           type: string
         txn_id:
+          description: Transaction ID for the next API call.
           type: string
       type: object
     PhrPhrAddressLoginRequest:
       properties:
+        method:
+          type: string
         phr_address:
           description: Abha address used to login
           type: string
@@ -2283,6 +2300,7 @@ components:
     PhrVerifyLoginOTPResponse:
       properties:
         abha_profiles:
+          description: Abha profiles of the user.
           items:
             $ref: '#/components/schemas/VerifyAbhaProfile'
           type: array
@@ -2292,9 +2310,16 @@ components:
           type: string
         profile:
           $ref: '#/components/schemas/ProfileResponse'
+          description: Profile of the user
         skip_state:
+          description: Determines the next page navigation based on the skip state
+          enum:
+          - abha_select
+          - abha_end
+          - abha_create
           type: string
         txn_id:
+          description: Transaction ID for the next api call.
           type: string
       type: object
     PincodeResolvedPincodeData:
@@ -2476,6 +2501,7 @@ components:
     RegistrationEkaIds:
       properties:
         min_token:
+          description: Minimum token required for authentication
           type: string
         oid:
           type:
