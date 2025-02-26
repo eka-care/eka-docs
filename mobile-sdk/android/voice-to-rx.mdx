@@ -1,0 +1,100 @@
+### Dependency inclusion in app/build.gradle.kts
+
+```kotlin
+implementation("com.github.eka-care:eka-v2rx-android:1.0.3")
+```
+
+### Initialise SDK
+
+```kotlin
+// Create object which is implementing OkHttpSetUp interface 
+// to provide auth tokens
+
+class OkHttpImpl : IOkHttpSetup {
+		// provide headers which are necessary here
+		override fun getDefaultHeaders(url: String): Map<String, String> {
+				val headers = HashMap<String, String>()
+        headers["auth"] = // provide session token here for authentication
+    }
+
+    override fun refreshAuthToken(url: String): Map<String, String>? {
+	      // refresh auth token here
+    }
+
+    override fun onSessionExpire() {
+		    // refresh token expired
+    }
+}
+
+Voice2Rx.init(
+    context = context,
+    config = Voice2RxInitConfig(
+        onStart = {
+
+        },
+        onStop = { sessionId, recordedFiles ->
+
+        },
+        onError = { sessionId, errorMsg ->
+
+        },
+        docOid = "",
+        docUuid = "",
+        ownerId = "",
+        contextData = ContextData(doctor = null, patient = null, visitid = sessionId),
+        okHttpSetup = OkHttpImpl(),
+        callerId = "",
+    )
+)
+
+```
+
+### Start Voice Session
+
+```kotlin
+// Here any mode can be passed which are specified in SDK
+Voice2Rx.startVoice2Rx(mode = Voice2RxType.DICTATION)
+// After starting session you will get callback in onStart function 
+// which is passed in init function
+```
+
+### Stop Voice Session
+
+```kotlin
+// After stopping the session 
+// onStop callback will be delivered with sessionId which is passed in init function
+Voice2Rx.stopVoice2Rx()
+```
+
+### Check session is currently running
+
+```kotlin
+// It will return true if session is going on
+Voice2Rx.isCurrentlyRecording()
+```
+
+### Get all sessions history
+
+```kotlin
+// It will return list of sessions taken 
+Voice2Rx.getSessions()
+```
+
+### For Retry the session
+
+```kotlin
+Voice2Rx.retrySession(
+    context = context,
+    sessionId = sessionId,
+    onResponse = { responseState -> 
+        // here you will get callback regarding retry was successful or not
+    },
+)
+```
+
+### After all the process completion
+
+```kotlin
+// Free up the resources using below function
+Voice2Rx.dispose()
+```
