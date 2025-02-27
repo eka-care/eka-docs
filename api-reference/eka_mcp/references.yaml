@@ -1,0 +1,505 @@
+openapi: 3.1.0
+info:
+   title: MCP Eka Assist API
+   description: Eka Assist documentation
+   version: 1.0.0
+   contact:
+      name: Nikhil
+      url: https://eka.care/
+      email: nikhil.kasukurthi@eka.care
+tags:
+-  name: protocols
+-  name: medications
+paths:
+   /protocols/v1/tags:
+      get:
+         summary: Protocols Conditions
+         description: This endpoint returns a comprehensive list of all protocol conditions
+            that are supported by the system. The conditions are categorized and include
+            unique identifiers that can be used in other API calls.
+         tags:
+         - protocols
+         parameters: []
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/TagList.a9993e3'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+   /protocols/v1/publishers:
+      get:
+         summary: Protocols Publishers
+         description: This endpoint returns a list of all protocol publishers that
+            are supported by the system. The publishers can be identified by their
+            unique id that can be used in other API calls.
+         tags:
+         - protocols
+         parameters: []
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/PublisherList.a9993e3'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+   /protocols/v1/search:
+      post:
+         summary: Protocols Search
+         description: This endpoint returns a list of all protocols for the given
+            conditions and publishers by the system. The protocols can be identified
+            by their unique page id. Protocol source included in the response.
+         tags:
+         - protocols
+         parameters: []
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProtocolList.a9993e3'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+         requestBody:
+            content:
+               application/json:
+                  schema:
+                     $ref: '#/components/schemas/ProtocolReq.71110c4'
+   /protocols/v1/publishers/tag:
+      get:
+         summary: Protocols Publishers by Tag
+         description: This endpoint returns a list of all protocols publishers for
+            given tag.
+         tags:
+         - protocols
+         parameters:
+         -  name: tag
+            in: query
+            schema:
+               title: Tag
+               type: string
+            required: true
+            description: ''
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProtocolPublishers.a4b6625'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+   /medications/v1/understanding:
+      get:
+         summary: Understand medications
+         description: This endpoint return all the suggested/similar drugs for given
+            drug name, generics, form or volume used by server.
+         tags:
+         - medications
+         parameters:
+         -  name: drug_name
+            in: query
+            schema:
+               title: Drug Name
+               type: string
+            required: true
+            description: ''
+         -  name: generic_names
+            in: query
+            schema:
+               anyOf:
+               -  items:
+                     type: string
+                  type: array
+               -  type: 'null'
+               default: null
+               title: Generic Names
+            required: false
+            description: ''
+         -  name: volumes
+            in: query
+            schema:
+               anyOf:
+               -  items:
+                     type: string
+                  type: array
+               -  type: 'null'
+               default: null
+               title: Volumes
+            required: false
+            description: ''
+         -  name: form
+            in: query
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Form
+            required: false
+            description: ''
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/MedicationList.a9993e3'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+   /medications/v1/interaction:
+      get:
+         summary: Medication interactions
+         description: This endpoint is used to check if given the list of drugs interact
+            with each other. It check drugs interaction on the basis of generics composition.
+            Two interacting drugs should not be prescribed together
+         tags:
+         - medications
+         parameters:
+         -  name: drug_names
+            in: query
+            schema:
+               title: Drug Names
+               type: string
+            required: true
+            description: ''
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/Interaction.a4b6625'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.d760567'
+components:
+   schemas:
+      TagList.a9993e3:
+         items:
+            $ref: '#/components/schemas/TagList.a9993e3.Tag'
+         title: TagList
+         type: array
+      GenericErr.d760567:
+         properties:
+            error:
+               title: Error
+               type: string
+         required:
+         - error
+         title: GenericErr
+         type: object
+      ValidationError.6a07bef:
+         title: ValidationError
+         description: Model of a validation error response.
+         type: array
+         items:
+            $ref: '#/components/schemas/ValidationError.6a07bef.ValidationErrorElement'
+      PublisherList.a9993e3:
+         items:
+            $ref: '#/components/schemas/PublisherList.a9993e3.Publisher'
+         title: PublisherList
+         type: array
+      ProtocolReq.71110c4:
+         properties:
+            queries:
+               items:
+                  $ref: '#/components/schemas/ProtocolReq.71110c4.ProtocolQuery'
+               title: Queries
+               type: array
+         required:
+         - queries
+         title: ProtocolReq
+         type: object
+      ProtocolList.a9993e3:
+         items:
+            $ref: '#/components/schemas/ProtocolList.a9993e3.Protocol'
+         title: ProtocolList
+         type: array
+      ProtocolPublishersByTag.a4b6625:
+         properties:
+            tag:
+               title: Tag
+               type: string
+         required:
+         - tag
+         title: ProtocolPublishersByTag
+         type: object
+      ProtocolPublishers.a4b6625:
+         items:
+            type: string
+         title: ProtocolPublishers
+         type: array
+      AutoSuggestQuery.a4b6625:
+         properties:
+            drug_name:
+               title: Drug Name
+               type: string
+            generic_names:
+               anyOf:
+               -  items:
+                     type: string
+                  type: array
+               -  type: 'null'
+               default: null
+               title: Generic Names
+            volumes:
+               anyOf:
+               -  items:
+                     type: string
+                  type: array
+               -  type: 'null'
+               default: null
+               title: Volumes
+            form:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Form
+         required:
+         - drug_name
+         title: AutoSuggestQuery
+         type: object
+      MedicationList.a9993e3:
+         items:
+            $ref: '#/components/schemas/MedicationList.a9993e3.Medication'
+         title: MedicationList
+         type: array
+      InteractionQuery.a4b6625:
+         properties:
+            drug_names:
+               title: Drug Names
+               type: string
+         required:
+         - drug_names
+         title: InteractionQuery
+         type: object
+      Interaction.a4b6625:
+         additionalProperties:
+            items:
+               maxItems: 2
+               minItems: 2
+               prefixItems:
+               -  type: string
+               -  type: string
+               type: array
+            type: array
+         title: Interaction
+         type: object
+      TagList.a9993e3.Tag:
+         properties:
+            tag_id:
+               title: Tag Id
+               type: string
+            text:
+               title: Text
+               type: string
+            detail:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Detail
+         required:
+         - tag_id
+         - text
+         title: Tag
+         type: object
+      ValidationError.6a07bef.ValidationErrorElement:
+         title: ValidationErrorElement
+         description: Model of a validation error response element.
+         type: object
+         properties:
+            loc:
+               title: Missing field name
+               type: array
+               items:
+                  type: string
+            msg:
+               title: Error message
+               type: string
+            type:
+               title: Error type
+               type: string
+            ctx:
+               title: Error context
+               type: object
+         required:
+         - loc
+         - msg
+         - type
+      PublisherList.a9993e3.Publisher:
+         properties:
+            publisher_id:
+               title: Publisher Id
+               type: string
+            publisher:
+               title: Publisher
+               type: string
+            acronym:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Acronym
+         required:
+         - publisher_id
+         - publisher
+         - acronym
+         title: Publisher
+         type: object
+      ProtocolReq.71110c4.ProtocolQuery:
+         properties:
+            query:
+               title: Query
+               type: string
+            tag:
+               title: Tag
+               type: string
+            publisher:
+               title: Publisher
+               type: string
+         required:
+         - query
+         - tag
+         - publisher
+         title: ProtocolQuery
+         type: object
+      ProtocolList.a9993e3.Protocol:
+         properties:
+            url:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Url
+            source_url:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Source Url
+            type:
+               anyOf:
+               -  enum:
+                  - guideline
+                  - pathway
+                  - protocol
+                  type: string
+               -  type: 'null'
+               default: null
+               title: Type
+            author:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Author
+            publication_year:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               default: null
+               title: Publication Year
+            conditions:
+               anyOf:
+               -  items:
+                     type: string
+                  type: array
+               -  type: 'null'
+               default: null
+               title: Conditions
+         title: Protocol
+         type: object
+      MedicationList.a9993e3.Medication:
+         properties:
+            name:
+               title: Name
+               type: string
+            generic_name:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Generic Name
+            manufacturer_name:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Manufacturer Name
+            product_type:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Product Type
+         required:
+         - name
+         - generic_name
+         - manufacturer_name
+         - product_type
+         title: Medication
+         type: object
+security: []
