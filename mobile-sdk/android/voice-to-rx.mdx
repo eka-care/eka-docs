@@ -1,96 +1,160 @@
-### Github Repo
+# Voice2Rx Android SDK
 
-[Voice2Rx](https://github.com/eka-care/eka-v2rx-android/tree/voice2rx_sdk)
+Voice2Rx is an Android SDK that allows voice transcription and structured prescription data generation for healthcare applications.
 
-### Dependency inclusion in app/build.gradle.kts
+## Table of Contents
+
+- [Prerequisites](/mobile-sdk/android/voice-to-rx#prerequisites)
+- [Installation](/mobile-sdk/android/voice-to-rx#installation)
+- [Initialization](/mobile-sdk/android/voice-to-rx#initialization)
+- [Basic Usage](/mobile-sdk/android/voice-to-rx#basic-usage)
+    - [Starting a Voice Session](/mobile-sdk/android/voice-to-rx#starting-a-voice-session)
+    - [Stopping a Voice Session](/mobile-sdk/android/voice-to-rx#stopping-a-voice-session)
+    - [Checking Session Status](/mobile-sdk/android/voice-to-rx#checking-session-status)
+- [Working with Sessions](/mobile-sdk/android/voice-to-rx#working-with-sessions)
+    - [Retrieving Session History](/mobile-sdk/android/voice-to-rx#retrieving-session-history)
+    - [Sample Structured Rx Data](/mobile-sdk/android/voice-to-rx#sample-structured-rx-data)
+    - [Sample Markdown Output](/mobile-sdk/android/voice-to-rx#sample-markdown-output)
+- [Advanced Features](/mobile-sdk/android/voice-to-rx#advanced-features)
+    - [Retrying a Session](/mobile-sdk/android/voice-to-rx#retrying-a-session)
+- [Cleanup](/mobile-sdk/android/voice-to-rx#cleanup)
+- [Links](/mobile-sdk/android/voice-to-rx#links)
+
+## Prerequisites
+
+Before integrating the Voice2Rx SDK, ensure that your Android project meets the following requirements:
+
+- Android API level 24 or higher
+- Kotlin 1.9.0 or higher
+- Microphone permission in your AndroidManifest.xml:
+    
+    ```xml
+    
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    ```
+    
+- Runtime permission handling for microphone access
+
+## Installation
+
+Add the following dependency to your `app/build.gradle.kts` file:
 
 ```kotlin
 implementation("com.github.eka-care:eka-v2rx-android:1.0.5")
+
 ```
 
-### Initialise SDK
+## Initialization
+
+To initialize the SDK, you need to implement the `IOkHttpSetup` interface and provide the necessary configuration:
 
 ```kotlin
-// Create object which is implementing OkHttpSetUp interface 
-// to provide auth tokens
-
+// Create object implementing IOkHttpSetup interface to provide auth tokens
 class OkHttpImpl : IOkHttpSetup {
-		// provide headers which are necessary here
-		override fun getDefaultHeaders(url: String): Map<String, String> {
-				val headers = HashMap<String, String>()
+    // Provide headers which are necessary for authentication
+    override fun getDefaultHeaders(url: String): Map<String, String> {
+        val headers = HashMap<String, String>()
         headers["auth"] = // provide session token here for authentication
+        return headers
     }
 
     override fun refreshAuthToken(url: String): Map<String, String>? {
-	      // refresh auth token here
+        // refresh auth token here
+        return null
     }
 
     override fun onSessionExpire() {
-		    // refresh token expired
+        // handle token expiration
     }
 }
 
+// Initialize the SDK
 Voice2Rx.init(
     context = context,
     config = Voice2RxInitConfig(
         onStart = {
-
+            // Code to execute when recording starts
         },
         onStop = { sessionId, recordedFiles ->
-
+            // Code to execute when recording stops
         },
         onError = { sessionId, errorMsg ->
-
+            // Handle errors
         },
-        docOid = "",
-        docUuid = "",
-        ownerId = "",
-        contextData = ContextData(doctor = null, patient = null, visitid = sessionId),
+        docOid = "",       // Doctor oid
+        docUuid = "",      // Doctor UUID
+        ownerId = "",      // Owner ID
+        contextData = ContextData(
+            doctor = null,
+            patient = null,
+            visitid = sessionId
+        ),
         okHttpSetup = OkHttpImpl(),
-        callerId = "",
+        callerId = "",     // Caller ID
     )
 )
 
 ```
 
-### Start Voice Session
+## Basic Usage
+
+### Starting a Voice Session
+
+To start a voice recording session:
 
 ```kotlin
-// Here any mode can be passed which are specified in SDK
+// Start a voice session in DICTATION or CONSULTATION mode
 Voice2Rx.startVoice2Rx(mode = Voice2RxType.DICTATION)
-// After starting session you will get callback in onStart function 
-// which is passed in init function
+// The onStart callback (defined in init) will be triggered when the session begins
+
 ```
 
-### Stop Voice Session
+### Stopping a Voice Session
+
+To stop a voice recording session:
 
 ```kotlin
-// After stopping the session 
-// onStop callback will be delivered with sessionId which is passed in init function
+// Stop the current voice session
 Voice2Rx.stopVoice2Rx()
+// The onStop callback will be triggered with the sessionId
+
 ```
 
-### Check session is currently running
+### Checking Session Status
+
+To check if a recording session is currently active:
 
 ```kotlin
-// It will return true if session is going on
-Voice2Rx.isCurrentlyRecording()
+// Returns true if a recording session is in progress
+val isRecording = Voice2Rx.isCurrentlyRecording()
+
 ```
 
-### Get all sessions history
+## Working with Sessions
+
+### Retrieving Session History
+
+To access previous recording sessions:
 
 ```kotlin
-// It will return list of sessions taken 
+// Get all recording sessions
 val sessions = Voice2Rx.getSessions()
-// access any session from the list for e.g below is taken the first element
-val session = sessions.first()
-// Can access transcript and structured rx in the session object
-// Sample responses for both values given below
-val transcript = session.transcript
-val structuredRx = session.structuredRx
+
+// Access a specific session (example using the first session)
+val session = sessions.firstOrNull()
+
+// Access session data
+session?.let {
+    val transcript = it.transcript       // Raw transcript text
+    val structuredRx = it.structuredRx   // Structured prescription data
+}
+
 ```
 
-### Sample parsed data in structured rx
+### Sample Structured Rx Data
+
+The SDK returns structured prescription data in JSON format:
 
 ```json
 {
@@ -179,9 +243,12 @@ val structuredRx = session.structuredRx
     ]
   }
 }
+
 ```
 
-### Sample parsed data in markdown format
+### Sample Markdown Output
+
+The SDK can also generate a formatted markdown output:
 
 ```markdown
 **Chief Complaints**
@@ -208,23 +275,37 @@ val structuredRx = session.structuredRx
 - Follow up after 15 days with all investigation reports
 - Continue physiotherapy sessions
 - Take prescribed medications as directed
+
 ```
 
-### For Retry the session
+## Advanced Features
+
+### Retrying a Session
+
+To retry processing a session:
 
 ```kotlin
 Voice2Rx.retrySession(
     context = context,
     sessionId = sessionId,
-    onResponse = { responseState -> 
-        // here you will get callback regarding retry was successful or not
-    },
+    onResponse = { responseState ->
+        // Handle the retry response
+        // Indicates whether retry was successful or not
+    }
 )
+
 ```
 
-### After all the process completion
+## Cleanup
+
+When you're done using the SDK, free up resources:
 
 ```kotlin
-// Free up the resources using below function
+// Release all resources
 Voice2Rx.dispose()
+
 ```
+
+## Links
+
+- [GitHub Repository](https://github.com/eka-care/eka-v2rx-android)
