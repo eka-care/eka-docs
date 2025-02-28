@@ -11,7 +11,7 @@ tags:
 -  name: protocols
 -  name: medications
 paths:
-   /protocols/v1/tags:
+   /eka_mcp/protocols/v1/tags:
       get:
          summary: Protocols Conditions
          description: This endpoint returns a comprehensive list of all protocol conditions
@@ -39,7 +39,7 @@ paths:
                   application/json:
                      schema:
                         $ref: '#/components/schemas/GenericErr.d760567'
-   /protocols/v1/publishers:
+   /eka_mcp/protocols/v1/publishers:
       get:
          summary: Protocols Publishers
          description: This endpoint returns a list of all protocol publishers that
@@ -67,7 +67,7 @@ paths:
                   application/json:
                      schema:
                         $ref: '#/components/schemas/GenericErr.d760567'
-   /protocols/v1/search:
+   /eka_mcp/protocols/v1/search:
       post:
          summary: Protocols Search
          description: This endpoint returns a list of all protocols for the given
@@ -99,8 +99,8 @@ paths:
             content:
                application/json:
                   schema:
-                     $ref: '#/components/schemas/ProtocolReq.71110c4'
-   /protocols/v1/publishers/tag:
+                     $ref: '#/components/schemas/MedicationUnderstanding.b6c8896'
+   /eka_mcp/protocols/v1/publishers/tag:
       get:
          summary: Protocols Publishers by Tag
          description: This endpoint returns a list of all protocols publishers for
@@ -111,10 +111,12 @@ paths:
          -  name: tag
             in: query
             schema:
+               default: null
+               description: The tag/condition for which the publisher is being fetched
                title: Tag
                type: string
-            required: true
-            description: ''
+            required: false
+            description: The tag/condition for which the publisher is being fetched
          responses:
             '200':
                description: OK
@@ -134,7 +136,7 @@ paths:
                   application/json:
                      schema:
                         $ref: '#/components/schemas/GenericErr.d760567'
-   /medications/v1/understanding:
+   /eka_mcp/medications/v1/understanding:
       get:
          summary: Understand medications
          description: This endpoint return all the suggested/similar drugs for given
@@ -145,34 +147,14 @@ paths:
          -  name: drug_name
             in: query
             schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: The segmented branded name of the medicine like Glim 1mg
                title: Drug Name
-               type: string
-            required: true
-            description: ''
-         -  name: generic_names
-            in: query
-            schema:
-               anyOf:
-               -  items:
-                     type: string
-                  type: array
-               -  type: 'null'
-               default: null
-               title: Generic Names
             required: false
-            description: ''
-         -  name: volumes
-            in: query
-            schema:
-               anyOf:
-               -  items:
-                     type: string
-                  type: array
-               -  type: 'null'
-               default: null
-               title: Volumes
-            required: false
-            description: ''
+            description: The segmented branded name of the medicine like Glim 1mg
          -  name: form
             in: query
             schema:
@@ -180,9 +162,37 @@ paths:
                -  type: string
                -  type: 'null'
                default: null
+               description: The form of the medicine like Tablet, Syrup
                title: Form
             required: false
-            description: ''
+            description: The form of the medicine like Tablet, Syrup
+         -  name: generic_names
+            in: query
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: The generic name of the medicine like 'Glimeperide', 'Metformin'.
+                  In case of compound generics, pass the name only with comma separated
+                  like Glimeperide,Metformin
+               title: Generic Names
+            required: false
+            description: The generic name of the medicine like 'Glimeperide', 'Metformin'.
+               In case of compound generics, pass the name only with comma separated
+               like Glimeperide,Metformin
+         -  name: volumes
+            in: query
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: The volume of the drug name or generic composition like
+                  '650','1000','500'
+               title: Volumes
+            required: false
+            description: The volume of the drug name or generic composition like '650','1000','500'
          responses:
             '200':
                description: OK
@@ -202,8 +212,8 @@ paths:
                   application/json:
                      schema:
                         $ref: '#/components/schemas/GenericErr.d760567'
-   /medications/v1/interaction:
-      get:
+   /eka_mcp/medications/v1/interaction:
+      post:
          summary: Medication interactions
          description: This endpoint is used to check if given the list of drugs interact
             with each other. It check drugs interaction on the basis of generics composition.
@@ -214,10 +224,16 @@ paths:
          -  name: drug_names
             in: query
             schema:
+               default: null
+               description: 'List of drug names to check for interactions. Eg: [''Bencid
+                  tablet'', ''Fluvir 75Mg capsule'']'
+               items:
+                  type: string
                title: Drug Names
-               type: string
-            required: true
-            description: ''
+               type: array
+            required: false
+            description: 'List of drug names to check for interactions. Eg: [''Bencid
+               tablet'', ''Fluvir 75Mg capsule'']'
          responses:
             '200':
                description: OK
@@ -264,80 +280,76 @@ components:
             $ref: '#/components/schemas/PublisherList.a9993e3.Publisher'
          title: PublisherList
          type: array
-      ProtocolReq.71110c4:
+      MedicationUnderstanding.b6c8896:
          properties:
-            queries:
-               items:
-                  $ref: '#/components/schemas/ProtocolReq.71110c4.ProtocolQuery'
-               title: Queries
-               type: array
-         required:
-         - queries
-         title: ProtocolReq
+            drug_name:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: The segmented branded name of the medicine like Glim 1mg
+               title: Drug Name
+            form:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: The form of the medicine like Tablet, Syrup
+               title: Form
+            generic_names:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: The generic name of the medicine like 'Glimeperide', 'Metformin'.
+                  In case of compound generics, pass the name only with comma separated
+                  like Glimeperide,Metformin
+               title: Generic Names
+            volumes:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: The volume of the drug name or generic composition like
+                  '650','1000','500'
+               title: Volumes
+         title: MedicationUnderstanding
          type: object
       ProtocolList.a9993e3:
          items:
             $ref: '#/components/schemas/ProtocolList.a9993e3.Protocol'
          title: ProtocolList
          type: array
-      ProtocolPublishersByTag.a4b6625:
+      ProtocolPublisher.b6c8896:
          properties:
             tag:
+               default: null
+               description: The tag/condition for which the publisher is being fetched
                title: Tag
                type: string
-         required:
-         - tag
-         title: ProtocolPublishersByTag
+         title: ProtocolPublisher
          type: object
       ProtocolPublishers.a4b6625:
          items:
             type: string
          title: ProtocolPublishers
          type: array
-      AutoSuggestQuery.a4b6625:
-         properties:
-            drug_name:
-               title: Drug Name
-               type: string
-            generic_names:
-               anyOf:
-               -  items:
-                     type: string
-                  type: array
-               -  type: 'null'
-               default: null
-               title: Generic Names
-            volumes:
-               anyOf:
-               -  items:
-                     type: string
-                  type: array
-               -  type: 'null'
-               default: null
-               title: Volumes
-            form:
-               anyOf:
-               -  type: string
-               -  type: 'null'
-               default: null
-               title: Form
-         required:
-         - drug_name
-         title: AutoSuggestQuery
-         type: object
       MedicationList.a9993e3:
          items:
             $ref: '#/components/schemas/MedicationList.a9993e3.Medication'
          title: MedicationList
          type: array
-      InteractionQuery.a4b6625:
+      MedicationInteraction.b6c8896:
          properties:
             drug_names:
+               default: null
+               description: 'List of drug names to check for interactions. Eg: [''Bencid
+                  tablet'', ''Fluvir 75Mg capsule'']'
+               items:
+                  type: string
                title: Drug Names
-               type: string
-         required:
-         - drug_names
-         title: InteractionQuery
+               type: array
+         title: MedicationInteraction
          type: object
       Interaction.a4b6625:
          additionalProperties:
@@ -412,23 +424,6 @@ components:
          - acronym
          title: Publisher
          type: object
-      ProtocolReq.71110c4.ProtocolQuery:
-         properties:
-            query:
-               title: Query
-               type: string
-            tag:
-               title: Tag
-               type: string
-            publisher:
-               title: Publisher
-               type: string
-         required:
-         - query
-         - tag
-         - publisher
-         title: ProtocolQuery
-         type: object
       ProtocolList.a9993e3.Protocol:
          properties:
             url:
@@ -446,9 +441,8 @@ components:
             type:
                anyOf:
                -  enum:
-                  - guideline
-                  - pathway
-                  - protocol
+                  - image
+                  - pdf
                   type: string
                -  type: 'null'
                default: null
