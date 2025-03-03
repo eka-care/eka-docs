@@ -1,0 +1,419 @@
+# Eka Health Records Android SDK Documentation
+
+## Table of Contents
+
+1. [API Reference](#api-reference)
+2. [Introduction](#introduction)
+3. [Prerequisites](#prerequisites)
+4. [Installation](#installation)
+5. [SDK Initialization](#sdk-initialization)
+6. [Data Models](#data-models)
+   - [VaultEntity](#vaultentity)
+   - [RecordModel](#recordmodel)
+   - [Document Types](#document-types)
+   - [AvailableDocTypes](#availabledoctypes)
+   - [DocumentSortEnum](#documentsortEnum)
+7. [Core Functionality](#core-functionality)
+   - [Data Synchronization](#data-synchronization)
+   - [Document Retrieval](#document-retrieval)
+   - [Document Management](#document-management)
+   - [Document Viewing](#document-viewing)
+   - [File Handling](#file-handling)
+8. [Advanced Features](#advanced-features)
+9. [Troubleshooting](#troubleshooting)
+
+## API Reference
+
+For complete API reference, please refer to the source code documentation in the GitHub repository:
+[https://github.com/eka-care/eka-health-records-android](https://github.com/eka-care/eka-health-records-android)
+
+## Introduction
+
+The Eka Health Records Android SDK provides comprehensive functionality for managing medical document records in Android applications. This SDK allows integration with the Eka Care platform for storing, retrieving, and managing health documents.
+
+## Prerequisites
+
+Before using the Eka Health Records SDK, ensure your development environment meets the following requirements:
+
+- Android Studio Arctic Fox (2020.3.1) or newer
+- Minimum SDK version: 21 (Android 5.0 Lollipop)
+- Kotlin version: 1.5.0 or newer
+- JDK 8 or newer
+- Authentication with Eka platform (tokens required for initialization)
+
+## Installation
+
+Add the repository to your project-level `build.gradle` or `settings.gradle` file:
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+```
+
+Include the dependency in your app-level `build.gradle.kts` file:
+
+```kotlin
+implementation("com.github.eka-care:eka-health-records-android:1.2.5")
+```
+
+Replace `1.2.5` with the latest version as needed.
+
+## SDK Initialization
+
+Initialize the SDK by creating an implementation of the `IOkHttpSetup` interface to provide authentication tokens:
+
+```kotlin
+class OkHttpImpl : IOkHttpSetup {
+    // Provide headers necessary for authentication
+    override fun getDefaultHeaders(url: String): Map<String, String> {
+        val headers = HashMap<String, String>()
+        headers["auth"] = "YOUR_SESSION_TOKEN_HERE"
+        return headers
+    }
+
+    override fun refreshAuthToken(url: String): Map<String, String>? {
+        // Implement token refresh logic
+        return null
+    }
+
+    override fun onSessionExpire() {
+        // Handle session expiration
+    }
+}
+
+// Initialize the Document class
+Document.init(
+    context = applicationContext,
+    documentConfiguration = DocumentConfiguration(
+        okHttpSetup = OkHttpImpl(),
+        host = "YOUR_API_HOST",
+        vitalsEnabled = true // Set to true to enable navigation from Smart Report Vitals
+    )
+)
+```
+
+## Data Models
+
+### VaultEntity
+
+The primary entity for document storage in the Room database. `VaultEntity` represents medical document records.
+
+```kotlin
+@Entity(tableName = "vault_table")
+data class VaultEntity(
+    @PrimaryKey @ColumnInfo(name = "local_id") var localId: String,
+    @ColumnInfo(name = "doc_id") var documentId: String?,
+    @ColumnInfo(name = "uuid") var uuid: String?,
+    @ColumnInfo(name = "owner_id") var ownerId: String? = null,
+    @ColumnInfo(name = "filter_id") var filterId: String? = null,
+    @ColumnInfo(name = "file_path") var filePath: List<String>?,
+    @ColumnInfo(name = "file_type") var fileType: String,
+    @ColumnInfo(name = "thumbnail") var thumbnail: String?,
+    @ColumnInfo(name = "created_at") var createdAt: Long,
+    @ColumnInfo(name = "source") var source: Int?,
+    @ColumnInfo(name = "is_edited") var isEdited: Boolean = false,
+    @ColumnInfo(name = "is_deleted") var isDeleted: Boolean = false,
+    @ColumnInfo(name = "doc_type") var documentType: Int?,
+    @ColumnInfo(name = "doc_date") var documentDate: Long?,
+    @ColumnInfo(name = "tags") var tags: String?,
+    @ColumnInfo(name = "auto_tags") var autoTags : String?,
+    @ColumnInfo(name = "cta") var cta: String?,
+    @ColumnInfo(name = "hash_id") var hashId: String?,
+    @ColumnInfo(name = "is_analyzing") var isAnalyzing: Boolean,
+    @ColumnInfo(name = "smart_report_field") var smartReportField : String? = null
+)
+```
+
+### RecordModel
+
+A data transfer object representing document records, used for API communication.
+
+```kotlin
+data class RecordModel(
+    val localId: String?,
+    val documentId: String?,
+    val ownerId : String?,
+    val documentType: Int?,
+    val documentDate: Long?,
+    val createdAt : Long?,
+    val thumbnail: String?,
+    val filePath: List<String>?,
+    val fileType: String?,
+    val cta: CTA?,
+    val tags: String?,
+    val autoTags : String?,
+    val source: Int?,
+    val isAnalyzing: Boolean = false
+)
+```
+
+### Document Types
+
+Constants used to specify document categories:
+
+| Type ID | Description |
+|---------|-------------|
+| 1 | Lab Report |
+| 2 | Prescription |
+| 3 | Discharge Summary |
+| 4 | Vaccine Certificate |
+| 5 | Insurance |
+| 6 | Invoice |
+| 7 | Scan |
+| 8 | Other |
+| -1 | All types (default) |
+
+### AvailableDocTypes
+
+A data class representing available document types for filtering:
+
+```kotlin
+@Keep
+data class AvailableDocTypes(
+    val docType: Int,
+    val count: Int
+)
+```
+
+### DocumentSortEnum
+
+Enum used for specifying document sort criteria:
+
+```kotlin
+enum class DocumentSortEnum {
+    UPLOAD_DATE,    // Sort by when documents were uploaded
+    DOCUMENT_DATE   // Sort by the date on the document itself
+}
+```
+
+## Core Functionality
+
+### Data Synchronization
+
+Initialize background synchronization for patient documents:
+
+```kotlin
+/**
+ * Initializes background synchronization for patient documents
+ *
+ * This function sets up a background worker that handles:
+ * - Synchronizing documents with the server
+ * - Managing document changes (edits and deletions)
+ *
+ * @param context Application context
+ * @param ownerId The ID of the document owner (optional)
+ * @param filterId Additional ID to filter documents (optional)
+ * @param patientUuid The UUID of the patient whose documents are being synced
+ */
+Document.initSyncingData(
+    context: Context,
+    ownerId: String? = null,
+    filterId: String? = null,
+    patientUuid: String
+)
+```
+
+### Document Retrieval
+
+Retrieve documents with optional filtering and sorting:
+
+```kotlin
+/**
+ * Retrieves a list of documents with optional filtering and sorting
+ * Returns a Flow containing a list of documents that match the provided filters.
+ * The results can be sorted according to the specified criteria.
+ *
+ * @param ownerId The ID of the document owner to filter by (optional)
+ * @param filterId Additional ID to filter documents by (optional)
+ * @param docType The type of documents to retrieve (default: -1, all types)
+ * @param sortBy Specifies how to sort the returned documents
+ *
+ * @return Flow<List<VaultEntity>>? A Flow emitting lists of documents matching the criteria,
+ * or null if no documents are found or an error occurs
+ */
+val documentsFlow = Document.getDocuments(
+    ownerId = "user123",
+    filterId = "filter456",
+    docType = 1, // Lab Reports only
+    sortBy = DocumentSortEnum.DOCUMENT_DATE
+)
+
+// Collect the flow to observe document changes
+lifecycleScope.launch {
+    documentsFlow?.collect { documents ->
+        // Process the documents
+    }
+}
+```
+
+Get a single document by ID:
+
+```kotlin
+/**
+ * Retrieves a single document by its document ID
+ * @return RecordModel? The document record, or null if not found
+ */
+val document = Document.getDocumentById(id = "doc123")
+```
+
+Get available document types:
+
+```kotlin
+/**
+ * Retrieves a list of available document types with their counts
+ * This allows the application to see what document types are available for a specific
+ *
+ * @param filterId Additional ID to filter documents by (optional)
+ * @param ownerId The ID of the document owner to filter by (optional)
+ * @return List<AvailableDocTypes>? List of document types with their counts, or null if no data is found
+ */
+lifecycleScope.launch {
+    val availableTypes = Document.getAvailableDocTypes(filterId = "filter456", ownerId = "user123")
+    // Process available document types
+}
+```
+
+### Document Management
+
+Store documents:
+
+```kotlin
+/**
+ * Stores a list of documents in the vault database
+ * @param vaultEntityList List of VaultEntity objects to be stored in the database
+ */
+Document.storeDocuments(vaultEntityList = listOfDocuments)
+```
+
+Delete a document:
+
+```kotlin
+/**
+ * Marks a document as deleted in the database
+ *
+ * @param filterId Additional ID to identify the document (optional)
+ * @param localId The localId of the document to delete
+ */
+Document.deleteDocument(filterId = "filter456", localId = "local123")
+```
+
+Edit document metadata:
+
+```kotlin
+/**
+ * Updates document metadata
+ *
+ * @param localId The localId of the document to edit
+ * @param docType The new document type (optional)
+ * @param docDate The new document date (optional)
+ * @param filterId The filterId of the document to edit
+ */
+Document.editDocument(
+    localId = "local123",
+    docType = 2, // Change to Prescription
+    docDate = System.currentTimeMillis(),
+    filterId = "filter456"
+)
+```
+
+### Document Viewing
+
+Open a document viewer:
+
+```kotlin
+/**
+ * Opens the appropriate viewer activity for a document
+ * This function determines whether to open the standard document viewer or
+ * the Smart Report viewer based on the document's autoTags.
+ *
+ * @param context Application context for starting the activity
+ * @param model The RecordModel representing the document to view
+ * @param oid The filter ID (optional)
+ */
+Document.view(context = requireContext(), model = documentModel, filterId = "filter456")
+```
+
+### File Handling
+
+Download document files:
+
+```kotlin
+/**
+ * Downloads a file from a URL and returns the local file path
+ * This function handles the downloading and saving of document files to local storage.
+ *
+ * @param url The remote URL of the file to download
+ * @param context Application context for file operations
+ * @param type The type of file being downloaded (optional)
+ * @return String The local file path where the document is saved
+ */
+val localFilePath = Document.downloadFileFromTheAssetUrl(
+    url = "https://example.com/document.pdf",
+    context = requireContext(),
+    type = "pdf"
+)
+```
+
+Download thumbnail images:
+
+```kotlin
+/**
+ * Downloads a thumbnail image from a URL and returns the local file path
+ * This function handles the downloading and saving of document thumbnail images.
+ *
+ * @param url The remote URL of the thumbnail to download
+ * @param context Application context for file operations
+ * @return String The local file path where the thumbnail is saved
+ */
+val thumbnailPath = Document.downloadThumbNailFromAssetUrl(
+    url = "https://example.com/thumbnail.jpg",
+    context = requireContext()
+)
+```
+
+Check if a document exists:
+
+```kotlin
+/**
+ * Checks if a document already exists in the database
+ * Returns -1 if the document is not found, otherwise returns 0.
+ *
+ * @param documentId The ID of the document to check
+ * @param ownerId The ID of the document owner (optional)
+ * @return Int? -1 if not found, 0 if exists, or null if an error occurs
+ */
+val exists = Document.alreadyExistDocument(documentId = "doc123", ownerId = "user456")
+```
+
+## Advanced Features
+
+### Cleanup
+
+When the SDK is no longer needed or when a user logs out:
+
+```kotlin
+/**
+ * Clears all data from the database
+ * This function should be called when the SDK is no longer needed or when
+ * a user logs out to ensure data privacy.
+ */
+Document.destroy()
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Authentication Failures**
+   - Ensure your `IOkHttpSetup` implementation provides valid tokens
+   - Verify the host URL is correctly specified
+
+2. **Documents Not Syncing**
+   - Check network connectivity
+   - Verify the patient UUID is correct
+   - Ensure background workers are not restricted by battery optimization
+
+3. **File Download Issues**
+   - Check storage permissions
+   - Verify the device has sufficient storage space
