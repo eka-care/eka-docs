@@ -216,111 +216,161 @@ paths:
       tags:
         - Patient Registration API
       summary: Get patient details by profile id
-      description: >-
+      description: >
         This API provides functionality to get details of a patient by their Eka
-        profile id, from a business' directory. 
-        
+        profile id, from a business' directory.
+
         The patient should have been previously added to the business directory for this API to return the patient's details.
 
-
-        ### Request Parameter
-
-
-        | Parameter | Type | Expected Values | Description |
-        Required/Optional/Not Required |
-
-        | --- | --- | --- | --- | --- |
-
-        | patient_id | string | Patient's Eka profile id | Patient's eka profile id | Required |
 
       operationId: Getpatientdetailsbyid
       parameters:
         - name: auth
           in: header
-          required: True
-          description: >-
-            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          description: >
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth API.
           schema:
             type: string
-          example: >-
+          example: >
             eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
         - name: patient_id
           in: path
-          description: ''
           required: true
-          style: simple
+          description: Patient's Eka profile id
           schema:
             type: string
+
       responses:
         '200':
           description: OK
           headers:
             Date:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: Tue, 24 Mar 2020 06:26:06 GMT
+              schema:
+                type: string
+              example: Tue, 24 Mar 2020 06:26:06 GMT
             Content-Length:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: '380'
+              schema:
+                type: string
+              example: '380'
             Connection:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: keep-alive
+              schema:
+                type: string
+              example: keep-alive
             Server:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: nginx/1.10.3 (Ubuntu)
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
             Vary:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: Cookie, Accept-Encoding
+              schema:
+                type: string
+              example: Cookie, Accept-Encoding
             Content-Encoding:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: gzip
+              schema:
+                type: string
+              example: gzip
             Strict-Transport-Security:
-              content:
-                text/plain:
-                  schema:
-                    type: string
-                  example: max-age=15768000
+              schema:
+                type: string
+              example: max-age=15768000
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/200OK1'
-                  - example:
-                      patient_id: '189673451298376'
-                      partner_patient_id: 'MO1298376'
-                      first_name: Raj
-                      middle_name: ''
-                      last_name: Sharma
-                      gender: "M"
-                      dob: '1988-11-30'
-                      email: raj.sharma@example.com
-                      mobile: '+919876543210'
-                      address:
-                        line1: 'B504, Seabreeze Heights,'
-                        city: Mumbai
-                        pincode: '400001'
-                      tag: "tag#1"
-                      partner_meta:
-                        key1: value1
-                      created_at: 1732607432
-                      
+                type: object
+                properties:
+                  patient_id:
+                    type: string
+                    example: '189673451298376'
+                  partner_patient_id:
+                    type: string
+                    example: 'MO1298376'
+                  first_name:
+                    type: string
+                    example: Raj
+                  middle_name:
+                    type: string
+                    example: ''
+                  last_name:
+                    type: string
+                    example: Sharma
+                  gender:
+                    type: string
+                    enum:
+                      - M
+                      - F
+                      - O
+                    example: M
+                  dob:
+                    type: string
+                    format: date
+                    example: '1988-11-30'
+                  email:
+                    type: string
+                    example: raj.sharma@example.com
+                  mobile:
+                    type: string
+                    example: '+919876543210'
+                  address:
+                    type: object
+                    properties:
+                      line1:
+                        type: string
+                        example: 'B504, Seabreeze Heights,'
+                      city:
+                        type: string
+                        example: Mumbai
+                      pincode:
+                        type: string
+                        example: '400001'
+                  tag:
+                    type: string
+                    example: "tag#1"
+                  partner_meta:
+                    type: object
+                    additionalProperties: true
+                    example:
+                      key1: value1
+                  created_at:
+                    type: integer
+                    example: 1732607432
+                  relations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        relation:
+                          type: string
+                          enum:
+                            - Husband
+                            - Wife
+                            - Father
+                            - Mother
+                            - Son
+                            - Daughter
+                            - Brother
+                            - Sister
+                            - Grandfather
+                            - Grandmother
+                            - Spouse
+                            - Father & Mother
+                            - Cousin Brother
+                            - Cousin Sister
+                            - Paternal Uncle
+                            - Paternal Aunt
+                            - Maternal Uncle
+                            - Maternal Aunt
+                            - Paternal Grandfather
+                            - Paternal Grandmother
+                            - Maternal Grandfather
+                            - Maternal Grandmother
+                            - Great grandfather
+                            - Great grandmother
+                            - Niece
+                            - Nephew
+                          example: husband
+                        pid:
+                          type: string
+                          example: '144051779835569'
         '404':
           description: Not Found
           content:
@@ -333,18 +383,16 @@ paths:
                     properties:
                       code:
                         type: string
+                        example: "PATIENTS_NOT_FOUND"
                       message:
                         type: string
+                        example: "No patients found with the provided id belonging to this business"
                   status_code:
                     type: integer
+                    example: 404
                   success:
                     type: boolean
-              example:
-                error:
-                  code: "PATIENTS_NOT_FOUND"
-                  message: "No patients found with the provided id belonging to this business"
-                status_code: 404
-                success: false
+                    example: false
         '403':
           description: Forbidden
           content:
@@ -354,24 +402,22 @@ paths:
                 properties:
                   data:
                     type: object
+                    example: {}
                   status_code:
                     type: integer
+                    example: 403
                   success:
                     type: boolean
+                    example: false
                   error:
                     type: object
                     properties:
                       code:
                         type: string
+                        example: "UNAUTHORIZED_ACCESS"
                       message:
                         type: string
-              example:
-                data: { }
-                status_code: 403
-                success: false
-                error:
-                  code: "UNAUTHORIZED_ACCESS"
-                  message: "You do not have permission to get details for this patient"
+                        example: "You do not have permission to get details for this patient"
         '500':
           description: Internal Server Error
           content:
@@ -381,24 +427,22 @@ paths:
                 properties:
                   data:
                     type: object
+                    example: {}
                   status_code:
                     type: integer
+                    example: 500
                   success:
                     type: boolean
+                    example: false
                   error:
                     type: object
                     properties:
                       code:
                         type: string
+                        example: "SERVER_ERROR"
                       message:
                         type: string
-              example:
-                data: { }
-                status_code: 500
-                success: false
-                error:
-                  code: "SERVER_ERROR"
-                  message: "An unexpected error occurred on the server"
+                        example: "An unexpected error occurred on the server"
       deprecated: false
     patch:
       tags:
