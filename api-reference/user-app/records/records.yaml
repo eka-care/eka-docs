@@ -35,6 +35,13 @@ paths:
             type: string
             nullable: true
           description: Please include the nextPageToken from the API response to enable pagination.
+        - name: p_oid
+          in: query
+          schema:
+            type: string
+            nullable: true
+            required: false
+          description: Include the `p_oid` to fetch the list of records from the EMR.
         - name: accept
           in: header
           required: true
@@ -132,6 +139,13 @@ paths:
         - Records
       summary: "Step 1: Upload Record"
       description: Generate a presigned URL that allows you to securely upload a document to the server. This URL can be used to upload the document directly without needing additional authentication or authorization steps.
+      parameters:
+        - in: query
+          name: p_oid
+          required: false
+          description: Include the `p_oid` to upload the document for a patient in the EMR.
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -203,6 +217,13 @@ paths:
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
+        - name: p_oid
+          in: query
+          schema:
+            type: string
+            nullable: true
+            required: false
+          description: Include the `p_oid` to update the record of a patient in the EMR.
       requestBody:
         content:
           application/json:
@@ -282,6 +303,13 @@ paths:
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
+        - name: p_oid
+          in: query
+          schema:
+            type: string
+            nullable: true
+            required: false
+          description: Include the `p_oid` to delete the record of a patient from the EMR.
       responses:
         "200":
           description: Document deleted successfully.
@@ -292,9 +320,10 @@ paths:
       security:
         - auth: []
 
+
     get:
       summary: Describes a document
-      description: Once you get the list of all the documents with coresponding id's, you can this to know more details about the document.
+      description: Once you retrieve a list of all documents with their corresponding IDs, you can use this endpoint to get more details about a specific document.
       operationId: getDocument
       parameters:
         - in: path
@@ -304,6 +333,13 @@ paths:
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
+        - in: query
+          name: p_oid
+          required: false
+          description: Include the `p_oid` to fetch the record of a patient uploaded on EMR.
+          schema:
+            type: string
+            nullable: true
       responses:
         "200":
           description: Description of a document.
