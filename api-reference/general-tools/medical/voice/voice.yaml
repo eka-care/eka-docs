@@ -7,6 +7,8 @@ servers:
     description: Production server
   - url: https://api.dev.eka.care
     description: Development server
+
+
 paths:
   /voice/upload?mode={mode}&txnid={txnid}:
     post:
@@ -34,7 +36,6 @@ paths:
             schema:
               type: string
               format: binary
-
       responses:
         "200":
           description: "200 response"
@@ -50,6 +51,8 @@ paths:
                 $ref: "#/components/schemas/Unauthorized"
       security:
         - auth: []
+
+
   /health/api/v1/fhir/retrieve:
     get:
       summary: Retrieve the prased data for the upload audio file
@@ -219,6 +222,113 @@ paths:
       security:
         - auth: []
 
+
+  /api/v2/transaction/init/{session_id}:
+    post:
+      description: |-
+        This API is used to initialize a transaction for audio transcription with the given session ID.
+        It sets up the session parameters and prepares for audio file processing.
+
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitTransactionRequest"
+      responses:
+        "200":
+          description: Successful transaction initialization.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InitTransactionSuccessResponse"
+        "400":
+          description: Error in transaction initialization.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InitTransactionErrorResponse"
+        "401":
+          description: Unauthorized. Invalid or missing authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unauthorized"
+      security:
+        - auth: []
+
+
+  /api/v2/transaction/commit/{session_id}:
+    post:
+      description: |-
+        This API is used to end all audio transmissions for the given session ID. It commits the transaction and finalizes the session.
+
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful transaction commit.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Transaction committed successfully
+                  data:
+                    type: object
+                    example:
+                      {
+                        "c_id": "12345678910111213",
+                        "b_id": "12345678910111213",
+                        "mode": "consultation",
+                        "meta_data": "{'client_version': '2.1.0', 'device_type': 'iPhone 13', 'language': 'en-US', 'priority': 'high', 'message': {'hello': 'there'}}",
+                        "status": "COMMIT",
+                        "c_at": "2025-03-07T10:23:25Z",
+                        "actor": "430b579b-e979-4c90-aa73-02af8fe9rfdad",
+                        "sqs_files": ['1.m4a', '2.m4a'],
+                        "transfer": "Stream",
+                        "files": ['1.m4a', '2.m4a'],
+                        "txn_id": "R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC",
+                        "u_at": "2025-03-07T10:23:25Z",
+                        "user_status": "COMMIT"
+                      }
+        "404":
+          description: Transaction not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  error:
+                    type: string
+                    example: Transaction not found
+        "401":
+          description: Unauthorized. Invalid or missing authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unauthorized"
+      security:
+        - auth: []
+
 components:
   schemas:
     Success:
@@ -242,6 +352,73 @@ components:
     Empty:
       title: "Empty Schema"
       type: "object"
+    TransactionModes:
+      type: string
+      enum: [consultation, dictation]
+    TransferMethods:
+      type: string
+      enum: [stream, batch, vaded]
+    TransactionStatus:
+      type: string
+      enum: [CREATED, INIT, COMMIT, TRANSCRIPT, COMPLETE]
+    VadStatus:
+      type: string
+      enum: [START, FINISH]
+    Action:
+      type: string
+      enum: [TRANSCRIPT]
+    InitTransactionRequest:
+      type: object
+      required:
+        - mode
+        - transfer
+      properties:
+        mode:
+          $ref: "#/components/schemas/TransactionModes"
+          description: The mode of transcription
+          example: consultation
+        transfer:
+          $ref: "#/components/schemas/TransferMethods"
+          description: The transfer method for the audio files
+          example: vaded
+        meta_data:
+          type: object
+          description: Additional metadata about the session
+          example:
+            client_version: "2.1.0"
+            device_type: "iPhone 13"
+            language: "en-US"
+            priority: "high"
+            message:
+              hello: "there"
+    InitTransactionSuccessResponse:
+      type: object
+      required:
+        - status
+        - message
+        - txn_id
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: "Transaction initialized successfully, checking for audio files"
+        txn_id:
+          type: string
+          example: "R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC"
+    InitTransactionErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: "Invalid request parameters"
   securitySchemes:
     auth:
       type: http
