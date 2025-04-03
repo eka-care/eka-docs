@@ -17,7 +17,7 @@ At Eka Care, we've chosen to implement webhooks by sending minimal information i
 
 2. **Improved Scalability:** Smaller payloads allow our webhook system to handle a much higher number of events per second, ensuring better performance and scalability as our user base grows.
 
-3. **Flexibility for Future Changes:** By keeping the webhook payload minimal, we can easily add new fields or modify the appointment data structure without breaking existing integrations. Third-party developers only need to update their code when they want to utilize new features.
+3. **Flexibility for Future Changes:** By keeping the webhook payload minimal, we can easily add new fields or modify the appointment data structure without breaking existing integrations. This means third-party developers need to update their code only when they want to utilize new features.
 
 4. **Reduced Risk of Data Inconsistency:** Sending full details in webhooks could lead to race conditions where the data in the webhook might be outdated by the time it's processed. By encouraging API calls for the latest data, we ensure that third-party applications always have the most up-to-date information.
 
@@ -85,86 +85,7 @@ Ensure your endpoint is publicly accessible and can handle the expected load of 
 </Step>
 </Steps>
 
-
-These are the samples of the webhook payloads that you will receive from Eka Care:
-
-<Steps>
-
-<Step title="Appointment Webhook">
-When an appointment is created, modified, or completed, Eka Care will send a webhook event to your registered URL.
-
-**Example Payload:**
-```json
-{
-      "service": "dr",
-      "event_type": "appointment.created",
-      "event_time": 1730189586,
-      "timestamp": 1730189588,
-      "client_id": "{{client_id}}",
-      "business_id": "{{business_id}}",
-      "data": {
-            "appointment_id": "12345-abcde-67890-fghij",
-            "doctor_id": "0910731080189",
-            "patient_id": "54321098809",
-            "clinic_id": "09876345768790",
-            "status": "BK",
-            "action": "create",
-            "created_at": "2023-07-30T18:07:24.000Z",
-            "modified_at": "2023-07-30T18:07:24.000Z",
-            "client_meta": {
-                "visit_id": "Client_visit_id_123"
-            }
-      }
-}
-```
-</Step>
-
-<Step title="Fetch Appointment Details">
-After receiving the appointment webhook, use the appointment ID to fetch full details using the Get Appointment Details API.
-
-**Endpoint:** `GET {{HOST}}/dr/v1/business/appointments/{{appointment_id}}`
-
-This step allows you to retrieve comprehensive information about the appointment, including any additional details not included in the webhook payload.
-</Step>
-
-<Step title="Prescription Webhook">
-When a prescription is created, Eka Care will send a webhook event to your registered URL.
-
-**Example Payload:**
-```json
-{
-    "service": "dr",
-    "event_type": "prescription.created",
-    "event_time": 1730189586,
-    "timestamp": 1730189588,
-    "client_id": "{{client_id}}",
-    "business_id": "{{business_id}}",
-    "data": {
-        "status" : "created",
-        "action" : "created",
-        "rx_id": "{{rx_id}}",
-        "appointment_id": "{{appointment_id}}",
-        "doctor_id": "{{doctor_id}}",
-        "patient_id": "{{patient_id}}",
-        "clinic_id": "{{clinic_id}}",
-        "created_at": "2023-07-30T18:07:24.000Z"
-        },
-        "client_meta": {
-          "visit_id": "98765-zyxwv-43210-utsrq"
-    }
-}
-```
-</Step>
-
-<Step title="Fetch Prescription Details">
-After receiving the prescription webhook, use the prescription ID to fetch full details using the Get Prescription Details API.
-
-**Endpoint:** `GET {{HOST}}/dr/v1/business/prescription/{{prescription_id}}`
-
-This step allows you to retrieve comprehensive information about the prescription, including medication details and other relevant information not included in the webhook payload.
-</Step>
-
-</Steps>
+[Sample](./webhook-samples) payloads that you will receive from Eka Care.
 
 ---
 
@@ -184,7 +105,7 @@ Webhooks provide a real-time notification system for events occurring within the
 - Consider implementing a queueing system if you need to process a high volume of webhook events.
 - Always verify the authenticity of incoming webhook requests to prevent security issues.
 - Use the provided APIs to fetch full details after receiving a webhook, as the webhook payload may contain limited information.
-- If you plan to use the upcoming digital signature feature, prepare to provide a key and implement signature verification on your end.
+- If you plan to use the digital signature, provide a signing key and implement signature verification on your end.
 - Even without a digital signature, always implement additional security measures such as IP whitelisting and HTTPS to secure your webhook endpoint.
 
 ## Example Workflow
