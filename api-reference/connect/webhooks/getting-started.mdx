@@ -85,86 +85,7 @@ Ensure your endpoint is publicly accessible and can handle the expected load of 
 </Step>
 </Steps>
 
-
-These are the samples of the webhook payloads that you will receive from Eka Care:
-
-<Steps>
-
-<Step title="Appointment Webhook">
-When an appointment is created, modified, or completed, Eka Care will send a webhook event to your registered URL.
-
-**Example Payload:**
-```json
-{
-      "service": "dr",
-      "event_type": "appointment.created",
-      "event_time": 1730189586,
-      "timestamp": 1730189588,
-      "client_id": "{{client_id}}",
-      "business_id": "{{business_id}}",
-      "data": {
-            "appointment_id": "12345-abcde-67890-fghij",
-            "doctor_id": "0910731080189",
-            "patient_id": "54321098809",
-            "clinic_id": "09876345768790",
-            "status": "BK",
-            "action": "create",
-            "created_at": "2023-07-30T18:07:24.000Z",
-            "modified_at": "2023-07-30T18:07:24.000Z",
-            "client_meta": {
-                "visit_id": "Client_visit_id_123"
-            }
-      }
-}
-```
-</Step>
-
-<Step title="Fetch Appointment Details">
-After receiving the appointment webhook, use the appointment ID to fetch full details using the Get Appointment Details API.
-
-**Endpoint:** `GET {{HOST}}/dr/v1/business/appointments/{{appointment_id}}`
-
-This step allows you to retrieve comprehensive information about the appointment, including any additional details not included in the webhook payload.
-</Step>
-
-<Step title="Prescription Webhook">
-When a prescription is created, Eka Care will send a webhook event to your registered URL.
-
-**Example Payload:**
-```json
-{
-    "service": "dr",
-    "event_type": "prescription.created",
-    "event_time": 1730189586,
-    "timestamp": 1730189588,
-    "client_id": "{{client_id}}",
-    "business_id": "{{business_id}}",
-    "data": {
-        "status" : "created",
-        "action" : "created",
-        "rx_id": "{{rx_id}}",
-        "appointment_id": "{{appointment_id}}",
-        "doctor_id": "{{doctor_id}}",
-        "patient_id": "{{patient_id}}",
-        "clinic_id": "{{clinic_id}}",
-        "created_at": "2023-07-30T18:07:24.000Z"
-        },
-        "client_meta": {
-          "visit_id": "98765-zyxwv-43210-utsrq"
-    }
-}
-```
-</Step>
-
-<Step title="Fetch Prescription Details">
-After receiving the prescription webhook, use the prescription ID to fetch full details using the Get Prescription Details API.
-
-**Endpoint:** `GET {{HOST}}/dr/v1/business/prescription/{{prescription_id}}`
-
-This step allows you to retrieve comprehensive information about the prescription, including medication details and other relevant information not included in the webhook payload.
-</Step>
-
-</Steps>
+[Sample](./webhook-samples) payloads that you will receive from Eka Care.
 
 ---
 
@@ -184,7 +105,7 @@ Webhooks provide a real-time notification system for events occurring within the
 - Consider implementing a queueing system if you need to process a high volume of webhook events.
 - Always verify the authenticity of incoming webhook requests to prevent security issues.
 - Use the provided APIs to fetch full details after receiving a webhook, as the webhook payload may contain limited information.
-- If you plan to use the upcoming digital signature feature, prepare to provide a key and implement signature verification on your end.
+- If you plan to use digital signature, prepare to provide a key and implement signature verification on your end.
 - Even without a digital signature, always implement additional security measures such as IP whitelisting and HTTPS to secure your webhook endpoint.
 
 ## Example Workflow
