@@ -1,0 +1,163 @@
+# Integration Guide
+
+To integrate the SDK into your application, follow these steps:
+
+## Step 1: Add the JavaScript File
+
+Include the following JavaScript file in the header of your HTML:
+
+```html
+<script src="https://api.eka.care/sa-fe/main.js"></script>
+```
+
+**Note**: The required CSS is automatically injected, so there is no need to include a separate stylesheet. This happens internally (see main.tsx line 132).
+
+**Optional CSS Usage**  
+Though the CSS is injected automatically, you can include it manually if needed:
+
+```html
+<link rel="stylesheet" href="https://api.eka.care/sa-fe/styles.css" />
+```
+
+## Step 2: Initialize the SDK
+
+The SDK will add a function to the `window` object called `runSaApp`.
+
+You can call this function to run SA app as shown below:
+
+```javascript
+window.runSaApp({
+  workflow_id: 1234, // Replace with your actual workflow ID
+  container_id: "sa-container",
+  auth_token: developerAuthInitData.data.access_token,
+  refresh_token: developerAuthInitData.data.refresh_token,
+  params: {
+    gender: "M", // "M" for Male, "F" for Female, "O" for Other
+    age: 30, // Replace with the user's age
+  },
+  onEndCallback: ({ success, data, error }) => {
+    // Handle the callback here
+  },
+  // Optional parameters:
+  practice_info: {
+    practitioner_uuid: "your-practitioner-uuid",
+    patient_uuid: "your-patient-uuid",
+    unique_identifier: "optional-unique-identifier",
+  },
+  onSaRedirectCallback: ({ success, data, error }) => {
+    // Handle the redirect callback here
+  },
+  onSaSubmitCallback: ({ data, error }) => {
+    // Handle the redirect callback here
+  },
+});
+```
+
+You can call this function to show SA submissions as shown below:
+
+```javascript
+window.showSaSubmission({
+  container_id: "sa-container",
+  auth_token: developerAuthInitData.data.access_token,
+  refresh_token: developerAuthInitData.data.refresh_token,
+  assessment_ids: ["sa_25010214342273227", "sa_24122717143498525"], // Replace with your actual assessment ID
+});
+```
+
+## Additional Global Functions
+
+You can manually close the SA app or the SA submission flow if needed:
+
+```javascript
+window.closeSaApp();
+window.closeSaSubmissionApp();
+```
+
+## onSaSubmitCallback
+
+The `onSaSubmitCallback` is called immediately after a successful SA submission. This callback receives an object containing the following information:
+
+```typescript
+(params: {
+  data?: {
+    assessment_id: string; // The unique ID of the submitted assessment
+    workflow_id: number;   // The workflow ID associated with the submission
+  };
+  error?: string;          // An error message if the submission failed
+}) => void;
+```
+
+## Using onCopyToRxPad
+
+You can optionally pass a callback function for copying data to an Rx Pad:
+
+```javascript
+window.showSaSubmission({
+  container_id: "sa-container",
+  auth_token: developerAuthInitData.data.access_token,
+  refresh_token: developerAuthInitData.data.refresh_token,
+  assessment_ids: ["sa_25010214342273227", "sa_24122717143498525"], // Replace with your actual assessment ID
+  onCopyToRxPad: ({ fhirData, title }) => {
+    // Handle FHIR data as needed
+  },
+});
+```
+
+## Example
+
+Here is a complete example of how to integrate the SDK:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SDK Integration</title>
+    <script src="https://api.eka.care/sa-fe/main.js"></script>
+  </head>
+  <body>
+    <div id="sa-container"></div>
+    <script>
+      window.runSaApp({
+        workflow_id: 1234, // Replace with your actual workflow ID
+        container_id: "sa-container",
+        auth_token: developerAuthInitData.data.access_token,
+        refresh_token: developerAuthInitData.data.refresh_token,
+        params: {
+          gender: "M", // "M" for Male, "F" for Female, "O" for Other
+          age: 30, // Replace with the user's age
+        },
+        onEndCallback: ({ success, data, error }) => {
+          // Handle the callback here
+        },
+        // Optional parameters:
+        practice_info: {
+          practitioner_uuid: "your-practitioner-uuid",
+          patient_uuid: "your-patient-uuid",
+          unique_identifier: "optional-unique-identifier",
+        },
+        onSaRedirectCallback: ({ success, data, error }) => {
+          // Handle the redirect callback here
+        },
+        onSaSubmitCallback: ({ data, error }) => {
+          // Handle the redirect callback here
+        },
+      });
+
+      window.showSaSubmission({
+        container_id: "sa-container",
+        auth_token: developerAuthInitData.data.access_token,
+        refresh_token: developerAuthInitData.data.refresh_token,
+        assessment_ids: ["sa_25010214342273227", "sa_24122717143498525"], // Replace with your actual assessment ID
+        onCopyToRxPad: ({ fhirData, title }) => {
+          // Handle FHIR data as needed
+        },
+      });
+
+      window.closeSaApp();
+      window.closeSaSubmissionApp();
+    </script>
+  </body>
+</html>
+```
