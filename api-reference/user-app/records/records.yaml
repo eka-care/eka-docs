@@ -741,12 +741,12 @@ paths:
   /voice-record/api/status/{session_id}:
       get:
         summary: Retrieve voice records result
-        description: Retrieve a voice record result based on the given session id.
+        description: Retrieve a voice record result using the Session ID (also referred to as Transaction ID).
         parameters:
           - name: session_id
             in: query
             required: true
-            description: The unique identifier for the voice record is session id.
+            description: The unique identifier for the voice record is Session ID (also referred to as Transaction ID).
             schema:
               type: string
         responses:
@@ -766,10 +766,13 @@ paths:
                         - deleted
                         - error
                         - partial_completed
-                      example: "completed"
+                      example: "partial_completed"
                     error:
                       type: object
-                      example: {}
+                      example: {
+                        "code": "partial_output_transcription",
+                        "message": "Partial Output Transcription"
+                      }
                     data:
                       type: object
                       properties:
@@ -779,9 +782,44 @@ paths:
                             fhir:
                               type: string
                               example: "eyJlbnRyeSI6W3sicmVxdWVzdCI6eyJtZXRob2QiOiJQVVQiLCJ1cmwiOiJDb25kaXRpb24vMjMxZWIwMGQtNzNkNC01MmM2LTg1OTgtZTMxYjU5YzVmOTRiIn0sInJlc291cmNlIjp7ImlkIjoiMjMxZWIwMGQtNzNkNC01MmM2LTg1OTgtZTMxYjU5YzVmOTRiIiwiZXh0ZW5zaW9uIjpbeyJ1cmwiOiJodHRwczovL2VrYS5jYXJlL2NhcmVfY29udGV4dF9pZCIsInZhbHVlU3RyaW5nIjoiMzBFNzE2RjQtQTlFMS00OUU5LUI2REYtM0FGN0QyN0EwMUU5In1dLCJhc3NlcnRlciI6eyJkaXNwbGF5IjoiZHVtbXkgZG9jdG9yIiwicmVmZXJlbmNlIjoiUHJhY3RpdGlvbmVyLzE2MTQ5MjU4NjY1MzI4NyJ9LCJjYXRlZ29yeSI6W3siY29kaW5nIjpbeyJjb2RlIjoicHJvYmxlbS1saXN0LWl0ZW0iLCJkaXNwbGF5IjoiUHJvYmxlbSBMaXN0IEl0ZW0iLCJzeXN0ZW0iOiJodHRwOi8vdGVybWlub2xvZ3kuaGw3Lm9yZy9Db2RlU3lzdGVtL2NvbmRpdGlvbi1jYXRlZ29yeSJ9XX1dLCJjbGluaWNhbFN0YXR1cyI6eyJjb2RpbmciOlt7ImNvZGUiOiJhY3RpdmUiLCJkaXNwbGF5IjoiYWN0aXZlIiwic3lzdGVtIjoiaHR0cDovL3Rlcm1pbm9sb2d5LmhsNy5vcmcvQ29kZVN5c3RlbS9jb25kaXRpb24tY2xpbmljYWwifV19LCJjb2RlIjp7ImNvZGluZyI6W3siY29kZSI6ImxvY2FsZS0zOGE3OTQ1NjU0M2U1YjhiMmExYmI3NzNkM2I1NDllNCIsImRpc3BsYXkiOiJoeXBlcnRlbnNpb24iLCJzeXN0ZW0iOiJodHRwczovL3BhcmNoaS5la2EuY2FyZSJ9XX0sImVuY291bnRlciI6eyJyZWZlcmVuY2UiOiJFbmNvdW50ZXIvMDFhMzNjMmYtMDNiMC01NzI3LWEwNmYtNjYwYjUzYjllYjliIn0sImV2aWRlbmNlIjpbeyJjb2RlIjpbeyJjb2RpbmciOlt7ImNvZGUiOiIzMEU3MTZGNC1BOUUxLTQ5RTktQjZERi0zQUY3RDI3QTAxRTkiLCJzeXN0ZW0iOiJodHRwOi8vZWthLmNhcmUvcHJlc2NyaXB0aW9ucyJ9XX1dfV0sImlkZW50aWZpZXIiOlt7InN5c3RlbSI6Imh0dHBzOi8vcGFyY2hpLmVrYS5jYXJlIiwidmFsdWUiOiIzMEU3MTZGNC1BOUUxLTQ5RTktQjZERi0zQUY3RDI3QTAxRTkjbG9jYWxlLTM4YTc5NDU2NTQzZTViOGIyYTFiYjc3M2QzYjU0OWU0In1dLCJvbnNldERhdGVUaW1lIjoiMjAxOS0wMi0yMlQwNTo0MTozNi4wODgwMDArMDA6MDAiLCJyZWNvcmRlZERhdGUiOiIyMDI1LTAyLTIyVDA1OjQxOjM2LjA4ODAwMCswMDowMCIsInN1YmplY3QiOnsiZGlzcGxheSI6ImR1bW15X3BhdGllbnQiLCJyZWZlcmVuY2UiOiJQYXRpZW50L2R1bW15X3BhdGllbnRfb2lkIn0sInZlcmlmaWNhdGlvblN0YXR1cyI6eyJjb2RpbmciOlt7ImNvZGUiOiJjb25maXJtZWQiLCJkaXNwbGF5IjoiY29uZmlybWVkIiwic3lzdGVtIjoiaHR0cDovL3Rlcm1pbm9sb2d5LmhsNy5vcmcvQ29kZVN5c3RlbS9jb25kaXRpb24tY2xpbmljYWwifV19LCJyZXNvdXJjZVR5cGUiOiJDb25kaXRpb24ifX0seyJyZXF1ZXN0Ijp7Im1ldGhvZCI6IlBVVCIsInVybCI6Ik9ic2VydmF0aW9uLzQ5N2MyOTY3LThiNWUtNThjYS05ZTBkLTM5YTZiNGIxZGI4YSJ9LCJyZXNvdXJjZSI6eyJpZCI6IjQ5N2MyOTY3LThiNWUtNThjYS05ZTBkLTM5YTZiNGIxZGI4YSIsImV4dGVuc2lvbiI6W3sidXJsIjoiaHR0cHM6Ly9la2EuY2FyZS9jYXJlX2NvbnRleHRfaWQiLCJ2YWx1ZVN0cmluZyI6IjMwRTcxNkY0LUE5RTEtNDlFOS1CNkRGLTNBRjdEMjdBMDFFOSJ9XSwiY2F0ZWdvcnkiOlt7ImNvZGluZyI6W3siY29kZSI6InN5bXB0b20iLCJkaXNwbGF5Ijoic3ltcHRvbSIsInN5c3RlbSI6Imh0dHA6Ly9tZGIuZWthLmNhcmUifV19XSwiY29kZSI6eyJjb2RpbmciOlt7ImNvZGUiOiJsb2NhbGUtMWQ2ZTc2YmZlZmNkYmQ1NTg0ZWM1MmZiYjAwNDEwZTYiLCJkaXNwbGF5Ijoic3RvbWFjaCBwYWluIiwic3lzdGVtIjoiaHR0cHM6Ly9wYXJjaGkuZWthLmNhcmUifV19LCJlbmNvdW50ZXIiOnsicmVmZXJlbmNlIjoiRW5jb3VudGVyLzAxYTMzYzJmLTAzYjAtNTcyNy1hMDZmLTY2MGI1M2I5ZWI5YiJ9LCJpZGVudGlmaWVyIjpbeyJzeXN0ZW0iOiJodHRwczovL3BhcmNoaS5la2EuY2FyZSIsInZhbHVlIjoiMzBFNzE2RjQtQTlFMS00OUU5LUI2REYtM0FGN0QyN0EwMUU5I2xvY2FsZS0xZDZlNzZiZmVmY2RiZDU1ODRlYzUyZmJiMDA0MTBlNiJ9XSwicGVyZm9ybWVyIjpbeyJkaXNwbGF5IjoiZHVtbXkgZG9jdG9yIiwicmVmZXJlbmNlIjoiUHJhY3RpdGlvbmVyLzE2MTQ5MjU4NjY1MzI4NyJ9XSwic3RhdHVzIjoicHJlbGltaW5hcnkiLCJzdWJqZWN0Ijp7ImRpc3BsYXkiOiJkdW1teV9wYXRpZW50IiwicmVmZXJlbmNlIjoiUGF0aWVudC9kdW1teV9wYXRpZW50X29pZCJ9LCJyZXNvdXJjZVR5cGUiOiJPYnNlcnZhdGlvbiJ9fSx7InJlcXVlc3QiOnsibWV0aG9kIjoiUFVUIiwidXJsIjoiT2JzZXJ2YXRpb24vYzdkZmU5MzQtOTlmMy01ZjlkLTg0YmUtMjU5ZGI0MTFmYzMxIn0sInJlc291cmNlIjp7ImlkIjoiYzdkZmU5MzQtOTlmMy01ZjlkLTg0YmUtMjU5ZGI0MTFmYzMxIiwiZXh0ZW5zaW9uIjpbeyJ1cmwiOiJodHRwczovL2VrYS5jYXJlL2NhcmVfY29udGV4dF9pZCIsInZhbHVlU3RyaW5nIjoiMzBFNzE2RjQtQTlFMS00OUU5LUI2REYtM0FGN0QyN0EwMUU5In1dLCJjYXRlZ29yeSI6W3siY29kaW5nIjpbeyJjb2RlIjoic3ltcHRvbSIsImRpc3BsYXkiOiJzeW1wdG9tIiwic3lzdGVtIjoiaHR0cDovL21kYi5la2EuY2FyZSJ9XX1dLCJjb2RlIjp7ImNvZGluZyI6W3siY29kZSI6ImxvY2FsZS03ZmU4NDViMmU2MmNmYTkwNzUwOTg4ZGNkM2JjNGNjYiIsImRpc3BsYXkiOiJuYXVzZWEiLCJzeXN0ZW0iOiJodHRwczovL3BhcmNoaS5la2EuY2FyZSJ9XX0sImVuY291bnRlciI6eyJyZWZlcmVuY2UiOiJFbmNvdW50ZXIvMDFhMzNjMmYtMDNiMC01NzI3LWEwNmYtNjYwYjUzYjllYjliIn0sImlkZW50aWZpZXIiOlt7InN5c3RlbSI6Imh0dHBzOi8vcGFyY2hpLmVrYS5jYXJlIiwidmFsdWUiOiIzMEU3MTZGNC1BOUUxLTQ5RTktQjZERi0zQUY3RDI3QTAxRTkjbG9jYWxlLTdmZTg0NWIyZTYyY2ZhOTA3NTA5ODhkY2QzYmM0Y2NiIn1dLCJwZXJmb3JtZXIiOlt7ImRpc3BsYXkiOiJkdW1teSBkb2N0b3IiLCJyZWZlcmVuY2UiOiJQcmFjdGl0aW9uZXIvMTYxNDkyNTg2NjUzMjg3In1dLCJzdGF0dXMiOiJwcmVsaW1pbmFyeSIsInN1YmplY3QiOnsiZGlzcGxheSI6ImR1bW15X3BhdGllbnQiLCJyZWZlcmVuY2UiOiJQYXRpZW50L2R1bW15X3BhdGllbnRfb2lkIn0sInJlc291cmNlVHlwZSI6Ik9ic2VydmF0aW9uIn19LHsicmVxdWVzdCI6eyJtZXRob2QiOiJQVVQiLCJ1cmwiOiJNZWRpY2F0aW9uUmVxdWVzdC81YTA3ZjM3MS1iOGNhLTViNmEtOWExOC1mMmMzYTZlN2Y1NDMifSwicmVzb3VyY2UiOnsiaWQiOiI1YTA3ZjM3MS1iOGNhLTViNmEtOWExOC1mMmMzYTZlN2Y1NDMiLCJleHRlbnNpb24iOlt7InVybCI6Imh0dHBzOi8vZWthLmNhcmUvY2FyZV9jb250ZXh0X2lkIiwidmFsdWVTdHJpbmciOiIzMEU3MTZGNC1BOUUxLTQ5RTktQjZERi0zQUY3RDI3QTAxRTkifV0sImF1dGhvcmVkT24iOiIyMDI1LTAyLTIyVDA1OjQxOjM2LjA4ODAwMCswMDowMCIsImRvc2FnZUluc3RydWN0aW9uIjpbeyJhZGRpdGlvbmFsSW5zdHJ1Y3Rpb24iOlt7ImNvZGluZyI6W3siZGlzcGxheSI6IjYtMC0wIiwic3lzdGVtIjoiaHR0cHM6Ly9wYXJjaGkuZWthLmNhcmUvIn1dfV0sImRvc2VBbmRSYXRlIjpbeyJ0eXBlIjp7ImNvZGluZyI6W3siY29kZSI6Im9yZGVyZWQiLCJkaXNwbGF5IjoiT3JkZXJlZCIsInN5c3RlbSI6Imh0dHA6Ly90ZXJtaW5vbG9neS5obDcub3JnL0NvZGVTeXN0ZW0vZG9zZS1yYXRlLXR5cGUifV19fV0sInRleHQiOiJyZWZyYWluIGZyb20gZWF0aW5nIG9pbHkgZm9vZHMiLCJ0aW1pbmciOnsiY29kZSI6eyJjb2RpbmciOlt7InN5c3RlbSI6Imh0dHBzOi8vcGFyY2hpLmVrYS5jYXJlLyJ9XX0sInJlcGVhdCI6eyJmcmVxdWVuY3kiOjMsInBlcmlvZCI6MSwicGVyaW9kVW5pdCI6ImQiLCJ3aGVuIjpbIk1PUk4iXX19fV0sImVuY291bnRlciI6eyJyZWZlcmVuY2UiOiJFbmNvdW50ZXIvMDFhMzNjMmYtMDNiMC01NzI3LWEwNmYtNjYwYjUzYjllYjliIn0sImlkZW50aWZpZXIiOlt7InN5c3RlbSI6Imh0dHBzOi8vcGFyY2hpLmVrYS5jYXJlIiwidXNlIjoib2ZmaWNpYWwiLCJ2YWx1ZSI6IjMwRTcxNkY0LUE5RTEtNDlFOS1CNkRGLTNBRjdEMjdBMDFFOSNsb2NhbGUtODc0MzU1YmFlY2EyN2JjNGZmMTc3MTNlZTg4ZTgzZDMifV0sImludGVudCI6Im9yZGVyIiwibWVkaWNhdGlvbkNvZGVhYmxlQ29uY2VwdCI6eyJjb2RpbmciOlt7ImNvZGUiOiJsb2NhbGUtODc0MzU1YmFlY2EyN2JjNGZmMTc3MTNlZTg4ZTgzZDMiLCJkaXNwbGF5Ijoibm9yZmxveCA0MG1nIHRhYmxldCIsInN5c3RlbSI6Imh0dHA6Ly9la2EuY2FyZS9tZGIifV19LCJyZXF1ZXN0ZXIiOnsiZGlzcGxheSI6ImR1bW15IGRvY3RvciIsInJlZmVyZW5jZSI6IlByYWN0aXRpb25lci8xNjE0OTI1ODY2NTMyODcifSwic3RhdHVzIjoiYWN0aXZlIiwic3ViamVjdCI6eyJkaXNwbGF5IjoiZHVtbXlfcGF0aWVudCIsInJlZmVyZW5jZSI6IlBhdGllbnQvZHVtbXlfcGF0aWVudF9vaWQifSwicmVzb3VyY2VUeXBlIjoiTWVkaWNhdGlvblJlcXVlc3QifX0seyJyZXF1ZXN0Ijp7Im1ldGhvZCI6IlBPU1QiLCJ1cmwiOiJDb21wb3NpdGlvbiJ9LCJyZXNvdXJjZSI6eyJleHRlbnNpb24iOlt7InVybCI6Imh0dHBzOi8vZWthLmNhcmUvY2FyZV9jb250ZXh0X2lkIiwidmFsdWVTdHJpbmciOiIzMEU3MTZGNC1BOUUxLTQ5RTktQjZERi0zQUY3RDI3QTAxRTkifV0sImF1dGhvciI6W3siZGlzcGxheSI6ImR1bW15IGRvY3RvciIsInJlZmVyZW5jZSI6IlByYWN0aXRpb25lci8xNjE0OTI1ODY2NTMyODcifV0sImRhdGUiOiIyMDI1LTAyLTIyVDA1OjQxOjM2LjA4ODAwMCswMDowMCIsImlkZW50aWZpZXIiOnsic3lzdGVtIjoiaHR0cHM6Ly9wYXJjaGkuZWthLmNhcmUiLCJ2YWx1ZSI6IjMwRTcxNkY0LUE5RTEtNDlFOS1CNkRGLTNBRjdEMjdBMDFFOSJ9LCJzZWN0aW9uIjpbeyJlbnRyeSI6W3sicmVmZXJlbmNlIjoiQ29uZGl0aW9uLzIzMWViMDBkLTczZDQtNTJjNi04NTk4LWUzMWI1OWM1Zjk0YiJ9XSwidGl0bGUiOiJDb25kaXRpb24ifSx7ImVudHJ5IjpbeyJyZWZlcmVuY2UiOiJPYnNlcnZhdGlvbi80OTdjMjk2Ny04YjVlLTU4Y2EtOWUwZC0zOWE2YjRiMWRiOGEifSx7InJlZmVyZW5jZSI6Ik9ic2VydmF0aW9uL2M3ZGZlOTM0LTk5ZjMtNWY5ZC04NGJlLTI1OWRiNDExZmMzMSJ9XSwidGl0bGUiOiJPYnNlcnZhdGlvbiJ9LHsiZW50cnkiOlt7InJlZmVyZW5jZSI6Ik1lZGljYXRpb25SZXF1ZXN0LzVhMDdmMzcxLWI4Y2EtNWI2YS05YTE4LWYyYzNhNmU3ZjU0MyJ9XSwidGl0bGUiOiJNZWRpY2F0aW9uUmVxdWVzdCJ9XSwic3RhdHVzIjoicHJlbGltaW5hcnkiLCJzdWJqZWN0Ijp7ImRpc3BsYXkiOiJkdW1teV9wYXRpZW50IiwicmVmZXJlbmNlIjoiUGF0aWVudC9kdW1teV9wYXRpZW50X29pZCJ9LCJ0aXRsZSI6IlByZXNjcmlwdGlvbiIsInR5cGUiOnsiY29kaW5nIjpbeyJjb2RlIjoiNDQwNTQ1MDA2IiwiZGlzcGxheSI6IlByZXNjcmlwdGlvbiByZWNvcmQiLCJzeXN0ZW0iOiJodHRwOi8vc25vbWVkLmluZm8vc2N0In1dfSwicmVzb3VyY2VUeXBlIjoiQ29tcG9zaXRpb24ifX1dLCJ0eXBlIjoiYmF0Y2giLCJyZXNvdXJjZVR5cGUiOiJCdW5kbGUifQ=="
-
+          "400":
+            description: Bad Request
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        message:
+                          type: string
+                example:
+                  error:
+                    code: INVALID_REQUEST_PARAMETERS
+                    message: The request contains invalid parameters
+          "403":
+            description: Forbidden
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        message:
+                          type: string
+                example:
+                  error:
+                    code: ACCESS_DENIED
+                    message: "Access denied. You do not have permission to view this upload result." 
           "404":
-            description: when request session id has no data
+            description: when requested session id has no data
             content:
               application/json:
                 schema:
@@ -800,8 +838,28 @@ paths:
                     message:
                       type: string
                       example: Unauthorized
+          '500':
+            description: Internal Server Error
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        message:
+                          type: string
+                example:
+                  error:
+                    code: SERVER_ERROR
+                    message: An unexpected error occurred while processing your request. Please try again later.
+
         security:
           - auth: []
+
 components:
   schemas:
     DocumentTypeQueryParam:
