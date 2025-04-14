@@ -41,7 +41,7 @@ paths:
             type: string
             nullable: true
             required: false
-          description: Include the `p_oid` to fetch the list of records from the EMR.
+          description: Include the patient identifier (p_oid) to fetch the list of records. Applicable only for EMR cases.
         - name: accept
           in: header
           required: true
@@ -100,7 +100,13 @@ paths:
                                       items:
                                         type: string
                                         description: Tags associated with the document.
-                                        example: TYPE_TAG_SMART
+                                    auto_tags:
+                                        type : array
+                                        items:
+                                          type: string
+                                          description: Automatically assigned tags.
+                                          example: TYPE_TAG_SMART
+
                                     title:
                                       type: string
                                       description: Title associated with the document.
@@ -143,7 +149,7 @@ paths:
         - in: query
           name: p_oid
           required: false
-          description: Include the `p_oid` to upload the document for a patient in the EMR.
+          description: Include the patient identifier (p_oid) to upload the record. This is applicable only for EMR cases.
           schema:
             type: string
       requestBody:
@@ -223,7 +229,7 @@ paths:
             type: string
             nullable: true
             required: false
-          description: Include the `p_oid` to update the record of a patient in the EMR.
+          description: Include the patient identifier (p_oid) to update a patient's record. Applicable only for EMR cases.
       requestBody:
         content:
           application/json:
@@ -309,7 +315,7 @@ paths:
             type: string
             nullable: true
             required: false
-          description: Include the `p_oid` to delete the record of a patient from the EMR.
+          description: Include the patient identifier (p_oid) to delete a patient's record. Applicable only for EMR cases.
       responses:
         "200":
           description: Document deleted successfully.
@@ -336,7 +342,7 @@ paths:
         - in: query
           name: p_oid
           required: false
-          description: Include the `p_oid` to fetch the record of a patient uploaded on EMR.
+          description: Include the patient identifier (p_oid) to fetch a patient's record, applicable only for EMR cases.
           schema:
             type: string
             nullable: true
@@ -367,6 +373,8 @@ paths:
                       - iv
                       - sc
                       - ot
+                  smart_report:
+                     type: string
                   files:
                     type: array
                     items:
