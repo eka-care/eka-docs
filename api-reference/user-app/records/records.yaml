@@ -35,6 +35,13 @@ paths:
             type: string
             nullable: true
           description: Please include the nextPageToken from the API response to enable pagination.
+        - name: p_oid
+          in: query
+          schema:
+            type: string
+            nullable: true
+            required: false
+          description: Include the patient identifier (p_oid) to fetch the list of records. Applicable only for EMR cases.
         - name: accept
           in: header
           required: true
@@ -93,7 +100,13 @@ paths:
                                       items:
                                         type: string
                                         description: Tags associated with the document.
-                                        example: TYPE_TAG_SMART
+                                    auto_tags:
+                                        type : array
+                                        items:
+                                          type: string
+                                          description: Automatically assigned tags.
+                                          example: TYPE_TAG_SMART
+
                                     title:
                                       type: string
                                       description: Title associated with the document.
@@ -132,6 +145,13 @@ paths:
         - Records
       summary: "Step 1: Upload Record"
       description: Generate a presigned URL that allows you to securely upload a document to the server. This URL can be used to upload the document directly without needing additional authentication or authorization steps.
+      parameters:
+        - in: query
+          name: p_oid
+          required: false
+          description: Include the patient identifier (p_oid) to upload the record. This is applicable only for EMR cases.
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -203,6 +223,13 @@ paths:
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
+        - name: p_oid
+          in: query
+          schema:
+            type: string
+            nullable: true
+            required: false
+          description: Include the patient identifier (p_oid) to update a patient's record. Applicable only for EMR cases.
       requestBody:
         content:
           application/json:
@@ -282,6 +309,13 @@ paths:
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
+        - name: p_oid
+          in: query
+          schema:
+            type: string
+            nullable: true
+            required: false
+          description: Include the patient identifier (p_oid) to delete a patient's record. Applicable only for EMR cases.
       responses:
         "200":
           description: Document deleted successfully.
@@ -292,9 +326,10 @@ paths:
       security:
         - auth: []
 
+
     get:
       summary: Describes a document
-      description: Once you get the list of all the documents with coresponding id's, you can this to know more details about the document.
+      description: Once you retrieve a list of all documents with their corresponding IDs, you can use this endpoint to get more details about a specific document.
       operationId: getDocument
       parameters:
         - in: path
@@ -304,6 +339,13 @@ paths:
           schema:
             type: string
             example: 2df9e795-d368-4ceb-be9d-b44281703827
+        - in: query
+          name: p_oid
+          required: false
+          description: Include the patient identifier (p_oid) to fetch a patient's record, applicable only for EMR cases.
+          schema:
+            type: string
+            nullable: true
       responses:
         "200":
           description: Description of a document.
@@ -322,15 +364,124 @@ paths:
                       type: string
                   dt:
                     type: string
-                    enum:
-                      - lr
-                      - ps
-                      - ds
-                      - vc
-                      - in
-                      - iv
-                      - sc
-                      - ot
+                    enum: [ lr, ps, ds, vc, in, iv, sc, ot ]
+                  smart_report:
+                    type: object
+                    properties:
+                      verified:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                            unit:
+                              type: string
+                            unit_eka_id:
+                              type: string
+                            range:
+                              type: string
+                            result:
+                              type: string
+                            result_id:
+                              type: string
+                              enum:
+                                - sm-4067205096
+                                - sm-2631712380
+                                - sm-1420480405
+                                - sm-5279215230
+                                - sm-8146614980
+                                - sm-5279274814
+                                - sm-1220479757
+                                - sm-2631771970
+                                - sm-4067860500
+                                - sm-5379306527
+                                - sm-5612225938
+                            display_result:
+                              type: string
+                            id:
+                              type: integer
+                            vital_id:
+                              type: string
+                            page_num:
+                              type: integer
+                            file_index:
+                              type: integer
+                            coordinates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  x:
+                                    type: number
+                                  y:
+                                    type: number
+                            eka_id:
+                              type: string
+                            is_result_editable:
+                              type: boolean
+                            date:
+                              type: integer
+                              format: int64
+                      unverified:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                            unit:
+                              type: string
+                            unit_eka_id:
+                              type: string
+                            range:
+                              type: string
+                            result:
+                              type: string
+                            result_id:
+                              type: string
+                              enum:
+                                - sm-4067205096
+                                - sm-2631712380
+                                - sm-1420480405
+                                - sm-5279215230
+                                - sm-8146614980
+                                - sm-5279274814
+                                - sm-1220479757
+                                - sm-2631771970
+                                - sm-4067860500
+                                - sm-5379306527
+                                - sm-5612225938
+                            display_result:
+                              type: string
+                            id:
+                              type: integer
+                            vital_id:
+                              type: string
+                            page_num:
+                              type: integer
+                            file_index:
+                              type: integer
+                            coordinates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  x:
+                                    type: number
+                                  y:
+                                    type: number
+                            eka_id:
+                              type: string
+                            is_result_editable:
+                              type: boolean
+                            date:
+                              type: integer
+                              format: int64
                   files:
                     type: array
                     items:
@@ -341,10 +492,9 @@ paths:
                           format: uri
                         file_type:
                           type: string
-                          enum:
-                            - IMG
-                            - PDF
-              example:
+                          enum: [ IMG, PDF ]
+
+                example:
                 source: "androidp"
                 document_date_epoch: 1614556800
                 document_type: lr
@@ -1131,7 +1281,7 @@ components:
                               description: Name of the doctor associated with the report.
                             Facility:
                               type: string
-                              description: Name of the facility generating the report.  
+                              description: Name of the facility generating the report.
   securitySchemes:
     auth:
       type: http
