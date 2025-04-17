@@ -2,3 +2,71 @@
 title: Retrieve Result
 openapi: GET /voice-record/api/status/{session_id}
 ---
+
+### Code to decode base64 encoded FHIR response
+
+<AccordionGroup>
+  <Accordion title="Python">
+    ```python
+    import base64
+    import json
+
+    encoded_response = "BASE64_ENCODED_STRING_HERE"
+    decoded_bytes = base64.b64decode(encoded_response)
+    decoded_str = decoded_bytes.decode("utf-8")
+    fhir_response = json.loads(decoded_str)
+
+    print(json.dumps(fhir_response, indent=2))
+    ```
+  </Accordion>
+
+  <Accordion title="Java">
+    ```java
+    import java.util.Base64;
+    import org.json.JSONObject;
+
+    public class FhirDecoder {
+        public static void main(String[] args) {
+            String encodedResponse = "BASE64_ENCODED_STRING_HERE";
+            byte[] decodedBytes = Base64.getDecoder().decode(encodedResponse);
+            String decodedStr = new String(decodedBytes);
+
+            JSONObject json = new JSONObject(decodedStr);
+            System.out.println(json.toString(2));
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Go">
+    ```go
+    package main
+
+    import (
+        "encoding/base64"
+        "encoding/json"
+        "fmt"
+    )
+
+    func main() {
+        encodedResponse := "BASE64_ENCODED_STRING_HERE"
+        decodedBytes, err := base64.StdEncoding.DecodeString(encodedResponse)
+        if err != nil {
+            panic(err)
+        }
+
+        var fhirResponse map[string]interface{}
+        if err := json.Unmarshal(decodedBytes, &fhirResponse); err != nil {
+            panic(err)
+        }
+
+        prettyJSON, err := json.MarshalIndent(fhirResponse, "", "  ")
+        if err != nil {
+            panic(err)
+        }
+
+        fmt.Println(string(prettyJSON))
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

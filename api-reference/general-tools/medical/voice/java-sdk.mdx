@@ -1,0 +1,259 @@
+# Eka Care Ekascribe Java SDK Integration
+
+This guide explains how to integrate the Eka Care Ekascribe Java SDK.
+
+## Overview
+
+Eka Care provides an Ekascribe service that allows you to transcribe audio files into structured medical data. The Java SDK simplifies this integration process.
+
+## Quick Start
+
+The integration process follows these main steps:
+1. Set up webhook registration (one-time setup)
+2. Install the SDK
+3. Implement authentication
+4. Upload audio files
+5. Process the webhook callback
+6. Retrieve and parse the Ekascribe results
+
+## Prerequisites
+
+- Java 8 or higher
+- Maven or Gradle for dependency management
+- Client credentials (client ID and secret) from Eka Care
+
+## Installation
+
+You can add the Eka Care Java SDK to your project in two ways:
+
+### Option 1: Using dependency management
+
+#### Maven
+```xml
+<dependency>
+    <groupId>care.eka</groupId>
+    <artifactId>ekacare-java-sdk</artifactId>
+    <version>latest-version</version>
+</dependency>
+```
+
+#### Gradle
+```groovy
+implementation 'care.eka:ekacare-java-sdk:latest-version'
+```
+
+### Option 2: Direct download
+Download the Eka Java SDK from Maven repository [Here](https://central.sonatype.com/artifact/care.eka/ekacare-java-sdk)
+
+## Step 1: Register Webhook (One-time Setup)
+
+Before using the Ekascribe service, register a webhook to receive notifications when transcription is complete:
+
+```bash
+curl --request POST \
+  --url https://api.eka.care/notification/v1/connect/webhook/subscriptions \
+  --header 'Authorization: Bearer <auth_token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "event_names": [
+      "v2rx.completed"
+    ],
+    "endpoint": "your-endpoint-url",
+    "signing_key": "supersecretkey",
+    "protocol": "https"
+  }'
+```
+
+## Step 2: Authentication
+
+Initialize the client with your credentials and obtain access tokens:
+
+```java
+import care.eka.EkaCareClient;
+import com.fasterxml.jackson.databind.JsonNode;
+
+// Initialize the client
+EkaCareClient client = new EkaCareClient("your_client_id", "your_client_secret");
+
+// Login to get tokens
+JsonNode tokenResponse = client.getAuth().login();
+String accessToken = tokenResponse.get("access_token").asText();
+String refreshToken = tokenResponse.get("refresh_token").asText();
+
+// Set access token manually if needed
+client.setAccessToken(accessToken);
+
+// Refresh token when needed
+JsonNode refreshedTokens = client.getAuth().refreshToken(refreshToken);
+String newAccessToken = refreshedTokens.get("access_token").asText();
+```
+
+## Step 3: Upload Audio Files
+
+Upload audio files for transcription:
+
+```java
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+// Prepare files and metadata
+List<String> audioFiles = new ArrayList<>();
+audioFiles.add("path/to/audio_file1.mp3");
+audioFiles.add("path/to/audio_file2.mp3");
+
+String transactionId = "unique_transaction_id";
+Map<String, Object> extraData = new HashMap<>();
+extraData.put("mode", "dictation");
+String action = "ekascribe";
+
+// Upload files
+List<JsonNode> responses = client.getFiles().upload(audioFiles, transactionId, action, extraData);
+
+// Process responses
+for (JsonNode response : responses) {
+    // Handle response data as needed
+}
+```
+
+## Step 4: Handle Webhook Callback
+
+When the transcription is complete, Eka Care will send a webhook notification to your registered endpoint. Here's a sample of what you'll receive:
+
+```json
+{
+  "event": "v2rx.completed",
+  "data": {
+    "transaction_id": "unique_transaction_id",
+    "status": "completed",
+    "session_id": "session_123456"
+  },
+  "timestamp": "2023-07-20T10:30:00Z"
+}
+```
+
+## Step 5: Retrieve Ekascribe Results
+
+After receiving the webhook notification, retrieve the transcription results:
+
+```java
+// Get the session ID from the webhook callback
+String sessionId = "session_123456"; // This comes from the webhook payload
+
+// Fetch session status and results
+JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId);
+
+// Sample response structure
+// {
+//   "status": "completed",
+//   "error": {},
+//   "data": {
+//     "output": {
+//       "fhir": "base64_encoded_fhir_data..."
+//     }
+//   }
+// }
+
+// Extract and decode the FHIR data
+if (sessionStatus.has("data") && 
+    sessionStatus.get("data").has("output") && 
+    sessionStatus.get("data").get("output").has("fhir")) {
+    
+    String encodedFhir = sessionStatus.get("data").get("output").get("fhir").asText();
+    byte[] decodedBytes = java.util.Base64.getDecoder().decode(encodedFhir);
+    String fhirJson = new String(decodedBytes);
+}
+```
+
+## Complete Example
+
+Here's a complete example integrating all the above steps:
+
+```java
+package org.example;
+
+import care.eka.EkaCareClient;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Base64;
+
+public class EkascribeIntegrationExample {
+    public static void main(String[] args) {
+        try {
+            // Initialize the client
+            EkaCareClient client = new EkaCareClient("your_client_id", "your_client_secret");
+            
+            // Authenticate
+            authenticateClient(client);
+            
+            // Upload audio files
+            String transactionId = "txn_" + System.currentTimeMillis();
+            uploadAudioFiles(client, transactionId);
+            
+            // NOTE: At this point, wait for the webhook callback
+            // This would typically be handled by your web server
+            
+            // Once webhook is received, fetch results
+            // The sessionId would come from the webhook payload
+            String sessionId = "session_id_from_webhook";
+            getTranscriptionResults(client, sessionId);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private static void authenticateClient(EkaCareClient client) throws IOException {
+        JsonNode tokenResponse = client.getAuth().login();
+        client.setAccessToken(tokenResponse.get("access_token").asText());
+    }
+    
+    private static void uploadAudioFiles(EkaCareClient client, String transactionId) throws IOException {
+        List<String> audioFiles = new ArrayList<>();
+        audioFiles.add("path/to/audio1.mp3");
+        audioFiles.add("path/to/audio2.mp3");
+        
+        Map<String, Object> extraData = new HashMap<>();
+        extraData.put("mode", "dictation");
+        
+        List<JsonNode> responses = client.getFiles().upload(audioFiles, transactionId, "ekascribe", extraData);
+    }
+    
+    private static void getTranscriptionResults(EkaCareClient client, String sessionId) throws IOException {
+        JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId);
+        
+        if ("completed".equals(sessionStatus.get("status").asText())) {
+            String encodedFhir = sessionStatus.get("data").get("output").get("fhir").asText();
+            byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
+            String fhirJson = new String(decodedBytes);
+        } else {
+            // Handle non-completed status
+        }
+    }
+}
+```
+
+## Additional Resources
+
+- [Eka Care Java SDK Examples Repository](https://github.com/eka-care/eka-java-sdk-examples/)
+- [Eka Care Developer Documentation](https://developer.eka.care/)
+- [API Reference for Webhooks](https://developer.eka.care/api-reference/connect/webhooks/register-webhook)
+- [API Reference for Ekascribe](https://developer.eka.care/api-reference/general-tools/medical/voice/retrieve-transcribe)
+
+## Troubleshooting
+
+### Common Errors
+
+1. **Authentication Failed**: Verify your client ID and secret are correct
+2. **File Upload Failed**: Ensure file paths are valid and files are readable
+3. **Webhook Not Received**: Check your endpoint is publicly accessible and correctly registered
+
+### Support
+
+For additional support, contact the Eka Care developer support team at support@eka.care.
