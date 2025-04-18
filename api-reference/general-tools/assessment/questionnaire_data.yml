@@ -15,7 +15,7 @@ paths:
         - Get Questionnaire Data
       summary: Get Questionnaire Data
       description: >-
-        This API retrieves the questionnaire data for a given assessment ID. The questionnaire data includes all the available information about `practitioner`, `patient` and `questionnaire`.
+        This API retrieves the questionnaire data for a given assessment ID. The questionnaire data includes all the available information about `practitioner`, `patient` and `fhir_data`.
       
       security:
         - authApiKey: []
@@ -30,7 +30,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Questionnaire-200'
+                $ref: '#/components/schemas/QuestionnaireData-200'
         "400":
           description: Bad Request
           content:
@@ -84,7 +84,7 @@ components:
         example: application/json
 
   schemas:
-    Questionnaire-200:
+    QuestionnaireData-200:
       type: object
       properties:
         data:
@@ -113,39 +113,69 @@ components:
                   type: string
                   nullable: true
                   example: "m"
-            questionnaire:
-              type: array
-              items:
-                type: object
-                properties:
-                  question:
-                    type: string
-                    example: "What symptoms are you facing?"
-                  answer:
-                    type: string
-                    example: "Fever, Cough"
+            fhir_data:
+              type: object
+              properties:
+                resourceType:
+                  type: string
+                  example: "Bundle"
+                type:
+                  type: string
+                  example: "document"
+                link:
+                  type: array
                   items:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        question:
-                          type: string
-                          example: "Fever"
-                        answer:
-                          type: string
-                          example: "99.5"
-                        items:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              question:
-                                type: string
-                                example: "When did the fever start?"
-                              answer:
-                                type: string
-                                example: "2 days ago"
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        example: "https://eka.care/sn_1234567890"
+                      relation:
+                        type: string
+                        example: "object"
+                entry:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      resource:
+                        type: object
+                      fullUrl:
+                        type: string
+                        example: "Composition/f0b76f12-544d-4e40-8153-5e61cajsbca6"
+                id:
+                  type: string
+                  example: "sn_1234567890"
+                meta:
+                  type: object
+                  properties:
+                    versionId:
+                      type: string
+                      example: "1"
+                    lastUpdated:
+                      type: string
+                      example: "2025-03-03T06:45:01.416+00:00"
+                    profile:
+                      type: array
+                      items:
+                        type: string
+                        example: "https://nrces.in/ndhm/fhir/r4/StructureDefinition/DocumentBundle"
+                    security:
+                      type: array
+                      items:
+                        type: object
+                identifier:
+                  type: object
+                  properties:
+                    system:
+                      type: string
+                      example: "https://eka.care"
+                    value:
+                      type: string
+                      example: "sn_1234567890"
+                timestamp:
+                  type: string
+                  example: "2025-03-03T06:45:01.416+00:00"
     Generic-Error:
       type: object
       properties:
