@@ -2119,13 +2119,6 @@ paths:
                           enum: [ 100ms ]
                         url:
                           type: string
-                        conf:
-                          type: object
-                          properties:
-                            room_id:
-                              type: string
-                            room_sid:
-                              type: string
                   required:
                     - start_time
                 patient_details:
@@ -2254,11 +2247,8 @@ paths:
                   label: ["vitals_submitted"]
                   tags: ["paid", "in_consult"]
                 video_connect:
-                  vendor: "100ms"
+                  vendor: "other"
                   url: "https://xyz.com"
-                  conf:
-                    room_id: "r1"
-                    room_sid: "rs1"
               patient_details:
                 first_name: "Test"
                 mobile: "+919999999999"
@@ -3020,28 +3010,6 @@ paths:
                     type: string
                   custom_attributes:
                     type: object  
-                  video_connect:
-                    type: object
-                    oneOf:
-                      - title: OtherPlatform
-                        properties:
-                          platform:
-                            type: string
-                            enum: ['other','eka']
-                          url:
-                            type: string
-                            description: The meeting URL.
-                      - title: 100msPlatform
-                        properties:
-                          platform:
-                            type: string
-                            enum: ['100ms']
-                          meet_link:
-                            type: string
-                            description: The participant's meeting link for the '100ms' platform.
-                          host_link:
-                            type: string
-                            description: The host's meeting link for the '100ms' platform.                  
                   partner_meta:
                     type: object
                 example:
@@ -3075,9 +3043,6 @@ paths:
                   prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
                   custom_attributes:
                     label: ["vitals_submitted"]
-                  video_connect:
-                    platform: "eka"
-                    url: "https://mweb.eka.care/app/visit/start-call/{appointment_id}"
                   partner_meta:
                     key1: "value1"
         '400':
@@ -3361,6 +3326,226 @@ paths:
               partner_meta: {}
               patient_details:
                 first_name: "updated_name"
+      responses:
+        '204':
+          description: OK
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Thu, 16 Apr 2020 08:47:12 GMT
+            Transfer-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: chunked
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+            Vary:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Accept-Encoding
+            Strict-Transport-Security:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: max-age=15768000
+            Content-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: gzip
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "APPOINTMENT_NOT_FOUND"
+                  message: "The specified appointment ID does not exist"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "INVALID_REQUEST"
+                  message: "The request is invalid or missing required parameters"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "SERVER_ERROR"
+                  message: "An unexpected error occurred on the server"
+      deprecated: false
+  /dr/v2/appointment/{appointment_id}:
+    patch:
+      tags:
+        - Appointment API
+      summary: Update Appointment V2
+      description: >-
+
+        ### Overview
+
+
+        This API endpoint is used to update an existing appointment.
+
+      operationId: UpdateAppointment
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: appointment_id
+          in: path
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+        - name: partner_id
+          in: query
+          description: 'If set to 1 then appointment_id in path parameter should be partner_appointment_id else eka apppointment_id'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '1'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appointment_details:
+                  type: object
+                  properties:
+                    mode:
+                      type: string
+                      enum: [ INCLINIC, PHONE, VIDEO ]
+                    custom_attributes:
+                      type: object
+                      description: '`Custom attributes` and `value` for each custom attribute are a fixed set of enum defined by our partner at the time of onboarding. `Labels` and `Tags` are `special type` of custom attributes which exist by default for every partner and are visible in appointment queue. key-value pair within labels and tags can be defined by each repective partner. Position of other custom attributes in appointment queue need to configured by partner.'
+                    video_connect:
+                      type: object
+                      description: 'Configuration of video connect. To be used only when mode is `VIDEO`'
+                      properties:
+                        vendor:
+                          type: string
+                          enum: [ other ]
+                        url:
+                          type: string
+                          example: "https://meet.google.com/landing"
+                partner_meta:
+                  type: object
+                  properties:
+                    key1:
+                      type: string
+                      example: "value1"
+                patient_details:
+                  type: object
+                  properties:
+                    partner_patient_id:
+                      type: string
+                      example: "145367"
+                      description: "Patient id of the partner"
+                    first_name:
+                      type: string
+                      example: "Test"
+                      description: "First name of the patient"
+                    middle_name:
+                      type: string
+                      example: ""
+                      description: "Middle name of the patient (if any)"
+                    last_name:
+                      type: string
+                      example: "Patient"
+                      description: "Last name of the patient"
+                    mobile:
+                      type: string
+                      example: "+919999999999"
+                      description: "Mobile number of the patient, including country code"
+                    gender:
+                      type: string
+                      example: "M"
+                      description: "Gender of the patient (e.g., 'M' for male, 'F' for female, 'O' for others)"
+                      enum:
+                        - "M"
+                        - "F"
+                        - "O"
+                  oneOf:
+                    - title: DOB
+                      properties:
+                        dob:
+                          type: string
+                          format: date
+                          example: "1987-01-06"
+                          description: "Date of birth of the patient (YYYY-MM-DD)"
+                      required:
+                        - dob
+                    - title: AGE
+                      properties:
+                        age:
+                          type: integer
+                          example: 24
+                          description: "Age in months"
+                      required:
+                        - age
       responses:
         '204':
           description: OK
