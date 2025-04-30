@@ -2112,13 +2112,40 @@ paths:
                       description: '`Custom attributes` and `value` for each custom attribute are a fixed set of enum defined by our partner at the time of onboarding. `Labels` and `Tags` are `special type` of custom attributes which exist by default for every partner and are visible in appointment queue. key-value pair within labels and tags can be defined by each repective partner. Position of other custom attributes in appointment queue need to configured by partner.'
                     video_connect:
                       type: object
-                      description: 'Configuration of video connect. To be used only when mode is `VIDEO`'
-                      properties:
-                        vendor:
-                          type: string
-                          enum: [ 100ms ]
-                        url:
-                          type: string
+                      description: Configuration of video connect. To be used only when mode is `VIDEO`.
+                      oneOf:
+                        - title: OtherVendor
+                          properties:
+                            vendor:
+                              type: string
+                              enum: [other]
+                              description: Vendor must be other
+                            url:
+                              type: string
+                              description: Meeting URL for other vendor
+                              example: "https://meet.google.com/landing"
+                          required:
+                            - vendor
+                            - url
+                          additionalProperties: false
+                        - title: 100msVendor
+                          properties:
+                            vendor:
+                              type: string
+                              enum: [100ms]
+                              description: Vendor must be 100ms
+                            meet_link:
+                              type: string
+                              description: Link for the meeting (attendee)
+                            host_link:
+                              type: string
+                              description: Link for the host to join the meeting
+                          required:
+                            - vendor
+                            - meet_link
+                            - host_link
+                          additionalProperties: false
+                                       
                   required:
                     - start_time
                 patient_details:
@@ -3484,14 +3511,40 @@ paths:
                       description: '`Custom attributes` and `value` for each custom attribute are a fixed set of enum defined by our partner at the time of onboarding. `Labels` and `Tags` are `special type` of custom attributes which exist by default for every partner and are visible in appointment queue. key-value pair within labels and tags can be defined by each repective partner. Position of other custom attributes in appointment queue need to configured by partner.'
                     video_connect:
                       type: object
-                      description: 'Configuration of video connect. To be used only when mode is `VIDEO`'
-                      properties:
-                        vendor:
-                          type: string
-                          enum: [ other ]
-                        url:
-                          type: string
-                          example: "https://meet.google.com/landing"
+                      description: Configuration of video connect. To be used only when mode is `VIDEO`.
+                      oneOf:
+                        - title: OtherVendor
+                          properties:
+                            vendor:
+                              type: string
+                              enum: [other]
+                              description: Vendor must be other
+                            url:
+                              type: string
+                              description: Meeting URL for other vendor
+                              example: "https://meet.google.com/landing"
+                          required:
+                            - vendor
+                            - url
+                          additionalProperties: false
+                        - title: 100msVendor
+                          properties:
+                            vendor:
+                              type: string
+                              enum: [100ms]
+                              description: Vendor must be 100ms
+                            meet_link:
+                              type: string
+                              description: Link for the meeting (attendee)
+                            host_link:
+                              type: string
+                              description: Link for the host to join the meeting
+                          required:
+                            - vendor
+                            - meet_link
+                            - host_link
+                          additionalProperties: false
+                                            
                 partner_meta:
                   type: object
                   properties:
