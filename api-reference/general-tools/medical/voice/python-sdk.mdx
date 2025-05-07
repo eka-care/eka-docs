@@ -227,53 +227,6 @@ def get_transcription_results(client, session_id):
 if __name__ == "__main__":
     ekascribe_integration_example()
 ```
-
-## File Upload in Detail
-
-The SDK provides a robust file uploader that handles both regular and large file uploads:
-
-```python
-from ekacare import EkaCareClient
-from ekacare.tools.files import EkaUploadError
-
-client = EkaCareClient(
-    client_id="your_client_id",
-    client_secret="your_client_secret"
-)
-
-try:
-    # For a single file
-    response = client.files.upload(
-        file_paths=["path/to/audio.mp3"],
-        txn_id="unique_id",
-        action="ekascribe"
-    )
-    
-    # For multiple files
-    responses = client.files.upload(
-        file_paths=[
-            "path/to/audio1.mp3",
-            "path/to/audio2.mp3"
-        ],
-        txn_id="unique_group_id",
-        action="ekascribe"
-    )
-    
-    # With extra metadata
-    responses = client.files.upload(
-        file_paths=["path/to/audio.mp3"],
-        txn_id="unique_id",
-        action="ekascribe",
-        extra_data={
-            "mode": "dictation",
-            "language": "en-US"
-        }
-    )
-    
-except EkaUploadError as e:
-    print(f"Upload failed: {str(e)}")
-```
-
 The uploader automatically:
 - Determines appropriate upload method based on file size
 - Uses multipart upload for large files (>100MB)
@@ -281,8 +234,6 @@ The uploader automatically:
 - Groups related files with transaction IDs
 
 ## Additional Resources
-
-- [Eka Care Python SDK Examples Repository](https://github.com/eka-care/eka-python-sdk-examples/)
 - [Eka Care Developer Documentation](https://developer.eka.care/)
 - [API Reference for Webhooks](https://developer.eka.care/api-reference/connect/webhooks/register-webhook)
 - [API Reference for Ekascribe](https://developer.eka.care/api-reference/general-tools/medical/voice/retrieve-transcribe)
