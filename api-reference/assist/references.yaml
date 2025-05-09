@@ -1,0 +1,213 @@
+openapi: 3.1.0
+info:
+   title: Lucid
+   description: Lucid - Prompt runner + LLM stream chat
+   version: 0.0.1
+servers:
+-  url: https://api.dev.eka.care
+   description: Staging Server
+-  url: https://api.eka.care
+   description: Production Server
+paths:
+   /doc_assist/llm_router/v1/chat:
+      post:
+         summary: Stream Chat
+         operationId: stream_chat_doc_assist_llm_router_v1_chat_post
+         parameters:
+         -  name: session_id
+            in: query
+            required: true
+            schema:
+               type: string
+               title: Session Id
+         -  name: model_id
+            in: query
+            required: false
+            schema:
+               default: anthropic.claude-3-5-sonnet-20241022-v2:0
+               title: Model Id
+         -  name: Authorization
+            in: header
+            required: false
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Authorization
+         responses:
+            '200':
+               description: Successful Response
+            '422':
+               description: Validation Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/HTTPValidationError'
+   /doc_assist/prompt_runner/v1/run_prompt_stream:
+      post:
+         summary: Run Prompt Stream
+         description: Run a prompt with streaming response
+         operationId: run_prompt_stream_doc_assist_prompt_runner_v1_run_prompt_stream_post
+         parameters:
+         -  name: Authorization
+            in: header
+            required: false
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Authorization
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     $ref: '#/components/schemas/RunPromptStreamRequest'
+         responses:
+            '200':
+               description: Successful Response
+            '422':
+               description: Validation Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/HTTPValidationError'
+   /doc_assist/prompt_runner/v1/run_chat_stream:
+      post:
+         summary: Run Chat Stream
+         description: Run a prompt with streaming response
+         operationId: run_chat_stream_doc_assist_prompt_runner_v1_run_chat_stream_post
+         parameters:
+         -  name: Authorization
+            in: header
+            required: false
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Authorization
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     $ref: '#/components/schemas/RunPromptStreamRequest'
+         responses:
+            '200':
+               description: Successful Response
+            '422':
+               description: Validation Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/HTTPValidationError'
+   /doc_assist/prompt_runner/v1/run_prompt:
+      post:
+         summary: Run Prompt
+         description: Run a prompt with streaming response
+         operationId: run_prompt_doc_assist_prompt_runner_v1_run_prompt_post
+         parameters:
+         -  name: Authorization
+            in: header
+            required: false
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Authorization
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     $ref: '#/components/schemas/RunPromptStreamRequest'
+         responses:
+            '200':
+               description: Successful Response
+            '422':
+               description: Validation Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/HTTPValidationError'
+components:
+   schemas:
+      HTTPValidationError:
+         properties:
+            detail:
+               items:
+                  $ref: '#/components/schemas/ValidationError'
+               type: array
+               title: Detail
+         type: object
+         title: HTTPValidationError
+      RunPromptStreamRequest:
+         properties:
+            prompt_id:
+               type: string
+               title: Prompt Id
+            system_prompt_id:
+               type: string
+               title: System Prompt Id
+            input_variables:
+               anyOf:
+               -  type: object
+               -  type: 'null'
+               title: Input Variables
+            messages:
+               anyOf:
+               -  type: object
+               -  type: 'null'
+               title: Messages
+            model:
+               type: string
+               title: Model
+            use_patient_data:
+               type: boolean
+               title: Use Patient Data
+               default: false
+            data_source:
+               type: string
+               title: Data Source
+               default: doctool
+            temperature:
+               type: number
+               title: Temperature
+               default: 0.0
+            pt_oid:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Pt Oid
+            ipd_id:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Ipd Id
+         type: object
+         required:
+         - prompt_id
+         - system_prompt_id
+         - model
+         title: RunPromptStreamRequest
+      ValidationError:
+         properties:
+            loc:
+               items:
+                  anyOf:
+                  -  type: string
+                  -  type: integer
+               type: array
+               title: Location
+            msg:
+               type: string
+               title: Message
+            type:
+               type: string
+               title: Error Type
+         type: object
+         required:
+         - loc
+         - msg
+         - type
+         title: ValidationError
