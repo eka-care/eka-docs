@@ -117,7 +117,7 @@ When the transcription is complete, Eka Care will send a webhook notification to
   "data": {
     "transaction_id": "unique_transaction_id",
     "status": "completed",
-    "session_id": "session_123456"
+    "session_id": "unique_transaction_id"
   },
   "timestamp": "2023-07-20T10:30:00Z"
 }
@@ -131,7 +131,7 @@ After receiving the webhook notification, retrieve the transcription results:
 import base64
 
 # Get the session ID from the webhook callback
-session_id = "session_123456"  # This comes from the webhook payload
+session_id = "unique_transaction_id"  # This comes from the webhook payload which equals to transaction_id of Step 3: Upload Audio files 
 
 # Fetch session status and results
 session_status = client.v2rx.get_session_status(session_id)
@@ -183,7 +183,7 @@ def ekascribe_integration_example():
         
         # Once webhook is received, fetch results
         # The session_id would come from the webhook payload
-        session_id = "session_id_from_webhook"
+        session_id = transaction_id         # "session_id_from_webhook"
         get_transcription_results(client, session_id)
         
     except Exception as e:
@@ -215,7 +215,7 @@ def upload_audio_files(client, transaction_id):
 def get_transcription_results(client, session_id):
     session_status = client.v2rx.get_session_status(session_id)
     
-    if session_status["status"] == "completed":
+    if "data" in session_status and "output" in session_status["data"] and "fhir" in session_status["data"]["output"]:
         encoded_fhir = session_status["data"]["output"]["fhir"]
         decoded_bytes = base64.b64decode(encoded_fhir)
         fhir_json = decoded_bytes.decode('utf-8')
@@ -234,6 +234,7 @@ The uploader automatically:
 - Groups related files with transaction IDs
 
 ## Additional Resources
+- [Eka Care Python SDK Examples Repository](https://github.com/eka-care/ekapython-sdk-example)
 - [Eka Care Developer Documentation](https://developer.eka.care/)
 - [API Reference for Webhooks](https://developer.eka.care/api-reference/connect/webhooks/register-webhook)
 - [API Reference for Ekascribe](https://developer.eka.care/api-reference/general-tools/medical/voice/retrieve-transcribe)
@@ -246,33 +247,6 @@ The uploader automatically:
 2. **File Upload Failed**: Ensure file paths are valid and files are readable
 3. **Webhook Not Received**: Check your endpoint is publicly accessible and correctly registered
 4. **Import Errors**: Make sure you've installed all necessary dependencies
-
-### Exception Handling
-
-The SDK uses specific exception types to help diagnose issues:
-
-```python
-from ekacare import (
-    EkaCareError,
-    EkaCareAPIError, 
-    EkaCareAuthError, 
-    EkaCareValidationError
-)
-from ekacare.tools.files import EkaUploadError
-
-try:
-    # SDK operations
-    client.files.upload(...)
-except EkaCareAuthError:
-    # Handle authentication errors
-    print("Authentication failed")
-except EkaUploadError as e:
-    # Handle upload specific errors
-    print(f"Upload failed: {str(e)}")
-except EkaCareAPIError as e:
-    # Handle general API errors
-    print(f"API error: {str(e)}")
-```
 
 ### Support
 
