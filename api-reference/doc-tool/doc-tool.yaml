@@ -2381,10 +2381,10 @@ paths:
         
         ### Overview
 
-        This API endpoint is used to retrieve the details of an appointment
-        using its unique identifier. The response includes comprehensive
+        This API endpoint is used to retrieve all the appointments scheduled for a
+        specific date. It provides a comprehensive list of appointments. The response includes comprehensive
         information about the appointment, including patient and doctor details,
-        appointment status, and related services.
+        appointment status, timings and related services.
         
         
         Appointment_statuses:
@@ -2406,15 +2406,15 @@ paths:
           schema:
             type: string
             example: 'auth'
-        - name: partner_id
+        - name: date
           in: query
-          description: 'If set to 1 then appointment_id in path parameter should be partner_appointment_id else eka apppointment_id'
-          required: false
+          description: 'Date of scheduled appointments'
+          required: true
           style: form
           explode: true
           schema:
             type: string
-            example: '1'
+            example: "2025-05-01"
       responses:
         '200':
           description: OK
@@ -2452,115 +2452,95 @@ paths:
               schema:
                 type: object
                 properties:
-                  appointment_id:
-                    type: string
-                  created_at:
-                    type: integer
-                  doctor_id:
-                    type: string
-                  patient_id:
-                    type: string
-                  clinic_id:
-                    type: string
-                  channel:
-                    type: string
-                  status:
-                    type: string
-                    example: "BK"
-                    enum:
-                      - "BK"
-                      - "OG"
-                      - "CM"
-                      - "CMNP"
-                      - "CN"
-                      - "CND"
-                      - "CNS"
-                  mode:
-                    type: string
-                    example: "in_clinic"
-                    enum:
-                      - "tele"
-                      - "in_clinic"
-                  start_time:
-                    type: integer
-                  end_time:
-                    type: integer
-                  payment:
-                    type: object
-                    properties:
-                      payment_id:
-                        type: string
-                        nullable: true
-                      payment_status:
-                        type: string
-                        nullable: true
-                      amount:
-                        type: number
-                        nullable: true
-                  prescription_id:
-                    type: string
-                  service:
-                    type: object
-                    properties:
-                      created_at:
-                        type: integer
-                      mode:
-                        type: array
-                        items:
+                  appointments:
+                    type: array
+                    items:
+                     type: object
+                     properties:
+                        appointment_id:
                           type: string
-                      price:
-                        type: number
-                        nullable: true
-                      post_pay:
-                        type: boolean
-                      service_name:
-                        type: string
-                      book_ahead_days:
-                        type: integer
-                      appointment_type:
-                        type: string
-                      allow_patient_booking:
-                        type: boolean
-                  # New properties added
-                  prescription_url:
-                    type: string
-                  custom_attributes:
-                    type: object  
-                  partner_meta:
-                    type: object
+                        created_at:
+                          type: integer
+                        doctor_id:
+                          type: string
+                        patient_id:
+                          type: string
+                        clinic_id:
+                          type: string
+                        channel:
+                          type: string
+                        status:
+                          type: string
+                          example: "BK"
+                          enum:
+                            - "BK"
+                            - "OG"
+                            - "CM"
+                            - "CMNP"
+                            - "CN"
+                            - "CND"
+                            - "CNS"
+                        mode:
+                          type: string
+                          example: "in_clinic"
+                          enum:
+                            - "tele"
+                            - "in_clinic"
+                        start_time:
+                          type: integer
+                        end_time:
+                          type: integer
+                        prescription_id:
+                          type: string
+                        prescription_url:
+                          type: string
+                        partner_appointment_id:
+                          type: string
+                        partner_clinic_id:
+                          type: string
+                        partner_doctor_id:
+                          type: string
+                        partner_patient_id:
+                          type: string
+                        # sa_ids:
+                        #   type: array
                 example:
-                  appointment_id: "{{eka_appointment_id}}"
-                  partner_appointment_id: "{{partner_appointment_id}}"
-                  created_at: 1730189586
-                  doctor_id: "{{doctor_id}}"
-                  clinic_id: "{{clinic_id}}"
-                  patient_id: "{{patient_id}}"
-                  partner_doctor_id: "{{partner_doctor_id}}"
-                  partner_clinic_id: "{{partner_clinic_id}}"
-                  partner_patient_id: "{{partner_patient_id}}"
-                  status: CM
-                  mode: in_clinic
-                  start_time: 1730189586
-                  end_time: 1730189586
-                  payment:
-                    payment_id: null
-                    payment_status: null
-                    amount: null
-                  prescription_id: "{{prescription_id}}"
-                  service:
-                    created_at: 1730189586
-                    mode:
-                      - INCLINIC
-                    price: null
-                    post_pay: false
-                    service_name: consultation
-                    appointment_type: REGULAR
-                    allow_patient_booking: true
-                  prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
-                  custom_attributes:
-                    label: ["vitals_submitted"]
-                  partner_meta:
-                    key1: "value1"
+                  appointments:
+                    - appointment_id: "{{eka_appointment_id}}"
+                      partner_appointment_id: "{{partner_appointment_id}}"
+                      created_at: 1730189586
+                      doctor_id: "{{doctor_id}}"
+                      clinic_id: "{{clinic_id}}"
+                      channel: "Walkin"
+                      patient_id: "{{patient_id}}"
+                      partner_doctor_id: "{{partner_doctor_id}}"
+                      partner_clinic_id: "{{partner_clinic_id}}"
+                      partner_patient_id: "{{partner_patient_id}}"
+                      status: CM
+                      mode: in_clinic
+                      start_time: 1730189586
+                      end_time: 1730189586
+                      prescription_id: "{{prescription_id}}"
+                      prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
+                      # sa_ids: []
+                    - appointment_id: "{{eka_appointment_id}}"
+                      partner_appointment_id: "{{partner_appointment_id}}"
+                      created_at: 1730189586
+                      doctor_id: "{{doctor_id}}"
+                      clinic_id: "{{clinic_id}}"
+                      channel: "Walkin"
+                      patient_id: "{{patient_id}}"
+                      partner_doctor_id: "{{partner_doctor_id}}"
+                      partner_clinic_id: "{{partner_clinic_id}}"
+                      partner_patient_id: "{{partner_patient_id}}"
+                      status: CM
+                      mode: in_clinic
+                      start_time: 1730189586
+                      end_time: 1730189586
+                      prescription_id: "{{prescription_id}}"
+                      prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
+                      # sa_ids: []
+                    
         '400':
           description: Bad Request
           headers:
@@ -2701,6 +2681,7 @@ paths:
                 error:
                   code: SERVER_ERROR
                   message: An unexpected error occurred while processing your request. Please try again later.
+      
       deprecated: false
   /dr/v1/appointment/slots/reserve:
     post:
