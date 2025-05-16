@@ -2372,6 +2372,282 @@ paths:
                   code: INVALID_REQUEST_PARAMETERS
                   message: The request contains invalid parameters
       deprecated: false
+    get:
+      tags:
+        - Appointment API
+      summary: Get Appointments By date
+      description: >-
+        
+        
+        ### Overview
+
+        This API endpoint is used to retrieve all the appointments scheduled for a
+        specific date. It provides a comprehensive list of appointments. The response includes comprehensive
+        information about the appointment, including patient and doctor details,
+        appointment status, timings and related services.
+        
+        
+        Appointment_statuses:
+          - BK    : Booked
+          - OG    : Ongoing
+          - CM	  : Completed with Prescription
+          - CMNP  : Completed without a Prescription
+          - CN    : Cancelled
+          - CND   : Cancelled by Doctor
+          - CNS   : Cancelled by Staff
+
+      operationId: GetappointmentDetails
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: date
+          in: query
+          description: 'Date of scheduled appointments. Format should be YYYY-MM-DD'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: "2025-05-01"
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2020 11:09:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '377'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+            Vary:
+              schema:
+                type: string
+              example: Cookie, Accept-Encoding
+            Content-Encoding:
+              schema:
+                type: string
+              example: gzip
+            Strict-Transport-Security:
+              schema:
+                type: string
+              example: max-age=15768000
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointments:
+                    type: array
+                    items:
+                     type: object
+                     properties:
+                        appointment_id:
+                          type: string
+                        created_at:
+                          type: integer
+                        doctor_id:
+                          type: string
+                        patient_id:
+                          type: string
+                        clinic_id:
+                          type: string
+                        channel:
+                          type: string
+                        status:
+                          type: string
+                          example: "BK"
+                          enum:
+                            - "BK"
+                            - "OG"
+                            - "CM"
+                            - "CMNP"
+                            - "CN"
+                            - "CND"
+                            - "CNS"
+                        mode:
+                          type: string
+                          example: "in_clinic"
+                          enum:
+                            - "tele"
+                            - "in_clinic"
+                        start_time:
+                          type: integer
+                        end_time:
+                          type: integer
+                        prescription_id:
+                          type: string
+                        prescription_url:
+                          type: string
+                        partner_appointment_id:
+                          type: string
+                        partner_clinic_id:
+                          type: string
+                        partner_doctor_id:
+                          type: string
+                        partner_patient_id:
+                          type: string
+                        # sa_ids:
+                        #   type: array
+                example:
+                  appointments:
+                    - appointment_id: "{{eka_appointment_id}}"
+                      partner_appointment_id: "{{partner_appointment_id}}"
+                      created_at: 1730189586
+                      doctor_id: "{{doctor_id}}"
+                      clinic_id: "{{clinic_id}}"
+                      channel: "Walkin"
+                      patient_id: "{{patient_id}}"
+                      partner_doctor_id: "{{partner_doctor_id}}"
+                      partner_clinic_id: "{{partner_clinic_id}}"
+                      partner_patient_id: "{{partner_patient_id}}"
+                      status: CM
+                      mode: in_clinic
+                      start_time: 1730189586
+                      end_time: 1730189586
+                      prescription_id: "{{prescription_id}}"
+                      prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
+                      # sa_ids: []
+                    - appointment_id: "{{eka_appointment_id}}"
+                      partner_appointment_id: "{{partner_appointment_id}}"
+                      created_at: 1730189586
+                      doctor_id: "{{doctor_id}}"
+                      clinic_id: "{{clinic_id}}"
+                      channel: "Walkin"
+                      patient_id: "{{patient_id}}"
+                      partner_doctor_id: "{{partner_doctor_id}}"
+                      partner_clinic_id: "{{partner_clinic_id}}"
+                      partner_patient_id: "{{partner_patient_id}}"
+                      status: CM
+                      mode: in_clinic
+                      start_time: 1730189586
+                      end_time: 1730189586
+                      prescription_id: "{{prescription_id}}"
+                      prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
+                      # sa_ids: []
+                    
+        '400':
+          description: Bad Request
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2024 11:10:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '152'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: INVALID_REQUEST_PARAMETERS
+                  message: The request contains invalid parameters
+        '403':
+          description: Forbidden
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2024 11:11:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '145'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: ACCESS_DENIED
+                  message: "Access denied. You do not have permission to view this appointment." 
+        '500':
+          description: Internal Server Error
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2024 11:13:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '158'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: SERVER_ERROR
+                  message: An unexpected error occurred while processing your request. Please try again later.
+      
+      deprecated: false
   /dr/v1/appointment/slots/reserve:
     post:
       tags:
