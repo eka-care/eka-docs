@@ -91,14 +91,18 @@ transaction_id = "unique_transaction_id"
 extra_data = {
     "mode": "dictation"
 }
-action = "ekascribe"
+action = "ekascribe-v2"
 
 # Upload files
-responses = client.files.upload(
+responses = client.v2rx.upload(
     file_paths=audio_files, 
     txn_id=transaction_id, 
     action=action, 
-    extra_data=extra_data
+    extra_data=extra_data,
+    output_format = {
+        "input_language": ["en-IN"],
+        "output_template": [{"template_id": "clinical_notes_template"}]
+    }
 )
 
 # Process responses
@@ -134,7 +138,8 @@ import base64
 session_id = "unique_transaction_id"  # This comes from the webhook payload which equals to transaction_id of Step 3: Upload Audio files 
 
 # Fetch session status and results
-session_status = client.v2rx.get_session_status(session_id)
+action = "ekascribe-v2"
+session_status = client.v2rx.get_session_status(session_id, action)
 
 # Sample response structure
 # {
@@ -202,18 +207,27 @@ def upload_audio_files(client, transaction_id):
     extra_data = {
         "mode": "dictation"
     }
+
+    action = "ekascribe-v2"
+
     
-    responses = client.files.upload(
-        file_paths=audio_files, 
-        txn_id=transaction_id, 
-        action="ekascribe", 
-        extra_data=extra_data
-    )
+    
+    responses = client.v2rx.upload(
+    file_paths=audio_files, 
+    txn_id=transaction_id, 
+    action=action, 
+    extra_data=extra_data,
+    output_format = {
+        "input_language": ["en-IN"],
+        "output_template": [{"template_id": "clinical_notes_template"}]
+    }
+)
     
     return responses
 
 def get_transcription_results(client, session_id):
-    session_status = client.v2rx.get_session_status(session_id)
+    action = "ekascribe-v2"
+    session_status = client.v2rx.get_session_status(session_id, action)
     
     if "data" in session_status and "output" in session_status["data"] and "fhir" in session_status["data"]["output"]:
         encoded_fhir = session_status["data"]["output"]["fhir"]
