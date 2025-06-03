@@ -475,14 +475,6 @@ paths:
           examples:
           - "1990-05-15"
           type: string
-      - description: Registered Mobile Number
-        in: query
-        name: mobile
-        schema:
-          description: Registered Mobile Number
-          examples:
-          - "9876543210"
-          type: string
       - description: Transaction id received in the previous api.
         in: query
         name: transactionId
@@ -596,7 +588,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitResponseType4'
+                $ref: '#/components/schemas/InitResponseType3'
           description: OK
       security:
       - authApiKey: []
@@ -754,175 +746,6 @@ paths:
           description: No Content
       security:
       - authApiKey: []
-  /abdm/v1/consents/pin/change:
-    post:
-      description: Change the consent pin by providing a old and new pin combination
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "204":
-          description: No Content
-      security:
-      - authApiKey: []
-  /abdm/v1/consents/pin/exists:
-    get:
-      description: Returns if the user has already set the consent pin.
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExistResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/consents/pin/forgot/init:
-    post:
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InitResponseType3'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/v1/consents/pin/forgot/verify:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyRequestType5'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "204":
-          description: No Content
-      security:
-      - authApiKey: []
-  /abdm/v1/consents/pin/reset:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SetRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "204":
-          description: No Content
-      security:
-      - authApiKey: []
-  /abdm/v1/consents/pin/set:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SetRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "204":
-          description: No Content
-      security:
-      - authApiKey: []
-  /abdm/v1/consents/pin/verify:
-    post:
-      description: Verify the consent pin to approve/revoke consents
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyRequestType4'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "204":
-          description: No Content
-      security:
-      - authApiKey: []
   /abdm/v1/consents/revoke:
     post:
       requestBody:
@@ -949,7 +772,8 @@ paths:
       - authApiKey: []
   /abdm/v1/profile:
     delete:
-      description: Removes the association of ABHA with user profile and deletes all ABHA metadata from the Eka system.<Warning>Please
+      description: This endpoint removes the specified ABHA profile along with all
+        associated documents, vital records, and any other related data from the system.<Warning>Please
         note that the ABHA metadata will remain in the ABDM system, as ABDM does not
         provide a delete option</Warning>
       responses:
@@ -1437,7 +1261,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitResponseType5'
+                $ref: '#/components/schemas/InitResponseType4'
           description: OK
       security:
       - authApiKey: []
@@ -1448,7 +1272,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyRequestType6'
+              $ref: '#/components/schemas/VerifyRequestType4'
       responses:
         4XX:
           content:
@@ -1515,18 +1339,6 @@ components:
       required:
       - id
       - consent_artefacts
-      type: object
-    ChangeRequest:
-      properties:
-        new:
-          description: The new PIN to replace the old one
-          type: string
-        old:
-          description: The current PIN to be updated
-          type: string
-      required:
-      - old
-      - new
       type: object
     CommonsCareContext:
       properties:
@@ -1936,12 +1748,6 @@ components:
       required:
       - abha_address
       type: object
-    ExistResponse:
-      properties:
-        exist:
-          description: Indicates if the user has already set the consent PIN.
-          type: boolean
-      type: object
     GenericError:
       properties:
         code:
@@ -2110,29 +1916,11 @@ components:
       type: object
     InitResponseType3:
       properties:
-        expiry_in_minutes:
-          type: integer
-        medium:
-          description: Medium which is used to generate otp
-          examples:
-          - mobile
-          type: string
-        otp_medium_value:
-          description: Value of medium
-          examples:
-          - "9225828688"
-          type: string
         txn_id:
           description: Transaction ID required for the next API call.
           type: string
       type: object
     InitResponseType4:
-      properties:
-        txn_id:
-          description: Transaction ID required for the next API call.
-          type: string
-      type: object
-    InitResponseType5:
       properties:
         txn_id:
           description: Transaction ID required for the next API call.
@@ -2264,7 +2052,6 @@ components:
           - phr_address
           - abha_number
           - mobile
-          - aadhaar_number
           examples:
           - mobile
           type: string
@@ -2279,8 +2066,6 @@ components:
       type: object
     PhrPhrAddressLoginRequest:
       properties:
-        method:
-          type: string
         phr_address:
           description: Abha address used to login
           type: string
@@ -2583,6 +2368,58 @@ components:
         pin_detail:
           $ref: '#/components/schemas/CommonsPinDetail'
       type: object
+    ScanandshareAddress:
+      properties:
+        district:
+          description: District of the address
+          type: string
+        line:
+          description: Address line
+          type: string
+        pin_code:
+          description: Pin code of the address
+          type: string
+        state:
+          description: State of the address
+          type: string
+      required:
+      - pin_code
+      type: object
+    ScanandsharePatient:
+      properties:
+        abhaAddress:
+          description: ABHA address of the patient
+          type: string
+        address:
+          $ref: '#/components/schemas/ScanandshareAddress'
+          description: Address of the patient
+        dayOfBirth:
+          description: Day of birth of the patient
+          type: string
+        gender:
+          description: Gender of the patient
+          type: string
+        mobile_no:
+          description: Phone number of the patient
+          type: string
+        monthOfBirth:
+          description: Month of birth of the patient
+          type: string
+        name:
+          description: Name of the patient
+          type: string
+        yearOfBirth:
+          description: Year of birth of the patient
+          type: string
+      required:
+      - abhaAddress
+      - name
+      - gender
+      - dayOfBirth
+      - monthOfBirth
+      - yearOfBirth
+      - mobile_no
+      type: object
     ScanandshareRequest:
       properties:
         counter_id:
@@ -2594,19 +2431,12 @@ components:
         location:
           $ref: '#/components/schemas/HipLocation'
           description: Location of the user
+        patient:
+          $ref: '#/components/schemas/ScanandsharePatient'
+          description: Patient details
       required:
       - counter_id
       - hip_id
-      type: object
-    SetRequest:
-      properties:
-        pin:
-          description: Pin to authorize consent.
-          examples:
-          - "1234"
-          type: string
-      required:
-      - pin
       type: object
     SettingsRequest:
       properties:
@@ -2641,6 +2471,8 @@ components:
     VerifyAbhaProfile:
       properties:
         abha_address:
+          type: string
+        kyc_verified:
           type: string
         name:
           type: string
@@ -2688,30 +2520,6 @@ components:
       - otp
       type: object
     VerifyRequestType4:
-      properties:
-        pin:
-          description: PIN to authorize consent.
-          examples:
-          - "1234"
-          type: string
-        scope:
-          type: string
-      required:
-      - pin
-      type: object
-    VerifyRequestType5:
-      properties:
-        otp:
-          description: OTP received on the mobile number.
-          type: string
-        txn_id:
-          description: Transaction ID received in the previous API response.
-          type: string
-      required:
-      - otp
-      - txn_id
-      type: object
-    VerifyRequestType6:
       properties:
         otp:
           description: OTP received on the mobile number.
