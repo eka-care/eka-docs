@@ -165,6 +165,13 @@ paths:
     post:
       description: This endpoint is used to resend the mobile otp for aadhaar registration
         process.
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -197,6 +204,13 @@ paths:
       description: This API operates on a skip logic basis. If the mobile number provided
         in the second step differs from the one linked to the Aadhaar, this API will
         be used to verify the new mobile number.
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -508,6 +522,13 @@ paths:
       description: "ABDM allows a user to find their health records from any health
         facility they have visited via the discovery process. \n\nDiscover API returns
         any unlinked care-context for the ABHA User."
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -537,6 +558,13 @@ paths:
   /abdm/v1/care-contexts/discover/link/confirm:
     post:
       description: Confirm linking for discovered care context
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -566,6 +594,13 @@ paths:
   /abdm/v1/care-contexts/discover/link/init:
     post:
       description: Initialise the linking for discovered care context.
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -588,7 +623,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitResponseType3'
+                $ref: '#/components/schemas/InitResponseType4'
           description: OK
       security:
       - authApiKey: []
@@ -601,6 +636,12 @@ paths:
         required: true
         schema:
           description: Unique identifier for the Health Information Provider (HIP).
+          type: string
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
           type: string
       responses:
         4XX:
@@ -625,6 +666,13 @@ paths:
       - authApiKey: []
   /abdm/v1/care-contexts/providers:
     get:
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -648,6 +696,14 @@ paths:
       - authApiKey: []
   /abdm/v1/consents/approve:
     post:
+      description: This endpoint is used to approve the consent
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -673,6 +729,13 @@ paths:
   /abdm/v1/consents/auto-approval:
     get:
       description: Fetch the auto approval policy settings
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -696,11 +759,18 @@ paths:
       - authApiKey: []
     patch:
       description: Update the auto approval policy settings
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SettingsRequest'
+              $ref: '#/components/schemas/FormDataSettingsRequest'
       responses:
         4XX:
           content:
@@ -724,6 +794,14 @@ paths:
       - authApiKey: []
   /abdm/v1/consents/deny:
     post:
+      description: This endpoint is used to deny the consent
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -746,8 +824,185 @@ paths:
           description: No Content
       security:
       - authApiKey: []
+  /abdm/v1/consents/pin/change:
+    post:
+      description: Change the consent pin by providing a old and new pin combination
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/exists:
+    get:
+      description: Returns if the user has already set the consent pin.
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forgot/init:
+    post:
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType3'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forgot/verify:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType5'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/reset:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/set:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/verify:
+    post:
+      description: Verify the consent pin to approve/revoke consents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType4'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
   /abdm/v1/consents/revoke:
     post:
+      description: This endpoint is used to revoke the consent
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -776,6 +1031,13 @@ paths:
         associated documents, vital records, and any other related data from the system.<Warning>Please
         note that the ABHA metadata will remain in the ABDM system, as ABDM does not
         provide a delete option</Warning>
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -797,6 +1059,13 @@ paths:
       description: Fetches the ABHA profile of the User. <Note>Please cache these
         results locally. We do not recommend calling this API on every page load.
         Evict the cache when there is profile update.</Note>
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -823,6 +1092,13 @@ paths:
         Update Profile Details
 
         <Note>The API expects all the fields returned by the [Get Profiles API](/api-reference/user-app/abdm-connect/profile/details/profile-details) to be included in the PATCH request body.</Note>
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -850,6 +1126,13 @@ paths:
       description: Fetch the ABHA card.<Note>Please cache these results locally. We
         do not recommend calling this API on every page load. Evict the cache when
         there is profile update.</Note>
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -886,6 +1169,12 @@ paths:
           enum:
           - json
           type: string
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -912,6 +1201,13 @@ paths:
   /abdm/v1/profile/kyc/init:
     post:
       description: Request otp to initialise the KYC flow
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -941,6 +1237,13 @@ paths:
   /abdm/v1/profile/kyc/resend:
     post:
       description: Resend otp for KYC
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -970,6 +1273,13 @@ paths:
   /abdm/v1/profile/kyc/verify:
     post:
       description: Verify OTP to complete KYC
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -1001,6 +1311,13 @@ paths:
       description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
         by reading the QR code of the Hospital/Clinic.</Note> <Note>Use the device
         location for the location data</Note>
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -1029,7 +1346,14 @@ paths:
       - authApiKey: []
   /abdm/v1/provider/{hip_id}:
     get:
+      description: Fetches the Providers based on the HIP ID.
       parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       - description: Identifier for the Health Information Provider (HIP).
         in: path
         name: hip_id
@@ -1060,6 +1384,7 @@ paths:
       - authApiKey: []
   /abdm/v1/providers:
     get:
+      description: Fetches the List of Providers.
       parameters:
       - description: Name of the Health Information Provider (HIP), required with
           a minimum length of 3 characters.
@@ -1070,6 +1395,12 @@ paths:
           description: Name of the Health Information Provider (HIP), required with
             a minimum length of 3 characters.
           minLength: 3
+          type: string
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
           type: string
       responses:
         4XX:
@@ -1161,6 +1492,12 @@ paths:
           - denied
           - revoked
           type: string
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -1215,6 +1552,20 @@ paths:
           examples:
           - consent
           type: string
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        required: true
+        schema:
+          description: OID is used to Identify the user.
+          enum:
+          - consent
+          - subscription
+          - authorization
+          - all
+          examples:
+          - consent
+          type: string
       responses:
         4XX:
           content:
@@ -1239,6 +1590,13 @@ paths:
   /abdm/v1/session/init:
     post:
       description: Generate mobile OTP for user session token
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
@@ -1261,18 +1619,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitResponseType4'
+                $ref: '#/components/schemas/InitResponseType5'
           description: OK
       security:
       - authApiKey: []
   /abdm/v1/session/verify:
     post:
       description: Verify mobile OTP and get user session token
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyRequestType4'
+              $ref: '#/components/schemas/VerifyRequestType6'
       responses:
         4XX:
           content:
@@ -1334,11 +1699,21 @@ components:
         id:
           description: Unique identifier of a consent, also called the consent ID.
           type: string
-        pin_detail:
-          $ref: '#/components/schemas/CommonsPinDetail'
       required:
       - id
       - consent_artefacts
+      type: object
+    ChangeRequest:
+      properties:
+        new:
+          description: The new PIN to replace the old one
+          type: string
+        old:
+          description: The current PIN to be updated
+          type: string
+      required:
+      - old
+      - new
       type: object
     CommonsCareContext:
       properties:
@@ -1408,14 +1783,6 @@ components:
           description: Name of the Health Information User
           examples:
           - Apollo Hospital
-          type: string
-      type: object
-    CommonsPinDetail:
-      properties:
-        pin:
-          description: 4 digit pin used for consent requests
-          examples:
-          - "1234"
           type: string
       type: object
     CommonsPurpose:
@@ -1748,6 +2115,18 @@ components:
       required:
       - abha_address
       type: object
+    ExistResponse:
+      properties:
+        exist:
+          description: Indicates if the user has already set the consent PIN.
+          type: boolean
+      type: object
+    FormDataSettingsRequest:
+      properties:
+        oid:
+          description: OID is used to Identify the user.
+          type: string
+      type: object
     GenericError:
       properties:
         code:
@@ -1916,11 +2295,29 @@ components:
       type: object
     InitResponseType3:
       properties:
+        expiry_in_minutes:
+          type: integer
+        medium:
+          description: Medium which is used to generate otp
+          examples:
+          - mobile
+          type: string
+        otp_medium_value:
+          description: Value of medium
+          examples:
+          - "9225828688"
+          type: string
         txn_id:
           description: Transaction ID required for the next API call.
           type: string
       type: object
     InitResponseType4:
+      properties:
+        txn_id:
+          description: Transaction ID required for the next API call.
+          type: string
+      type: object
+    InitResponseType5:
       properties:
         txn_id:
           description: Transaction ID required for the next API call.
@@ -2366,60 +2763,6 @@ components:
           type:
           - array
           - "null"
-        pin_detail:
-          $ref: '#/components/schemas/CommonsPinDetail'
-      type: object
-    ScanandshareAddress:
-      properties:
-        district:
-          description: District of the address
-          type: string
-        line:
-          description: Address line
-          type: string
-        pin_code:
-          description: Pin code of the address
-          type: string
-        state:
-          description: State of the address
-          type: string
-      required:
-      - pin_code
-      type: object
-    ScanandsharePatient:
-      properties:
-        abhaAddress:
-          description: ABHA address of the patient
-          type: string
-        address:
-          $ref: '#/components/schemas/ScanandshareAddress'
-          description: Address of the patient
-        dayOfBirth:
-          description: Day of birth of the patient
-          type: string
-        gender:
-          description: Gender of the patient
-          type: string
-        mobile_no:
-          description: Phone number of the patient
-          type: string
-        monthOfBirth:
-          description: Month of birth of the patient
-          type: string
-        name:
-          description: Name of the patient
-          type: string
-        yearOfBirth:
-          description: Year of birth of the patient
-          type: string
-      required:
-      - abhaAddress
-      - name
-      - gender
-      - dayOfBirth
-      - monthOfBirth
-      - yearOfBirth
-      - mobile_no
       type: object
     ScanandshareRequest:
       properties:
@@ -2432,26 +2775,19 @@ components:
         location:
           $ref: '#/components/schemas/HipLocation'
           description: Location of the user
-        patient:
-          $ref: '#/components/schemas/ScanandsharePatient'
-          description: Patient details
       required:
       - counter_id
       - hip_id
       type: object
-    SettingsRequest:
+    SetRequest:
       properties:
-        enable:
-          description: Auto approval enable/disable
-          type: boolean
         pin:
-          description: Consent pin for auto approval
-          type:
-          - "null"
-          - string
+          description: Pin to authorize consent.
+          examples:
+          - "1234"
+          type: string
       required:
       - pin
-      - enable
       type: object
     SettingsResponse:
       properties:
@@ -2521,6 +2857,30 @@ components:
       - otp
       type: object
     VerifyRequestType4:
+      properties:
+        pin:
+          description: PIN to authorize consent.
+          examples:
+          - "1234"
+          type: string
+        scope:
+          type: string
+      required:
+      - pin
+      type: object
+    VerifyRequestType5:
+      properties:
+        otp:
+          description: OTP received on the mobile number.
+          type: string
+        txn_id:
+          description: Transaction ID received in the previous API response.
+          type: string
+      required:
+      - otp
+      - txn_id
+      type: object
+    VerifyRequestType6:
       properties:
         otp:
           description: OTP received on the mobile number.
