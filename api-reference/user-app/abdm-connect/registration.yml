@@ -425,13 +425,6 @@ paths:
     post:
       description: This API endpoint allows to check whether provided health id is
         already present in system.
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -501,12 +494,6 @@ paths:
         name: transactionId
         schema:
           description: Transaction id received in the previous api.
-          type: string
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
           type: string
       responses:
         4XX:
@@ -742,6 +729,13 @@ paths:
   /abdm/v1/consents/auto-approval:
     get:
       description: Fetch the auto approval policy settings
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       responses:
         4XX:
           content:
@@ -765,11 +759,18 @@ paths:
       - authApiKey: []
     patch:
       description: Update the auto approval policy settings
+      parameters:
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
       requestBody:
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SettingsRequest'
+              $ref: '#/components/schemas/FormDataSettingsRequest'
       responses:
         4XX:
           content:
@@ -1173,8 +1174,6 @@ paths:
         name: oid
         schema:
           description: OID is used to Identify the user.
-          enum:
-          - json
           type: string
       responses:
         4XX:
@@ -1432,12 +1431,6 @@ paths:
     get:
       description: This API endpoint is used to fetch pincode details.
       parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       - description: Pincode to fetch its details.
         in: path
         name: pincode
@@ -2128,6 +2121,12 @@ components:
           description: Indicates if the user has already set the consent PIN.
           type: boolean
       type: object
+    FormDataSettingsRequest:
+      properties:
+        oid:
+          description: OID is used to Identify the user.
+          type: string
+      type: object
     GenericError:
       properties:
         code:
@@ -2788,14 +2787,6 @@ components:
           type: string
       required:
       - pin
-      type: object
-    SettingsRequest:
-      properties:
-        enable:
-          description: Auto approval enable/disable
-          type: boolean
-      required:
-      - enable
       type: object
     SettingsResponse:
       properties:
