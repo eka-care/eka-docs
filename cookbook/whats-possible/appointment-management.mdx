@@ -1,0 +1,169 @@
+---
+title: "Appointments Management"
+description: "Building an appointments management app using the Eka Care SDK's appointments module."
+---
+
+## What We're Building
+
+An appointments management app that demonstrates:
+
+- Getting available slots for doctors
+- Booking appointments
+- Managing appointment status
+- Updating appointment times
+- Retrieving appointment details
+
+# Final product
+
+<img src="/images/get-all-appointments.png" alt="Hero Light" />
+
+## Create Next.js App
+
+```bash
+npx create-next-app@14.1.0 appointments-app
+cd appointments-app
+```
+
+## Install Eka Care SDK
+
+```bash
+npm install @eka-care/eka-care-core
+```
+
+## Setting Up Backend Auth
+
+Head to this [repo](https://github.com/eka-care/ekathon-nextjs-auth-template-api) and you will have a deployed live running backend in 1 click.
+
+## Building the Appointments App
+
+Replace `pages/index.js` with:
+
+```javascript
+import { useState, useEffect } from "react";
+import createEkaInstance from "@eka-care/eka-care-core";
+
+export default function AppointmentsApp() {
+  const [ekaInstance, setEkaInstance] = useState(null);
+  const [slots, setSlots] = useState(null);
+  const [appointment, setAppointment] = useState(null);
+  const [appointmentDetails, setAppointmentDetails] = useState(null);
+
+  useEffect(() => {
+    initializeSDK();
+  }, []);
+
+  const initializeSDK = async () => {
+    const authRes = await fetch(
+      "https://your-backend.vercel.app/api/manage-auth",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const authData = await authRes.json();
+
+    const ekaInstanceResult = createEkaInstance({
+      source: "FE",
+      auth_token: authData.data.access_token,
+      backendAuthEndpointURL: "https://your-backend.vercel.app/api/manage-auth",
+    });
+
+    setEkaInstance(ekaInstanceResult);
+  };
+
+  // Get available slots for a doctor
+  const getAvailableSlots = async () => {
+    const availableSlots = await ekaInstance.appointments.getSlotsForDoctor({
+      doctor_id: "doc123",
+      clinic_id: "clinic456",
+      start_date: "2025-06-01",
+      end_date: "2025-06-01",
+    });
+    setSlots(availableSlots);
+  };
+
+  // Book an appointment
+  const bookAppointment = async () => {
+    const newAppointment =
+      await ekaInstance.appointments.bookAppointmentSlotForDoctor({
+        isBusinessOrDoctorAssosiatedWithEka: true,
+        clinic_id: "clinic456",
+        doctor_id: "doc123",
+        patient_id: "patient789",
+        appointment_details: {
+          start_time: 1748607760,
+          mode: "INCLINIC",
+        },
+        patient_details: {
+          dob: "2004-08-01",
+          first_name: "John",
+          gender: "M",
+        },
+      });
+    setAppointment(newAppointment);
+  };
+
+  // Get appointments by date
+  const getAppointmentsByDate = async () => {
+    const appointments =
+      await ekaInstance.appointments.getAllAppointmentsByDate("25-01-06");
+  };
+
+  // Get appointment details by ID
+  const getAppointmentDetails = async () => {
+    const details = await ekaInstance.appointments.getAppointmentDetailsById({
+      appointment_id: "apt123",
+    });
+    setAppointmentDetails(details);
+  };
+
+  // Update appointment time
+  const updateAppointmentTime = async () => {
+    const updatedTime = await ekaInstance.appointments.updateAppointmentTime({
+      appointment_id: appointment.appointment_id,
+      start_time: Date.now(),
+    });
+  };
+
+  // Manage appointment status
+  const parkAppointment = async () => {
+    await ekaInstance.appointments.parkAppointment({
+      appointment_id: "apt123",
+    });
+  };
+
+  const completeAppointment = async () => {
+    await ekaInstance.appointments.completeAppointment({
+      appointment_id: "apt123",
+    });
+  };
+
+  const cancelAppointment = async () => {
+    await ekaInstance.appointments.cancelAppointment({
+      appointment_id: "apt123",
+    });
+  };
+
+  return (
+    <div className="container mx-auto p-8">
+      <div>...</div>
+    </div>
+  );
+}
+```
+
+## Key SDK Methods Used
+
+1. **Get Slots** - Retrieve available appointment slots for doctors
+2. **Book Appointment** - Create new appointments with patient details
+3. **Get Appointments** - Fetch appointments by date or ID
+4. **Update Time** - Modify appointment start and end times
+5. **Status Management** - Park, complete, or cancel appointments
+
+## What We Built
+
+A complete appointments management application using the Eka Care SDK where complex scheduling logic is handled by simple SDK method calls.
+
+[Live App](https://sdk-demo-ui-three.vercel.app/appointments) and
+[GitHub Repo](https://github.com/eka-care/web-sdk-ui-wrapper-old)

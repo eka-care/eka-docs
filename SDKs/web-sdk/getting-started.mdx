@@ -1,0 +1,471 @@
+---
+title: "Eka Care TS SDK"
+description: "TS sdk for Eka care APIs, has the following modules built in appointments, patients, medicationSearch and health assessment. with full TypeScript support and TS based autocomplete on `payload`, `fns`, return `responses`."
+---
+
+## Features
+
+- **Complete TypeScript Support** - Full type safety with intelligent autocomplete
+- **Healthcare Module Coverage** - Appointments, Patients, Medications, Health Assessments, ABHA (coming soon)
+- **Easy Integration** - Simple setup for Node.js, Next.js, and React applications
+- **Production Ready** - Robust error handling and validation
+- **Auth** - you as a third party dev dont need to worry about auth or refresh token. since the SDK takes care of it. and everytime you call any of the SDK modules and fns it will automatically manage the auth token and its life-cycle and renewal
+
+---
+
+## Installation
+
+```bash
+npm install @eka-care/eka-care-core
+```
+
+---
+
+## ⚠️ IMPORTANT NOTE BEFORE YOU START USING THE SDK
+
+The SDK can be used on both BE and FE — just with different configs.
+
+If you initialize the SDK in a backend JS/TS runtime like Node, Express, Next, etc., you can use a straightforward config. We’ve also made it FE-compatible with a slightly different setup.
+
+---
+
+### Setup for BE runtimes
+
+You can initialize the SDK in your **backend** environment by simply passing the `client_id`, `client_secret`, and `api_key`.
+
+> ⚠️ Make sure to store these credentials securely and never expose them on the frontend.
+
+```ts
+import createEkaInstance from "@eka-care/eka-care-core";
+
+const myEka = createEkaInstance({
+  client_id: "your_client_id",
+  client_secret: "your_client_secret",
+  api_key: "your_api_key",
+});
+```
+
+---
+
+### Setup for FE runtimes (React, Next.js, etc.)
+
+To use the SDK in a client-side web app, you'll need to use a token-based flow and set up a small backend auth proxy. Here's how:
+
+```ts
+// NOTE: This API endpoint is already written — you can deploy it with one click,
+// add your env variables, and have it running on your Vercel account. More on that below.
+
+// Client side FE code ——>
+const authRes = await fetch("https://your-backend.vercel.app/api/manage-auth", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+});
+
+const authData = await authRes.json();
+
+const ekaInstanceResult = createEkaInstance({
+  source: "FE",
+  auth_token: authData.data.access_token,
+  backendAuthEndpointURL:
+    "https://vercel-clone-from-eka-account-next.vercel.app/api/manage-auth", // make sure this is the full URL: https + your Vercel domain + the API route
+});
+```
+
+And you're GTG! You can initialize it once (maybe in a `useEffect` with empty dependencies) and take it for a spin. The SDK is now fully FE-compatible.
+
+---
+
+### Get the backend up and running for FE auth
+
+Only needed if you're using the SDK on the frontend.
+
+We have starter templates you can deploy instantly:
+
+- [Express Auth Template](https://github.com/eka-care/ekathon-express-auth-template-api)
+- [Next.js Auth Template](https://github.com/eka-care/ekathon-nextjs-auth-template-api)
+
+one click deployment button in the repo's readme
+Use these to deploy the `/api/manage-auth` route mentioned above.
+hence
+
+- deploy the repo that you wish to use (express or Next)
+- follow the deployment guidelines in the repo's readme
+- have the backend up and running
+  and you can now initialize the SDK on FE as well
+
+- by first calling the backend api that you just deployed, and getting the auth token
+
+```ts
+const authRes = await fetch("https://your-backend.vercel.app/api/manage-auth", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+});
+
+const authData = await authRes.json();
+```
+
+- and initing the SDK on client side
+
+```ts
+const ekaInstanceResult = createEkaInstance({
+  source: "FE",
+  auth_token: authData.data.access_token, // passing the auth token that you received from the above API call
+  backendAuthEndpointURL:
+    "https://vercel-clone-from-eka-account-next.vercel.app/api/manage-auth", // make sure this is the full URL: https + your Vercel domain + the API route
+});
+```
+
+---
+
+### Setup for BE runtimes
+
+```typescript
+import createEkaInstance from "@eka-care/eka-care-core";
+
+const myEka = createEkaInstance({
+  client_id: "your_client_id",
+  client_secret: "your_client_secret",
+  api_key: "your_api_key",
+});
+```
+
+### Next.js API Route Example
+
+```typescript
+// pages/api/healthcare.ts
+import createEkaInstance from "@eka-care/eka-care-core";
+
+const myEka = createEkaInstance({
+  client_id: process.env.EKA_CLIENT_ID,
+  client_secret: process.env.EKA_CLIENT_SECRET,
+  api_key: process.env.EKA_API_KEY,
+});
+
+export default async function handler(req, res) {
+  try {
+    const slots = await myEka.appointments.getSlotsForDoctor({
+      doctor_id: "doc123",
+      clinic_id: "clinic456",
+      start_date: "2025-06-05",
+      end_date: "2025-06-06",
+    });
+
+    res.status(200).json({ success: true, data: slots });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+```
+
+---
+
+## Module Documentation
+
+### Appointments Module
+
+Manage doctor appointments and schedules.
+
+```typescript
+// Get available slots for a doctor
+const slots = await myEka.appointments.getSlotsForDoctor({
+  doctor_id: "doc123",
+  clinic_id: "clinic456",
+  start_date: "2025-06-01",
+  end_date: "2025-06-01",
+});
+
+// Book an appointment
+const appointment = await myEka.appointments.bookAppointmentSlotForDoctor({
+  isBusinessOrDoctorAssosiatedWithEka: true,
+  clinic_id: "clinic456",
+  doctor_id: "doc123",
+  patient_id: "patient789",
+  appointment_details: {
+    start_time: 1748607760,
+    mode: "INCLINIC", // or "TELE"
+  },
+  patient_details: {
+    dob: "2004-08-01",
+    first_name: "John",
+    gender: "M",
+  },
+});
+
+// Get appointments by date
+const appointments = await myEka.appointments.getAllAppointmentsByDate(
+  "01-06-25"
+);
+
+// Get appointment details
+const details = await myEka.appointments.getAppointmentDetailsById({
+  appointment_id: "apt123",
+});
+
+// Manage appointment status
+await myEka.appointments.parkAppointment({ appointment_id: "apt123" });
+await myEka.appointments.completeAppointment({ appointment_id: "apt123" });
+await myEka.appointments.cancelAppointment({ appointment_id: "apt123" });
+
+// reschedule appointment
+const updatedApt = await myEka.appointments.updateAppointmentTime({
+  appointment_id: appointment.appointment_id,
+  start_time: Date.now(),
+});
+
+console.log("updated succcessful", updatedApt);
+```
+
+### Patients Module
+
+Patient registration and management.
+
+```typescript
+// Add new patient to directory
+const newPatient = await myEka.patients.addPatientToDirectory({
+  first_name: "John",
+  gender: "M",
+  mobile: "918074106021",
+  dob: "2004-08-01",
+});
+
+// Search patient by mobile number
+const patient = await myEka.patients.searchPatientByMobile({
+  mobile: "918074106021",
+});
+
+// Get patient details by ID
+const patientDetails = await myEka.patients.getPatientDetailsById({
+  patient_id: "174860072074280",
+});
+
+// Update Patient details
+
+const updatedPatientDetails = await myEka.patients.updatePatientDetails({
+  patient_id: newPatient.patient_id,
+  first_name: "new name",
+  address: {
+    city: "BLR",
+    country: "IN",
+  },
+  dob: "2000-10-10",
+});
+console.log(updatedPatientDetails, "update successful");
+```
+
+### Medication Search Module
+
+Search and find medications.
+
+```typescript
+// Search by drug name
+const medications = await myEka.medicationSearch.searchMedications({
+  drug_name: "paracetamol",
+});
+
+// Advanced search with multiple parameters
+const advancedSearch = await myEka.medicationSearch.searchMedications({
+  drug_name: "dolo",
+  form: "tablet",
+  volumes: "500",
+});
+
+// Search by generic names
+const genericSearch = await myEka.medicationSearch.searchMedications({
+  generic_names: "Glimeperide,Metformin",
+  drug_name: "Glimeperide",
+});
+```
+
+### Health Assessment Module
+
+Comprehensive health assessment and symptom checking.
+
+```typescript
+// Initialize assessment
+const assessment = await myEka.assessment.initAssessment({
+  client_id: "your_client_id",
+  user_info: {
+    gender: "M",
+    age: 25,
+  },
+  workflow_id: 814, // Symptom checker workflow
+});
+
+// Start assessment
+const startResponse = await myEka.assessment.startAssessment({
+  assessment_id: assessment.assessment_id,
+  client_id: "your_client_id",
+});
+
+// Handle different question types with full TypeScript support
+const question = startResponse.questions[0];
+
+if (question.component_code === "I-RADG") {
+  // Radio group with qualifiers (Yes/No/Don't Know)
+  const choices = question.component_data.choices; // ✅ Autocomplete works!
+
+  const userResponse = [
+    {
+      selected_choices: [
+        {
+          choice_id: choices[0].choice_id,
+          choice_label: choices[0].choice_label,
+          choice_qualifier: "p", // "p" = Yes, "a" = No, "u" = Don't Know
+        },
+      ],
+    },
+  ];
+} else if (question.component_code === "I-MULT") {
+  // Multiple choice selection
+  const choices = question.component_data.choices; // ✅ Autocomplete works!
+
+  const userResponse = [
+    {
+      selected_choices: choices.slice(0, 2).map((choice) => ({
+        choice_id: choice.choice_id,
+        choice_label: choice.choice_label,
+      })),
+    },
+  ];
+} else if (question.component_code === "I-ATSG") {
+  // Autosuggest symptoms
+  const staticChoices = question.component_data.autosuggest_static_choices; // ✅ Autocomplete works!
+
+  const availableChoices = staticChoices.sections[0]?.choices || [];
+  const userResponse = [
+    {
+      selected_choices: availableChoices.slice(0, 2).map((choice) => ({
+        choice_id: choice.choice_id!,
+        choice_label: choice.choice_label || choice.common_name!,
+      })),
+    },
+  ];
+}
+
+// Continue assessment
+const continueResponse = await myEka.assessment.continueAssessment({
+  assessment_id: assessment.assessment_id,
+  client_id: "your_client_id",
+  qid: question.qid,
+  user_response: userResponse,
+});
+
+// Submit final assessment
+const results = await myEka.assessment.submitAssessment({
+  assessment_id: assessment.assessment_id,
+  client_id: "your_client_id",
+});
+
+console.log("Health Assessment Results:", results.likelihood);
+```
+
+---
+
+## TypeScript Autocomplete
+
+The SDK provides full TypeScript support with intelligent autocomplete. Press `Ctrl+Space` to see available options, methods, args and responses:
+
+![TypeScript Autocomplete](https://img.shields.io/badge/TypeScript-Autocomplete-blue)
+
+```typescript
+// Autocomplete works throughout the entire SDK
+myEka. // Shows all available modules
+myEka.assessment. // Shows all assessment methods
+myEka.appointments. // Shows all appointment methods
+
+// Type safety for parameters
+await myEka.appointments.getSlotsForDoctor({
+  // Autocomplete shows required fields
+  doctor_id: "",
+  clinic_id: "",
+  start_date: "",
+  end_date: "",
+});
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env.local` file:
+
+```bash
+EKA_CLIENT_ID=your_client_id
+EKA_CLIENT_SECRET=your_client_secret
+EKA_API_KEY=your_api_key
+```
+
+### TypeScript Configuration
+
+Ensure your `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+---
+
+## Response Types
+
+All methods return properly typed responses:
+
+```typescript
+// Assessment results are fully typed
+interface LikelihoodItem {
+  id: string;
+  desc: string;
+  text: string;
+  likelihood: string;
+  relevant_doctor_specialities: string[];
+}
+
+// Appointment data is structured
+interface AppointmentDetails {
+  appointment_id: string;
+  status: string;
+  start_time: number;
+  // ... and more
+}
+```
+
+---
+
+## Error Handling
+
+The SDK would never break the app and has try/catch at every important step. but for proper UX its recommended to wrap its usage with your own try/catch or .then and .catch
+
+```typescript
+try {
+  const result = await myEka.appointments.getSlotsForDoctor({
+    doctor_id: "doc ID",
+    clinic_id: "clinic ID",
+    start_date: "2025-06-06",
+    end_date: "2025-06-06",
+  });
+} catch (error) {
+  console.error("API Error:", error.message);
+  // Handle error appropriately
+}
+```
+
+# Requirements
+
+- Node.js 16+
+- TypeScript 4.5+ (recommended)
+- Valid Eka Care API credentials
+
+---
+
+## NPM
+
+- **NPM Package**: [@eka-care/eka-care-core](https://www.npmjs.com/package/@eka-care/eka-care-core)
+
+---
