@@ -165,13 +165,6 @@ paths:
     post:
       description: This endpoint is used to resend the mobile otp for aadhaar registration
         process.
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -204,13 +197,6 @@ paths:
       description: This API operates on a skip logic basis. If the mobile number provided
         in the second step differs from the one linked to the Aadhaar, this API will
         be used to verify the new mobile number.
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -522,13 +508,6 @@ paths:
       description: "ABDM allows a user to find their health records from any health
         facility they have visited via the discovery process. \n\nDiscover API returns
         any unlinked care-context for the ABHA User."
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -558,13 +537,6 @@ paths:
   /abdm/v1/care-contexts/discover/link/confirm:
     post:
       description: Confirm linking for discovered care context
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -594,13 +566,6 @@ paths:
   /abdm/v1/care-contexts/discover/link/init:
     post:
       description: Initialise the linking for discovered care context.
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -637,12 +602,6 @@ paths:
         schema:
           description: Unique identifier for the Health Information Provider (HIP).
           type: string
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -666,13 +625,6 @@ paths:
       - authApiKey: []
   /abdm/v1/care-contexts/providers:
     get:
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -696,14 +648,6 @@ paths:
       - authApiKey: []
   /abdm/v1/consents/approve:
     post:
-      description: This endpoint is used to approve the consent
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -729,13 +673,6 @@ paths:
   /abdm/v1/consents/auto-approval:
     get:
       description: Fetch the auto approval policy settings
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -759,18 +696,11 @@ paths:
       - authApiKey: []
     patch:
       description: Update the auto approval policy settings
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
-              $ref: '#/components/schemas/FormDataSettingsRequest'
+              $ref: '#/components/schemas/SettingsRequest'
       responses:
         4XX:
           content:
@@ -792,16 +722,42 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/consents/create:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentCreateConsentRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentCreateConsentResponse'
+          description: OK
+        "204":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentCreateConsentResponse'
+          description: No Content
+      security:
+      - authApiKey: []
   /abdm/v1/consents/deny:
     post:
-      description: This endpoint is used to deny the consent
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -821,6 +777,74 @@ paths:
                 $ref: '#/components/schemas/GenericError'
           description: ""
         "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/details:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentConsentDetailReq'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentConsentDetailResp'
+          description: OK
+        "204":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentConsentDetailResp'
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/list:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentListConsentRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentListConsentResponse'
+          description: OK
+        "204":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentListConsentResponse'
           description: No Content
       security:
       - authApiKey: []
@@ -995,14 +1019,6 @@ paths:
       - authApiKey: []
   /abdm/v1/consents/revoke:
     post:
-      description: This endpoint is used to revoke the consent
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1031,13 +1047,6 @@ paths:
         associated documents, vital records, and any other related data from the system.<Warning>Please
         note that the ABHA metadata will remain in the ABDM system, as ABDM does not
         provide a delete option</Warning>
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -1059,13 +1068,6 @@ paths:
       description: Fetches the ABHA profile of the User. <Note>Please cache these
         results locally. We do not recommend calling this API on every page load.
         Evict the cache when there is profile update.</Note>
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -1092,13 +1094,6 @@ paths:
         Update Profile Details
 
         <Note>The API expects all the fields returned by the [Get Profiles API](/api-reference/user-app/abdm-connect/profile/details/profile-details) to be included in the PATCH request body.</Note>
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1126,13 +1121,6 @@ paths:
       description: Fetch the ABHA card.<Note>Please cache these results locally. We
         do not recommend calling this API on every page load. Evict the cache when
         there is profile update.</Note>
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -1169,12 +1157,6 @@ paths:
           enum:
           - json
           type: string
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -1201,13 +1183,6 @@ paths:
   /abdm/v1/profile/kyc/init:
     post:
       description: Request otp to initialise the KYC flow
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1237,13 +1212,6 @@ paths:
   /abdm/v1/profile/kyc/resend:
     post:
       description: Resend otp for KYC
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1273,13 +1241,6 @@ paths:
   /abdm/v1/profile/kyc/verify:
     post:
       description: Verify OTP to complete KYC
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1311,13 +1272,6 @@ paths:
       description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
         by reading the QR code of the Hospital/Clinic.</Note> <Note>Use the device
         location for the location data</Note>
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1346,14 +1300,7 @@ paths:
       - authApiKey: []
   /abdm/v1/provider/{hip_id}:
     get:
-      description: Fetches the Providers based on the HIP ID.
       parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       - description: Identifier for the Health Information Provider (HIP).
         in: path
         name: hip_id
@@ -1384,7 +1331,6 @@ paths:
       - authApiKey: []
   /abdm/v1/providers:
     get:
-      description: Fetches the List of Providers.
       parameters:
       - description: Name of the Health Information Provider (HIP), required with
           a minimum length of 3 characters.
@@ -1395,12 +1341,6 @@ paths:
           description: Name of the Health Information Provider (HIP), required with
             a minimum length of 3 characters.
           minLength: 3
-          type: string
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
           type: string
       responses:
         4XX:
@@ -1492,12 +1432,6 @@ paths:
           - denied
           - revoked
           type: string
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       responses:
         4XX:
           content:
@@ -1552,20 +1486,6 @@ paths:
           examples:
           - consent
           type: string
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        required: true
-        schema:
-          description: OID is used to Identify the user.
-          enum:
-          - consent
-          - subscription
-          - authorization
-          - all
-          examples:
-          - consent
-          type: string
       responses:
         4XX:
           content:
@@ -1590,13 +1510,6 @@ paths:
   /abdm/v1/session/init:
     post:
       description: Generate mobile OTP for user session token
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1626,13 +1539,6 @@ paths:
   /abdm/v1/session/verify:
     post:
       description: Verify mobile OTP and get user session token
-      parameters:
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
       requestBody:
         content:
           application/json:
@@ -1699,6 +1605,8 @@ components:
         id:
           description: Unique identifier of a consent, also called the consent ID.
           type: string
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
       required:
       - id
       - consent_artefacts
@@ -1728,6 +1636,13 @@ components:
           - heart-rate-2020
           type: string
       type: object
+    CommonsCareContextIdentifier:
+      properties:
+        cc_ref:
+          type: string
+        patient_ref:
+          type: string
+      type: object
     CommonsDuration:
       properties:
         from:
@@ -1737,6 +1652,28 @@ components:
         to:
           description: End time of the consent
           format: date-time
+          type: string
+      type: object
+    CommonsEkaDocReference:
+      properties:
+        clinic_id:
+          examples:
+          - afsdfj786fges87f68g8
+          type: string
+        d_oid:
+          examples:
+          - "162835406498984"
+          type: string
+      type: object
+    CommonsEkaPatientReference:
+      properties:
+        health_id:
+          examples:
+          - bobthebuilder@abdm
+          type: string
+        oid:
+          examples:
+          - "162835406498984"
           type: string
       type: object
     CommonsHiType:
@@ -1772,6 +1709,13 @@ components:
           - Apollo Hospital
           type: string
       type: object
+    CommonsHipIdentifier:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
     CommonsHiu:
       properties:
         id:
@@ -1783,6 +1727,32 @@ components:
           description: Name of the Health Information User
           examples:
           - Apollo Hospital
+          type: string
+      type: object
+    CommonsPeriodWithExpiry:
+      properties:
+        expiry:
+          examples:
+          - "2009-11-10T23:00:00Z"
+          format: date-time
+          type: string
+        from:
+          examples:
+          - "2009-11-10T23:00:00Z"
+          format: date-time
+          type: string
+        to:
+          examples:
+          - "2009-11-10T23:00:00Z"
+          format: date-time
+          type: string
+      type: object
+    CommonsPinDetail:
+      properties:
+        pin:
+          description: 4 digit pin used for consent requests
+          examples:
+          - "1234"
           type: string
       type: object
     CommonsPurpose:
@@ -1818,6 +1788,154 @@ components:
           description: Unique identifier for the care context.
           type: string
         txn_id:
+          type: string
+      type: object
+    ConsentCareContextDetail:
+      properties:
+        created_at:
+          type: string
+        display:
+          type: string
+        documents:
+          items:
+            $ref: '#/components/schemas/ConsentDocumentDetail'
+          type: array
+        id:
+          type: string
+        status:
+          type: string
+      type: object
+    ConsentConsentDetail:
+      properties:
+        c_at:
+          format: date-time
+          type: string
+        consent_id:
+          type: string
+        consent_init_id:
+          type: string
+        period:
+          $ref: '#/components/schemas/CommonsPeriodWithExpiry'
+        status:
+          type: string
+        u_at:
+          format: date-time
+          type: string
+      type: object
+    ConsentConsentDetailData:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/ConsentCareContextDetail'
+          type:
+          - array
+          - "null"
+        hip:
+          $ref: '#/components/schemas/ConsentHipDetail'
+      type: object
+    ConsentConsentDetailReq:
+      properties:
+        consent_id:
+          type: string
+        health_id:
+          type: string
+      type: object
+    ConsentConsentDetailResp:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/ConsentConsentDetailData'
+          type:
+          - array
+          - "null"
+      type: object
+    ConsentCreateConsentRequest:
+      properties:
+        appointment_id:
+          type: string
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/CommonsCareContextIdentifier'
+          type: array
+        hip_identifier:
+          $ref: '#/components/schemas/CommonsHipIdentifier'
+        hiu:
+          $ref: '#/components/schemas/ConsentEkaHiuIdentifier'
+        patient:
+          $ref: '#/components/schemas/CommonsEkaPatientReference'
+        period:
+          $ref: '#/components/schemas/CommonsPeriodWithExpiry'
+        purpose:
+          type: string
+        record_types:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+      type: object
+    ConsentCreateConsentResponse:
+      properties:
+        consent_init_id:
+          type: string
+      type: object
+    ConsentDocumentDetail:
+      properties:
+        fhir_url:
+          type: string
+        id:
+          type: string
+      type: object
+    ConsentEkaHiuIdentifier:
+      properties:
+        clinic_id:
+          examples:
+          - afsdfj786fges87f68g8
+          type: string
+        d_oid:
+          examples:
+          - "162835406498984"
+          type: string
+        requester:
+          $ref: '#/components/schemas/ConsentRequester'
+      type: object
+    ConsentHipDetail:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    ConsentListConsentRequest:
+      properties:
+        hiu:
+          $ref: '#/components/schemas/CommonsEkaDocReference'
+        patient:
+          $ref: '#/components/schemas/CommonsEkaPatientReference'
+      type: object
+    ConsentListConsentResponse:
+      properties:
+        consents:
+          items:
+            $ref: '#/components/schemas/ConsentConsentDetail'
+          type:
+          - array
+          - "null"
+      type: object
+    ConsentRequester:
+      properties:
+        identifier:
+          $ref: '#/components/schemas/ConsentRequesterIden'
+        name:
+          type: string
+      type: object
+    ConsentRequesterIden:
+      properties:
+        system:
+          type: string
+        type:
+          type: string
+        value:
           type: string
       type: object
     CreateRequest:
@@ -2120,12 +2238,6 @@ components:
         exist:
           description: Indicates if the user has already set the consent PIN.
           type: boolean
-      type: object
-    FormDataSettingsRequest:
-      properties:
-        oid:
-          description: OID is used to Identify the user.
-          type: string
       type: object
     GenericError:
       properties:
@@ -2449,7 +2561,6 @@ components:
           - phr_address
           - abha_number
           - mobile
-          - aadhaar_number
           examples:
           - mobile
           type: string
@@ -2763,6 +2874,60 @@ components:
           type:
           - array
           - "null"
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
+    ScanandshareAddress:
+      properties:
+        district:
+          description: District of the address
+          type: string
+        line:
+          description: Address line
+          type: string
+        pin_code:
+          description: Pin code of the address
+          type: string
+        state:
+          description: State of the address
+          type: string
+      required:
+      - pin_code
+      type: object
+    ScanandsharePatient:
+      properties:
+        abhaAddress:
+          description: ABHA address of the patient
+          type: string
+        address:
+          $ref: '#/components/schemas/ScanandshareAddress'
+          description: Address of the patient
+        dayOfBirth:
+          description: Day of birth of the patient
+          type: string
+        gender:
+          description: Gender of the patient
+          type: string
+        mobile_no:
+          description: Phone number of the patient
+          type: string
+        monthOfBirth:
+          description: Month of birth of the patient
+          type: string
+        name:
+          description: Name of the patient
+          type: string
+        yearOfBirth:
+          description: Year of birth of the patient
+          type: string
+      required:
+      - abhaAddress
+      - name
+      - gender
+      - dayOfBirth
+      - monthOfBirth
+      - yearOfBirth
+      - mobile_no
       type: object
     ScanandshareRequest:
       properties:
@@ -2775,6 +2940,9 @@ components:
         location:
           $ref: '#/components/schemas/HipLocation'
           description: Location of the user
+        patient:
+          $ref: '#/components/schemas/ScanandsharePatient'
+          description: Patient details
       required:
       - counter_id
       - hip_id
@@ -2788,6 +2956,20 @@ components:
           type: string
       required:
       - pin
+      type: object
+    SettingsRequest:
+      properties:
+        enable:
+          description: Auto approval enable/disable
+          type: boolean
+        pin:
+          description: Consent pin for auto approval
+          type:
+          - "null"
+          - string
+      required:
+      - pin
+      - enable
       type: object
     SettingsResponse:
       properties:
