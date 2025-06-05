@@ -792,6 +792,40 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/consents/create:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentCreateConsentRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentCreateConsentResponse'
+          description: OK
+        "204":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentCreateConsentResponse'
+          description: No Content
+      security:
+      - authApiKey: []
   /abdm/v1/consents/deny:
     post:
       description: This endpoint is used to deny the consent
@@ -821,6 +855,74 @@ paths:
                 $ref: '#/components/schemas/GenericError'
           description: ""
         "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/details:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentConsentDetailReq'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentConsentDetailResp'
+          description: OK
+        "204":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentConsentDetailResp'
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/list:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentListConsentRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentListConsentResponse'
+          description: OK
+        "204":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentListConsentResponse'
           description: No Content
       security:
       - authApiKey: []
@@ -1720,6 +1822,13 @@ components:
           - heart-rate-2020
           type: string
       type: object
+    CommonsCareContextIdentifier:
+      properties:
+        cc_ref:
+          type: string
+        patient_ref:
+          type: string
+      type: object
     CommonsDuration:
       properties:
         from:
@@ -1729,6 +1838,28 @@ components:
         to:
           description: End time of the consent
           format: date-time
+          type: string
+      type: object
+    CommonsEkaDocReference:
+      properties:
+        clinic_id:
+          examples:
+          - afsdfj786fges87f68g8
+          type: string
+        d_oid:
+          examples:
+          - "162835406498984"
+          type: string
+      type: object
+    CommonsEkaPatientReference:
+      properties:
+        health_id:
+          examples:
+          - bobthebuilder@abdm
+          type: string
+        oid:
+          examples:
+          - "162835406498984"
           type: string
       type: object
     CommonsHiType:
@@ -1764,6 +1895,13 @@ components:
           - Apollo Hospital
           type: string
       type: object
+    CommonsHipIdentifier:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
     CommonsHiu:
       properties:
         id:
@@ -1775,6 +1913,24 @@ components:
           description: Name of the Health Information User
           examples:
           - Apollo Hospital
+          type: string
+      type: object
+    CommonsPeriodWithExpiry:
+      properties:
+        expiry:
+          examples:
+          - "2009-11-10T23:00:00Z"
+          format: date-time
+          type: string
+        from:
+          examples:
+          - "2009-11-10T23:00:00Z"
+          format: date-time
+          type: string
+        to:
+          examples:
+          - "2009-11-10T23:00:00Z"
+          format: date-time
           type: string
       type: object
     CommonsPurpose:
@@ -1810,6 +1966,154 @@ components:
           description: Unique identifier for the care context.
           type: string
         txn_id:
+          type: string
+      type: object
+    ConsentCareContextDetail:
+      properties:
+        created_at:
+          type: string
+        display:
+          type: string
+        documents:
+          items:
+            $ref: '#/components/schemas/ConsentDocumentDetail'
+          type: array
+        id:
+          type: string
+        status:
+          type: string
+      type: object
+    ConsentConsentDetail:
+      properties:
+        c_at:
+          format: date-time
+          type: string
+        consent_id:
+          type: string
+        consent_init_id:
+          type: string
+        period:
+          $ref: '#/components/schemas/CommonsPeriodWithExpiry'
+        status:
+          type: string
+        u_at:
+          format: date-time
+          type: string
+      type: object
+    ConsentConsentDetailData:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/ConsentCareContextDetail'
+          type:
+          - array
+          - "null"
+        hip:
+          $ref: '#/components/schemas/ConsentHipDetail'
+      type: object
+    ConsentConsentDetailReq:
+      properties:
+        consent_id:
+          type: string
+        health_id:
+          type: string
+      type: object
+    ConsentConsentDetailResp:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/ConsentConsentDetailData'
+          type:
+          - array
+          - "null"
+      type: object
+    ConsentCreateConsentRequest:
+      properties:
+        appointment_id:
+          type: string
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/CommonsCareContextIdentifier'
+          type: array
+        hip_identifier:
+          $ref: '#/components/schemas/CommonsHipIdentifier'
+        hiu:
+          $ref: '#/components/schemas/ConsentEkaHiuIdentifier'
+        patient:
+          $ref: '#/components/schemas/CommonsEkaPatientReference'
+        period:
+          $ref: '#/components/schemas/CommonsPeriodWithExpiry'
+        purpose:
+          type: string
+        record_types:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+      type: object
+    ConsentCreateConsentResponse:
+      properties:
+        consent_init_id:
+          type: string
+      type: object
+    ConsentDocumentDetail:
+      properties:
+        fhir_url:
+          type: string
+        id:
+          type: string
+      type: object
+    ConsentEkaHiuIdentifier:
+      properties:
+        clinic_id:
+          examples:
+          - afsdfj786fges87f68g8
+          type: string
+        d_oid:
+          examples:
+          - "162835406498984"
+          type: string
+        requester:
+          $ref: '#/components/schemas/ConsentRequester'
+      type: object
+    ConsentHipDetail:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    ConsentListConsentRequest:
+      properties:
+        hiu:
+          $ref: '#/components/schemas/CommonsEkaDocReference'
+        patient:
+          $ref: '#/components/schemas/CommonsEkaPatientReference'
+      type: object
+    ConsentListConsentResponse:
+      properties:
+        consents:
+          items:
+            $ref: '#/components/schemas/ConsentConsentDetail'
+          type:
+          - array
+          - "null"
+      type: object
+    ConsentRequester:
+      properties:
+        identifier:
+          $ref: '#/components/schemas/ConsentRequesterIden'
+        name:
+          type: string
+      type: object
+    ConsentRequesterIden:
+      properties:
+        system:
+          type: string
+        type:
+          type: string
+        value:
           type: string
       type: object
     CreateRequest:
@@ -2441,7 +2745,6 @@ components:
           - phr_address
           - abha_number
           - mobile
-          - aadhaar_number
           examples:
           - mobile
           type: string
@@ -2756,6 +3059,58 @@ components:
           - array
           - "null"
       type: object
+    ScanandshareAddress:
+      properties:
+        district:
+          description: District of the address
+          type: string
+        line:
+          description: Address line
+          type: string
+        pin_code:
+          description: Pin code of the address
+          type: string
+        state:
+          description: State of the address
+          type: string
+      required:
+      - pin_code
+      type: object
+    ScanandsharePatient:
+      properties:
+        abhaAddress:
+          description: ABHA address of the patient
+          type: string
+        address:
+          $ref: '#/components/schemas/ScanandshareAddress'
+          description: Address of the patient
+        dayOfBirth:
+          description: Day of birth of the patient
+          type: string
+        gender:
+          description: Gender of the patient
+          type: string
+        mobile_no:
+          description: Phone number of the patient
+          type: string
+        monthOfBirth:
+          description: Month of birth of the patient
+          type: string
+        name:
+          description: Name of the patient
+          type: string
+        yearOfBirth:
+          description: Year of birth of the patient
+          type: string
+      required:
+      - abhaAddress
+      - name
+      - gender
+      - dayOfBirth
+      - monthOfBirth
+      - yearOfBirth
+      - mobile_no
+      type: object
     ScanandshareRequest:
       properties:
         counter_id:
@@ -2767,6 +3122,9 @@ components:
         location:
           $ref: '#/components/schemas/HipLocation'
           description: Location of the user
+        patient:
+          $ref: '#/components/schemas/ScanandsharePatient'
+          description: Patient details
       required:
       - counter_id
       - hip_id
