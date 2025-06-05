@@ -1,0 +1,121 @@
+---
+title: "Medication Search"
+description: "Building a full stack Building a medication search app using the Eka Care SDK's medication search module."
+---
+
+## What We're Building
+
+A medication search app that demonstrates:
+
+- Searching medications by drug name
+- Advanced search with multiple parameters
+- Search by generic names
+- Displaying comprehensive medication details
+
+# Final product
+
+<img src="/images/medicine-search1.png" alt="Hero Light" />
+
+## <img src="/images/medicine-search-results2.png" alt="Hero Light" />
+
+## Create Next.js App
+
+```bash
+npx create-next-app@14.1.0 medication-search-app
+cd medication-search-app
+```
+
+## Install Eka Care SDK
+
+```bash
+npm install @eka-care/eka-care-core
+```
+
+## Setting Up Backend Auth
+
+Head to this [repo](https://github.com/eka-care/ekathon-nextjs-auth-template-api) and you will have a deployed live running backend in 1 click.
+
+## Building the Medication Search App
+
+Replace `pages/index.js` with:
+
+```javascript
+import { useState, useEffect } from "react";
+import createEkaInstance from "@eka-care/eka-care-core";
+
+export default function MedicationSearch() {
+  const [ekaInstance, setEkaInstance] = useState(null);
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    initializeSDK();
+  }, []);
+
+  const initializeSDK = async () => {
+    const authRes = await fetch(
+      "https://your-backend.vercel.app/api/manage-auth",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const authData = await authRes.json();
+
+    const ekaInstanceResult = createEkaInstance({
+      source: "FE",
+      auth_token: authData.data.access_token,
+      backendAuthEndpointURL: "https://your-backend.vercel.app/api/manage-auth",
+    });
+
+    setEkaInstance(ekaInstanceResult);
+  };
+
+  // Basic search by drug name
+  const searchMedications = async () => {
+    const medications = await ekaInstance.medicationSearch.searchMedications({
+      drug_name: searchQuery,
+    });
+    setSearchResults(medications);
+  };
+
+  // Advanced search with multiple parameters
+  const advancedSearch = async () => {
+    const medications = await ekaInstance.medicationSearch.searchMedications({
+      drug_name: "dolo",
+      form: "tablet",
+      volumes: "500",
+    });
+    setSearchResults(medications);
+  };
+
+  // Search by generic names
+  const searchByGeneric = async () => {
+    const medications = await ekaInstance.medicationSearch.searchMedications({
+      generic_names: "Glimeperide,Metformin",
+      drug_name: "Glimeperide",
+    });
+    setSearchResults(medications);
+  };
+
+  return (
+    <div className="container mx-auto p-8">
+      <div>...</div>
+    </div>
+  );
+}
+```
+
+## Key SDK Methods Used
+
+1. **Basic Search** - Search medications by drug name
+2. **Advanced Search** - Search with form, volume, and other parameters
+3. **Generic Search** - Search by generic medication names
+
+## What We Built
+
+A complete medication search application using the Eka Care SDK where the core functionality is handled by just 3 search method variations.
+
+[Live App](https://sdk-demo-ui-three.vercel.app/medicine-search) and
+[GitHub Repo](https://github.com/eka-care/web-sdk-ui-wrapper-old)
