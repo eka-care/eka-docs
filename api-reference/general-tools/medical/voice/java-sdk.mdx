@@ -97,7 +97,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import care.eka.v2rx.V2RX
 
+// Create v2rx client for
 // Prepare files and metadata
 List<String> audioFiles = new ArrayList<>();
 audioFiles.add("path/to/audio_file1.mp3");
@@ -106,10 +108,15 @@ audioFiles.add("path/to/audio_file2.mp3");
 String transactionId = "unique_transaction_id";
 Map<String, Object> extraData = new HashMap<>();
 extraData.put("mode", "dictation");
-String action = "ekascribe";
+String action = "ekascribe-v2";
+
+Map<String, Object> outputFormat = new HashMap<>();
+Map<String, String> templateMap = new HashMap<>();
+templateMap.put("template_id", "eka_emr_template");
+outputFormat.put("output_template", Arrays.asList(templateMap));
 
 // Upload files
-List<JsonNode> responses = client.getFiles().upload(audioFiles, transactionId, action, extraData);
+JsonNode responses = client.getV2RX().upload(audioFiles, transactionId, action, extraData, outputFormat);
 
 // Process responses
 for (JsonNode response : responses) {
@@ -127,7 +134,7 @@ When the transcription is complete, Eka Care will send a webhook notification to
   "data": {
     "transaction_id": "unique_transaction_id",
     "status": "completed",
-    "session_id": "session_123456"
+    "session_id": "session_id_123",
   },
   "timestamp": "2023-07-20T10:30:00Z"
 }
@@ -139,10 +146,11 @@ After receiving the webhook notification, retrieve the transcription results:
 
 ```java
 // Get the session ID from the webhook callback
-String sessionId = "session_123456"; // This comes from the webhook payload
+String sessionId = "session_id_123"; // Session id from webhook means equal to transaction ID
+String action = "ekascribe-v2"
 
 // Fetch session status and results
-JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId);
+JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId, action);
 
 // Sample response structure
 // {
@@ -156,13 +164,27 @@ JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId);
 // }
 
 // Extract and decode the FHIR data
-if (sessionStatus.has("data") && 
-    sessionStatus.get("data").has("output") && 
-    sessionStatus.get("data").get("output").has("fhir")) {
-    
+if (sessionStatus.has("status") && "completed".equals(sessionStatus.get("status").asText())) {
     String encodedFhir = sessionStatus.get("data").get("output").get("fhir").asText();
-    byte[] decodedBytes = java.util.Base64.getDecoder().decode(encodedFhir);
+    byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
     String fhirJson = new String(decodedBytes);
+    System.out.println("Decoded Data :" + fhirJson);
+
+} else if(!sessionStatus.has("status")){
+    JsonNode outputNode = sessionStatus.get("data").get("output");
+    Integer step =0;
+    for (JsonNode node : outputNode) {
+        if( node.has("value")){
+            step++;
+            String encodedFhir = node.get("value").asText();
+            byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
+            String fhirJson = new String(decodedBytes);
+            System.out.println("Decoded Data "+ step+ " :" + fhirJson);
+        } else {
+            System.out.println("No value found in output node: " + node.toPrettyString());
+        }
+    }
+
 }
 ```
 
@@ -171,7 +193,6 @@ if (sessionStatus.has("data") &&
 Here's a complete example integrating all the above steps:
 
 ```java
-package org.example;
 
 import care.eka.EkaCareClient;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -181,6 +202,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class EkascribeIntegrationExample {
@@ -194,15 +216,16 @@ public class EkascribeIntegrationExample {
             
             // Upload audio files
             String transactionId = "txn_" + System.currentTimeMillis();
-            uploadAudioFiles(client, transactionId);
+            String action = "ekascribe-v2";    // ex. ekascribe, ekascribe-v2
+            uploadAudioFiles(client, transactionId, action);
             
             // NOTE: At this point, wait for the webhook callback
             // This would typically be handled by your web server
             
             // Once webhook is received, fetch results
             // The sessionId would come from the webhook payload
-            String sessionId = "session_id_from_webhook";
-            getTranscriptionResults(client, sessionId);
+            String sessionId = transactionId; // Session id from webhook means equal to transaction ID
+            getTranscriptionResults(client, sessionId, action);
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -214,26 +237,48 @@ public class EkascribeIntegrationExample {
         client.setAccessToken(tokenResponse.get("access_token").asText());
     }
     
-    private static void uploadAudioFiles(EkaCareClient client, String transactionId) throws IOException {
+    private static void uploadAudioFiles(EkaCareClient client, String transactionId, String action) throws IOException {
         List<String> audioFiles = new ArrayList<>();
         audioFiles.add("path/to/audio1.mp3");
         audioFiles.add("path/to/audio2.mp3");
         
         Map<String, Object> extraData = new HashMap<>();
         extraData.put("mode", "dictation");
+
+        Map<String, Object> outputFormat = new HashMap<>();
+        Map<String, String> templateMap = new HashMap<>();
+        templateMap.put("template_id", "eka_emr_template");
+        outputFormat.put("output_template", Arrays.asList(templateMap));
         
-        List<JsonNode> responses = client.getFiles().upload(audioFiles, transactionId, "ekascribe", extraData);
+        List<JsonNode> responses = client.getV2RX().upload(audioFiles, transactionId, action, extraData, outputFormat);
+        System.out.println("Upload Responses: " + responses.toString());
     }
     
-    private static void getTranscriptionResults(EkaCareClient client, String sessionId) throws IOException {
-        JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId);
+    private static void getTranscriptionResults(EkaCareClient client, String sessionId, String action) throws IOException {
+        JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId, action);
+        System.out.println("Session Status: " + sessionStatus.toPrettyString());
         
-        if ("completed".equals(sessionStatus.get("status").asText())) {
+        if (sessionStatus.has("status") && "completed".equals(sessionStatus.get("status").asText())) {
             String encodedFhir = sessionStatus.get("data").get("output").get("fhir").asText();
             byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
             String fhirJson = new String(decodedBytes);
-        } else {
-            // Handle non-completed status
+            System.out.println("Decoded Data :" + fhirJson);
+
+        } else if(!sessionStatus.has("status")){
+            JsonNode outputNode = sessionStatus.get("data").get("output");
+            Integer step =0;
+            for (JsonNode node : outputNode) {
+                if( node.has("value")){
+                    step++;
+                    String encodedFhir = node.get("value").asText();
+                    byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
+                    String fhirJson = new String(decodedBytes);
+                    System.out.println("Decoded Data "+ step+ " :" + fhirJson);
+                } else {
+                    System.out.println("No value found in output node: " + node.toPrettyString());
+                }
+            }
+
         }
     }
 }
