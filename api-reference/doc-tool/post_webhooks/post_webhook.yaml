@@ -5,14 +5,14 @@ info:
 servers:
   - url: https://{{partner_host}}
 paths:
-  /registered_url_for_appointment_events:
+  /registered_url_for_add_appointment_events:
     post:
       tags:
         - Appointment Webhooks
-      summary: Appointment Events
+      summary: Create appointment
       description: >-
 
-        When an appointment is created/modified or completed, a webhook event is sent to registered
+        When an appointment is created, a webhook event is sent to registered
         webhooks with details about the appointment, including the appointment
         ID, status, doctor ID, patient ID, and event type.
 
@@ -21,7 +21,10 @@ paths:
 
 
         • **event**: string - The type of resource for which event is generated. For appointments, this
-        will be `appointment`.
+        will be `appointment.created`.
+
+
+        • **service**: string - The type of service. For appointments, this will be `appointment`.
 
 
         • **data**: object - Contains detailed information about the appointment
@@ -93,10 +96,18 @@ paths:
                 - business_id
                 - data
               properties:
+                service:
+                  type: string
+                  example: "appointment"
+                  description: "Type of serivce"
                 event:
                   type: string
                   example: "appointment.created"
                   description: "Type of event"
+                transaction_id:
+                  type: string
+                  example: "{{transaction_id}}"
+                  description: "Transaction ID for the appointment"
                 event_time:
                   type: integer
                   example: 1730189586
@@ -107,7 +118,7 @@ paths:
                   description: "Timestamp of the event"
                 client_id:
                   type: string
-                  example: "{{business_id}}"
+                  example: "{{client_id}}"
                   description: "Client ID for the appointment"
                 business_id:
                   type: string
@@ -121,10 +132,15 @@ paths:
                     - doctor_id
                     - patient_id
                     - clinic_id
+                    - partner_doctor_id
+                    - partner_patient_id
+                    - partner_clinic_id
                     - status
                     - action
                     - created_at
                     - modified_at
+                    - partner_meta
+                    - sa_ids
                   properties:
                     appointment_id:
                       type: string
@@ -190,12 +206,657 @@ paths:
                           type: string
                           example: "value1"
                       description: "Partner-specific metadata"
+                    sa_ids:
+                      type: array
+                      example: []
+                      description: ""
 
       responses:
         '200':
           description: ''
           headers: { }
       deprecated: false
+  
+  /registered_url_for_update_appointment_events:
+    post:
+      tags:
+        - Appointment Webhooks
+      summary: Update appointment
+      description: >-
+
+        When an appointment is updated, a webhook event is sent to registered
+        webhooks with details about the appointment, including the appointment
+        ID, status, doctor ID, patient ID, and event type.
+
+
+        **Field Definitions**
+
+
+        • **event**: string - The type of resource for which event is generated. For appointments, this
+        will be `appointment.updated`.
+
+
+        • **service**: string - The type of service. For appointments, this will be `appointment`.
+
+
+        • **data**: object - Contains detailed information about the appointment
+        event.
+
+
+        • **appointment_id**: string - Unique identifier for the appointment.
+
+
+        • **doctor_id**: string - Unique identifier for the doctor.
+
+
+        • **patient_id**: string - Unique identifier for the patient.
+
+
+        • **status**: string - Status of the appointment. Possible values can be 
+        
+          - "BK" (Booked),
+        
+          - "OG" (Ongoing),
+        
+          - "CM" (Completed with Prescription),
+        
+          - "CMNP" (Completed without Prescription),
+        
+          - "CN" (Cancelled).
+        
+        
+        • **action**: string - Current action for the appointment. Possible values can be 
+
+            - created
+        
+            - modified
+        
+            - completed
+
+        • **partner_meta**: key value pair specified by `partner` while creating appointment.  
+
+
+        • **timestamp**: string (ISO 8601) - The date and time when the event
+        occurred.
+
+
+        • **custom_attibutes**: complete set of custom attributes(inclusing tags and labels) defined against this appointment.
+        occurred.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: AppointmentWebhook
+      parameters: [ ]
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - event_time
+                - timestamp
+                - client_id
+                - business_id
+                - data
+              properties:
+                service:
+                  type: string
+                  example: "appointment"
+                  description: "Type of serivce"
+                event:
+                  type: string
+                  example: "appointment.updated"
+                  description: "Type of event"
+                transaction_id:
+                  type: string
+                  example: "{{transaction_id}}"
+                  description: "Transaction ID for the appointment"
+                event_time:
+                  type: integer
+                  example: 1730189586
+                  description: "Event occured timestamp"
+                timestamp:
+                  type: integer
+                  example: 1730189586
+                  description: "Timestamp of the event"
+                client_id:
+                  type: string
+                  example: "{{client_id}}"
+                  description: "Client ID for the appointment"
+                business_id:
+                  type: string
+                  example: "{{business_id}}"
+                  description: "Business ID for the appointment"
+                data:
+                  type: object
+                  required:
+                    - appointment_id
+                    - partner_appointment_id
+                    - doctor_id
+                    - patient_id
+                    - clinic_id
+                    - partner_doctor_id
+                    - partner_patient_id
+                    - partner_clinic_id
+                    - status
+                    - action
+                    - created_at
+                    - modified_at
+                    - partner_meta
+                    - sa_ids
+                  properties:
+                    appointment_id:
+                      type: string
+                      example: "{{appointment_id}}"
+                      description: "Unique appointment ID"
+                    partner_appointment_id:
+                      type: string
+                      example: "{{partner_appointment_id}}"
+                      description: "Partner's appointment ID"
+                    doctor_id:
+                      type: string
+                      example: "{{doctor_id}}"
+                      description: "Identifier for the doctor in Eka"
+                    partner_doctor_id:
+                      type: string
+                      example: "{{partner_doctor_id}}"
+                      description: "Identifier for the partner’s doctor"
+                    patient_id:
+                      type: string
+                      example: "{{patient_id}}"
+                      description: "Identifier for the patient in Eka"
+                    partner_patient_id:
+                      type: string
+                      example: "{{partner_patient_id}}"
+                      description: "Identifier for the partner’s patient"
+                    clinic_id:
+                      type: integer
+                      example: "{{clinic_id}}"
+                      description: "Identifier for the clinic in Eka"
+                    partner_clinic_id:
+                      type: string
+                      example: "{{partner_clinic_id}}"
+                      description: "Identifier for the partner’s clinic"
+                    status:
+                      type: string
+                      example: "BK"
+                      description: "Status of the appointment"
+                    action:
+                      type: string
+                      example: "created"
+                      description: "Action performed"
+                    created_at:
+                      type: integer
+                      example: 1730189586
+                      description: "Creation timestamp"
+                    modified_at:
+                      type: integer
+                      example: 1730189586
+                      description: "Modification timestamp"
+                    custom_attributes:
+                      type: object
+                      properties:
+                        label:
+                          type: array
+                          items:
+                            type: string
+                          example: ["vital_submitted"]
+                      description: "Custom attributes for the event"
+                    partner_meta:
+                      type: object
+                      properties:
+                        key1:
+                          type: string
+                          example: "value1"
+                      description: "Partner-specific metadata"
+                    sa_ids:
+                      type: array
+                      example: []
+                      description: ""
+
+      responses:
+        '200':
+          description: ''
+          headers: { }
+      deprecated: false
+   
+  /registered_url_for_assessment_taken_events:
+    post:
+      tags:
+        - Appointment Webhooks
+      summary: Assessment Taken 
+      description: >-
+
+        When an assessment is completed, a webhook event is sent to registered
+        webhooks with details about the appointment, including the appointment
+        ID, status, doctor ID, patient ID, and event type.
+
+
+        **Field Definitions**
+
+
+        • **event**: string - The type of resource for which event is generated. For appointments, this
+        will be `appointment.assessments.taken`.
+
+
+        • **service**: string - The type of service. For appointments, this will be `appointment`.
+
+
+        • **data**: object - Contains detailed information about the appointment
+        event.
+
+
+        • **appointment_id**: string - Unique identifier for the appointment.
+
+
+        • **doctor_id**: string - Unique identifier for the doctor.
+
+
+        • **patient_id**: string - Unique identifier for the patient.
+
+
+        • **status**: string - Status of the appointment. Possible values can be 
+        
+          - "BK" (Booked),
+        
+          - "OG" (Ongoing),
+        
+          - "CM" (Completed with Prescription),
+        
+          - "CMNP" (Completed without Prescription),
+        
+          - "CN" (Cancelled).
+        
+        
+        • **action**: string - Current action for the appointment. Possible values can be 
+
+            - created
+        
+            - modified
+        
+            - completed
+
+        • **partner_meta**: key value pair specified by `partner` while creating appointment.  
+
+
+        • **timestamp**: string (ISO 8601) - The date and time when the event
+        occurred.
+
+
+        • **custom_attibutes**: complete set of custom attributes(inclusing tags and labels) defined against this appointment.
+        occurred.
+
+
+        • **sa_ids**: List of self assessment IDs.
+        
+
+        • **workflow_data**: List of self assessment data.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: AppointmentWebhook
+      parameters: [ ]
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - event_time
+                - timestamp
+                - client_id
+                - business_id
+                - data
+              properties:
+                  event:
+                    type: string
+                    example: "appointment.assessments.taken"
+                    description: "Type of event"
+                  event_time:
+                    type: integer
+                    example: 1749544696
+                    description: "Event occurred timestamp"
+                  service:
+                    type: string
+                    example: "appointment"
+                    description: "Service related to the event"
+                  transaction_id:
+                    type: string
+                    example: "d-bcebe31d-5a73-4d05-bd4f-0fdef45dcb86"
+                    description: "Transaction ID for the event"
+                  timestamp:
+                    type: integer
+                    example: 1730189586
+                    description: "Timestamp of the event"
+                  business_id:
+                    type: string
+                    example: "75682005283056"
+                    description: "Business ID for the appointment"
+                  client_id:
+                    type: string
+                    example: ""
+                    description: "Client ID for the appointment"
+                  data:
+                    type: object
+                    required:
+                      - appointment_id
+                      - doctor_id
+                      - patient_id
+                      - clinic_id
+                      - status
+                      - created_at
+                      - modified_at
+                    properties:
+                      appointment_id:
+                        type: string
+                        example: "d-bcebe31d-5a73-4d05-bd4f-0fdef45dcb86"
+                        description: "Unique appointment ID"
+                      clinic_id:
+                        type: string
+                        example: "678faea412e547001db5c639"
+                        description: "Identifier for the clinic"
+                      created_at:
+                        type: integer
+                        example: 1749544579
+                        description: "Creation timestamp"
+                      custom_attributes:
+                        type: object
+                        properties:
+                          label:
+                            type: array
+                            items:
+                              type: string
+                            example: []
+                          tags:
+                            type: array
+                            items:
+                              type: string
+                            example: ["87"]
+                        description: "Custom attributes for the event"
+                      doctor_id:
+                        type: string
+                        example: "171458899473447"
+                        description: "Identifier for the doctor"
+                      modified_at:
+                        type: integer
+                        example: 1749544696
+                        description: "Modification timestamp"
+                      partner_appointment_id:
+                        type: string
+                        example: ""
+                        description: "Partner's appointment ID"
+                      partner_clinic_id:
+                        type: string
+                        example: null
+                        description: "Partner’s clinic identifier"
+                      partner_doctor_id:
+                        type: string
+                        example: null
+                        description: "Partner’s doctor identifier"
+                      partner_meta:
+                        type: object
+                        properties:
+                          key1:
+                            type: string
+                            example: "value1"
+                        description: "Partner-specific metadata"
+                      partner_patient_id:
+                        type: string
+                        example: "{{partner_patient_id}}"
+                        description: "Partner’s patient identifier"
+                      patient_id:
+                        type: string
+                        example: "174436114490384"
+                        description: "Identifier for the patient"
+                      sa_ids:
+                        type: array
+                        items:
+                          type: string
+                        example: ["sa_25061014072610653"]
+                        description: "List of SA IDs"
+                      status:
+                        type: string
+                        example: "CK"
+                        description: "Status of the appointment"
+                      workflow_data:
+                        type: object
+                        properties:
+                          sa_25061014072610653:
+                            type: string
+                            example: "3970"
+                        description: "Workflow data related to the appointment"
+
+      responses:
+        '200':
+          description: ''
+          headers: { }
+      deprecated: false
+   
+  /registered_url_for_status_change_events:
+    post:
+      tags:
+        - Appointment Webhooks
+      summary: Status changed
+      description: >-
+
+        When status of an appointment changes, a webhook event is sent to registered
+        webhooks with details about the appointment, including the appointment
+        ID, status, doctor ID, patient ID, and event type.
+
+
+        **Field Definitions**
+
+
+        • **event**: string - The type of resource for which event is generated. For appointments, this
+        will be `appointment.statuschange`.
+
+
+        • **service**: string - The type of service. For appointments, this will be `appointment`.
+
+        
+        • **data**: object - Contains detailed information about the appointment
+        event.
+
+
+        • **appointment_id**: string - Unique identifier for the appointment.
+
+
+        • **doctor_id**: string - Unique identifier for the doctor.
+
+
+        • **patient_id**: string - Unique identifier for the patient.
+
+
+        • **status**: string - Status of the appointment. Possible values can be 
+        
+          - "BK" (Booked),
+        
+          - "OG" (Ongoing),
+        
+          - "CM" (Completed with Prescription),
+        
+          - "CMNP" (Completed without Prescription),
+        
+          - "CN" (Cancelled).
+        
+        
+        • **action**: string - Current action for the appointment. Possible values can be 
+
+            - created
+        
+            - modified
+        
+            - completed
+
+        • **partner_meta**: key value pair specified by `partner` while creating appointment.  
+
+
+        • **timestamp**: string (ISO 8601) - The date and time when the event
+        occurred.
+
+
+        • **custom_attibutes**: complete set of custom attributes(inclusing tags and labels) defined against this appointment.
+        occurred.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: AppointmentWebhook
+      parameters: [ ]
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - event_time
+                - timestamp
+                - client_id
+                - business_id
+                - data
+              properties:
+                business_id:
+                  type: string
+                  example: "77133577914507"
+                  description: "Business ID for the appointment"
+                client_id:
+                  type: string
+                  example: ""
+                  description: "Client ID for the appointment"
+                event:
+                  type: string
+                  example: "appointment.statuschange"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1749544752
+                  description: "Event occurred timestamp"
+                service:
+                  type: string
+                  example: "appointment"
+                  description: "Service related to the event"
+                timestamp:
+                  type: integer
+                  example: 1730189586
+                  description: "Timestamp of the event"
+                transaction_id:
+                  type: string
+                  example: "api-53423-GH_228766880001"
+                  description: "Transaction ID for the event"
+                data:
+                  type: object
+                  required:
+                    - appointment_id
+                    - clinic_id
+                    - doctor_id
+                    - patient_id
+                    - status
+                    - created_at
+                    - modified_at
+                  properties:
+                    appointment_id:
+                      type: string
+                      example: "api-53423-GH_228766880001"
+                      description: "Unique appointment ID"
+                    clinic_id:
+                      type: string
+                      example: "678f4fcd4ce758001d3624ee"
+                      description: "Identifier for the clinic"
+                    created_at:
+                      type: integer
+                      example: 1749532041
+                      description: "Creation timestamp"
+                    custom_attributes:
+                      type: object
+                      properties:
+                        label:
+                          type: array
+                          items:
+                            type: string
+                          example: []
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                          example: []
+                      description: "Custom attributes for the appointment"
+                    doctor_id:
+                      type: string
+                      example: "173744358327115"
+                      description: "Identifier for the doctor"
+                    modified_at:
+                      type: integer
+                      example: 1749544752
+                      description: "Modification timestamp"
+                    partner_appointment_id:
+                      type: string
+                      example: "GH_228766880001"
+                      description: "Partner's appointment ID"
+                    partner_clinic_id:
+                      type: string
+                      example: "CL04"
+                      description: "Partner’s clinic identifier"
+                    partner_doctor_id:
+                      type: string
+                      example: "sheilly"
+                      description: "Partner’s doctor identifier"
+                    partner_meta:
+                      type: object
+                      properties:
+                        appointment_id:
+                          type: string
+                          example: "6740438"
+                        encounter_id:
+                          type: string
+                          example: "228766880001"
+                        facility_id:
+                          type: string
+                          example: "GH"
+                      description: "Partner-specific metadata"
+                    partner_patient_id:
+                      type: string
+                      example: "MM01156831"
+                      description: "Partner’s patient identifier"
+                    patient_id:
+                      type: string
+                      example: "173986493567406"
+                      description: "Identifier for the patient"
+                    status:
+                      type: string
+                      example: "CM"
+                      description: "Status of the appointment"
+      responses:
+        '200':
+          description: ''
+          headers: { }
+      deprecated: false
+  
   /registered_url_for_prescription_events:
     post:
       tags:
