@@ -98,21 +98,40 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Prepare files and metadata
+// Collect all audio files in a list
 List<String> audioFiles = new ArrayList<>();
-audioFiles.add("path/to/audio_file1.mp3");
-audioFiles.add("path/to/audio_file2.mp3");
+audioFiles.add("<full file path>");
+audioFiles.add("<full file path 2>");
 
+// Set your own txn id
 String transactionId = "unique_transaction_id";
+
+//Custom keys , you'll get back the exact same in result API
 Map<String, Object> extraData = new HashMap<>();
 extraData.put("mode", "dictation");
-String action = "ekascribe-v2";
+extraData.put("uhid", "unique_patient_id");
+extraData.put("hfid", "unique_health_facility_id");
 
+// Define the output format for the V2RX action
 Map<String, Object> outputFormat = new HashMap<>();
-Map<String, Object> templateMap = new HashMap<>();
-templateMap.put("template_id", "eka_emr_template");
-templateMap.put("codification_needed",true);
-outputFormat.put("output_template", Arrays.asList(templateMap));
+outputFormat.put("input_language", Arrays.asList("en-IN", "hi"));
+
+// output template ids
+Map<String, Object> templateMap1 = new HashMap<>();
+templateMap1.put("template_id", "<your_template_id>");
+templateMap1.put("language_output", "en-IN");
+// set true if you need codified data (if out supports that)
+templateMap1.put("codification_needed", true);
+
+// Sample second template id
+Map<String, Object> templateMap2 = new HashMap<>();
+templateMap2.put("template_id", "clinical_notes_template");
+templateMap2.put("language_output", "en-IN");
+
+outputFormat.put("output_template", Arrays.asList(templateMap1, templateMap2));
+
+// Keep this the same
+String action = "ekascribe-v2";
 
 // Upload files
 JsonNode responses = client.getV2RX().upload(audioFiles, transactionId, action, extraData, outputFormat);
@@ -144,23 +163,30 @@ When the transcription is complete, Eka Care will send a webhook notification to
 After receiving the webhook notification, retrieve the transcription results:
 
 ```java
-// Get the session ID from the webhook callback
-String sessionId = "session_id_123"; // Session id from webhook means equal to transaction ID
+// Get the transactionId from the webhook callback
+String transactionId = "session_id_123";
 String action = "ekascribe-v2"
 
 // Fetch session status and results
-JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId, action);
+JsonNode sessionStatus = client.getV2RX().getSessionStatus(transactionId, action);
 
 // Sample response structure
-// {
-//   "status": "completed",
-//   "error": {},
-//   "data": {
-//     "output": {
-//       "fhir": "base64_encoded_fhir_data..."
-//     }
-//   }
-// }
+'''{
+    "data": {
+        "output": [
+            {
+                "template_id": "eka_emr_template",
+                "value": "base64_encoded_data",
+                "type": "eka_emr",
+                "name": "Eka EMR Format",
+                "status": "success",
+                "errors": [],
+                "warnings": []
+            }
+        ],
+        "additional_data": {}
+    }
+}'''
 
 // Extract and decode the FHIR data
 if (sessionStatus.has("data") &&
@@ -212,8 +238,44 @@ public class EkascribeIntegrationExample {
             authenticateClient(client);
             
             // Upload audio files
-            String transactionId = "txn_" + System.currentTimeMillis();
-            String action = "ekascribe-v2";    // ex. ekascribe, ekascribe-v2
+
+            // Collect all audio files in a list
+            List<String> audioFiles = new ArrayList<>();
+            audioFiles.add("<full file path>");
+            audioFiles.add("<full file path 2>");
+
+            // Set your own txn id
+            String transactionId = "unique_transaction_id";
+
+            Map<String, Object> extraData = new HashMap<>();
+            extraData.put("mode", "dictation");
+
+            //Custom keys , you'll get back the exact same in result API
+            extraData.put("uhid", "unique_patient_id"); 
+            extraData.put("hfid", "unique_health_facility_id");
+
+            // Define the output format for the V2RX action
+            Map<String, Object> outputFormat = new HashMap<>();
+            outputFormat.put("input_language", Arrays.asList("en-IN", "hi"));
+
+            // output template ids
+            Map<String, Object> templateMap1 = new HashMap<>();
+            templateMap1.put("template_id", "<your_template_id>");
+            templateMap1.put("language_output", "en-IN");
+            // set true if you need codified data (if out supports that)
+            templateMap1.put("codification_needed", true);
+            
+            // Sample second template id
+            Map<String, Object> templateMap2 = new HashMap<>();
+            templateMap2.put("template_id", "clinical_notes_template");
+            templateMap2.put("language_output", "en-IN");
+            
+            // Add both templates to the output_template list
+            outputFormat.put("output_template", Arrays.asList(templateMap1, templateMap2));
+            
+            // Keep this the same
+            String action = "ekascribe-v2";
+
             uploadAudioFiles(client, transactionId, action);
             
             // NOTE: At this point, wait for the webhook callback
@@ -221,8 +283,8 @@ public class EkascribeIntegrationExample {
             
             // Once webhook is received, fetch results
             // The sessionId would come from the webhook payload
-            String sessionId = transactionId; // Session id from webhook means equal to transaction ID
-            getTranscriptionResults(client, sessionId, action);
+            String transactionId = transactionId;
+            getTranscriptionResults(client, transactionId, action);
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -231,23 +293,21 @@ public class EkascribeIntegrationExample {
     
     private static void authenticateClient(EkaCareClient client) throws IOException {
         JsonNode tokenResponse = client.getAuth().login();
+
+        // Extras
+        System.out.println("Access Token: " + tokenResponse.get("access_token").asText());
+        System.out.println("Refresh Token: " + tokenResponse.get("refresh_token").asText());
+
         client.setAccessToken(tokenResponse.get("access_token").asText());
+
+        // Refresh token when needed
+        JsonNode refreshedTokens = client.getAuth().refreshToken(tokenResponse.get("refresh_token").asText());
+        
+        // Extras
+        System.out.println("New Access Token: " + refreshedTokens.get("access_token").asText());
     }
     
     private static void uploadAudioFiles(EkaCareClient client, String transactionId, String action) throws IOException {
-        List<String> audioFiles = new ArrayList<>();
-        audioFiles.add("path/to/audio1.mp3");
-        audioFiles.add("path/to/audio2.mp3");
-        
-        Map<String, Object> extraData = new HashMap<>();
-        extraData.put("mode", "dictation");
-
-        Map<String, Object> outputFormat = new HashMap<>();
-        Map<String, Object> templateMap = new HashMap<>();
-        templateMap.put("template_id", "eka_emr_template");
-        templateMap.put("codification_needed",true);
-        outputFormat.put("output_template", Arrays.asList(templateMap));
-        
         List<JsonNode> responses = client.getV2RX().upload(audioFiles, transactionId, action, extraData, outputFormat);
         System.out.println("Upload Responses: " + responses.toString());
     }
