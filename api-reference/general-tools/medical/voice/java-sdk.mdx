@@ -109,8 +109,9 @@ extraData.put("mode", "dictation");
 String action = "ekascribe-v2";
 
 Map<String, Object> outputFormat = new HashMap<>();
-Map<String, String> templateMap = new HashMap<>();
+Map<String, Object> templateMap = new HashMap<>();
 templateMap.put("template_id", "eka_emr_template");
+templateMap.put("codification_needed",true);
 outputFormat.put("output_template", Arrays.asList(templateMap));
 
 // Upload files
@@ -162,24 +163,22 @@ JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId, action);
 // }
 
 // Extract and decode the FHIR data
-if (sessionStatus.has("status") && "completed".equals(sessionStatus.get("status").asText())) {
-    String encodedFhir = sessionStatus.get("data").get("output").get("fhir").asText();
-    byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
-    String fhirJson = new String(decodedBytes);
-    System.out.println("Decoded Data :" + fhirJson);
+if (sessionStatus.has("data") &&
+        sessionStatus.get("data").has("output") &&
+        sessionStatus.get("data").get("output").isArray() &&
+        sessionStatus.get("data").get("output").size() > 0) {
 
-} else if(!sessionStatus.has("status")){
     JsonNode outputNode = sessionStatus.get("data").get("output");
-    Integer step =0;
+    Integer step = 0;
     for (JsonNode node : outputNode) {
-        if( node.has("value")){
+        if (node.has("value")) {
             step++;
             String encodedFhir = node.get("value").asText();
             byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
             String fhirJson = new String(decodedBytes);
-            System.out.println("Decoded Data "+ step+ " :" + fhirJson);
+            System.out.println("Decoded Data " + step + " :" + fhirJson);
         } else {
-            System.out.println("No value found in output node: " + node.toPrettyString());
+            System.out.println("No value found in output node "+ step+ " :"+ node.toPrettyString());
         }
     }
 
@@ -244,8 +243,9 @@ public class EkascribeIntegrationExample {
         extraData.put("mode", "dictation");
 
         Map<String, Object> outputFormat = new HashMap<>();
-        Map<String, String> templateMap = new HashMap<>();
+        Map<String, Object> templateMap = new HashMap<>();
         templateMap.put("template_id", "eka_emr_template");
+        templateMap.put("codification_needed",true);
         outputFormat.put("output_template", Arrays.asList(templateMap));
         
         List<JsonNode> responses = client.getV2RX().upload(audioFiles, transactionId, action, extraData, outputFormat);
@@ -256,24 +256,22 @@ public class EkascribeIntegrationExample {
         JsonNode sessionStatus = client.getV2RX().getSessionStatus(sessionId, action);
         System.out.println("Session Status: " + sessionStatus.toPrettyString());
         
-        if (sessionStatus.has("status") && "completed".equals(sessionStatus.get("status").asText())) {
-            String encodedFhir = sessionStatus.get("data").get("output").get("fhir").asText();
-            byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
-            String fhirJson = new String(decodedBytes);
-            System.out.println("Decoded Data :" + fhirJson);
+        if (sessionStatus.has("data") &&
+                sessionStatus.get("data").has("output") &&
+                sessionStatus.get("data").get("output").isArray() &&
+                sessionStatus.get("data").get("output").size() > 0) {
 
-        } else if(!sessionStatus.has("status")){
             JsonNode outputNode = sessionStatus.get("data").get("output");
-            Integer step =0;
+            Integer step = 0;
             for (JsonNode node : outputNode) {
-                if( node.has("value")){
+                if (node.has("value")) {
                     step++;
                     String encodedFhir = node.get("value").asText();
                     byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
                     String fhirJson = new String(decodedBytes);
-                    System.out.println("Decoded Data "+ step+ " :" + fhirJson);
+                    System.out.println("Decoded Data " + step + " :" + fhirJson);
                 } else {
-                    System.out.println("No value found in output node: " + node.toPrettyString());
+                    System.out.println("No value found in output node "+ step+ " :"+ node.toPrettyString());
                 }
             }
 
