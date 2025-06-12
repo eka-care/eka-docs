@@ -1,0 +1,364 @@
+openapi: "3.0.1"
+info:
+  title: EkaScribe Voice API v2
+  version: "2024-12-01T12:09:09Z"
+  description: EkaScribe Voice-to-Prescription API for medical transcription and structured data generation
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+paths:
+  /voice/api/v2/transaction/init/{session_id}:
+    post:
+      summary: Initialize Transaction
+      description: Initialize a voice-to-prescription transaction before starting to send audio files. This endpoint must be called before uploading any audio files for transcription and processing.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Unique identifier for the transaction session
+          schema:
+            type: string
+            example: "test_1234"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mode
+                - transfer
+                - s3_url
+              properties:
+                additional_data:
+                  type: object
+                  description: Contextual information for the transaction
+                  properties:
+                    doctor:
+                      type: object
+                      description: Doctor information including ID and profile details
+                      properties:
+                        _id:
+                          type: string
+                          example: "174097180967921"
+                        profile:
+                          type: object
+                          properties:
+                            personal:
+                              type: object
+                              properties:
+                                name:
+                                  type: object
+                                  properties:
+                                    f:
+                                      type: string
+                                      example: "Divyesh"
+                                    l:
+                                      type: string
+                                      example: ""
+                    patient:
+                      type: object
+                      description: Patient information (can be empty initially)
+                    visitid:
+                      type: string
+                      description: Unique visit identifier for tracking
+                      example: "09e4f00f-d665-4212-b77c-b2dd5f22bd92_1742560488782"
+                mode:
+                  type: string
+                  description: Processing mode
+                  enum:
+                    - dictation
+                    - consultation
+                  example: "dictation"
+                input_language:
+                  type: array
+                  description: Array of supported input languages
+                  items:
+                    type: string
+                  example: ["en-IN"]
+                speciality:
+                  type: string
+                  description: Medical speciality context for better transcription accuracy
+                  example: "general_medicine"
+                Section:
+                  type: string
+                  description: Specific section or context for the audio content
+                  example: "consultation_notes"
+                output_format_template:
+                  type: array
+                  description: Array of template configurations for output format
+                  items:
+                    type: object
+                    properties:
+                      template_id:
+                        type: string
+                        example: "eka_emr_template"
+                transfer:
+                  type: string
+                  description: Transfer method or protocol
+                  enum:
+                    - stream
+                    - batch
+                    - vaded
+                    - non-vaded
+                  example: "vaded"
+                s3_url:
+                  type: string
+                  description: S3 bucket URL where audio files will be stored
+                  example: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
+            example:
+              additional_data:
+                doctor:
+                  _id: "174097180967921"
+                  profile:
+                    personal:
+                      name:
+                        f: "Divyesh"
+                        l: ""
+                patient: {}
+                visitid: "09e4f00f-d665-4212-b77c-b2dd5f22bd92_1742560488782"
+              mode: "dictation"
+              input_language: ["en-IN"]
+              speciality: "general_medicine"
+              Section: "consultation_notes"
+              output_format_template: [{"template_id": "eka_emr_template"}]
+              transfer: "vaded"
+              s3_url: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
+      responses:
+        "201":
+          description: Transaction initialized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Transaction initialized successfully"
+                  txn_id:
+                    type: string
+                    example: "test_1234"
+        "409":
+          description: Transaction already initialized with the same session ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Transaction already initialized"
+        "422":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  details:
+                    type: array
+                    items:
+                      type: object
+
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unauthorized"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - auth: []
+
+  /voice/api/v2/transaction/stop/{session_id}:
+    post:
+      summary: Stop Transaction
+      description: Stop a voice-to-prescription transaction after all audio files have been prepared. This endpoint should be called when you have uploaded all audio files.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Unique identifier for the transaction session
+          schema:
+            type: string
+            example: "test_1234"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                audio_files:
+                  type: array
+                  description: Array of audio file names that are ready for processing
+                  items:
+                    type: string
+                  example: ["2.m4a", "3.m4a"]
+            example:
+              audio_files: ["2.m4a", "3.m4a"]
+
+      responses:
+        "200":
+          description: Transaction stopped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Transaction stopped successfully"
+        "400":
+          description: Bad Request - Invalid request parameters or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  details:
+                    type: array
+                    items:
+                      type: object
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unauthorized"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - auth: []
+
+  /voice/api/v2/transaction/commit/{session_id}:
+    post:
+      summary: Commit Transaction
+      description: Commit a voice-to-prescription transaction after uploading all the chunked files. This endpoint should be called after stop api. All audio files have been successfully uploaded for processing.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Unique identifier for the transaction session
+          schema:
+            type: string
+            example: "test_1234"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - audio_files
+              properties:
+                audio_files:
+                  type: array
+                  description: Array of audio file names that have been uploaded
+                  items:
+                    type: string
+                  example: ["2.m4a", "3.m4a"]
+            example:
+              audio_files: ["2.m4a", "3.m4a"]
+
+      responses:
+        "200":
+          description: Transaction committed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Transaction committed successfully"
+        "422":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  details:
+                    type: array
+                    items:
+                      type: object
+        "400":
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "failed"
+                  message:
+                    type: string
+                    example: "Transaction doesn't exist"
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unauthorized"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - auth: []
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "Error message"
+    Unauthorized:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Unauthorized"
+  securitySchemes:
+    auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
