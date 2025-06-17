@@ -711,13 +711,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GerrorErrorResp'
+                $ref: '#/components/schemas/GenericError'
           description: ""
         5XX:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GerrorErrorResp'
+                $ref: '#/components/schemas/GenericError'
           description: ""
         "200":
           content:
@@ -757,13 +757,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GerrorErrorResp'
+                $ref: '#/components/schemas/GenericError'
           description: ""
         5XX:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GerrorErrorResp'
+                $ref: '#/components/schemas/GenericError'
           description: ""
         "200":
           content:
@@ -803,13 +803,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GerrorErrorResp'
+                $ref: '#/components/schemas/GenericError'
           description: ""
         5XX:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GerrorErrorResp'
+                $ref: '#/components/schemas/GenericError'
           description: ""
         "200":
           content:
@@ -819,6 +819,61 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/care-contexts/link/on-confirm:
+    post:
+      description: This API is used by HIP to confirm the linking of care contexts
+        after OTP verification.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsLinkOnConfirmHmisConnect'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+      summary: Discover Link On Confirm
+  /abdm/v1/care-contexts/link/on-init:
+    post:
+      description: This API is used by HIP to initiate the linking of unlinked health
+        records (care contexts). HIP must send an OTP and provide details such as
+        OTP expiry and other related information.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsLinkOnInitHmisConnect'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+      summary: Discover Link On Init
   /abdm/v1/care-contexts/linked:
     get:
       parameters:
@@ -866,6 +921,32 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/care-contexts/on-discover:
+    post:
+      description: This API is used to send unlinked care contexts to abdm.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsDiscoverCareContextHmisConnect'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+      summary: Discover On Care Contexts
   /abdm/v1/care-contexts/providers:
     get:
       parameters:
@@ -3025,50 +3106,6 @@ components:
         source_error:
           $ref: '#/components/schemas/SourceErr'
       type: object
-    GerrorAction:
-      properties:
-        cta:
-          $ref: '#/components/schemas/GerrorActionCta'
-        description:
-          type: string
-        img:
-          type: string
-        suggest_method:
-          type: string
-        title:
-          type: string
-      type: object
-    GerrorActionCta:
-      properties:
-        params:
-          additionalProperties:
-            type: string
-          type:
-          - object
-          - "null"
-        pid:
-          type: string
-        title:
-          type: string
-      type: object
-    GerrorErrorResp:
-      properties:
-        action:
-          $ref: '#/components/schemas/GerrorAction'
-        code:
-          type: integer
-        error:
-          type: string
-        source_error:
-          $ref: '#/components/schemas/GerrorSourceErr'
-      type: object
-    GerrorSourceErr:
-      properties:
-        code:
-          type: string
-        message:
-          type: string
-      type: object
     HipLocation:
       properties:
         latitude:
@@ -3333,11 +3370,111 @@ components:
         scan_share_url:
           type: string
       type: object
+    ModelsCareContext:
+      properties:
+        display:
+          description: Display name or identifier for the care context
+          type: string
+        ref_num:
+          description: Unique reference number for the care context
+          type: string
+      type: object
+    ModelsDiscoverCareContextHmisConnect:
+      properties:
+        error:
+          $ref: '#/components/schemas/ModelsError'
+          description: Error details, if any
+        patients:
+          description: List of patients including reference number, display name,
+            care contexts, and HI type
+          items:
+            $ref: '#/components/schemas/ModelsPatient'
+          type:
+          - array
+          - "null"
+        request_id:
+          description: Request ID that is received in the webhook call
+          type: string
+        txn_id:
+          description: transaction id that is received in the webhhok call.
+          type: string
+      required:
+      - txn_id
+      - request_id
+      type: object
     ModelsDoesHealthIdExistResponse:
       properties:
         exists:
           description: Indicates whether the health ID exist.
           type: boolean
+      type: object
+    ModelsError:
+      properties:
+        code:
+          description: Error code indicating the type of error
+          type: integer
+        message:
+          description: Detailed error message
+          type: string
+      type: object
+    ModelsLinkOnConfirmHmisConnect:
+      properties:
+        error:
+          $ref: '#/components/schemas/ModelsError'
+          description: Error details, if any occurred during the process.
+        patients:
+          description: List of patients including reference number, display name,
+            care contexts, and HI type
+          items:
+            $ref: '#/components/schemas/ModelsPatient'
+          type:
+          - array
+          - "null"
+        request_id:
+          description: Request ID that is received in the webhook call.
+          type: string
+      required:
+      - request_id
+      type: object
+    ModelsLinkOnInitHmisConnect:
+      properties:
+        error:
+          $ref: '#/components/schemas/ModelsError'
+          description: Error details, if any occurred during the process.
+        otp_expiry:
+          description: Expiry time of the OTP sent for linking care contexts.
+          type: string
+        ref_num:
+          description: patient reference number.
+          type: string
+        request_id:
+          description: Request ID that is received in the webhook call.
+          type: string
+        txn_id:
+          description: Transaction ID received in the webhook call.
+          type: string
+      required:
+      - txn_id
+      - request_id
+      type: object
+    ModelsPatient:
+      properties:
+        care_contexts:
+          description: List of care contexts of the patient
+          items:
+            $ref: '#/components/schemas/ModelsCareContext'
+          type:
+          - array
+          - "null"
+        display:
+          description: Display name or identifier for the patient
+          type: string
+        hi_type:
+          description: Type of health information (HI)
+          type: string
+        ref_num:
+          description: patient reference number.
+          type: string
       type: object
     ModelsSuggestHealthIdResponse:
       properties:
