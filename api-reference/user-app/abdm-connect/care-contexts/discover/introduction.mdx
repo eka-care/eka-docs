@@ -6,16 +6,35 @@ ABDM allows a user to find their health records from any health facility they ha
 
 When a discovery request is initiated by the user, the HIP will receive a list of verified identifiers along with name and demographic information. Verified information includes the ABHA address, the mobile number name, gender, year of birth.
 
-
+### PHR Flow
 <Steps>
     <Step title="Discover Unlinked CareContexts">
         Use the discover api to get a list of care-contexts that are not linked to the user's account.
         Linking Process is initiated by the user by providing the care-context id and the verification code is sent to the user's mobile number.
+        - **API Reference:** [Discover Unlinked CareContexts](/api-reference/user-app/abdm-connect/care-contexts/discover/discover)
     </Step>
     <Step title="Initate the linking">
         Use the link init api to initiate the linking process, the HIP will send an OTP to the user's mobile number.
+        - **API Reference:** [Initate the linking](/api-reference/user-app/abdm-connect/care-contexts/discover/link-init)
     </Step>
     <Step title="Confirm the linking with OTP">
         Use `txn_id` from the previous step and OTP sent to the user's mobile number to confirm the linking.
+        - **API Reference:** [Confirm the linking with OTP](/api-reference/user-app/abdm-connect/care-contexts/discover/link-confirm)
+    </Step>
+</Steps>
+
+### HIP Flow
+<Steps>
+    <Step title="On Discover">
+        The HIP receives a discovery request and returns the list of unlinked care-contexts associated with the user.
+        - **API Reference:** [On Discover](/api-reference/user-app/abdm-connect/care-contexts/discover/on_discover)
+    </Step>
+    <Step title="On Link Init">
+        After generating the OTP, the HIP should call the `on-link-init` API to notify the ABDM gateway about the OTP sent.
+        - **API Reference:** [On Link Init](/api-reference/user-app/abdm-connect/care-contexts/discover/link_on_init)
+    </Step>
+    <Step title="On Link Confirm">
+        After verifying the OTP and initiating the linking of the care-context, the HIP should call the on-link-confirm API to notify the ABDM gateway about the successful linking of the unlinked health record.
+        - **API Reference:** [On Link Confirm](/api-reference/user-app/abdm-connect/care-contexts/discover/link_on_confirm)
     </Step>
 </Steps>
