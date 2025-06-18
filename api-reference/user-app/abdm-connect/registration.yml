@@ -819,10 +819,58 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/care-contexts/link:
+    post:
+      description: This API is used by HIP to link care contexts.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkCareContextLinkingRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
+      summary: Care context linking
   /abdm/v1/care-contexts/link/on-confirm:
     post:
       description: This API is used by HIP to confirm the linking of care contexts
         after OTP verification.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -851,6 +899,17 @@ paths:
       description: This API is used by HIP to initiate the linking of unlinked health
         records (care contexts). HIP must send an OTP and provide details such as
         OTP expiry and other related information.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -924,6 +983,17 @@ paths:
   /abdm/v1/care-contexts/on-discover:
     post:
       description: This API is used to send unlinked care contexts to abdm.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -3301,6 +3371,30 @@ components:
     KycVerifyKycOtpResponse:
       properties:
         txn_id:
+          type: string
+      type: object
+    LinkCareContextLinkingRequest:
+      properties:
+        abha_address:
+          type: string
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/LinkCareContextMeta'
+          type:
+          - array
+          - "null"
+        oid:
+          type: string
+        partner_user_id:
+          type: string
+      type: object
+    LinkCareContextMeta:
+      properties:
+        care_context_id:
+          type: string
+        display:
+          type: string
+        hi_type:
           type: string
       type: object
     ListsRequestDetail:
