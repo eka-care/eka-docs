@@ -2,74 +2,116 @@
 openapi: "POST /v1/file-upload"
 ---
 
-### Path Parameters
-- `txn_id`: The session ID for which the file is being uploaded.
-- `action`: The action to be performed for the file upload, typically "default" or "ekascribe".
-### Response:
-structured as follows:
 
+### Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `txn_id` | string | Yes | Session ID for file upload |
+| `action` | string | No | Upload action: `ekascribe`, `ekascribe-v2` |
+
+
+### Response
 ```json
-"uploadData" : {
-    "url" : "https://m-prod-ekascribe-batch.s3.amazonaws.com/",
-    "fields" : {
-        "x-amz-meta-mode" : "dictation",
-        "x-amz-meta-input_language" : [ "en-US" ],
-        "key" : "EC_173210496011417/txn_301/20250617_105524/${filename}",
-        "x-amz-algorithm" : "<x-amz-algorithm>",
-        "x-amz-credential" : "<x-amz-credential>",
-        "x-amz-date" : "<x-amz-date>",
-        "x-amz-security-token" : "<x-amz-security-token>",
-        "x-amz-signature" : "<x-amz-signature>"
-    }
-},
-"folderPath" : "EC_173210496011417/txn_301/20250617_105524/",
-"txn_id" : "txn_301"
-```
-- `url` + `folderPath` in response is the `S3 bucket URL` that is required when [initialize transaction](https://developer.eka.care/api-reference/general-tools/medical/voice/ekascribe-v2/init) to specify where the audio files will be uploaded.
-
-**Example S3 URL:**
-```plaintext
-https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/
+{
+    "uploadData": {
+        "url": "https://m-prod-ekascribe-batch.s3.amazonaws.com/",
+        "fields": {
+            "x-amz-meta-mode": "dictation",
+            "x-amz-meta-uhid": "unique_patient_id",
+            "x-amz-meta-hfid": "unique_health_facility_id",
+            "key": "EC_173210496011417/txn_301/20250617_105524/${filename}",
+            "x-amz-algorithm": "AWS4-HMAC-SHA256",
+            "x-amz-credential": "...",
+            "x-amz-date": "...",
+            "policy": "...",
+            "x-amz-signature": "..."
+        }
+    },
+    "folderPath": "EC_173210496011417/txn_301/20250617_105524/",
+    "txn_id": "txn_301"
+}
 ```
 
-## 2. Upload File
-#### Sample Python Example to Upload File using Presigned URL
+---
 
-```Python
+### 2. Upload Audio Files
+```python
 import requests
+import os
+from io import BytesIO
+import json
 
-# Values from presigned URL response
-url = "https://m-prod-ekascribe-batch.s3.amazonaws.com/"
-folder_path = "EC_173210496011417/txn_301/20250617_105524/"
-filename = "sample_audio.wav"   # Replace with your actual file name
-key = folder_path + filename
-
-fields = {
-    "x-amz-meta-mode": "dictation",
-    "x-amz-meta-input_language": "en-US",
-    "key": key,
-    "x-amz-algorithm": "<x-amz-algorithm>",
-    "x-amz-credential": "<x-amz-credential>",
-    "x-amz-date": "<x-amz-date>",
-    "x-amz-security-token": "<x-amz-security-token>",
-    "policy": "<policy>",
-    "x-amz-signature": "<x-amz-signature>",
-}
-
-files = {
-    "file": open(filename, "rb")
-}
-
-response = requests.post(url, data=fields, files=files)
-
-print("Upload status:", response.status_code)
+def upload_file(upload_data, folder_path, file_path):
+    """Upload a single audio file"""
+    file_name = os.path.basename(file_path)
+    upload_data['fields']['key'] = folder_path + file_name
+    
+    with open(file_path, 'rb') as file:
+        files = {'file': (file_name, file)}
+        response = requests.post(upload_data['url'], data=upload_data['fields'], files=files)
+    
+    if response.status_code == 204:
+        return {'key': folder_path + file_name, 'size': os.path.getsize(file_path)}
+    else:
+        raise Exception(f"Upload failed: {response.status_code}")
 ```
+
+---
+
+## Complete Upload Workflow
+
+```python
+# Collect all audio files in a list
+audio_files = [
+    "/path/to/consultation_audio.wav",
+    "/path/to/follow_up_audio.wav"
+]
+
+# Same as the one used in presigned url
+transaction_id = "unique_transaction_id_123"
+
+
+action = "ekascribe-v2"
+
+# Step 1: Get presigned URL
+upload_response = get_presigned_url(txn_id=transaction_id, action=action)
+
+# Step 2: Upload audio files
+upload_results = []
+for audio_file in audio_files:
+    result = upload_file(
+        upload_response['uploadData'].copy(),  # Use copy to avoid modifying original
+        upload_response['folderPath'],
+        audio_file
+    )
+    upload_results.append(result)
+    print(f"Uploaded: {result['key']}")
+
+
+# Process responses
+for response in upload_results:
+    # Handle response data as needed
+    print(f"File: {response['key']}, Size: {response['size']} bytes")
+```
+
+---
+
+
 
 ## HTTP Status Codes
 
-The API returns different HTTP status codes based on the processing outcome:
+| Code | Description |
+|------|-------------|
+| 200 | Presigned URL generated successfully |
+| 204 | File uploaded successfully |
+| 403 | Upload failed (expired policy) |
 
-| Status Code | Description | Scenario |
-|-------------|-------------|----------|
-| 204 | Success | Files uploaded on presigned s3 url successfully |
-| 403 | Failed | Policy Condition failed ( Policy is expired ) |
+---
+
+## Key Notes
+
+- **Same Presigned URL**: Both audio files and JSON use the same presigned URL from the API
+- **JSON Filename**: Auto-generated as `{txn_id}.json` in the same folder as audio files
+- **Upload Location**: All files (audio + JSON) go to the same S3 folder path
+- **File Paths**: Only filenames are stored in JSON, not full paths
+- **Metadata**: Request body data becomes S3 metadata with `x-amz-meta-` prefix

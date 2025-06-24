@@ -30,7 +30,7 @@ paths:
               required:
                 - mode
                 - transfer
-                - s3_url
+                - batch_s3_url
               properties:
                 additional_data:
                   type: object
@@ -46,7 +46,6 @@ paths:
                             l: ""
                     patient: {}
                     visitid: "09e4f00f-d665-4212-b77c-b2dd5f22bd92_1742560488782"
-
                 mode:
                   type: string
                   description: Processing mode
@@ -54,6 +53,12 @@ paths:
                     - dictation
                     - consultation
                   example: "dictation"
+                client_generated_files:
+                  type: array
+                  description: Array of audio file names that were uploaded to S3
+                  items:
+                    type: string
+                  example: ["1.m4a", "2.m4a"]
                 input_language:
                   type: array
                   description: Array of supported input languages for voice transcription
@@ -62,10 +67,6 @@ paths:
                     enum:
                       - "en-IN"
                       - "en-US"
-                      - "hi-IN"
-                      - "gu-IN"
-                      - "kn-IN"
-                      - "mixed"
                       - "hi"
                       - "gu"
                       - "kn"
@@ -93,6 +94,11 @@ paths:
                       template_id:
                         type: string
                         example: "eka_emr_template"
+                      codification_needed:
+                        type: boolean
+                        description: Whether codification is needed for the output
+                        example: false
+                  example: [{"template_id": "eka_emr_template", "codification_needed": false}]
                 transfer:
                   type: string
                   description: Transfer mode use `vaded` for pre-processed audio with Voice Activity Detection, `non-vaded` for raw audio files
@@ -100,10 +106,11 @@ paths:
                     - non-vaded
                     - vaded
                   example: "non-vaded"
-                s3_url:
+                batch_s3_url:
                   type: string
-                  description: S3 bucket URL where audio files will be stored. It will be getting after uploading the audio files.
+                  description: S3 bucket URL where audio files were uploaded. The path received in presigned url.
                   example: https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/
+
             example:
               additional_data:
                 doctor:
@@ -119,9 +126,11 @@ paths:
               input_language: ["en-IN"]
               speciality: "general_medicine"
               Section: "consultation_notes"
-              output_format_template: [{"template_id": "eka_emr_template"}]
+              output_format_template: [{"template_id": "eka_emr_template", "language_output": "en-IN", "codification_needed": false}]
               transfer: "vaded"
-              s3_url: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
+              batch_s3_url: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
+      security:
+        - auth: []
       responses:
         "201":
           description: Transaction initialized successfully
@@ -166,21 +175,32 @@ paths:
                     type: array
                     items:
                       type: object
-
         "401":
           description: Unauthorized - Invalid or missing authentication token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unauthorized"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+                  message:
+                    type: string
+                    example: "Invalid or missing authentication token"
         "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - auth: []
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
 
   /voice/api/v2/transaction/stop/{session_id}:
     post:
@@ -211,7 +231,8 @@ paths:
                   example: ["2.m4a", "3.m4a"]
             example:
               audio_files: ["2.m4a", "3.m4a"]
-
+      security:
+        - auth: []
       responses:
         "200":
           description: Transaction stopped successfully
@@ -231,7 +252,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
         "422":
           description: Missing required fields
           content:
@@ -248,192 +276,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unauthorized"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+                  message:
+                    type: string
+                    example: "Invalid or missing authentication token"
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - auth: []
-
-  /v1/file-upload:
-    post:
-      summary: File Upload
-      description: |
-        This endpoint generates presigned URLs for uploading audio files to S3. It provides the necessary credentials and upload parameters to securely upload files directly to AWS S3.
-        The process involves two main steps: 
-
-        - **Request Presigned URL**: Call this endpoint to get folderPath and uploadData
-        - **Upload File**: Use the returned `uploadData` and `folderPath` to upload your file to S3 using multipart form data
-
-        ### 1. Request Presigned URL
-
-      parameters:
-        - name: txn_id
-          in: query
-          required: true
-          description: Transaction ID for the file upload
-          schema:
-            type: string
-            example: "txn_301"
-        - name: action
-          in: query
-          required: false
-          description: Action for the file upload
-          schema:
-            type: string
-            enum:
-              - "default"
-              - "ekascribe"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                extraData:
-                  type: object
-                  description: Additional data for the upload request
-                  additionalProperties: true
-                  example:
-                    mode: "dictation"
-                    input_language: ["en-US"]
-                  properties:
-                    mode:
-                      type: string
-                      description: Processing mode for the audio file
-                      enum:
-                        - dictation
-                        - consultation
-                      example: "dictation"
-                    input_language:
-                      type: array
-                      description: Array of supported input languages for voice transcription
-                      items:
-                        type: string
-                        enum:
-                          - "en-IN"
-                          - "en-US"
-                          - "hi-IN"
-                          - "gu-IN"
-                          - "kn-IN"
-                          - "mixed"
-                          - "hi"
-                          - "gu"
-                          - "kn"
-                          - "ml"
-                          - "ta"
-                          - "te"
-                          - "bn"
-                          - "mr"
-                          - "pa"
-                      example: ["en-US"]
-      responses:
-        "200":
-          description: Presigned URL generated successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  uploadData:
-                    type: object
-                    description: Contains the S3 upload URL and required form fields
-                    properties:
-                      url:
-                        type: string
-                        description: S3 bucket URL for uploading the file
-                        example: "https://m-prod-ekascribe-batch.s3.amazonaws.com/"
-                      fields:
-                        type: object
-                        description: Required form fields for S3 upload
-                        properties:
-                          x-amz-meta-extraData:
-                            type: object
-                            description: Additional metadata for the upload
-                            properties:
-                              mode:
-                                type: string
-                                example: "dictation"
-                              input_language:
-                                type: array
-                                items:
-                                  type: string
-                                example: ["en-US"]
-                            example:
-                              mode: "dictation"
-                              input_language: ["en-US"]
-                          key:
-                            type: string
-                            description: S3 key path with ${filename} placeholder
-                            example: "EC_173210496011417/txn_301/20250617_105524/${filename}"
-                          x-amz-algorithm:
-                            type: string
-                            example: "AWS4-HMAC-SHA256"
-                          x-amz-credential:
-                            type: string
-                            example: "ASIAYES5P2B2ZIB4II4R/20250617/ap-south-1/s3/aws4_request"
-                          x-amz-date:
-                            type: string
-                            example: "20250617T105524Z"
-                          x-amz-security-token:
-                            type: string
-                            description: AWS security token for authentication
-                          policy:
-                            type: string
-                            description: Base64 encoded policy document
-                          x-amz-signature:
-                            type: string
-                            description: AWS signature for the request
-                        additionalProperties: true
-                  folderPath:
+                  error:
                     type: string
-                    description: The folder path where files will be stored in S3
-                    example: "EC_173210496011417/txn_301/20250617_105524/"
-                  txn_id:
+                    description: Error message
+                  code:
                     type: string
-                    description: Transaction ID to be used for subsequent operations
-                    example: "txn_301"
-              example:
-                uploadData:
-                  url: "https://m-prod-ekascribe-batch.s3.amazonaws.com/"
-                  fields:
-                    "x-amz-meta-extraData": {
-                      "mode": "dictation",
-                      "input_language": ["en-US"]
-                    }
-                    key: "EC_173210496011417/txn_301/20250617_105524/${filename}"
-                    x-amz-algorithm: "<x-amz-algorithm>"
-                    x-amz-credential: "<x-amz-credential>"
-                    x-amz-date: "<x-amz-date>"
-                    x-amz-security-token: "<x-amz-security-token>"
-                    policy: "<policy>"
-                    x-amz-signature: "<x-amz-signature>"
-                folderPath: "EC_173210496011417/txn_301/20250617_105524/"
-                txn_id: "txn_301"
-        "400":
-          description: Bad Request - Invalid request parameters
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "401":
-          description: Unauthorized - Invalid or missing authentication token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Unauthorized"
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - auth: []
+                    description: Error code
 
   /voice/api/v3/status/{session_id}:
     get:
@@ -454,6 +317,8 @@ paths:
           schema:
             type: string
             example: "test_1234"
+      security:
+        - auth: []
       responses:
         "200":
           description: All templates processed successfully
@@ -514,7 +379,6 @@ paths:
                           doctor:
                             _id: "174097180967921"
                           visitid: "09e4f00f-d665-4212-b77c-b2dd5f22bd92_1742560488782"
-        
         "202":
           description: Transaction is still in progress - continue polling
           content:
@@ -534,7 +398,6 @@ paths:
                         type: object
                         description: Additional contextual data from the transaction
                         additionalProperties: true
-        
         "206":
           description: Partial success - some templates succeeded, others failed or partially succeeded
           content:
@@ -580,7 +443,6 @@ paths:
                       additional_data:
                         type: object
                         additionalProperties: true
-        
         "400":
           description: Bad Request - Transaction not found or request failure
           content:
@@ -598,14 +460,19 @@ paths:
                       msg:
                         type: string
                         example: "Transaction doesn't exist"
-        
         "401":
           description: Unauthorized - Invalid or missing authentication token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unauthorized"
-        
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+                  message:
+                    type: string
+                    example: "Invalid or missing authentication token"
         "500":
           description: Internal Server Error - System failure or all templates failed
           content:
@@ -623,28 +490,147 @@ paths:
                       msg:
                         type: string
                         example: "Error in generating output file"
+
+  /v1/file-upload:
+    post:
+      summary: File Upload
+      description: |
+        This endpoint generates presigned URLs for uploading audio files to S3. It provides the necessary credentials and upload parameters to securely upload files directly to AWS S3.
+        
+        The process involves two main steps:
+        - **Request Presigned URL**: Call this endpoint to get folderPath and uploadData
+        - **Upload File**: Use the returned `uploadData` and `folderPath` to upload your file to S3 using multipart form data
+      parameters:
+        - name: txn_id
+          in: query
+          required: true
+          description: Session ID for file upload
+          schema:
+            type: string
+            example: "txn_301"
+        - name: action
+          in: query
+          required: false
+          description: Upload action type
+          schema:
+            type: string
+            enum: [ekascribe, ekascribe-v2]
+            default: ekascribe-v2
+            example: "ekascribe-v2"
+            
       security:
         - auth: []
+      responses:
+        "200":
+          description: Presigned URL generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadData:
+                    type: object
+                    description: Contains the S3 upload URL and required form fields
+                    properties:
+                      url:
+                        type: string
+                        description: S3 bucket URL for uploading the file
+                        example: "https://m-prod-ekascribe-batch.s3.amazonaws.com/"
+                      fields:
+                        type: object
+                        description: Required form fields for S3 upload
+                        properties:
+                          x-amz-meta-mode:
+                            type: string
+                            example: "dictation"
+                          key:
+                            type: string
+                            description: S3 key path with ${filename} placeholder
+                            example: "EC_173210496011417/txn_301/20250617_105524/${filename}"
+                          x-amz-algorithm:
+                            type: string
+                            example: "AWS4-HMAC-SHA256"
+                          x-amz-credential:
+                            type: string
+                            example: "ASIAYES5P2B2ZIB4II4R/20250617/ap-south-1/s3/aws4_request"
+                          x-amz-date:
+                            type: string
+                            example: "20250617T105524Z"
+                          x-amz-security-token:
+                            type: string
+                            description: AWS security token for authentication
+                          policy:
+                            type: string
+                            description: Base64 encoded policy document
+                          x-amz-signature:
+                            type: string
+                            description: AWS signature for the request
+                        additionalProperties: true
+                  folderPath:
+                    type: string
+                    description: The folder path where files will be stored in S3
+                    example: "EC_173210496011417/txn_301/20250617_105524/"
+                  txn_id:
+                    type: string
+                    description: Transaction ID to be used for subsequent operations
+                    example: "txn_301"
+        "400":
+          description: Bad Request - Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
+        "401":
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+                  message:
+                    type: string
+                    example: "Invalid or missing authentication token"
+        "403":
+          description: Upload failed (expired policy)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
 
 components:
-  schemas:
-    Error:
-      type: object
-      properties:
-        status:
-          type: string
-          example: "error"
-        message:
-          type: string
-          example: "Error message"
-    Unauthorized:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Unauthorized"
   securitySchemes:
     auth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Bearer authentication header of the form `Bearer <token>`, where `<token>` is your auth token.
