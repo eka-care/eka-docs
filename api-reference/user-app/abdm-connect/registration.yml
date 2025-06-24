@@ -1650,6 +1650,42 @@ paths:
           description: No Content
       security:
       - authApiKey: []
+  /abdm/v1/hip/care-context/data/on-fetch:
+    post:
+      description: API for HIP to push care context FHIR data to HIU
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsHipDataPushRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
   /abdm/v1/hip/onboard:
     post:
       description: Onboard facility
@@ -3900,6 +3936,26 @@ components:
           - DataProcessed
           - InvalidDataReceived
           - NoDataAvailable
+          type: string
+      type: object
+    RecordsEnvelope:
+      properties:
+        care_context_id:
+          type: string
+        data:
+          type: string
+        error:
+          $ref: '#/components/schemas/CommonsError'
+      type: object
+    RecordsHipDataPushRequest:
+      properties:
+        envelopes:
+          items:
+            $ref: '#/components/schemas/RecordsEnvelope'
+          type:
+          - array
+          - "null"
+        transaction_id:
           type: string
       type: object
     RecordsResponse:
