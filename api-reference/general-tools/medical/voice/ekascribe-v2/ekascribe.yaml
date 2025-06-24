@@ -30,8 +30,33 @@ paths:
               required:
                 - mode
                 - transfer
-                - batch_s3_url
+                - s3_url
+                - client_generated_files
               properties:
+                mode:
+                  type: string
+                  description: Processing mode
+                  enum:
+                    - dictation
+                    - consultation
+                  example: "dictation"
+                transfer:
+                  type: string
+                  description: Transfer mode use `vaded` for pre-processed audio with Voice Activity Detection, `non-vaded` for raw audio files
+                  enum:
+                    - non-vaded
+                    - vaded
+                  example: "non-vaded"
+                s3_url:
+                  type: string
+                  description: S3 bucket URL where audio files were uploaded. The path received in presigned url.
+                  example: https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/
+                client_generated_files:
+                  type: array
+                  description: Array of audio file names that were uploaded to S3
+                  items:
+                    type: string
+                  example: ["https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/audio_first.m4a", "https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/audio_second.m4a"]
                 additional_data:
                   type: object
                   description: Contextual information for the transaction
@@ -46,19 +71,6 @@ paths:
                             l: ""
                     patient: {}
                     visitid: "09e4f00f-d665-4212-b77c-b2dd5f22bd92_1742560488782"
-                mode:
-                  type: string
-                  description: Processing mode
-                  enum:
-                    - dictation
-                    - consultation
-                  example: "dictation"
-                client_generated_files:
-                  type: array
-                  description: Array of audio file names that were uploaded to S3
-                  items:
-                    type: string
-                  example: ["1.m4a", "2.m4a"]
                 input_language:
                   type: array
                   description: Array of supported input languages for voice transcription
@@ -99,17 +111,6 @@ paths:
                         description: Whether codification is needed for the output
                         example: false
                   example: [{"template_id": "eka_emr_template", "codification_needed": false}]
-                transfer:
-                  type: string
-                  description: Transfer mode use `vaded` for pre-processed audio with Voice Activity Detection, `non-vaded` for raw audio files
-                  enum:
-                    - non-vaded
-                    - vaded
-                  example: "non-vaded"
-                batch_s3_url:
-                  type: string
-                  description: S3 bucket URL where audio files were uploaded. The path received in presigned url.
-                  example: https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/
 
             example:
               additional_data:
@@ -164,102 +165,6 @@ paths:
                   message:
                     type: string
                     example: "Transaction already initialized"
-        "422":
-          description: Missing required fields
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  details:
-                    type: array
-                    items:
-                      type: object
-        "401":
-          description: Unauthorized - Invalid or missing authentication token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized"
-                  message:
-                    type: string
-                    example: "Invalid or missing authentication token"
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: Error message
-                  code:
-                    type: string
-                    description: Error code
-
-  /voice/api/v2/transaction/stop/{session_id}:
-    post:
-      summary: Stop Transaction
-      description: Stop a voice-to-prescription transaction after all audio files have been prepared. This endpoint should be called when you have uploaded all audio files.
-      parameters:
-        - name: session_id
-          in: path
-          required: true
-          description: Unique identifier for the transaction session
-          schema:
-            type: string
-            example: "test_1234"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - audio_files
-              properties:
-                audio_files:
-                  type: array
-                  description: Array of audio file names that are ready for processing
-                  items:
-                    type: string
-                  example: ["2.m4a", "3.m4a"]
-            example:
-              audio_files: ["2.m4a", "3.m4a"]
-      security:
-        - auth: []
-      responses:
-        "200":
-          description: Transaction stopped successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "success"
-                  message:
-                    type: string
-                    example: "Transaction stopped successfully"
-        "400":
-          description: Bad Request - Invalid request parameters or missing required fields
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: Error message
-                  code:
-                    type: string
-                    description: Error code
         "422":
           description: Missing required fields
           content:
