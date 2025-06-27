@@ -45,6 +45,35 @@ implementation 'care.eka:ekacare-java-sdk:latest-version'
 ### Option 2: Direct download
 Download the Eka Java SDK from Maven repository [Here](https://central.sonatype.com/artifact/care.eka/ekacare-java-sdk)
 
+## Available Template IDs
+
+Eka Care supports multiple output templates for different medical documentation needs. Choose the appropriate template ID based on your requirements:
+
+| Template ID | Description | Use Case |
+|-------------|-------------|----------|
+| `clinical_notes_template` | Comprehensive clinical notes with structured medical information | General clinical documentation, patient consultations |
+| `eka_emr_template` | EMR-compatible format for electronic medical records | Integration with EMR systems |
+| `transcript_template` | Basic transcription with minimal structuring | Simple audio-to-text conversion |
+
+## Supported Input Languages
+
+Eka Care supports transcription in multiple languages. Specify the appropriate language ID in the `input_language` parameter:
+
+| Language ID | Language Name |
+|-------------|---------------|
+| `en-IN` | English (India) |
+| `en-US` | English (United States) |
+| `hi` | Hindi |
+| `gu` | Gujarati |
+| `kn` | Kannada |
+| `ml` | Malayalam |
+| `ta` | Tamil |
+| `te` | Telugu |
+| `bn` | Bengali |
+| `mr` | Marathi |
+| `pa` | Punjabi |
+
+
 ## Step 1: Register Webhook (One-time Setup)
 
 Before using the Ekascribe service, register a webhook to receive notifications when transcription is complete:
@@ -118,14 +147,14 @@ outputFormat.put("input_language", Arrays.asList("en-IN", "hi"));
 
 // output template ids
 Map<String, Object> templateMap1 = new HashMap<>();
-templateMap1.put("template_id", "<your_template_id>");
+templateMap1.put("template_id", "clinical_notes_template");
 templateMap1.put("language_output", "en-IN");
 // set true if you need codified data (if out supports that)
 templateMap1.put("codification_needed", true);
 
 // Sample second template id
 Map<String, Object> templateMap2 = new HashMap<>();
-templateMap2.put("template_id", "clinical_notes_template");
+templateMap2.put("template_id", "eka_emr_template");
 templateMap2.put("language_output", "en-IN");
 
 outputFormat.put("output_template", Arrays.asList(templateMap1, templateMap2));
@@ -152,7 +181,7 @@ When the transcription is complete, Eka Care will send a webhook notification to
   "data": {
     "transaction_id": "unique_transaction_id",
     "status": "completed",
-    "session_id": "session_id_123",
+    "session_id": "unique_transaction_id"
   },
   "timestamp": "2023-07-20T10:30:00Z"
 }
@@ -164,8 +193,8 @@ After receiving the webhook notification, retrieve the transcription results:
 
 ```java
 // Get the transactionId from the webhook callback
-String transactionId = "session_id_123";
-String action = "ekascribe-v2"
+String transactionId = "unique_transaction_id";  // This comes from the webhook payload
+String action = "ekascribe-v2";
 
 // Fetch session status and results
 JsonNode sessionStatus = client.getV2RX().getSessionStatus(transactionId, action);
@@ -175,20 +204,18 @@ JsonNode sessionStatus = client.getV2RX().getSessionStatus(transactionId, action
     "data": {
         "output": [
             {
-                "template_id": "eka_emr_template",
-                "value": "base64_encoded_data",
-                "type": "eka_emr",
-                "name": "Eka EMR Format",
+                "template_id": "clinical_notes_template",
+                "value": "<base 64 encoded value>",
+                "name": "Clinical Notes Template",
                 "status": "success",
                 "errors": [],
                 "warnings": []
             }
-        ],
-        "additional_data": {}
+        ]
     }
 }'''
 
-// Extract and decode the FHIR data
+// Extract and decode the Template data
 if (sessionStatus.has("data") &&
         sessionStatus.get("data").has("output") &&
         sessionStatus.get("data").get("output").isArray() &&
@@ -199,10 +226,13 @@ if (sessionStatus.has("data") &&
     for (JsonNode node : outputNode) {
         if (node.has("value")) {
             step++;
-            String encodedFhir = node.get("value").asText();
-            byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
-            String fhirJson = new String(decodedBytes);
-            System.out.println("Decoded Data " + step + " :" + fhirJson);
+            String templateId = node.get("template_id").asText();
+            String templateName = node.get("name").asText();
+            String encodedValue = node.get("value").asText();
+            byte[] decodedBytes = Base64.getDecoder().decode(encodedValue);
+            String templateJson = new String(decodedBytes);
+            System.out.println("Template: " + templateName + " (" + templateId + ")");
+            System.out.println("Decoded Data " + step + " :" + templateJson);
         } else {
             System.out.println("No value found in output node "+ step+ " :"+ node.toPrettyString());
         }
@@ -238,42 +268,7 @@ public class EkascribeIntegrationExample {
             authenticateClient(client);
             
             // Upload audio files
-
-            // Collect all audio files in a list
-            List<String> audioFiles = new ArrayList<>();
-            audioFiles.add("<full file path>");
-            audioFiles.add("<full file path 2>");
-
-            // Set your own txn id
             String transactionId = "unique_transaction_id";
-
-            Map<String, Object> extraData = new HashMap<>();
-            extraData.put("mode", "dictation");
-
-            //Custom keys , you'll get back the exact same in result API
-            extraData.put("uhid", "unique_patient_id"); 
-            extraData.put("hfid", "unique_health_facility_id");
-
-            // Define the output format for the V2RX action
-            Map<String, Object> outputFormat = new HashMap<>();
-            outputFormat.put("input_language", Arrays.asList("en-IN", "hi"));
-
-            // output template ids
-            Map<String, Object> templateMap1 = new HashMap<>();
-            templateMap1.put("template_id", "<your_template_id>");
-            templateMap1.put("language_output", "en-IN");
-            // set true if you need codified data (if out supports that)
-            templateMap1.put("codification_needed", true);
-            
-            // Sample second template id
-            Map<String, Object> templateMap2 = new HashMap<>();
-            templateMap2.put("template_id", "clinical_notes_template");
-            templateMap2.put("language_output", "en-IN");
-            
-            // Add both templates to the output_template list
-            outputFormat.put("output_template", Arrays.asList(templateMap1, templateMap2));
-            
-            // Keep this the same
             String action = "ekascribe-v2";
 
             uploadAudioFiles(client, transactionId, action);
@@ -283,7 +278,6 @@ public class EkascribeIntegrationExample {
             
             // Once webhook is received, fetch results
             // The sessionId would come from the webhook payload
-            String transactionId = transactionId;
             getTranscriptionResults(client, transactionId, action);
             
         } catch (Exception e) {
@@ -308,6 +302,37 @@ public class EkascribeIntegrationExample {
     }
     
     private static void uploadAudioFiles(EkaCareClient client, String transactionId, String action) throws IOException {
+        // Collect all audio files in a list
+        List<String> audioFiles = new ArrayList<>();
+        audioFiles.add("<full file path>");
+        audioFiles.add("<full file path 2>");
+
+        Map<String, Object> extraData = new HashMap<>();
+        extraData.put("mode", "dictation");
+
+        //Custom keys , you'll get back the exact same in result API
+        extraData.put("uhid", "unique_patient_id"); 
+        extraData.put("hfid", "unique_health_facility_id");
+
+        // Define the output format for the V2RX action
+        Map<String, Object> outputFormat = new HashMap<>();
+        outputFormat.put("input_language", Arrays.asList("en-IN", "hi"));
+
+        // output template ids
+        Map<String, Object> templateMap1 = new HashMap<>();
+        templateMap1.put("template_id", "clinical_notes_template");
+        templateMap1.put("language_output", "en-IN");
+        // set true if you need codified data (if out supports that)
+        templateMap1.put("codification_needed", true);
+        
+        // Sample second template id
+        Map<String, Object> templateMap2 = new HashMap<>();
+        templateMap2.put("template_id", "eka_emr_template");
+        templateMap2.put("language_output", "en-IN");
+        
+        // Add both templates to the output_template list
+        outputFormat.put("output_template", Arrays.asList(templateMap1, templateMap2));
+        
         List<JsonNode> responses = client.getV2RX().upload(audioFiles, transactionId, action, extraData, outputFormat);
         System.out.println("Upload Responses: " + responses.toString());
     }
@@ -326,10 +351,13 @@ public class EkascribeIntegrationExample {
             for (JsonNode node : outputNode) {
                 if (node.has("value")) {
                     step++;
-                    String encodedFhir = node.get("value").asText();
-                    byte[] decodedBytes = Base64.getDecoder().decode(encodedFhir);
-                    String fhirJson = new String(decodedBytes);
-                    System.out.println("Decoded Data " + step + " :" + fhirJson);
+                    String templateId = node.get("template_id").asText();
+                    String templateName = node.get("name").asText();
+                    String encodedValue = node.get("value").asText();
+                    byte[] decodedBytes = Base64.getDecoder().decode(encodedValue);
+                    String templateJson = new String(decodedBytes);
+                    System.out.println("Template: " + templateName + " (" + templateId + ")");
+                    System.out.println("Decoded Data " + step + " :" + templateJson);
                 } else {
                     System.out.println("No value found in output node "+ step+ " :"+ node.toPrettyString());
                 }
