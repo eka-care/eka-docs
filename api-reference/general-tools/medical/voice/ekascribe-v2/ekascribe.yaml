@@ -56,7 +56,7 @@ paths:
                   description: Array of audio file names that were uploaded to S3
                   items:
                     type: string
-                  example: ["https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/audio_first.m4a", "https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/audio_second.m4a"]
+                  example: ["audio_first.m4a", "audio_second.m4a"]
                 additional_data:
                   type: object
                   description: Contextual information for the transaction
@@ -93,10 +93,7 @@ paths:
                   type: string
                   description: Medical speciality context for better transcription accuracy
                   example: "general_medicine"
-                Section:
-                  type: string
-                  description: Specific section or context for the audio content
-                  example: "consultation_notes"
+                
                 output_format_template:
                   type: array
                   description: Array of template configurations for output format
@@ -105,6 +102,10 @@ paths:
                     properties:
                       template_id:
                         type: string
+                        enum:
+                          - eka_emr_template
+                          - clinical_notes_template
+                          - transcript_template
                         example: "eka_emr_template"
                       codification_needed:
                         type: boolean
@@ -126,7 +127,6 @@ paths:
               mode: "dictation"
               input_language: ["en-IN"]
               speciality: "general_medicine"
-              Section: "consultation_notes"
               output_format_template: [{"template_id": "eka_emr_template", "language_output": "en-IN", "codification_needed": false}]
               transfer: "non-vaded"
               batch_s3_url: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
@@ -419,7 +419,7 @@ paths:
           description: Upload action type
           schema:
             type: string
-            enum: [ekascribe, ekascribe-v2]
+            enum: [ekascribe-v2]
             default: ekascribe-v2
             example: "ekascribe-v2"
             
