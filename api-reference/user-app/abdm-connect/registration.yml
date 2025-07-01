@@ -1650,6 +1650,42 @@ paths:
           description: No Content
       security:
       - authApiKey: []
+  /abdm/v1/hip/care-context/data/on-fetch:
+    post:
+      description: API for HIP to push care context FHIR data to HIU
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsHipDataPushRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
   /abdm/v1/hip/onboard:
     post:
       description: Onboard facility
@@ -3900,6 +3936,54 @@ components:
           - DataProcessed
           - InvalidDataReceived
           - NoDataAvailable
+          type: string
+      type: object
+    RecordsDHPubKey:
+      properties:
+        expiry:
+          type: string
+        key_value:
+          type: string
+        parameters:
+          type: string
+      type: object
+    RecordsEntry:
+      properties:
+        care_context_id:
+          type: string
+        checksum:
+          description: Checksum of the non encrypted plain text fhir data
+          type: string
+        content:
+          description: Encrypted content
+          type: string
+        media:
+          enum:
+          - application/fhir+json
+          type: string
+      type: object
+    RecordsHipDataPushRequest:
+      properties:
+        entries:
+          items:
+            $ref: '#/components/schemas/RecordsEntry'
+          type:
+          - array
+          - "null"
+        key_information:
+          $ref: '#/components/schemas/RecordsKeyMaterial'
+        transaction_id:
+          type: string
+      type: object
+    RecordsKeyMaterial:
+      properties:
+        crypto_alg:
+          type: string
+        curve:
+          type: string
+        dh_public_key:
+          $ref: '#/components/schemas/RecordsDHPubKey'
+        nonce:
           type: string
       type: object
     RecordsResponse:
