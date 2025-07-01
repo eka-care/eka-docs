@@ -12,7 +12,7 @@ paths:
   /voice/api/v2/transaction/init/{session_id}:
     post:
       summary: Initialize Transaction
-      description: Initialize a voice-to-prescription transaction before starting to send audio files. This endpoint must be called before uploading any audio files for transcription and processing.
+      description: Start the transcription process for the uploaded audio files. This endpoint is called after uploading any audio files in S3 bucket for transcription and processing.
       parameters:
         - name: session_id
           in: path
@@ -30,8 +30,33 @@ paths:
               required:
                 - mode
                 - transfer
-                - s3_url
+                - batch_s3_url
+                - client_generated_files
               properties:
+                mode:
+                  type: string
+                  description: Processing mode
+                  enum:
+                    - dictation
+                    - consultation
+                  example: "dictation"
+                transfer:
+                  type: string
+                  description: Transfer mode use `vaded` for pre-processed audio with Voice Activity Detection, `non-vaded` for raw audio files
+                  enum:
+                    - non-vaded
+                    - vaded
+                  example: "non-vaded"
+                batch_s3_url:
+                  type: string
+                  description: S3 bucket URL where audio files were uploaded. The path received in presigned url.
+                  example: https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/
+                client_generated_files:
+                  type: array
+                  description: Array of audio file names that were uploaded to S3
+                  items:
+                    type: string
+                  example: ["audio_first.m4a", "audio_second.m4a"]
                 additional_data:
                   type: object
                   description: Contextual information for the transaction
@@ -46,14 +71,6 @@ paths:
                             l: ""
                     patient: {}
                     visitid: "09e4f00f-d665-4212-b77c-b2dd5f22bd92_1742560488782"
-
-                mode:
-                  type: string
-                  description: Processing mode
-                  enum:
-                    - dictation
-                    - consultation
-                  example: "dictation"
                 input_language:
                   type: array
                   description: Array of supported input languages for voice transcription
@@ -62,10 +79,6 @@ paths:
                     enum:
                       - "en-IN"
                       - "en-US"
-                      - "hi-IN"
-                      - "gu-IN"
-                      - "kn-IN"
-                      - "mixed"
                       - "hi"
                       - "gu"
                       - "kn"
@@ -80,10 +93,7 @@ paths:
                   type: string
                   description: Medical speciality context for better transcription accuracy
                   example: "general_medicine"
-                Section:
-                  type: string
-                  description: Specific section or context for the audio content
-                  example: "consultation_notes"
+                
                 output_format_template:
                   type: array
                   description: Array of template configurations for output format
@@ -92,18 +102,17 @@ paths:
                     properties:
                       template_id:
                         type: string
+                        enum:
+                          - eka_emr_template
+                          - clinical_notes_template
+                          - transcript_template
                         example: "eka_emr_template"
-                transfer:
-                  type: string
-                  description: Transfer method or protocol
-                  enum:
-                    - vaded
-                    - non-vaded
-                  example: "vaded"
-                s3_url:
-                  type: string
-                  description: S3 bucket URL where audio files will be stored. It will be getting after uploading the audio files.
-                  example: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
+                      codification_needed:
+                        type: boolean
+                        description: Whether codification is needed for the output
+                        example: false
+                  example: [{"template_id": "eka_emr_template", "codification_needed": false}]
+
             example:
               additional_data:
                 doctor:
@@ -118,10 +127,11 @@ paths:
               mode: "dictation"
               input_language: ["en-IN"]
               speciality: "general_medicine"
-              Section: "consultation_notes"
-              output_format_template: [{"template_id": "eka_emr_template"}]
-              transfer: "vaded"
-              s3_url: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
+              output_format_template: [{"template_id": "eka_emr_template", "language_output": "en-IN", "codification_needed": false}]
+              transfer: "non-vaded"
+              batch_s3_url: "s3://m-pp-voice2rx/250307/R-S3-195D5131-D014-56A8-ACCF-2F8F2D230DEC/"
+      security:
+        - auth: []
       responses:
         "201":
           description: Transaction initialized successfully
@@ -166,159 +176,255 @@ paths:
                     type: array
                     items:
                       type: object
-
         "401":
           description: Unauthorized - Invalid or missing authentication token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unauthorized"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+                  message:
+                    type: string
+                    example: "Invalid or missing authentication token"
         "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - auth: []
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
 
-  /voice/api/v2/transaction/stop/{session_id}:
-    post:
-      summary: Stop Transaction
-      description: Stop a voice-to-prescription transaction after all audio files have been prepared. This endpoint should be called when you have uploaded all audio files.
+  /voice/api/v3/status/{session_id}:
+    get:
+      summary: Transaction Result
+      description: |
+        Retrieve the status and results of a transcription session using the session ID. This endpoint provides comprehensive information about the transcription process including:
+        - Current processing status
+        - Structured output data when available
+        - Template-specific results and status
+        - Error and warning details
+        
+        The API implements intelligent polling to wait for completion and returns different HTTP status codes based on the processing outcome.
       parameters:
         - name: session_id
           in: path
           required: true
-          description: Unique identifier for the transaction session
+          description: Unique identifier for the transcription session
           schema:
             type: string
             example: "test_1234"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                audio_files:
-                  type: array
-                  description: Array of audio file names that are ready for processing
-                  items:
-                    type: string
-                  example: ["2.m4a", "3.m4a"]
-            example:
-              audio_files: ["2.m4a", "3.m4a"]
-
+      security:
+        - auth: []
       responses:
         "200":
-          description: Transaction stopped successfully
+          description: All templates processed successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: "success"
-                  message:
-                    type: string
-                    example: "Transaction stopped successfully"
+                  data:
+                    type: object
+                    properties:
+                      output:
+                        type: array
+                        description: Array of processed template results
+                        items:
+                          type: object
+                          properties:
+                            template_id:
+                              type: string
+                              description: Unique identifier for the template
+                              example: "eka_emr_template"
+                            value:
+                              type: string
+                              description: Structured output data from the template
+                              additionalProperties: true
+                              example: "eyJwcmVzY3JpcHRpb24iOiB7Im1lZGljYXRpb25zIjogW3sibmFtZSI6ICJkb2xvIiwgImZyZXF1ZW5jeSI6IHsicGF0dGVybl9pZCI6ICJmcC0xIiwgImRvc2UiOiBbIjEiLCAiMCIsICIxIl0sICJwZXJpb2QiOiAxLCAicGVyaW9kX3VuaXQiOiAiZGF5IiwgImZyZXF1ZW5jeSI6ICIzIiwgImN1c3RvbSI6ICIxLTAtMSJ9LCAiaW5zdHJ1Y3Rpb24iOiAiVGFrZSB0d2ljZSBhIGRheSIsICJpZCI6ICJsb2NhbGUtMmFiMWU5OGIxMzU4NzFhZjZjYjAxYjQ3MjE5NWNmZjQifV0sICJsYW5ndWFnZSI6ICJFTiJ9fQ=="    
+                            type:
+                              type: string
+                              description: Type of template output
+                              example: "eka_emr"
+                            name:
+                              type: string
+                              description: Human-readable name of the template
+                              example: "EKA EMR Template"
+                            status:
+                              type: string
+                              enum: ["success", "partial_success", "failure"]
+                              description: Processing status of the template
+                              example: "success"
+                            errors:
+                              type: array
+                              description: Array of error messages if any
+                              items:
+                                type: string
+                              example: []
+                            warnings:
+                              type: array
+                              description: Array of warning messages if any
+                              items:
+                                type: string
+                              example: []
+                      additional_data:
+                        type: object
+                        description: Additional contextual data from the transaction
+                        additionalProperties: true
+                        example:
+                          "mode": "dictation"
+                          doctor:
+                            _id: "174097180967921"
+                          visitid: "09e4f00f-d665-4212-b77c-b2dd5f22bd92_1742560488782"
+        "202":
+          description: Transaction is still in progress - continue polling
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      output:
+                        type: array
+                        description: Empty array when processing is in progress
+                        items: {}
+                        example: []
+                      additional_data:
+                        type: object
+                        description: Additional contextual data from the transaction
+                        additionalProperties: true
+        "206":
+          description: Partial success - some templates succeeded, others failed or partially succeeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      output:
+                        type: array
+                        description: Array of processed template results with mixed statuses
+                        items:
+                          type: object
+                          properties:
+                            template_id:
+                              type: string
+                              example: "eka_emr_template"
+                            value:
+                              type: string
+                              example: ""
+                            type:
+                              type: string
+                              example: "eka_emr"
+                            name:
+                              type: string
+                              example: "EKA EMR Template"
+                            status:
+                              type: string
+                              enum: ["success", "partial_success", "failure"]
+                              example: "partial_success"
+                            errors:
+                              type: array
+                              items:
+                                type: string
+                              example: ["Unable to extract medication dosage"]
+                            warnings:
+                              type: array
+                              items:
+                                type: string
+                              example: ["Low confidence in diagnosis section"]
+                      additional_data:
+                        type: object
+                        additionalProperties: true
         "400":
-          description: Bad Request - Invalid request parameters or missing required fields
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "422":
-          description: Missing required fields
+          description: Bad Request - Transaction not found or request failure
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  details:
-                    type: array
-                    items:
-                      type: object
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: ["missing_business_id", "transaction_not_found"]
+                        example: "transaction_not_found"
+                      msg:
+                        type: string
+                        example: "Transaction doesn't exist"
         "401":
           description: Unauthorized - Invalid or missing authentication token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unauthorized"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+                  message:
+                    type: string
+                    example: "Invalid or missing authentication token"
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - System failure or all templates failed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - auth: []
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: ["system_error", "output_not_available"]
+                        example: "system_error"
+                      msg:
+                        type: string
+                        example: "Error in generating output file"
 
   /v1/file-upload:
     post:
       summary: File Upload
-      description: This endpoint generate presigned URLs for uploading audio files to S3. It provides the necessary credentials and upload parameters to securely upload files directly to AWS S3.
+      description: |
+        This endpoint generates presigned URLs for uploading audio files to S3. It provides the necessary credentials and upload parameters to securely upload files directly to AWS S3.
+        
+        The process involves two main steps:
+        - **Request Presigned URL**: Call this endpoint to get folderPath and uploadData
+        - **Upload File**: Use the returned `uploadData` and `folderPath` to upload your file to S3 using multipart form data
       parameters:
         - name: txn_id
           in: query
-          required: false
-          description: Transaction ID for the file upload
+          required: true
+          description: Session ID for file upload
           schema:
             type: string
             example: "txn_301"
         - name: action
           in: query
           required: false
-          description: Action for the file upload
+          description: Upload action type
           schema:
             type: string
-            example: "default"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                extraData:
-                  type: object
-                  description: Additional data for the upload request
-                  additionalProperties: true
-                  example:
-                    mode: "dictation"
-                    input_language: ["en-US"]
-                  properties:
-                    mode:
-                      type: string
-                      description: Processing mode for the audio file
-                      enum:
-                        - dictation
-                        - consultation
-                      example: "dictation"
-                    input_language:
-                      type: array
-                      description: Array of supported input languages for voice transcription
-                      items:
-                        type: string
-                        enum:
-                          - "en-IN"
-                          - "en-US"
-                          - "hi-IN"
-                          - "gu-IN"
-                          - "kn-IN"
-                          - "mixed"
-                          - "hi"
-                          - "gu"
-                          - "kn"
-                          - "ml"
-                          - "ta"
-                          - "te"
-                          - "bn"
-                          - "mr"
-                          - "pa"
-                      example: ["en-US"]
+            enum: [ekascribe-v2]
+            default: ekascribe-v2
+            example: "ekascribe-v2"
+            
+      security:
+        - auth: []
       responses:
         "200":
           description: Presigned URL generated successfully
@@ -339,25 +445,13 @@ paths:
                         type: object
                         description: Required form fields for S3 upload
                         properties:
-                          x-amz-meta-extraData:
-                            type: object
-                            description: Additional metadata for the upload
-                            properties:
-                              mode:
-                                type: string
-                                example: "dictation"
-                              input_language:
-                                type: array
-                                items:
-                                  type: string
-                                example: ["en-US"]
-                            example:
-                              mode: "dictation"
-                              input_language: ["en-US"]
+                          x-amz-meta-mode:
+                            type: string
+                            example: "dictation"
                           key:
                             type: string
                             description: S3 key path with ${filename} placeholder
-                            example: "EC_173210496011417/EC_173210496011417/txn_301/20250617_105524/${filename}"
+                            example: "EC_173210496011417/txn_301/20250617_105524/${filename}"
                           x-amz-algorithm:
                             type: string
                             example: "AWS4-HMAC-SHA256"
@@ -380,68 +474,68 @@ paths:
                   folderPath:
                     type: string
                     description: The folder path where files will be stored in S3
-                    example: "EC_173210496011417/EC_173210496011417/txn_301/20250617_105524/"
+                    example: "EC_173210496011417/txn_301/20250617_105524/"
                   txn_id:
                     type: string
                     description: Transaction ID to be used for subsequent operations
                     example: "txn_301"
-              example:
-                uploadData:
-                  url: "https://m-prod-ekascribe-batch.s3.amazonaws.com/"
-                  fields:
-                    "x-amz-meta-extraData": {
-                      "mode": "dictation",
-                      "input_language": ["en-US"]
-                    }
-                    key: "EC_173210496011417/EC_173210496011417/txn_301/20250617_105524/${filename}"
-                    x-amz-algorithm: "AWS4-HMAC-SHA256"
-                    x-amz-credential: "ASIAYES5P2B2ZIB4II4R/20250617/ap-south-1/s3/aws4_request"
-                    x-amz-date: "20250617T105524Z"
-                    x-amz-security-token: "IQoJb3JpZ2luX2VjEIv//////////wEaCmFwLXNvdXRoLTEiRjBEAiB77A+/VTqjBAGvBUSiKpjSCM2XRu3qMm0lb2UYnEzcmgIgEO7Lb9ZDtFWrI4WAMXgG2EQsE85c/pOjCl7rR7GVjVUq9wIIdBABGgw1NTk2MTU1NjE4NDUiDHUTfWybBKCmARd9JyrUAprkJ56YiznWCgp37mRb73TA7ErbWRcDSoeJd4CO8hKF7DpyEI5tGlinQY99KyFRDw5Sl7TY0VM4SB56bENebUq31+P6TigiTe1I9Fe8c5MFJoJiPmYN31J1pUD76Cu+g6PPVKJ1XMHzSVa+pR0ZldRBuBGlxAi/8yjRsciSPtgqlH4kOSbE9G5xNCQ5Ph6LN9nfngodOSoBBioe2gEWl3JYMWcbkdcW2YNwxkDjzb8ZyD2RakQRD25bGnYXCez4YlQa0x1HXNzUts7/mJDbfXaxHfosH0zevwvDjdSI1J71jJSr/G5yyzmYZn6HJYT4ZoxxE+t1cT4m9HZ1A5il9idupmFZocOQp86+3Q54TprJ0NemFZMSUhv8oWnmLYSPlMQ4C9UjViEZ7R/TMT0PwiLoleS5yvEiNiXfHagdxnlYoNAdOAmbmsfUAC3qeMtCuEpPfqwwvZHFwgY6nwE/+BNXMBRBCapqUEXAeCH+kSmPxCZUWl6KKvfxjAS3sG1LVBk5fc4z2Xn0dCklL7d7VT/Bg7LvOBEe7OnjRJNdjINK9fPUAKo7TM3uSDb6ryCQ2NHhTuVp6Z9hqYuKwN41QfmLjoMUhk3ViEjfWQrCFAz/WR1Q8imYPYHO4geakzDwLfhA79WhillxFUE9PDPYqMlLCXa2wD7SbEh25Gs="
-                    policy: "eyJleHBpcmF0aW9uIjogIjIwMjUtMDYtMTdUMTE6NTU6MjRaIiwgImNvbmRpdGlvbnMiOiBbWyJzdGFydHMtd2l0aCIsICIka2V5IiwgIkVDXzE3MzIxMDQ5NjAxMTQxNy9FQ18xNzMyMTA0OTYwMTE0MTcvdHhuXzMwMS8yMDI1MDYxN18xMDU1MjQvIl0sIFsiY29udGVudC1sZW5ndGgtcmFuZ2UiLCAwLCA1MzY4NzA5MTIwXSwgWyJzdGFydHMtd2l0aCIsICIkeC1hbXotbWV0YS1tb2RlIiwgIiJdLCBbInN0YXJ0cy13aXRoIiwgIiR4LWFtei1tZXRhLWlucHV0X2xhbmd1YWdlIiwgIiJdLCB7ImJ1Y2tldCI6ICJtLXByb2QtZWthc2NyaWJlLWJhdGNoIn0sIFsic3RhcnRzLXdpdGgiLCAiJGtleSIsICJFQ18xNzMyMTA0OTYwMTE0MTcvRUNfMTczMjEwNDk2MDExNDE3L3R4bl8zMDEvMjAyNTA2MTdfMTA1NTI0LyJdLCB7IngtYW16LWFsZ29yaXRobSI6ICJBV1M0LUhNQUMtU0hBMjU2In0sIHsieC1hbXotY3JlZGVudGlhbCI6ICJBU0lBWUVTNVAyQjJaSUI0SUk0Ui8yMDI1MDYxNy9hcC1zb3V0aC0xL3MzL2F3czRfcmVxdWVzdCJ9LCB7IngtYW16LWRhdGUiOiAiMjAyNTA2MTdUMTA1NTI0WiJ9LCB7IngtYW16LXNlY3VyaXR5LXRva2VuIjogIklRb0piM0pwWjJsdVgyVmpFSXYvLy8vLy8vLy8vd0VhQ21Gd0xYTnZkWFJvTFRFaVJqQkVBaUI3N0ErL1ZUcWpCQUd2QlVTaUtwalNDTTJYUnUzcU1tMGxiMlVZbkV6Y21nSWdFTzdMYjlaRHRGV3JJNFdBTVhnRzJFUXNFODVjL3BPakNsN3JSN0dWalZVcTl3SUlkQkFCR2d3MU5UazJNVFUxTmpFNE5EVWlESFVUZld5YkJLQ21BUmQ5SnlyVUFwcmtKNTZZaXpuV0NncDM3bVJiNzNUQTdFcmJXUmNEU29lSmQ0Q084aEtGN0RweUVJNXRHbGluUVk5OUt5RlJEdzVTbDdUWTBWTTRTQjU2YkVOZWJVcTMxK1A2VGlnaVRlMUk5RmU4YzVNRkpvSmlQbVlOMzFKMXBVRDc2Q3UrZzZQUFZLSjFYTUh6U1ZhK3BSMFpsZFJCdUJHbHhBaS84eWpSc2NpU1B0Z3FsSDRrT1NiRTlHNXhOQ1E1UGg2TE45bmZuZ29kT1NvQkJpb2UyZ0VXbDNKWU1XY2JrZGNXMllOd3hrRGp6YjhaeUQyUmFrUVJEMjViR25ZWENlejRZbFFhMHgxSFhOelV0czcvbUpEYmZYYXhIZm9zSDB6ZXZ3dkRqZFNJMUo3MWpKU3IvRzV5eXptWVpuNkhKWVQ0Wm94eEUrdDFjVDRtOUhaMUE1aWw5aWR1cG1GWm9jT1FwODYrM1E1NFRwckowTmVtRlpNU1VodjhvV25tTFlTUGxNUTRDOVVqVmlFWjdSL1RNVDBQd2lMb2xlUzV5dkVpTmlYZkhhZ2R4bmxZb05BZE9BbWJtc2ZVQUMzcWVNdEN1RXBQZnF3d3ZaSEZ3Z1k2bndFLytCTlhNQlJCQ2FwcVVFWEFlQ0gra1NtUHhDWlVXbDZLS3ZmeGpBUzNzRzFMVkJrNWZjNHoyWG4wZENrbEw3ZDdWVC9CZzdMdk9CRWU3T25qUkpOZGpJTks5ZlBVQUtvN1RNM3VTRGI2cnlDUTJOSGhUdVZwNlo5aHFZdUt3TjQxUWZtTGpvTVVoazNWaUVqZldRckNGQXovV1IxUThpbVlQWUhPNGdlYWt6RHdMZmhBNzlXaGlsbHhGVUU5UERQWXFNbExDWGEyd0Q3U2JFaDI1R3M9In1dfQ=="
-                    x-amz-signature: "c5ed7f0d5fd7d39945193dd7d7b1c8e8706f0efbdca541202301bdc841d50044"
-                folderPath: "EC_173210496011417/EC_173210496011417/txn_301/20250617_105524/"
-                txn_id: "txn_301"
         "400":
           description: Bad Request - Invalid request parameters
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
         "401":
           description: Unauthorized - Invalid or missing authentication token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unauthorized"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+                  message:
+                    type: string
+                    example: "Invalid or missing authentication token"
+        "403":
+          description: Upload failed (expired policy)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
         "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - auth: []
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                  code:
+                    type: string
+                    description: Error code
 
 components:
-  schemas:
-    Error:
-      type: object
-      properties:
-        status:
-          type: string
-          example: "error"
-        message:
-          type: string
-          example: "Error message"
-    Unauthorized:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Unauthorized"
   securitySchemes:
     auth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Bearer authentication header of the form `Bearer <token>`, where `<token>` is your auth token.

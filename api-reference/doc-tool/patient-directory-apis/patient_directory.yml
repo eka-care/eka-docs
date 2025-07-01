@@ -1,0 +1,391 @@
+openapi: 3.0.3
+info:
+  title: Patient APIs
+  description: Patient Directory CRUD
+  version: 1.0.0
+
+servers:
+  - url: https://api.eka.care
+
+paths:
+  /profiles/v1/patient/:
+    post:
+      summary: Create a patient profile
+      tags:
+        - Patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fn:
+                  type: string
+                  description: First name
+                  example: eka
+                mn:
+                  type: string
+                  description: First name
+                  example: eka
+                ln:
+                  type: string
+                  description: Last name
+                  example: user
+                dob:
+                  type: string
+                  format: date
+                  example: "2000-01-02"
+                gen:
+                  type: string
+                  enum: [M, F, O]
+                  description: Gender
+                  example: M
+                bloodgroup:
+                  type: string
+                  enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]
+                  description: Blood group of the patient
+                  example: A+
+                ccd:
+                  type: string
+                  description: Country code of the patient
+                  example: "+91"
+                mobile:
+                  type: string
+                  description: Mobile number of the patient ( without country code )
+                  example: "6000000000"
+                email:
+                  type: string
+                  format: email
+                  example: testuser@eka.care
+                username:
+                  type: string
+                  description: Unique UHID| partner id | username for the patient
+                  example: UH0001
+                abha:
+                  type: string
+                  description: ABHA address of the patient
+                  example: xyz@abdm
+              required:
+                - fn
+                - dob
+                - gen  
+      responses:
+        '201':
+          description: Patient created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oid:
+                    type: string
+                    example: "1876816818618681"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: androiddoc
+      security:
+        - bearerAuth: []
+
+  /profiles/v1/patient/minified/:
+    get:
+      summary: List patient profiles
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of patient profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientProfileMin'
+                  currPageMeta:
+                    type: object
+                    properties:
+                      currPageNo:
+                        type: integer
+                        example: 1
+                      pageSize:
+                        type: integer
+                        example: 10
+                      nextPage:
+                        type: integer
+                        example: 2
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '500':
+          description: Server error
+
+  /profiles/v1/patient/search:
+    get:
+      summary: Search patient profiles
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: query
+          name: mobile
+          schema:
+            type: string
+            example: "121"
+        - in: query
+          name: username
+          schema:
+            type: string
+            example: "EK001"
+        - in: query
+          name: name
+          schema:
+            type: string
+            example: "Eka"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of patient profiles matching search query (PREfix search)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientProfileMin'
+                  currPageMeta:
+                    type: object
+                    properties:
+                      currPageNo:
+                        type: integer
+                        example: 1
+                      pageSize:
+                        type: integer
+                        example: 10
+                      nextPage:
+                        type: integer
+                        example: 2
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '500':
+          description: Server error
+
+  /profiles/v1/patient/{oid}:
+    get:
+      summary: Retrieve patient profile
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: path
+          name: oid
+          required: true
+          schema:
+            type: string
+            example: 18661861868168
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of patient profiles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '500':
+          description: Server error
+
+    patch:
+      summary: Update patient profile details
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: path
+          name: oid
+          required: true
+          schema:
+            type: string
+            example: 18661861868168
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dob:
+                  type: string
+                  format: date
+                  example: "2000-01-02"
+                gen:
+                  type: string
+                  enum: [M, F, O]
+                  description: Gender
+                  example: M
+      responses:
+        '200':
+          description: Update Patient profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile updated successfully"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '500':
+          description: Server error
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PatientProfile:
+      type: object
+      properties:
+        oid:
+          type: string
+          example: "175074536120088"
+        wid:
+          type: string
+          example: "77088166996724"
+        ps:
+          type: string
+          example: "P"
+        c_ate:
+          type: integer
+          example: 1750745358
+        u_ate:
+          type: integer
+          example: 1750745358
+        gen:
+          type: string
+          example: "M"
+        dob:
+          type: string
+          format: date
+          example: "2000-01-02"
+        fn:
+          type: string
+          example: "Eka"
+        ln:
+          type: string
+          example: "User"
+        fln:
+          type: string
+          example: "Eka User"
+        bg:
+          type: string
+          example: "B+"
+        mobile:
+          type: string
+          example: "+911201201201"
+
+    PatientProfileMin:
+      type: object
+      properties:
+        mobile:
+          type: string
+          example: "1212121212"
+        username:
+          type: string
+          example: "EK19819819"
+        fln:
+          type: string
+          example: "Test user"
+        u_ate:
+          description: "updated at epoch"
+          type: number
+          example: 1750918049
+
+    400Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Invalid Gender Enum"
+            code:
+              type: string
+              example: "invalid_request"
+    
+    404Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Not found"  
+        code:
+          type: string
+          example: "profile_not_found"
