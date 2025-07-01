@@ -3938,24 +3938,52 @@ components:
           - NoDataAvailable
           type: string
       type: object
-    RecordsEnvelope:
+    RecordsDHPubKey:
+      properties:
+        expiry:
+          type: string
+        key_value:
+          type: string
+        parameters:
+          type: string
+      type: object
+    RecordsEntry:
       properties:
         care_context_id:
           type: string
-        data:
+        checksum:
+          description: Checksum of the non encrypted plain text fhir data
           type: string
-        error:
-          $ref: '#/components/schemas/CommonsError'
+        content:
+          description: Encrypted content
+          type: string
+        media:
+          enum:
+          - application/fhir+json
+          type: string
       type: object
     RecordsHipDataPushRequest:
       properties:
-        envelopes:
+        entries:
           items:
-            $ref: '#/components/schemas/RecordsEnvelope'
+            $ref: '#/components/schemas/RecordsEntry'
           type:
           - array
           - "null"
+        key_information:
+          $ref: '#/components/schemas/RecordsKeyMaterial'
         transaction_id:
+          type: string
+      type: object
+    RecordsKeyMaterial:
+      properties:
+        crypto_alg:
+          type: string
+        curve:
+          type: string
+        dh_public_key:
+          $ref: '#/components/schemas/RecordsDHPubKey'
+        nonce:
           type: string
       type: object
     RecordsResponse:
