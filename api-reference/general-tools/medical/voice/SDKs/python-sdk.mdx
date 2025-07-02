@@ -1,4 +1,3 @@
-
 # Eka Care Ekascribe Python SDK Integration
 
 This guide explains how to integrate the Eka Care Ekascribe Python SDK.
@@ -30,6 +29,35 @@ You can add the Eka Care Python SDK to your project using pip:
 ```bash
 pip install ekacare
 ```
+
+## Available Template IDs
+
+Eka Care supports multiple output templates for different medical documentation needs. Choose the appropriate template ID based on your requirements:
+
+| Template ID | Description | Use Case |
+|-------------|-------------|----------|
+| `clinical_notes_template` | Comprehensive clinical notes with structured medical information | General clinical documentation, patient consultations |
+| `eka_emr_template` | EMR-compatible format for electronic medical records | Integration with EMR systems |
+| `transcript_template` | Basic transcription with minimal structuring | Simple audio-to-text conversion |
+
+## Supported Input Languages
+
+Eka Care supports transcription in multiple languages. Specify the appropriate language ID in the `input_language` parameter:
+
+| Language ID | Language Name |
+|-------------|---------------|
+| `en-IN` | English (India) |
+| `en-US` | English (United States) |
+| `hi` | Hindi |
+| `gu` | Gujarati |
+| `kn` | Kannada |
+| `ml` | Malayalam |
+| `ta` | Tamil |
+| `te` | Telugu |
+| `bn` | Bengali |
+| `mr` | Marathi |
+| `pa` | Punjabi |
+
 
 ## Step 1: Register Webhook (One-time Setup)
 
@@ -143,24 +171,30 @@ session_id = "unique_transaction_id"  # This comes from the webhook payload whic
 
 # Fetch session status and results
 action = "ekascribe-v2"
-session_status = client.v2rx.get_session_status(session_id, action)
+session_data = client.v2rx.get_session_status(session_id, action)
 
-# Sample response structure
-# {
-#   "status": "completed",
-#   "error": {},
-#   "data": {
-#     "output": {
-#       "fhir": "base64_encoded_fhir_data..."
-#     }
-#   }
-# }
 
-# Extract and decode the FHIR data
-if "data" in session_status and "output" in session_status["data"] and "fhir" in session_status["data"]["output"]:
-    encoded_fhir = session_status["data"]["output"]["fhir"]
-    decoded_bytes = base64.b64decode(encoded_fhir)
-    fhir_json = decoded_bytes.decode('utf-8')
+#{
+#  "data": {
+#    "output": [
+#      {
+#        "template_id": "clinical_notes_template",
+#        "value": "<base 64 encoded value>",
+#        "name": "Clinical Notes Template",
+#        "status": "success",
+#        "errors": [],
+#        "warnings": []
+#      }
+#    ]
+#  }
+#}
+
+# Extract and decode the Template value
+for template_data in session_status.get("data", {}).get("output", []):
+    template_id, template_value = template_data.get("template_id"), template_data.get("value")
+    decoded_bytes = base64.b64decode(template_value)
+    template_json = decoded_bytes.decode('utf-8')
+    print(template_json)
 ```
 
 ## Complete Example
