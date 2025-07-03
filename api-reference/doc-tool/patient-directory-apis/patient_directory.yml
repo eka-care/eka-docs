@@ -100,10 +100,63 @@ paths:
             example: androiddoc
       security:
         - bearerAuth: []
+   
+    get:
+        summary: List patient profiles
+        tags:
+          - Patient
+        parameters:
+          - in: header
+            name: client-id
+            required: true
+            schema:
+              type: string
+              example: EC_1431
+          - in: query
+            name: pageNo
+            schema:
+              type: integer
+              example: 1
+          - in: query
+            name: pageSize
+            schema:
+              type: integer
+              example: 100
+        security:
+          - bearerAuth: []
+        responses:
+          '200':
+            description: A list of patient profiles
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      example: "success"
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/ListPatientProfile'
+                    currPageMeta:
+                      type: object
+                      properties:
+                        currPageNo:
+                          type: integer
+                          example: 1
+                        pageSize:
+                          type: integer
+                          example: 10
+                        nextPage:
+                          type: integer
+                          example: 2
+          '500':
+            description: Server error
 
   /profiles/v1/patient/minified/:
     get:
-      summary: List patient profiles
+      summary: List minified patient profiles
       tags:
         - Patient
       parameters:
@@ -113,6 +166,27 @@ paths:
           schema:
             type: string
             example: EC_1431
+        - in: query
+          name: pageNo
+          schema:
+            type: integer
+            example: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            example: 100
+        - in: query
+          name: select
+          required: false
+          description: |
+            Comma-separated list of fields to include in the response.
+            Example: `wid,oid`
+            Valid fields: mobile, fln, u_ate, c_ate, arc, dob, gen, oid, wid
+          schema:
+            type: string
+          example: mobile, fln
+
       security:
         - bearerAuth: []
       responses:
@@ -139,12 +213,6 @@ paths:
                       nextPage:
                         type: integer
                         example: 2
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/400Error'
         '500':
           description: Server error
 
@@ -175,6 +243,11 @@ paths:
           schema:
             type: string
             example: "Eka"
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            example: 10
       security:
         - bearerAuth: []
       responses:
@@ -183,30 +256,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  profiles:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PatientProfileMin'
-                  currPageMeta:
-                    type: object
-                    properties:
-                      currPageNo:
-                        type: integer
-                        example: 1
-                      pageSize:
-                        type: integer
-                        example: 10
-                      nextPage:
-                        type: integer
-                        example: 2
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/400Error'
+                $ref: '#/components/schemas/SearchPatientProfile'
         '500':
           description: Server error
 
@@ -301,6 +351,43 @@ paths:
         '500':
           description: Server error
 
+    delete:
+      summary: Delete patient profile
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: path
+          name: oid
+          required: true
+          schema:
+            type: string
+            example: 18661861868168
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Patient profile deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile archived successfully"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/404Error'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -356,9 +443,6 @@ components:
         mobile:
           type: string
           example: "1212121212"
-        username:
-          type: string
-          example: "EK19819819"
         fln:
           type: string
           example: "Test user"
@@ -366,6 +450,144 @@ components:
           description: "updated at epoch"
           type: number
           example: 1750918049
+        c_ate:
+          description: "created at epoch"
+          type: number
+          example: 1750918049
+        arc:
+          type: boolean
+          example: false
+        dob:
+          type: string
+          format: date
+          example: "2000-01-02"
+        gen:
+          type: string
+          example: "M"
+        oid:
+          type: string
+          example: "175074536120088"
+        wid:
+          type: string
+          example: "77088111111111"
+
+    ListPatientProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "170563111111111"
+        uuid:
+          type: string
+        profile:
+          type: object
+          properties:
+            personal:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Eka User"
+                age:
+                  type: object
+                  properties:
+                    dob:
+                      type: string
+                      format: date
+                      example: "1998-02-12"
+                phone:
+                  type: object
+                  properties:
+                    c:
+                      type: string
+                      example: "+91"
+                    n:
+                      type: string
+                      example: "94003XXXXX"
+                onApp:
+                  type: boolean
+                  example: false
+                gender:
+                  type: string
+                  example: "M"
+        formData:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+                example: "UHID"
+              type:
+                type: string
+                example: "string"
+              key:
+                type: string
+                example: "uhid"
+              value:
+                type: string
+                example: "EK132"
+        archived:
+          type: boolean
+          example: false
+        link:
+          type: array
+          items:
+            type: string
+          example: []
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-19T04:01:03.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-19T04:01:14.000000Z"
+        workspace_id:
+          type: string
+          example: "b-111111111111"
+        referredBy:
+          type: string
+          nullable: true
+          example: null
+        refer_id:
+          type: string
+          nullable: true
+          example: null
+        relations:
+          type: array
+          items:
+            type: object
+          example: []
+        visits:
+          type: array
+          items:
+            type: object
+          example: []
+        docids:
+          type: array
+          items:
+            type: object
+          example: []
+
+
+    SearchPatientProfile:
+      type: array
+      items:
+        type: object
+        properties:
+          username:
+            type: string
+            example: "1111111111"
+          mobile:
+            type: string
+            example: "98765XXXXX"
+          oid:
+            type: string
+            example: "17552615662165"
+          fln:
+            type: string
+            example: "Veena"
 
     400Error:
       type: object
