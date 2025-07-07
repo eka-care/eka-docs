@@ -1,50 +1,74 @@
-These are the steps to manage patient information using the Patient Directory API.
-
-<Steps>
-
-<Step title="Search for Patients">
-This step is used to search for existing patients profiles in a business' directory. You can use 10 digit mobile number to search for a patient.
-
-**Endpoint:** `GET {{HOST}}/v1/business/patients/search?mobile=`
-
-**Description:** Quickly locate patient records and retrieve relevant details.
-</Step>
-
-<Step title="Add a Patient">
-This step is used to add new patient records to a business' directory.
-
-**Endpoint:** `POST {{HOST}}/v1/business/doctor/patient/add`
-
-**Description:** Provide necessary details such as personal information, contact details, and medical history to create a new patient profile.
-
-<Note> Right now adding a patient is done in reference to a specific doctor,
-    which automatically adds the patient to the business directory as well.
-    Adding patient directly to a business is WIP and adding via doctor_id will be `deprecated`. </Note>
-</Step>
-
-<Step title="Edit Patient Details (WIP)" >
-This step is used to update existing patient records in a doctor's directory.
-
-**Endpoint:** `PUT {{HOST}}/v1/business/doctor/patient/edit`
-
-**Description:** Modify personal details, contact information, and other relevant data to ensure that the patient profile remains accurate and current.
-</Step>
-
-</Steps>
-
----
-
 ## Overview
 
-The Patient Directory API is designed to manage patient information within a business' directory. This API allows for searching, adding, and editing patient details in a specific doctor's directory. It facilitates efficient patient management and ensures that all necessary information is up-to-date and easily accessible.
+The **Patient Directory** provides APIs for managing patient profiles in your system. 
 
-## Main Actors
+## Patient Profile
 
-- **Patient:** The individual whose information is being managed in the doctor's directory. This includes personal details, contact information, medical history, and other relevant data.
+A **Patient Profile** represents the core demographic and identifier data for a patient, used for managing and retrieving patient details across the system.  
+
+<AccordionGroup>
+<Accordion type="single" collapsible title="Profile Details">
+    
+    | Field      | Source           | Type       | Description                       |
+    |------------|------------------|------------|-----------------------------------| 
+    | `oid`      | System Generated | `string`   | unique identifier                 | 
+    | `wid`      | System Generated | `string`   | Workspace ID                      | 
+    | `ps`       | System Generated | `string`   | Persona type (allowed-> ["P"])    |                 
+    | `c_ate`    | System Generated | `integer`  | Creation timestamp (epoch)        | 
+    | `u_ate`    | System Generated | `integer`  | Last update timestamp (epoch)     | 
+    | `gen`      | User Input       | `"M" \| "F" \| "O"` | Gender (Refer below)     | 
+    | `dob`      | User Input       | `date`     | Date of birth                     | 
+    | `fn`       | User Input       | `string`   | First name                        | 
+    | `mn`       | User Input       | `string`   | Middle name                       | 
+    | `ln`       | User Input       | `string`   | Last name                         | 
+    | `ccd`      | User Input       | `string`   | Country code                      | 
+    | `mobile`   | User Input       | `string`   | Mobile number (ccd + mobile -> E.164 format)  | 
+    | `email`    | User Input       | `string`   | Valid email address               | 
+    | `username` | User Input       | `string`   | Unique user identifier like (UHID)| 
+    | `s`        | User Input       | `string`   | Salutation (Refer below)          | 
+    | `bg`       | User Input       | `string`   | Blood group (Refer Below)         | 
+    | `abha`     | User Input       | `string`   | ABHA address                      | 
+    | `arc`      | System Updated   | `boolean`  | Is profile archived               | 
+
+</Accordion>
+<Accordion type="single" collapsible title="Salutation Enums">
+    Supported Salutations 
+    - Dr 
+    - Smt
+</Accordion>
+<Accordion type="single" collapsible title="Gender Enums">
+    Supported Genders 
+    | Enum  | Gender    |
+    |-------|-----------|
+    | F     | Female    |
+    | M     | Male      |
+    | O     | Others    |  
+</Accordion>
+</AccordionGroup>
+
+It enables seamless **CRUD operations** (Create, Read, Update, Archive(Delete)) on patient profiles, allowing you to integrate profile management into your applications with ease.  
+
+In addition, it offers **search APIs** to locate patient profiles using:  
+- **Username** (a unique patient identifier like UHID)  
+- **Mobile number** (without country code)  
+- **Name** (prefix-based search)  
+
+Search results are limited to a **maximum of 100 records** to ensure performance.  
+
+For detailed usage, refer to the following API documentation:  
+- [Create Patient Profile API](/api-reference/doc-tool/patient-directory-apis/add-patient)
+- [Retrieve Single Patient Profile API](/api-reference/doc-tool/patient-directory-apis/retrieve-patient-details)
+- [List Workspace Patients API](/api-reference/doc-tool/patient-directory-apis/patients-list-minified)  
+- [Update Patient Profile API](/api-reference/doc-tool/patient-directory-apis/update-patient-details)
+- [Archive Patient Profile API](/api-reference/doc-tool/patient-directory-apis/delete-patient)  
+- [Search Patients API](/api-reference/doc-tool/patient-directory-apis/search-patient) 
+
+These APIs are designed to be **developer-friendly** and quick to adopt. Follow the links above for request/response formats, examples, and error handling guidelines.  
 
 ## Usage Notes
 
 - Ensure that all required fields are provided when adding or editing patient information.
 - Use appropriate search criteria to narrow down patient records effectively.
 - Handle sensitive patient data with care and comply with relevant privacy regulations.
-- Currently, a patient can only be added in reference to a doctor in a business. This automatically adds the patient to the business directory and allows searching at the business level.
+- Currently, a patient can only be added in reference to a workspace. This automatically adds the patient profile to the workspace directory and allows searching at the workspace level.
+
