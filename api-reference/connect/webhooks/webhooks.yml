@@ -274,12 +274,234 @@ paths:
                         example: "SERVER_ERROR"
 
   /notification/v1/connect/webhook/subscriptions/{id}:
+    patch:
+      tags:
+        - Webhooks
+      summary: Add Event to Webhook
+      description: |
+        Adds a new event to the specified webhook. The `id` path parameter identifies the webhook. The request body must include the `event_id` to be added.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the webhook.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_id:
+                  type: string
+                  description: The event to add to the webhook.
+                  example: "prescription.created"
+              required:
+                - event_id
+      responses:
+        '200':
+          description: Event added successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "webhook event added successfully"
+                  status:
+                    type: string
+                    example: "success"
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Invalid event"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '401':
+          description: Unauthorized request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Unauthorized request"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '404':
+          description: Webhook not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Webhook not found"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Internal Server Error"
+                      code:
+                        type: string
+                        example: "SERVER_ERROR"
+
+    put:
+      tags:
+        - Webhooks
+      summary: Update Webhook
+      description: |
+        Updates the specified webhook. The `id` path parameter identifies the webhook. The request body must include the new `event_ids` array and optionally a new `signing_key`.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the webhook.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of event names to update for the webhook.
+                  example:
+                    - "rec.srp"
+                    - "user.data.access"
+                    - "appointment.created"
+                signing_key:
+                  type: string
+                  description: New signing key for the webhook.
+                  example: "supersigningkey1"
+              required:
+                - event_ids
+      responses:
+        '200':
+          description: Webhook updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "webhook updated successfully"
+                  status:
+                    type: string
+                    example: "success"
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Invalid request"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '401':
+          description: Unauthorized request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Unauthorized request"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '404':
+          description: Webhook not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Webhook not found"
+                      code:
+                        type: string
+                        example: "INVALID_REQUEST"
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Internal Server Error"
+                      code:
+                        type: string
+                        example: "SERVER_ERROR"
     delete:
       tags:
         - Webhooks
       summary: Delete a Webhook
       description: |
-        Deletes an existing webhook based on its ID. This endpoint allows partners to remove a previously registered webhook by specifying its unique identifier in the path parameter. The `id` parameter is required and must match the ID of the webhook to be deleted. Upon successful deletion, the service will no longer send POST requests to the webhook's URL for the specified scope. This operation helps partners manage and clean up their webhook configurations.
+        Deletes an existing webhook based on its ID. This endpoint allows partners to remove a previously registered webhook by specifying its unique identifier in the path parameter. The `id` parameter is required and must match the ID of the webhook to be deleted. Upon successful deletion, the service will no longer send POST requests to the webhook's URL for the specified scope.
       security:
         - bearerAuth: [ ]
       parameters:
