@@ -2,24 +2,34 @@
 openapi: get /assessment/api/fetch_interviews/v2/
 ---
 
-# Fetch and Group Assessments (V2)
+# Fetch and Group Assessments
 
-This API allows you to fetch assessments from both the Self-Assessment and Smartcheck modules. It provides powerful filtering capabilities and groups the results based on a combination of identifiers, making it easy to retrieve all assessments related to a specific interaction or entity.
+This API provides powerful filtering capabilities and groups the results based on a combination of identifiers, making it easy to retrieve all assessments related to a specific interaction or entity.
 
 The grouping is based on a composite key of `practitioner_uuid`, `patient_uuid`, `unique_identifier`, and `transaction_id`.
 
-## Example Request
+## Response
 
-<APIEndpoint
-  method="GET"
-  path="/assessment/api/fetch_interviews/v2/"
-  description="Fetch assessments for patients or doctors based on filters like status, workflow IDs and identifiers"
-/>
-
-Here is an example of how to fetch all completed assessments for a specific patient.
-
-```bash
-curl --location 'http://deepthought.eka.care/assessment/api/fetch_interviews/v2/?status=COMPLETED&unique_identifier=173765761279832' \
---header 'Content-Type: application/json' \
---header 'jwt-payload: {"b-id":174299061865934,"iss":"emr.eka.care", "uuid":"40d6c891-4a30-400e-a861-7fdb9b06606a"}' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkb2Mtd2ViIiwiYi1pZCI6IjE3MDE0MjYxMjk4NTU4OCIsImNjIjp7ImRvYy1pZCI6IjE2MTQ2Nzc1NjA0NDIwMyIsImlzLWQiOnRydWV9LCJkb2IiOiIxOTkyLTA4LTA1IiwiZG9jLWlkIjoiMTYxNDY3NzU2MDQ0MjAzIiwiZXhwIjoxNzUyNTEyNTA0LCJmbiI6IlJhZ2h1bmFuZGFuIiwiZ2VuIjoiTSIsImlhdCI6MTc1MjUwODkwNCwiaWRwIjoibW9iIiwiaXMtZCI6dHJ1ZSwiaXNzIjoiZW1yLmVrYS5jYXJlIiwibG4iOiJHdXB0YSIsIm9pZCI6IjE2MTQ2Nzc1NjA0NDIwMyIsInByaSI6dHJ1ZSwiciI6IklOIiwidXVpZCI6IjQwZDZjODkxLTRhMzAtNDAwZS1hODYxLTdmZGI5YjA2NjA2YSJ9.DYLDmKHqt11_fol2MFjMuOpDJqhac1K_2w0rhP1X3LI'
+```json
+{
+  "conversations": [
+    {
+      "practitioner_uuid": "161467756044223",
+      "patient_uuid": "02b66c91-ce53-45b7-8794-14f4a640f9g4",
+      "unique_identifier": "173765761279834",
+      "transaction_id": "txn_aBcDeFgHiJkLmNoP",
+      "conversations": [
+        {
+          "conversationid": "sa_123456789",
+          "created_at": "2023-07-15T10:30:00Z"
+        },
+        {
+          "conversationid": "sn_987654321",
+          "created_at": "2023-07-15T10:35:00Z"
+        }
+      ]
+    }
+  ]
+}
+```
+---
