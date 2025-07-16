@@ -5564,6 +5564,171 @@ paths:
         '500':
           description: Wrong API URL/Wrong JSON request/ Something went wrong
   
+  /dr/v1/doctor/service/{doctor_id}:
+    get:
+      tags:
+        - Doctor and clinic API
+      summary: Get Doctor services
+      description: >-
+          This API response returns a list of medical services offered by a specific doctor, including details like service name, duration, booking options, and fees. Each service specifies whether it supports pre-pay or post-pay, along with the delivery mode (e.g., in-clinic or teleconsultation). The data helps configure or display available appointment types for patient booking.
+
+          ### Response Parameters
+
+          | Parameter | Type | Description |
+
+          | --- | --- | --- |
+
+          | data | object | Response data object |
+
+          | data.services | array | List of services offered
+          |
+
+          | data.services[].appointment_type | string | Type of appointment (e.g., REGULAR, FOLLOW_UP)
+          |
+
+          | data.services[].archive | boolean | Service active or archived on doc tool
+          |
+
+          | data.services[].book_ahead_days | integer | Service bookability from today
+          |
+
+          | data.services[].created_at | integer | Epoch time
+          |
+
+          | data.services[].currency | string | Currency of Price
+          |
+
+          | data.services[].duration | integer | Duration of service booked in minutes
+          |
+
+          | data.services[].mode | array | Mode of consultation
+
+          | data.services[].pre_pay | boolean | Payment to be taken at the time of booking an appointment or not
+          |
+
+          | data.services[].price | number | Price of Service
+          |
+
+          | data.services[].service_name | string | Service Name
+          |
+
+          | data.services[].conf_id | string | Configuration ID for the service
+          |
+
+      
+      operationId: GetDoctorServices
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: doctor_id
+          in: path
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+      
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+              example: Sun, 12 Apr 2020 11:09:57 GMT
+            Content-Length:
+              schema:
+                type: string
+              example: '377'
+            Connection:
+              schema:
+                type: string
+              example: keep-alive
+            Server:
+              schema:
+                type: string
+              example: nginx/1.10.3 (Ubuntu)
+            Vary:
+              schema:
+                type: string
+              example: Cookie, Accept-Encoding
+            Content-Encoding:
+              schema:
+                type: string
+              example: gzip
+            Strict-Transport-Security:
+              schema:
+                type: string
+              example: max-age=15768000
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      services:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            appointment_type:
+                              type: string
+                              enum:
+                                - REGULAR
+                                - FOLLOW_UP
+                            archive:
+                              type: boolean
+                            book_ahead_days:
+                              type: integer
+                            created_at:
+                              type: integer
+                            currency:
+                              type: string
+                            duration:
+                              type: integer
+                            mode:
+                              type: array
+                              items:
+                                type: string
+                                enum:
+                                  - tele
+                                  - in-clinic
+                            pre_pay:
+                              type: boolean
+                            price:
+                              type: number
+                              format: float
+                            service_name:
+                              type: string
+                            conf_id:
+                              type: string
+                      
+              example:
+                  data:
+                    services:
+                        appointment_type: REGULAR
+                        archive: false
+                        book_ahead_days: 111
+                        created_at: 1752230657
+                        currency: INR
+                        duration: 15
+                        mode:
+                          - in-clinic
+                        pre_pay: false
+                        price: 459
+                        service_name: Tele Consulation
+                        conf_id: "25e4acd4eb5fbc0b8523d8de315555a9ee7b5700b0b89a07879daff1be1510e6"
+
+      deprecated: false
+  
 components:
   schemas:
     AuthLoginRequest:
