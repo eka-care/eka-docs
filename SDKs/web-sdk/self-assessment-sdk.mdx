@@ -1,0 +1,563 @@
+---
+title: Self Assessment SDK
+description: "Complete implementation guide for the Self Assessment SDK"
+---
+
+# Self Assessment SDK Implementation
+
+This guide provides everything you need to integrate the Self Assessment SDK into your application.
+
+## Overview
+
+The Self Assessment SDK allows you to integrate intelligent assessment workflows into your healthcare applications. It provides:
+
+- **Interactive Assessments**: Run dynamic, workflow-based patient assessments
+- **Flexible Workflows**: Support for multiple assessment workflows and categories
+
+## Installation
+
+### Prerequisites
+
+- A modern web browser
+- A web server or development environment
+- Valid authentication tokens from your Self Assessment provider
+
+### Setup
+
+Add the SDK script directly to your HTML:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Self Assessment Integration</title>
+  </head>
+  <body>
+    <!-- Container for the Self Assessment app -->
+    <div id="sa-container"></div>
+
+    <!-- Include the Self Assessment SDK -->
+    <script src="https://api.eka.care/sa-fe/main.js"></script>
+
+    <script>
+      // Your integration code will go here
+    </script>
+  </body>
+</html>
+```
+
+## Core Functions
+
+### 1. runSaApp
+
+Initializes and runs a Self Assessment application.
+
+**Parameters:**
+
+- `workflow_id` (number, required): The ID of the assessment workflow to run
+- `container_id` (string, required): The HTML element ID where the assessment will be rendered
+- `auth_token` (string, required): JWT authentication token for API access
+- `refresh_token` (string, required): Token used to refresh the auth token when it expires
+- `params` (object, optional): Additional parameters for the assessment (e.g., age, gender)
+- `practice_info` (object, optional): Information about the practice and patient
+- `transaction_id` (string, optional): Unique transaction identifier
+- `onEndCallback` (function, optional): Callback function called when assessment ends
+- `onSaRedirectCallback` (function, optional): Callback function called when assessment redirects
+- `onSaSubmitCallback` (function, optional): Callback function called when assessment is submitted
+- `onSaInitCallback` (function, optional): Callback function called when assessment is initialized
+
+**Example:**
+
+```javascript
+window.runSaApp({
+  workflow_id: 4014,
+  container_id: "sa-container",
+  auth_token: "your-jwt-token",
+  refresh_token: "your-refresh-token",
+  params: {
+    age: 25,
+    gender: "M",
+  },
+  practice_info: {
+    practitioner_uuid: "161461111111111",
+    patient_uuid: "9531778f-030c-11223344-38488c",
+    unique_identifier: "17345678765",
+  },
+  transaction_id: "appt_1234",
+  onSaInitCallback: (params) => {
+    console.log("Assessment initialized:", params);
+  },
+});
+```
+
+### 2. closeSaApp
+
+Closes the currently running Self Assessment application.
+
+**Example:**
+
+```javascript
+window.closeSaApp();
+```
+
+### 3. showSaSubmission
+
+Displays assessment submission data in a modal or container.
+
+**Parameters:**
+
+- `container_id` (string, required): The HTML element ID where the submission will be displayed
+- `auth_token` (string, required): JWT authentication token for API access
+- `refresh_token` (string, required): Token used to refresh the auth token when it expires
+- `assessment_ids` (string[], required): Array of assessment IDs to display
+
+**Example:**
+
+```javascript
+window.showSaSubmission({
+  container_id: "sa-container",
+  auth_token: "your-jwt-token",
+  refresh_token: "your-refresh-token",
+  assessment_ids: ["sa_250387576868696698"],
+});
+```
+
+### 4. closeSaSubmissionApp
+
+Closes the currently displayed submission application.
+
+**Example:**
+
+```javascript
+window.closeSaSubmissionApp();
+```
+
+### 5. fetchAssessment
+
+Fetches assessment data from the server.
+
+**Parameters:**
+
+- `status` (string, required): The status of assessments to fetch (e.g., 'COMPLETED', 'PENDING')
+- `unique_identifier` (string, required): Unique identifier for the assessment
+
+**Example:**
+
+```javascript
+window
+  .fetchAssessment({
+    status: "COMPLETED",
+    unique_identifier: "17345678765",
+  })
+  .then((response) => {
+    if (response.data) {
+      console.log("Assessment data:", response.data);
+    } else {
+      console.error("Error:", response.error);
+    }
+  });
+```
+
+### 6. getWorkflowList
+
+Fetches the list of available workflows.
+
+**Parameters:**
+
+- `category` (string, optional): Optional category filter for workflows
+
+**Example:**
+
+```javascript
+// Get all workflows
+window.getWorkflowList().then((response) => {
+  console.log("All workflows:", response.workflows);
+});
+
+// Get workflows by category
+window.getWorkflowList({ category: "test" }).then((response) => {
+  console.log("Test workflows:", response.workflows);
+});
+```
+
+## Callback Functions
+
+### onSaInitCallback
+
+Called when the assessment is successfully initialized and ready to start.
+
+**Parameters:**
+
+```typescript
+{
+  success: boolean;
+  data?: {
+    assessment_id: string;
+    workflow_id: number;
+  };
+  error?: string;
+}
+```
+
+**Example:**
+
+```javascript
+const onSaInitCallback = (params) => {
+  if (params.success) {
+    console.log("Assessment initialized successfully");
+    console.log("Assessment ID:", params.data.assessment_id);
+    console.log("Workflow ID:", params.data.workflow_id);
+  } else {
+    console.error("Failed to initialize assessment:", params.error);
+  }
+};
+```
+
+### onSaCloseCallback (onEndCallback)
+
+Called when the assessment is closed or ended by the user.
+
+**Parameters:**
+
+```typescript
+{
+  success: boolean;
+  data?: {
+    assessment_id: string;
+    workflow_id: number;
+  };
+  error?: string;
+}
+```
+
+**Example:**
+
+```javascript
+const onSaCloseCallback = (params) => {
+  if (params.success) {
+    console.log("Assessment closed successfully");
+    console.log("Final Assessment ID:", params.data.assessment_id);
+  } else {
+    console.error("Assessment closed with error:", params.error);
+  }
+};
+```
+
+### onSaSubmitCallback
+
+Called when the user submits the assessment (completes all questions).
+
+**Parameters:**
+
+```typescript
+{
+  data?: {
+    assessment_id: string;
+    workflow_id: number;
+  };
+  error?: string;
+}
+```
+
+**Example:**
+
+```javascript
+const onSaSubmitCallback = (params) => {
+  if (params.data) {
+    console.log("Assessment submitted successfully");
+    console.log("Submitted Assessment ID:", params.data.assessment_id);
+  } else {
+    console.error("Assessment submission failed:", params.error);
+  }
+};
+```
+
+### onSaRedirectCallback
+
+Called when the assessment redirects to a different workflow.
+
+**Parameters:**
+
+```typescript
+{
+  success: boolean;
+  data?: {
+    assessment_id: string;
+    workflow_id: number;
+    new_workflow_id: number;
+  };
+  error?: string;
+}
+```
+
+**Example:**
+
+```javascript
+const onSaRedirectCallback = (params) => {
+  if (params.success) {
+    console.log("Assessment redirected to new workflow");
+    console.log("Original Workflow ID:", params.data.workflow_id);
+    console.log("New Workflow ID:", params.data.new_workflow_id);
+  } else {
+    console.error("Assessment redirect failed:", params.error);
+  }
+};
+```
+
+## Complete Implementation Example
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Self Assessment Complete Example</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      #sa-container {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #ccc;
+        margin: 20px 0;
+      }
+      .button {
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Self Assessment SDK Demo</h1>
+
+    <button class="button" onclick="startAssessment()">Start Assessment</button>
+    <button class="button" onclick="showSubmissions()">Show Submissions</button>
+    <button class="button" onclick="closeAssessment()">Close Assessment</button>
+    <button class="button" onclick="fetchData()">Fetch Assessment Data</button>
+
+    <div id="sa-container"></div>
+
+    <script src="https://api.eka.care/sa-fe/main.js"></script>
+    <script>
+      // Configuration
+      const config = {
+        workflow_id: 4014,
+        container_id: "sa-container",
+        auth_token: "your-jwt-auth-token",
+        refresh_token: "your-refresh-token",
+        params: { age: 25, gender: "M" },
+        practice_info: {
+          practitioner_uuid: "161461111111111",
+          patient_uuid: "9531778f-030c-11223344-38488c",
+          unique_identifier: "17345678765",
+        },
+        transaction_id: "appt_1234",
+      };
+
+      function startAssessment() {
+        window.runSaApp({
+          ...config,
+          onSaInitCallback: (params) => console.log("Initialized:", params),
+          onEndCallback: (params) => console.log("Closed:", params),
+          onSaSubmitCallback: (params) => console.log("Submitted:", params),
+          onSaRedirectCallback: (params) => console.log("Redirected:", params),
+        });
+      }
+
+      function showSubmissions() {
+        window.showSaSubmission({
+          container_id: "sa-container",
+          auth_token: config.auth_token,
+          refresh_token: config.refresh_token,
+          assessment_ids: ["sa_250387576868696698"],
+        });
+      }
+
+      function closeAssessment() {
+        window.closeSaApp();
+      }
+
+      function fetchData() {
+        window
+          .fetchAssessment({
+            status: "COMPLETED",
+            unique_identifier: "17345678765",
+          })
+          .then((response) => {
+            if (response.data) {
+              console.log("Assessment data:", response.data);
+            } else {
+              console.error("Error:", response.error);
+            }
+          });
+      }
+    </script>
+  </body>
+</html>
+```
+
+## Type Definitions
+
+### TRunSaApp
+
+```typescript
+interface TRunSaApp {
+  workflow_id: number;
+  container_id: string;
+  auth_token: string;
+  refresh_token: string;
+  params?: {
+    age?: number;
+    gender?: string;
+    [key: string]: any;
+  };
+  practice_info?: {
+    practitioner_uuid: string;
+    patient_uuid: string;
+    unique_identifier: string;
+  };
+  transaction_id?: string;
+  onEndCallback?: (params: {
+    success: boolean;
+    data?: { assessment_id: string; workflow_id: number };
+    error?: string;
+  }) => void;
+  onSaRedirectCallback?: (params: {
+    success: boolean;
+    data?: {
+      assessment_id: string;
+      workflow_id: number;
+      new_workflow_id: number;
+    };
+    error?: string;
+  }) => void;
+  onSaSubmitCallback?: (params: {
+    data?: { assessment_id: string; workflow_id: number };
+    error?: string;
+  }) => void;
+  onSaInitCallback?: (params: {
+    success: boolean;
+    data?: { assessment_id: string; workflow_id: number };
+    error?: string;
+  }) => void;
+}
+```
+
+### TShowSaSubmission
+
+```typescript
+interface TShowSaSubmission {
+  container_id: string;
+  auth_token: string;
+  refresh_token: string;
+  assessment_ids: string[];
+}
+```
+
+### Assessment Response
+
+```typescript
+interface AssessmentResponse {
+  data: {
+    conversations: Array<{
+      practitioner_uuid: string | null;
+      patient_uuid: string;
+      unique_identifier: string;
+      transaction_id: string;
+      conversations: Array<{
+        conversationid: string;
+        created_at: string;
+      }>;
+    }>;
+  } | null;
+  error?: {
+    error_code: string;
+    display_message: string;
+    message: string;
+  };
+}
+```
+
+### Workflow List Response
+
+```typescript
+interface WorkflowListResponse {
+  workflows: Array<{
+    wflow_id: number;
+    wflow_name: string;
+    wflow_desc: string | null;
+    category: string;
+  }>;
+  error?: {
+    error_code: string;
+    display_message: string;
+    message: string;
+  };
+}
+```
+
+## Error Handling
+
+All functions return consistent error objects with:
+
+- `error_code`: Machine-readable error code
+- `display_message`: User-friendly error message
+- `message`: Technical error details
+
+**Common Error Codes:**
+
+- `AUTH_ERROR`: Authentication failed
+- `NETWORK_ERROR`: Network connection issues
+- `FETCH_ERROR`: Data fetching failed
+- `VALIDATION_ERROR`: Invalid parameters
+- `UNKNOWN_ERROR`: Unexpected errors
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Container Not Found
+
+**Problem**: Assessment doesn't appear in the container.
+
+**Solution**:
+
+- Ensure the container element exists before calling `runSaApp`
+- Check that `container_id` matches the actual HTML element ID
+- Make sure the container has proper dimensions
+
+```html
+<div
+  id="sa-container"
+  style="width: 100%; height: 600px; border: 1px solid #ccc;"
+></div>
+```
+
+#### 2. Authentication Errors
+
+**Problem**: Assessment fails to initialize due to auth issues.
+
+**Solution**:
+
+- Verify your `auth_token` and `refresh_token` are valid
+- Check that tokens haven't expired
+- Ensure you're using the correct authentication flow for Self Assessment
+
+#### 3. Workflow Not Found
+
+**Problem**: Assessment fails with workflow-related errors.
+
+**Solution**:
+
+- Verify the `workflow_id` exists and is accessible
+- Use `getWorkflowList()` to see available workflows
+- Check if the workflow requires specific parameters
+
+```javascript
+// Check available workflows
+window.getWorkflowList().then((response) => {
+  console.log("Available workflows:", response.workflows);
+});
+```
