@@ -4,29 +4,80 @@ openapi: get /assessment/api/fetch_interviews/v2/
 
 # Fetch and Group Assessments
 
-This API provides powerful filtering capabilities and groups the results based on a combination of identifiers, making it easy to retrieve all assessments related to a specific interaction or entity.
+This API fetches and groups assessments. One can filter using any combination of these properties:
+`practitioner_uuid`, `patient_uuid`, `unique_identifier`, `transaction_id` with `status` (default: COMPLETED).
 
-The grouping is based on a composite key of `practitioner_uuid`, `patient_uuid`, `unique_identifier`, and `transaction_id`.
+One can also create a New Assessment using [🔗 INIT API](/api-reference/general-tools/assessment/assessment-flow/initialization/initialize-assessment) with any one of these properties.
 
-## Response
+## Examples
+
+### Example 1: Filtering by Practitioner AND Patient
+This request finds all assessment groups for a specific practitioner AND a specific patient. The unique_identifier can be different for each group.
+
+### Request:
+```json
+curl ".../v2/?practitioner_uuid=123-doc&patient_uuid=456-patient"
+```
+
+### Response: 
+Notice how both groups in the response match the requested practitioner_uuid and patient_uuid.
 
 ```json
 {
   "conversations": [
     {
-      "practitioner_uuid": "161467756044223",
-      "patient_uuid": "02b66c91-ce53-45b7-8794-14f4a640f9g4",
-      "unique_identifier": "173765761279834",
-      "transaction_id": "txn_aBcDeFgHiJkLmNoP",
+      "practitioner_uuid": "123-doc",
+      "patient_uuid": "456-patient",
+      "unique_identifier": "UID-A",
+      "transaction_id": "TXN-1",
       "conversations": [
-        {
-          "conversationid": "sa_123456789",
-          "created_at": "2023-07-15T10:30:00Z"
-        },
-        {
-          "conversationid": "sn_987654321",
-          "created_at": "2023-07-15T10:35:00Z"
-        }
+        { "conversationid": "sa_111", "created_at": "..." }
+      ]
+    },
+    {
+      "practitioner_uuid": "123-doc",
+      "patient_uuid": "456-patient",
+      "unique_identifier": "UID-B",
+      "transaction_id": "TXN-2",
+      "conversations": [
+        { "conversationid": "sa_222", "created_at": "..." },
+        { "conversationid": "sn_333", "created_at": "..." }
+      ]
+    }
+  ]
+}
+```
+
+### Example 2: Filtering by a Single Identifier
+This request finds all assessment groups that share the same unique_identifier, regardless of the practitioner or patient.
+
+### Request: 
+```json 
+curl ".../v2/?unique_identifier=UID-XYZ"
+```
+
+### Response: 
+Notice how both groups have the same unique_identifier, but different practitioners and patients.
+
+```json
+{
+  "conversations": [
+    {
+      "practitioner_uuid": "doc-alpha",
+      "patient_uuid": "patient-one",
+      "unique_identifier": "UID-XYZ",
+      "transaction_id": "TXN-100",
+      "conversations": [
+        { "conversationid": "sa_777", "created_at": "..." }
+      ]
+    },
+    {
+      "practitioner_uuid": "doc-beta",
+      "patient_uuid": "patient-two",
+      "unique_identifier": "UID-XYZ",
+      "transaction_id": "TXN-200",
+      "conversations": [
+        { "conversationid": "sn_888", "created_at": "..." }
       ]
     }
   ]
