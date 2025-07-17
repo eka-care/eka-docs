@@ -49,8 +49,13 @@ paths:
                   example: "non-vaded"
                 batch_s3_url:
                   type: string
-                  description: S3 bucket URL where audio files were uploaded. The path received in presigned url.
-                  example: https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/
+                  description: |
+                    Complete S3 URL path where audio files are uploaded. This is constructed by combining:
+                    - Base S3 URL from presigned response: `presigned_url["uploadData"]["url"]`
+                    - Folder path from presigned response: `presigned_url["folderPath"]`
+                    
+                    **Construction:** `presigned_url["uploadData"]["url"] + presigned_url["folderPath"]`
+                  example: "https://m-prod-ekascribe-batch.s3.amazonaws.com/EC_173210496011417/txn_301/20250617_105524/"
                 client_generated_files:
                   type: array
                   description: Array of audio file names that were uploaded to S3
