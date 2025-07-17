@@ -1762,6 +1762,42 @@ paths:
           description: Accepted
       security:
       - authApiKey: []
+  /abdm/v1/hiu/care-context/data/on-push:
+    post:
+      description: API for HIU to push care context FHIR parsing status
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsHiuDataPushRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
   /abdm/v1/profile:
     delete:
       description: This endpoint removes the specified ABHA profile along with all
@@ -3975,6 +4011,19 @@ components:
         transaction_id:
           type: string
       type: object
+    RecordsHiuDataPushRequest:
+      properties:
+        consent_id:
+          type: string
+        status_response:
+          items:
+            $ref: '#/components/schemas/RecordsStatusResponse'
+          type:
+          - array
+          - "null"
+        transaction_id:
+          type: string
+      type: object
     RecordsKeyMaterial:
       properties:
         crypto_alg:
@@ -3996,6 +4045,15 @@ components:
           - "null"
       required:
       - care_contexts
+      type: object
+    RecordsStatusResponse:
+      properties:
+        care_context_id:
+          type: string
+        description:
+          type: string
+        success:
+          type: boolean
       type: object
     RegistrationEkaIds:
       properties:
