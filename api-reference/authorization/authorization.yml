@@ -38,9 +38,11 @@ paths:
           description: OK
       tags:
       - Connect APIs
+
   /connect-auth/v1/account/refresh:
     post:
       description: Get new Authorization token using the refresh token
+      deprecated: true
       requestBody:
         content:
           application/json:
@@ -67,6 +69,43 @@ paths:
           description: OK
       tags:
       - Connect APIs
+  /connect-auth/v1/account/refresh-token:
+    post:
+      description: Get new Authorization token using the refresh token
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: Bearer <access_token>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountConnectRefreshRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenapiGenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenapiGenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountConnectRefreshResponse'
+          description: OK
+      tags:
+      - Connect APIs
+  
   /connect-auth/v1/oidc-client/{client_id}/refresh:
     post:
       description: Connect Client Auth Refresh
