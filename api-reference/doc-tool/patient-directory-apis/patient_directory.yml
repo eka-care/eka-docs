@@ -11,6 +11,11 @@ paths:
   /profiles/v1/patient/:
     post:
       summary: Create a patient profile
+      description: |
+        Allows businesses to add new patient record by capturing personal, contact, and medical information.
+
+        **Name Field Requirement**:
+              - Either `fln` **must be provided**, or at least `fn` must be included (optionally with `mn` and `ln`).
       tags:
         - Patient
       requestBody:
@@ -22,16 +27,24 @@ paths:
               properties:
                 fn:
                   type: string
-                  description: First name
+                  description: First name (will be converted and stored in lowercase)
                   example: eka
                 mn:
                   type: string
-                  description: First name
+                  description: Middle name (will be converted and stored in lowercase)
                   example: eka
                 ln:
                   type: string
-                  description: Last name
+                  description: Last name (will be converted and stored in lowercase)
                   example: user
+                fln:
+                  type: string
+                  description: Full name (will be converted and stored in lowercase)
+                  example: eka user
+                s:
+                  type: string
+                  description: Salutation (optional)
+                  example: Dr
                 dob:
                   type: string
                   format: date
@@ -46,18 +59,15 @@ paths:
                   enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]
                   description: Blood group of the patient
                   example: A+
-                ccd:
-                  type: string
-                  description: Country code of the patient
-                  example: "+91"
                 mobile:
                   type: string
-                  description: Mobile number of the patient ( without country code )
-                  example: "6000000000"
+                  description: Mobile number of the patient ( with country code )
+                  example: "+916000000000"
                 email:
                   type: string
                   format: email
                   example: testuser@eka.care
+                  description: Email address of the patient (will be converted and stored in lowercase)
                 username:
                   type: string
                   description: Unique UHID| partner id | username for the patient
@@ -66,10 +76,18 @@ paths:
                   type: string
                   description: ABHA address of the patient
                   example: xyz@abdm
+                extras:
+                  type: object
+                  additionalProperties: true
+                  description: Additional arbitrary data as a JSON object
+                  example:
+                    dummyKey: "Dummy Value"
               required:
-                - fn
                 - dob
-                - gen  
+                - gen
+              oneOf:
+              - required: [fn]
+              - required: [fln]
       responses:
         '201':
           description: Patient created successfully
@@ -81,6 +99,7 @@ paths:
                   oid:
                     type: string
                     example: "1876816818618681"
+                    description: Unique identifier for the patient. Use this ID to retrieve the patient profile.
         '400':
           description: Bad request
           content:
@@ -104,6 +123,14 @@ paths:
   /profiles/v1/patient/minified/:
     get:
       summary: List patient profiles
+      description : |
+        Retrieves a paginated list of patient profiles.
+
+        The following fields are **always included** in the response, regardless of the `select` parameter:
+          - `mobile`
+          - `oid`
+          - `username`
+          - `fln`
       tags:
         - Patient
       parameters:
@@ -115,21 +142,27 @@ paths:
             example: EC_1431
         - in: query
           name: pageNo
+          required: true
           schema:
             type: integer
             example: 1
         - in: query
           name: pageSize
+          required: false
           schema:
             type: integer
             example: 100
+          description: |
+            The number of records to return.
+            Default is 500. Maximum is 2000.
         - in: query
           name: select
           required: false
           description: |
-            Comma-separated list of fields to include in the response.
-            Example: `wid,oid`
-            Valid fields: mobile, fln, u_ate, c_ate, arc, dob, gen, oid, wid
+              Comma-separated list of additional fields to include in the response.
+              Example: `abha,dob,gen`
+
+              Valid optional fields:  "arc", "abha", "c_ate", "_additional", "dob", "gen", "u_ate", "wid"
           schema:
             type: string
           example: mobile, fln
@@ -166,9 +199,17 @@ paths:
   /profiles/v1/patient/search:
     get:
       summary: Search patient profiles
-      description: >
+      description: |
         Search patient profiles by **username**, **mobile**, or **full name** (prefix match).
-        The `limit` parameter defines how many results to return (default: 100, max: 100).
+
+        Search patient profiles by exactly **one** of the following (prefix match):
+            - `username`
+            - `mobile`
+            - `name`
+
+        The `limit` parameter controls the number of results fetched internally (default: 100, maximum: 100).
+        
+        However, **the actual number of results returned may be less than `limit`**, because archived profiles are **filtered out after fetch**.
       tags:
         - Patient
       parameters:
@@ -248,6 +289,12 @@ paths:
 
     patch:
       summary: Update patient profile details
+      description: |
+          Payload for updating patient profile.
+
+          **Name Field Requirement**:
+            - Either `fln` **must be provided**, or at least `fn` must be included (optionally with `mn` and `ln`).
+            - If you do not want to change the name, omit all name fields.
       tags:
         - Patient
       parameters:
@@ -281,6 +328,56 @@ paths:
                   enum: [M, F, O]
                   description: Gender
                   example: M
+                mobile:
+                  type: string
+                  description: Mobile number of the patient
+                  example: "+916000000000"
+                fn:
+                  type: string
+                  description: First name (will be converted and stored in lowercase)
+                  example: eka
+                mn:
+                  type: string
+                  description: Middle name (will be converted and stored in lowercase)
+                  example: eka
+                ln:
+                  type: string
+                  description: Last name (will be converted and stored in lowercase)
+                  example: user
+                fln:
+                  type: string
+                  description: Full name (will be converted and stored in lowercase)
+                  example: eka user
+                bloodgroup:
+                  type: string
+                  enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]
+                  description: Blood group of the patient
+                  example: A+
+                s:
+                  type: string
+                  description: Salutation (will be converted and stored in lowercase)
+                  example: Dr
+                email:
+                  type: string
+                  format: email
+                  example: testuser@eka.care
+                  description: Email address of the patient (will be converted and stored in lowercase)
+                abha:
+                  type: string
+                  description: ABHA address of the patient
+                  example: xyz@abdm
+                username:
+                  type: string
+                  description: |
+                    Unique UHID| partner id | username for the patient.
+                    **Note:** username must be unique within a workspace. Please refrain from sending it unless it has changed.
+                  example: UH0001
+                extras:
+                  type: object
+                  additionalProperties: true
+                  description: Additional arbitrary data as a JSON object
+                  example:
+                    dummyKey: "Dummy Value"
       responses:
         '200':
           description: Update Patient profile
@@ -302,7 +399,10 @@ paths:
           description: Server error
 
     delete:
-      summary: Delete patient profile
+      summary: Archive patient profile
+      description: |
+        **Note:** The patient profile is not deleted permanently — it is only archived.
+        Archived profiles can still be retrieved using the `arc=true` query parameter in the retrieve API.
       tags:
         - Patient
       parameters:
@@ -318,11 +418,18 @@ paths:
           schema:
             type: string
             example: 18661861868168
+        - in: query
+          name: arc
+          required: false
+          schema:
+            type: boolean
+            example: true
+            default: false
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Patient profile deleted successfully
+          description: Patient profile archived successfully
           content:
             application/json:
               schema:
