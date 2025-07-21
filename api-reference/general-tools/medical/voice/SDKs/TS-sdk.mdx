@@ -10,6 +10,7 @@ The Eka Care Ekascribe SDK allows you to capture and process audio, generating s
 
 Before getting started, ensure you have:
 
+- Node 14 or higher
 - `npm` or `yarn` for dependency management
 - Access and refresh tokens from Eka Care (optional for some methods)
 - Microphone access via browser permissions
@@ -25,7 +26,9 @@ npm install ekascribe-ts-sdk
 yarn add ekascribe-ts-sdk
 ```
 
-## Step 1: Initialize Ekascribe
+## Usage
+
+### 1. Initialize Ekascribe
 
 Before using any other method, initialize the SDK with access and refresh tokens.
 
@@ -36,14 +39,16 @@ initEkascribe({
 });
 ```
 
-## Step 2: Fetch configurations list
+### 2. Fetch configurations list
 
 Get supported input languages, output formats, and consultation modes.
 
 ```ts
 getEkascribeConfig();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   data?: {
@@ -78,19 +83,21 @@ getEkascribeConfig();
 }
 ```
 
-## Step 3: Start recording
+### 3. Start recording
 
 Start recording with user-selected options.
 
 ```ts
 await startVoiceRecording({
-  mode: "consultation",
+  mode: 'consultation',
   input_language: ['te', 'en'],
   output_format_template: [{ template_id: 'eka_emr_template' }],
-  txn_id: 'abc-123'
+  txn_id: 'abc-123',
 });
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   error_code?: ERROR_CODE;
@@ -101,14 +108,16 @@ await startVoiceRecording({
 };
 ```
 
-## Step 4: Pause recording
+### 4. Pause recording
 
-Use this method to pause voice recording
+Use the method to pause voice recording
 
 ```ts
 await pauseRecording();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   error_code?: ERROR_CODE;
@@ -118,14 +127,16 @@ await pauseRecording();
 };
 ```
 
-## Step 5: Resume recording
+### 5. Resume recording
 
-Use this method to resume voice recording
+Use the method to resume voice recording
 
 ```ts
 await resumeRecording();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   error_code?: ERROR_CODE;
@@ -135,55 +146,62 @@ await resumeRecording();
 };
 ```
 
-## Step 6: End recording
+### 6. End recording
 
-Use this method to end voice recording
+Use the method to end voice recording
 
 ```ts
 await endRecording();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   error_code?: ERROR_CODE;
   status_code: number;
   message: string;
-  failed_files?: ['1.mp3', '2.mp3']; // if there are any failed files 
+  failed_files?: ['1.mp3', '2.mp3']; // if there are any failed files
   total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3']; // list of all audio files generated
 };
 ```
 
-## Step 7: Retry upload recording
+### 7. Retry upload recording
 
 Use this method to retry uploading failed audio files.
 
 ```ts
-await retryUploadRecording({ force_commit: true/false });
+await retryUploadRecording({ force_commit: true / false });
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   error_code?: ERROR_CODE;
   status_code: number;
   message: string;
-  failed_files?: ['1.mp3', '2.mp3']; // if there are any failed files 
-  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3']; // list of all audio files generated
+  failed_files?: ['1.mp3', '2.mp3'];
+  total_audio_files?: ['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
 };
 ```
-#### `force_commit` behavior
 
-- If `force_commit` is set to `true`, the SDK will call the commit API even if some audio files still fail to upload after retrying once.
-- If `force_commit` is set to `false`, the SDK will wait until **all audio files** are uploaded successfully before making the commit request.
+`force_commit` behavior
 
+-- If `force_commit` is set to `true`, the SDK will call the commit API even if some audio files still fail to upload after retrying once.
 
-## Step 8: Cancel recording session
+-- If `force_commit` is set to `false`, the SDK will wait until **all audio files** are uploaded successfully before making the commit request.
 
-Use this method to cancel a recording session.
+### 8. Cancel recording session
+
+Use the method to cancel a recording session.
 
 ```ts
 await cancelRecordingSession({ txn_id: 'abc-123' });
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   status: string;
@@ -197,14 +215,16 @@ await cancelRecordingSession({ txn_id: 'abc-123' });
 }
 ```
 
-## Step 9: Commit transaction
+### 9. Commit transaction
 
 Use this method to commit a transaction that is not yet committed or returned a "commit failed" error in a previous step.
 
 ```ts
 await commitTransactionCall();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   error_code?: ERROR_CODE;
@@ -213,14 +233,16 @@ await commitTransactionCall();
 };
 ```
 
-## Step 10: Stop transaction
+### 10. Stop transaction
 
 Use this method to stop a transaction that has not yet been stopped or returned a "stop failed" error in a previous step.
 
 ```ts
 await stopTransactionCall();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
 {
   error_code?: ERROR_CODE;
@@ -229,55 +251,57 @@ await stopTransactionCall();
 };
 ```
 
-## Step 11: Get output template prescriptions
+### 11. Get output template prescriptions
 
 Use this method to fetch the final generated prescription output for a session.
 
 ```ts
 await getTemplateOutput({ txn_id: 'abc-123' });
 ```
-### Response type: TODO
-add a decoding example code
-```ts
-```
 
-## Step 12: Get total uploaded files
+### 12. Get total uploaded files
 
 Use this method to retrieve all the audio files generated for a specific session.
 
 ```ts
 const files = await getTotalAudioFiles();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
-['1.mp3', '2.mp3', '3.mp3', '4.mp3']; 
+['1.mp3', '2.mp3', '3.mp3', '4.mp3'];
 ```
 
-## Step 13: Get successfully uploaded files
+### 13. Get successfully uploaded files
 
 Use this method to retrieve all the audio files that were uploaded successfully.
 
 ```ts
 const successFiles = await getSuccessfullyUploadedFiles();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
-['3.mp3', '4.mp3']; 
+['3.mp3', '4.mp3'];
 ```
 
-## Step 14: Get failed audio files
+### 14. Get failed audio files
 
 Use this method to retrieve all the audio files that failed to upload.
 
 ```ts
 const failedFiles = await getFailedFiles();
 ```
-### Response type:
+
+- #### Response type:
+
 ```ts
-['1.mp3', '2.mp3']; 
+['1.mp3', '2.mp3'];
 ```
 
-## Step 15: Generic Error Callback
+### 15. Generic Error Callback
 
 Whenever an error occurs in the SDK during voice recording, the following callback will be triggered. You can listen to this to handle errors globally.
 
