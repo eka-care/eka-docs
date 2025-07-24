@@ -105,7 +105,48 @@ paths:
           description: OK
       tags:
       - Connect APIs
-  
+
+  /privacy/v1/user:
+    delete:
+      description: Delete User Privacy Data
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: Bearer <access_token>
+      responses:
+        "202":
+          description: User privacy data deletion accepted
+        "4XX":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: No Record Found
+                  code:
+                    type: integer
+                    example: 400
+          description: Client error
+        "5XX":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: No Record Found
+                  code:
+                    type: integer
+                    example: 500
+          description: Server error
+      tags:
+        - Connect APIs
   /connect-auth/v1/oidc-client/{client_id}/refresh:
     post:
       description: Connect Client Auth Refresh
