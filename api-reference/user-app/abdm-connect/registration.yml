@@ -2609,14 +2609,20 @@ paths:
             application/json:
               schema:
                 properties:
-                  requestID:
-                    description: request id to get the token
+                  request_id:
+                    description: Request ID to track the status
+                    type: string
+                  status:
+                    enum:
+                    - success
+                    - ' processing'
+                    - ' failed'
                     type: string
                 type: object
           description: Accepted
       security:
       - authApiKey: []
-  /abdm/v2/profile/share/{requestID}:
+  /abdm/v2/profile/share/{request_id}:
     get:
       description: Get token number issued by the facility
       parameters:
@@ -2632,7 +2638,7 @@ paths:
           type: string
       - description: request id received from the POST /abdm/v2/profile/share API
         in: path
-        name: requestID
+        name: request_id
         required: true
         schema:
           description: request id received from the POST /abdm/v2/profile/share API
@@ -4309,8 +4315,6 @@ components:
       required:
       - hip_id
       - counter_id
-      - patient
-      - user_x_token
       type: object
     ScanandshareRequest:
       properties:
@@ -4334,10 +4338,14 @@ components:
       properties:
         expiry:
           description: Expiry time for the token
+          examples:
+          - "2025-07-25T18:36:20+05:30"
           format: date-time
-          type: string
+          type:
+          - "null"
+          - string
         request_id:
-          description: Request ID to track the status of the profile share
+          description: Request ID to track the status
           type: string
         status:
           enum:
