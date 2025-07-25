@@ -1216,12 +1216,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericError'
           description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConsentCreateConsentResponse'
-          description: OK
         "204":
           content:
             application/json:
@@ -1303,12 +1297,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericError'
           description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConsentConsentDetailResp'
-          description: OK
         "204":
           content:
             application/json:
@@ -1348,12 +1336,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericError'
           description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConsentListConsentResponse'
-          description: OK
         "204":
           content:
             application/json:
@@ -2579,6 +2561,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerifyResponseType4'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v2/profile/share:
+    post:
+      description: Request to generate appointment token at the facility. <Note> Get
+        the hip_id and counter_id by reading the QR code of the Hospital/Clinic.</Note>
+        <Note>Use the device location for the location data</Note>
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanandshareProfileShareRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  request_id:
+                    description: Request ID to track the status
+                    type: string
+                  status:
+                    enum:
+                    - success
+                    - ' processing'
+                    - ' failed'
+                    type: string
+                type: object
+          description: Accepted
+      security:
+      - authApiKey: []
+  /abdm/v2/profile/share/{request_id}:
+    get:
+      description: Get token number issued by the facility
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: request id received from the POST /abdm/v2/profile/share API
+        in: path
+        name: request_id
+        required: true
+        schema:
+          description: request id received from the POST /abdm/v2/profile/share API
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanandshareResponse'
           description: OK
       security:
       - authApiKey: []
@@ -4211,6 +4293,29 @@ components:
       - yearOfBirth
       - mobile_no
       type: object
+    ScanandshareProfileShareRequest:
+      properties:
+        counter_id:
+          description: Counter ID from QR Code
+          type: string
+        hip_id:
+          description: HIP ID from QR Code
+          type: string
+        location:
+          $ref: '#/components/schemas/HipLocation'
+          description: Location of the user
+        patient:
+          $ref: '#/components/schemas/ScanandsharePatient'
+        request_id:
+          description: Request ID to track the status of the profile share
+          type: string
+        user_x_token:
+          description: user authorization token
+          type: string
+      required:
+      - hip_id
+      - counter_id
+      type: object
     ScanandshareRequest:
       properties:
         counter_id:
@@ -4228,6 +4333,29 @@ components:
       required:
       - counter_id
       - hip_id
+      type: object
+    ScanandshareResponse:
+      properties:
+        expiry:
+          description: Expiry time for the token
+          examples:
+          - "2025-07-25T18:36:20+05:30"
+          format: date-time
+          type:
+          - "null"
+          - string
+        request_id:
+          description: Request ID to track the status
+          type: string
+        status:
+          enum:
+          - success
+          - ' processing'
+          - ' failed'
+          type: string
+        token_number:
+          description: Token number for the scan and share
+          type: string
       type: object
     ScanandshareToken:
       properties:
