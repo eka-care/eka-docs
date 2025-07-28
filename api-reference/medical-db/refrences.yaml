@@ -1,0 +1,460 @@
+openapi: 3.1.0
+info:
+   title: Eka Care Drugs and Labs API
+   description: API for searching pharmaceutical drugs and laboratory tests from Eka medical database
+   version: 1.0.0
+   contact:
+      name: Eka Care Support
+      url: https://eka.care/
+      email: support@eka.care
+tags:
+-  name: drugs
+-  name: labs
+-  name: symptoms
+-  name: diagnoses
+paths:
+   /medical-db/v1/drugs-and-labs:
+      get:
+         summary: Search Drugs and Laboratory Tests
+         description: 'This endpoint returns comprehensive information about pharmaceutical drugs and laboratory tests from the Eka medical database based on search query.
+         
+         
+         The API provides detailed drug information including manufacturer details, dosage information, generic names etc'
+         tags:
+         - drugs
+         - labs
+         parameters:
+         -  name: q
+            in: query
+            schema:
+               type: string
+               description: Search query string for drugs or lab tests
+               title: Query
+            required: true
+            description: Search query string for drugs or lab tests
+         -  name: limit
+            in: query
+            schema:
+               type: integer
+               minimum: 1
+               maximum: 100
+               default: 10
+               title: Limit
+            required: false
+            description: Maximum number of results to return
+         -  name: s_type
+            in: query
+            schema:
+               type: string
+               enum: [drug, lab]
+               default: drug
+               description: Type of search to perform - drug/medicine for pharmaceutical products, lab for laboratory tests
+               title: Search Type
+            required: false
+            description: Type of search to perform - drug/medicine for pharmaceutical products, lab for laboratory tests
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/SearchResponse.a9993e3'
+            '400':
+               description: Bad Request
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+            '404':
+               description: Not Found
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/SearchResponse.a9993e3'
+            '429':
+               description: Too Many Requests
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+   /medical-db/v1/sym-and-diag:
+      get:
+         summary: Search Symptoms and Diagnoses
+         description: 'This endpoint returns comprehensive information about medical symptoms and diagnoses from the Eka medical database based on search query.
+         
+         
+         The API provides detailed symptom and diagnosis information including ICD-10 codes, common names, and medical terminology for healthcare professionals and applications.'
+         tags:
+         - symptoms
+         - diagnoses
+         parameters:
+         -  name: q
+            in: query
+            schema:
+               type: string
+               description: Search query string for symptoms or diagnoses
+               title: Query
+            required: true
+            description: Search query string for symptoms or diagnoses
+         -  name: limit
+            in: query
+            schema:
+               type: integer
+               minimum: 1
+               maximum: 100
+               default: 10
+               description: Maximum number of results to return
+               title: Limit
+            required: false
+            description: Maximum number of results to return
+         -  name: s_type
+            in: query
+            schema:
+               type: string
+               enum: [symptom, diagnosis]
+               default: all
+               description: Type of search to perform - symptom for symptoms only, diagnosis for diagnoses only, all for both
+               title: Search Type
+            required: false
+            description: Type of search to perform - symptom for symptoms only, diagnosis for diagnoses only, all for both
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/SymptomsAndDiagnosesResponse.a9993e3'
+            '400':
+               description: Bad Request
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+            '404':
+               description: Not Found
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/SymptomsAndDiagnosesResponse.a9993e3'
+            '429':
+               description: Too Many Requests
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+components:
+   schemas:
+      SearchResponse.a9993e3:
+         properties:
+            drugs:
+               items:
+                  $ref: '#/components/schemas/Drug.b6c8896'
+               title: Drugs
+               type: array
+               description: Array of drug objects matching the search criteria
+            lab_tests:
+               items:
+                  $ref: '#/components/schemas/LabTest.e57b7a5'
+               title: Lab Tests
+               type: array
+               description: Array of laboratory test objects matching the search criteria
+         required:
+         - drugs
+         - lab_tests
+         title: SearchResponse
+         type: object
+      SymptomsAndDiagnosesResponse.a9993e3:
+         properties:
+            symptoms:
+               items:
+                  $ref: '#/components/schemas/Symptom.b6c8896'
+               title: Symptoms
+               type: array
+               description: Array of symptom objects matching the search criteria
+            diagnoses:
+               items:
+                  $ref: '#/components/schemas/Diagnosis.e57b7a5'
+               title: Diagnoses
+               type: array
+               description: Array of diagnosis objects matching the search criteria
+         required:
+         - symptoms
+         - diagnoses
+         title: SymptomsAndDiagnosesResponse
+         type: object
+      Drug.b6c8896:
+         properties:
+            id:
+               type: string
+               title: ID
+               description: Unique identifier for the drug
+            name:
+               type: string
+               title: Name
+               description: Commercial name of the drug
+            manufacturer_name:
+               type: string
+               title: Manufacturer Name
+               description: Name of the manufacturing company
+            product_type:
+               type: string
+               title: Product Type
+               description: Type/form of the product (Tablet, Syrup, Injection, etc.)
+            product_sku:
+               type: string
+               title: Product SKU
+               description: Product packaging information
+            generic_name:
+               type: string
+               title: Generic Name
+               description: Generic/chemical name with dosage information
+            generic_id:
+               type: string
+               title: Generic ID
+               description: Unique identifier for the generic compound
+            dosage:
+               $ref: '#/components/schemas/Dosage.6a07bef'
+            action_class:
+               type: object
+               title: Action Class
+               description: Drug action classification
+               additionalProperties: true
+            common_name:
+               type: string
+               title: Common Name
+               description: Commonly used name for the drug
+            soa:
+               type: boolean
+               title: SOA
+               description: Schedule of Administration flag
+            drug_name_match:
+               type: boolean
+               title: Drug Name Match
+               description: Whether drug name matches search query exactly
+            include_suggestion:
+               type: boolean
+               title: Include Suggestion
+               description: Whether to include this drug in suggestion lists
+            highlighted_fields:
+               type: object
+               title: Highlighted Fields
+               description: Fields to highlight in search results for better UX
+               additionalProperties: true
+            is_otc:
+               anyOf:
+               -  type: boolean
+               -  type: 'null'
+               default: null
+               title: Is OTC
+               description: Over-the-counter availability status
+         required:
+         - id
+         - name
+         - manufacturer_name
+         - product_type
+         - generic_name
+         - generic_id
+         - common_name
+         - soa
+         - drug_name_match
+         title: Drug
+         type: object
+      Dosage.6a07bef:
+         properties:
+            unit:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Unit
+               description: Dosage unit (tablet, ml, etc.)
+            unit_name:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Unit Name
+               description: Human-readable unit name
+            unit_id:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Unit ID
+               description: Unique identifier for the dosage unit
+            dosage:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Dosage
+               description: Dosage frequency pattern (e.g., 1-1-1 for three times daily)
+            dosage_form:
+               type: string
+               title: Dosage Form
+               description: Form of the medication (tablet, syrup, injection, etc.)
+            df_id:
+               type: string
+               title: Dosage Form ID
+               description: Unique identifier for the dosage form
+            days:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Days
+               description: Duration of treatment in days
+            food:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Food
+               description: Food relation instructions (SF = Sugar Free, etc.)
+         required:
+         - dosage_form
+         - df_id
+         title: Dosage
+         type: object
+      LabTest.e57b7a5:
+         properties:
+            id:
+               type: string
+               title: ID
+               description: Unique identifier for the laboratory test
+            name:
+               type: string
+               title: Name
+               description: Name of the laboratory test
+            description:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Description
+               description: Detailed description of the test
+            category:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Category
+               description: Test category or classification
+            price:
+               anyOf:
+               -  type: number
+               -  type: 'null'
+               default: null
+               title: Price
+               description: Test price in local currency
+            preparation:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Preparation
+               description: Pre-test preparation instructions for patients
+         required:
+         - id
+         - name
+         title: LabTest
+         type: object
+      Symptom.b6c8896:
+         properties:
+            id:
+               type: string
+               title: ID
+               description: Unique identifier for the symptom
+            name:
+               type: string
+               title: Name
+               description: Medical name of the symptom
+            common_name:
+               type: string
+               title: Common Name
+               description: Commonly used name for the symptom that patients understand
+         required:
+         - id
+         - name
+         - common_name
+         title: Symptom
+         type: object
+      Diagnosis.e57b7a5:
+         properties:
+            id:
+               type: string
+               title: ID
+               description: Unique identifier for the diagnosis
+            name:
+               type: string
+               title: Name
+               description: Medical name of the diagnosis
+            common_name:
+               type: string
+               title: Common Name
+               description: Commonly used name for the diagnosis that patients understand
+            icd10_code:
+               type: string
+               title: ICD-10 Code
+               description: International Classification of Diseases 10th Revision code
+            icd10_name:
+               type: string
+               title: ICD-10 Name
+               description: Official ICD-10 description of the diagnosis
+         required:
+         - id
+         - name
+         - common_name
+         - icd10_code
+         - icd10_name
+         title: Diagnosis
+         type: object
+      GenericErr.82b01e4:
+         properties:
+            error:
+               title: Error
+               type: string
+               description: Error message describing what went wrong
+            code:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               default: null
+               title: Code
+               description: HTTP status code or internal error code
+            details:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               title: Details
+               description: Additional error details for debugging
+         required:
+         - error
+         title: GenericErr
+         type: object
+   securitySchemes:
+      BearerAuth:
+         type: http
+         scheme: bearer
+         bearerFormat: JWT
+         description: Enter JWT token for authentication
+servers:
+-  url: https://api.dev.eka.care
+   description: Development Server
+-  url: https://api.eka.care
+   description: Production Server
+security:
+-  BearerAuth: []
