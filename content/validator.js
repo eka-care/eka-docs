@@ -1,102 +1,361 @@
-console.log("validator.js loaded");
+// Mock JQ validation function (replaces server call)
+function mockJQValidation(payload, expression) {
+    try {
+        // Handle root object access
+        if (expression === '.') {
+            return {
+                valid: true,
+                result: payload,
+                error: null
+            };
+        }
 
-// validator.js
-document.addEventListener('DOMContentLoaded', function () {
-    function showValidationResult(valid, result, error) {
-        const out = document.getElementById('jq-validation-output');
-        out.innerHTML = '';
+        // Handle simple property access (.property)
+        if (expression.startsWith('.') && !expression.includes('[') && !expression.includes('|')) {
+            const key = expression.substring(1);
 
-        // Create card container
-        const card = document.createElement('div');
-        card.style.cssText = `
+            if (key === '') {
+                return {
+                    valid: true,
+                    result: payload,
+                    error: null
+                };
+            }
+
+            if (key.includes('.')) {
+                const keys = key.split('.');
+                let current = payload;
+
+                for (const k of keys) {
+                    if (current && typeof current === 'object' && current.hasOwnProperty(k)) {
+                        current = current[k];
+                    } else {
+                        return {
+                            valid: false,
+                            result: null,
+                            error: `Property path '${key}' not found in JSON object`
+                        };
+                    }
+                }
+                return {
+                    valid: true,
+                    result: current,
+                    error: null
+                };
+            }
+
+            if (payload && typeof payload === 'object' && payload.hasOwnProperty(key)) {
+                return {
+                    valid: true,
+                    result: payload[key],
+                    error: null
+                };
+            } else {
+                return {
+                    valid: false,
+                    result: null,
+                    error: `Property '${key}' not found in JSON object`
+                };
+            }
+        }
+
+        // Handle array indexing
+        if (expression.match(/^\.\[\d+]$/)) {
+            const indexMatch = expression.match(/^\.\[(\d+)]$/);
+            if (indexMatch) {
+                const index = parseInt(indexMatch[1]);
+
+                if (Array.isArray(payload)) {
+                    if (index >= 0 && index < payload.length) {
+                        return {
+                            valid: true,
+                            result: payload[index],
+                            error: null
+                        };
+                    } else {
+                        return {
+                            valid: false,
+                            result: null,
+                            error: `Array index ${index} is out of bounds (array length: ${payload.length})`
+                        };
+                    }
+                } else {
+                    return {
+                        valid: false,
+                        result: null,
+                        error: `Cannot index non-array value with [${index}]`
+                    };
+                }
+            }
+        }
+
+        // Handle length
+        if (expression === '.length' || expression === '. | length') {
+            if (Array.isArray(payload)) {
+                return {
+                    valid: true,
+                    result: payload.length,
+                    error: null
+                };
+            } else if (typeof payload === 'object' && payload !== null) {
+                return {
+                    valid: true,
+                    result: Object.keys(payload).length,
+                    error: null
+                };
+            } else {
+                return {
+                    valid: false,
+                    result: null,
+                    error: "Cannot get length of non-array/non-object value"
+                };
+            }
+        }
+
+        // Handle keys
+        if (expression === '. | keys' || expression === '.keys') {
+            if (typeof payload === 'object' && payload !== null) {
+                return {
+                    valid: true,
+                    result: Array.isArray(payload)
+                        ? Array.from({ length: payload.length }, (_, i) => i)
+                        : Object.keys(payload),
+                    error: null
+                };
+            } else {
+                return {
+                    valid: false,
+                    result: null,
+                    error: "Cannot get keys of non-object value"
+                };
+            }
+        }
+
+        // Handle type checking
+        if (expression === '. | type' || expression === '.type') {
+            let type;
+            if (payload === null) type = 'null';
+            else if (Array.isArray(payload)) type = 'array';
+            else if (typeof payload === 'object') type = 'object';
+            else type = typeof payload;
+
+            return {
+                valid: true,
+                result: type,
+                error: null
+            };
+        }
+
+        return {
+            valid: false,
+            result: null,
+            error: `JQ expression '${expression}' is not supported in demo mode. Supported: ., .property, .[index], .length, . | keys, . | type`
+        };
+
+    } catch (error) {
+        return {
+            valid: false,
+            result: null,
+            error: `Error processing expression: ${error.message}`
+        };
+    }
+}
+
+function showValidationResult(valid, result, error) {
+    const out = document.getElementById('jq-validation-output');
+    if (!out) {
+        alert("Error: Output element not found!");
+        return;
+    }
+
+    out.innerHTML = '';
+
+    const resultsContainer = document.createElement('div');
+    resultsContainer.style.cssText = `
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    `;
+
+    // Validation Status Card
+    const statusCard = document.createElement('div');
+    statusCard.style.cssText = `
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        background-color: ${valid ? '#f0f9ff' : '#fef2f2'};
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+
+    const statusTitle = document.createElement('h3');
+    statusTitle.textContent = 'Validation Status';
+    statusTitle.style.cssText = 'margin: 0 0 10px 0; color: #333;';
+    statusCard.appendChild(statusTitle);
+
+    const status = document.createElement('div');
+    status.innerHTML = valid
+        ? '<b style="color: #059669; font-size: 16px;">✓ Valid JQ Expression</b>'
+        : '<b style="color: #dc2626; font-size: 16px;">✗ Invalid JQ Expression</b>';
+    statusCard.appendChild(status);
+
+    resultsContainer.appendChild(statusCard);
+
+    // Result Card
+    if (typeof result !== 'undefined' && result !== null) {
+        const resultCard = document.createElement('div');
+        resultCard.style.cssText = `
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 20px;
-            margin-top: 20px;
-            background-color: #f9f9f9;
+            background-color: #f9fafb;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         `;
 
-        // Add validation status
-        if (typeof valid !== 'undefined') {
-            const status = document.createElement('div');
-            status.innerHTML = valid ? '<b style="color: green;">✓ Valid JQ expression</b>' : '<b style="color: red;">✗ Invalid JQ expression</b>';
-            status.style.marginBottom = '15px';
-            card.appendChild(status);
-        }
+        const resultTitle = document.createElement('h3');
+        resultTitle.textContent = 'JQ Expression Result';
+        resultTitle.style.cssText = 'margin: 0 0 15px 0; color: #333;';
+        resultCard.appendChild(resultTitle);
 
-        // Add result
-        if (typeof result !== 'undefined') {
-            const resultTitle = document.createElement('h4');
-            resultTitle.textContent = 'Result:';
-            resultTitle.style.marginBottom = '10px';
-            card.appendChild(resultTitle);
+        const resultPre = document.createElement('pre');
+        resultPre.textContent = JSON.stringify(result, null, 2);
+        resultPre.style.cssText = `
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            margin: 0;
+            white-space: pre-wrap;
+            color: #dc2626;
+        `;
+        resultCard.appendChild(resultPre);
 
-            const resultPre = document.createElement('pre');
-            resultPre.textContent = JSON.stringify(result, null, 2);
-            resultPre.style.cssText = `
-                background-color: #fff;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 15px;
-                overflow-x: auto;
-                font-family: 'Courier New', monospace;
-            `;
-            card.appendChild(resultPre);
-        }
-
-        // Add error
-        if (error) {
-            const errorDiv = document.createElement('div');
-            errorDiv.innerHTML = `<span style="color: red;"><b>Error:</b> ${error}</span>`;
-            errorDiv.style.marginTop = '10px';
-            card.appendChild(errorDiv);
-        }
-
-        out.appendChild(card);
+        resultsContainer.appendChild(resultCard);
     }
 
-    function validateJQ() {
-        const payload = document.getElementById('payload').value;
-        const expression = document.getElementById('jq-expression-input').value;
+    // Error Card
+    if (error) {
+        const errorCard = document.createElement('div');
+        errorCard.style.cssText = `
+            border: 1px solid #fca5a5;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #fef2f2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        `;
 
-        try {
-            fetch('/validate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    payload: JSON.parse(payload),
-                    expression: expression
-                })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    showValidationResult(data.valid, data.result, data.error);
-                })
-                .catch(err => showValidationResult(false, undefined, err && err.message));
-        } catch (parseError) {
-            showValidationResult(false, undefined, 'Invalid JSON format');
-        }
+        const errorTitle = document.createElement('h3');
+        errorTitle.textContent = 'Error Details';
+        errorTitle.style.cssText = 'margin: 0 0 10px 0; color: #dc2626;';
+        errorCard.appendChild(errorTitle);
+
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = `<span style="color: #dc2626; font-weight: 500;">${error}</span>`;
+        errorCard.appendChild(errorDiv);
+
+        resultsContainer.appendChild(errorCard);
     }
 
-    // Expose validateJQ function globally
-    window.validateJQ = validateJQ;
+    out.appendChild(resultsContainer);
+}
 
-    // Wait for form to be available
-    function attachFormHandler() {
-        const form = document.getElementById('submit');
-        if (form) {
-            alert("Form found, attaching handler!");
-            form.addEventListener('click', function (e) {
-                alert("Form found and handler attached!");
-                validateJQ();
-            });
-        } else {
-            // Retry after 100ms
-            setTimeout(attachFormHandler, 100);
-        }
+function validateJQ() {
+    const payloadInput = document.getElementById('payload');
+    const expressionInput = document.getElementById('jq-expression-input');
+
+    if (!payloadInput || !expressionInput) {
+        showValidationResult(false, undefined, 'Form elements not found');
+        return;
     }
 
-    // Start checking for form
-    attachFormHandler();
+    const payload = payloadInput.value.trim();
+    const expression = expressionInput.value.trim();
+
+    if (!payload) {
+        showValidationResult(false, undefined, 'Please enter a JSON payload');
+        return;
+    }
+
+    if (!expression) {
+        showValidationResult(false, undefined, 'Please enter a JQ expression');
+        return;
+    }
+
+    try {
+        const parsedPayload = JSON.parse(payload);
+        const result = mockJQValidation(parsedPayload, expression);
+        showValidationResult(result.valid, result.result, result.error);
+    } catch (parseError) {
+        showValidationResult(false, undefined, 'Invalid JSON format in payload');
+    }
+}
+
+// Make validateJQ available globally
+window.validateJQ = validateJQ;
+
+function handleSubmitClick(e) {
+    e.preventDefault();
+    validateJQ();
+}
+
+// Helper function to find the submit button in the event path
+function findSubmitButton(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.id === 'submit') {
+            return current;
+        }
+        current = current.parentElement;
+    }
+    return null;
+}
+
+// Initialize validator button
+function initializeValidatorButton() {
+    const submitButton = document.getElementById('submit');
+
+    if (submitButton) {
+        submitButton.removeEventListener('click', handleSubmitClick);
+        submitButton.addEventListener('click', handleSubmitClick);
+        submitButton.style.border = "2px solid green";
+        return true;
+    }
+    return false;
+}
+
+// Try initialization with retries
+function tryInitialization() {
+    let attempts = 0;
+    const maxAttempts = 50;
+
+    const intervalId = setInterval(() => {
+        attempts++;
+
+        if (initializeValidatorButton() || attempts >= maxAttempts) {
+            clearInterval(intervalId);
+        }
+    }, 100);
+}
+
+// Enhanced event delegation
+document.addEventListener('click', function(e) {
+    const submitButton = findSubmitButton(e.target);
+
+    if (submitButton) {
+        e.preventDefault();
+        validateJQ();
+    }
 });
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        tryInitialization();
+    });
+} else {
+    tryInitialization();
+}
