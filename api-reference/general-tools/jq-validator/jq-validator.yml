@@ -1,0 +1,45 @@
+openapi: 3.0.0
+info:
+  title: JQ Validator API
+  description: API for validating and evaluating JQ expressions against JSON payloads
+  version: 1.0.0
+paths:
+  /validate:
+    post:
+      summary: Validate and evaluate a JQ expression
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payload
+                - expression
+              properties:
+                payload:
+                  type: object
+                  description: The JSON payload to evaluate against
+                expression:
+                  type: string
+                  description: The JQ expression to validate and execute
+      responses:
+        '200':
+          description: Successful validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: Whether the JQ expression is syntactically valid
+                  result:
+                    type: object
+                    description: The result of evaluating the expression
+                  success:
+                    type: boolean
+                    description: Whether the evaluation was successful
+                  error:
+                    type: string
+                    description: Error message if validation or evaluation failed
