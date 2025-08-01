@@ -1074,23 +1074,9 @@ paths:
                     Type of case
                   example: "OPConsultation"
               required:
-                - display_name
-                - type
       responses:
-        "200":
-          description: Case updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Case updated successfully"
-                  case_id:
-                    type: string
-                    example: "case_id_1"
-
+        "204":
+          description: Case updated successfully (no content)
         "400":
           description: Bad request (missing/invalid fields)
           content:
@@ -1156,7 +1142,7 @@ paths:
         - Cases
       summary: List Cases
       description: >-
-        This endpoint returns a list of all cases associated with a patient.
+        This endpoint returns a list of all cases.
         Results are always ordered by ascending value of `updated_at`.
 
 
@@ -1176,9 +1162,11 @@ paths:
           description: Token to fetch the next page of results
         - in: query
           name: u_at__gt
-          required: false
           schema:
-            type: integer
+            type: string
+            nullable: true
+            example: 1614556800
+          required: false
           description: >
             Return only records with `updated_at` greater than this value (used for incremental sync)
 
@@ -1240,7 +1228,7 @@ paths:
         - Cases
       summary: Create Case
       description: >-
-        This endpoint creates a new medical case associated with a patient.
+        This endpoint creates a new medical case.
 
       parameters:
         - in: header
@@ -1248,7 +1236,7 @@ paths:
           required: true
           schema:
             type: string
-          description: Patient ID associated with the case
+          description: Patient ID
       requestBody:
         required: true
         content:
@@ -1289,6 +1277,16 @@ paths:
                     type: string
                     description: Unique identifier for the newly created case
                     example: "case_12345"
+        "409":
+          description: Case already Exist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Case Already Exist"
         "400":
           description: Bad request – missing or invalid fields in the request body
           content:
