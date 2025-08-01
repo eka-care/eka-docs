@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: Fetch Assessments V2 API
+  version: 2.0.0
+servers:
+  - description: Production
+    url: https://api.eka.care
+  - description: Staging
+    url: https://api.dev.eka.care
+
+paths:
+  /assessment/api/fetch_interviews/v2/:
+    get:
+      summary: Fetch Grouped Assessments
+      description: >
+        Fetch assessments from both Self-Assessment and Smartcheck modules.
+      parameters:
+        - name: practitioner_uuid
+          in: query
+          description: The UUID of the practitioner(doctor oid) to filter assessments by.
+          required: false
+          schema:
+            type: string
+            example: "161467756044223"
+        - name: patient_uuid
+          in: query
+          description: The UUID of the patient(patient_uuid) to filter assessments by.
+          required: false
+          schema:
+            type: string
+            example: "02b66c91-ce53-45b7-8794-14f4a640f9c2"
+        - name: unique_identifier
+          in: query
+          description: A unique identifier(patient_oid) associated with the assessment.
+          required: false
+          schema:
+            type: string
+            example: "173765761279832"
+        - name: transaction_id
+          in: query
+          description: The transaction ID for a specific assessment session.
+          required: false
+          schema:
+            type: string
+            example: "txn_aBcDeFgHiJkLmNoP"
+        - name: wfids
+          in: query
+          description: Comma-separated list of workflow IDs to filter by.
+          required: false
+          schema:
+            type: string
+            example: "101,102"
+        - name: status
+          in: query
+          description: The status of the assessments to fetch.
+          required: false
+          schema:
+            type: string
+            enum: [NEW, IN_REVIEW, COMPLETED, PARTIAL]
+            default: COMPLETED
+      responses:
+        '200':
+          description: A successful response containing the grouped assessments.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    description: A list of assessment groups.
+                    items:
+                      type: object
+                      properties:
+                        practitioner_uuid:
+                          type: string
+                          description: The practitioner UUID for this group.
+                        patient_uuid:
+                          type: string
+                          description: The patient UUID for this group.
+                        unique_identifier:
+                          type: string
+                          description: The unique identifier for this group.
+                        transaction_id:
+                          type: string
+                          description: The transaction ID for this group.
+                        conversations:
+                          type: array
+                          description: A list of individual assessments within this group.
+                          items:
+                            type: object
+                            properties:
+                              conversationid:
+                                type: string
+                                description: The unique ID for the assessment, prefixed with 'sa_' or 'sn_'.
+                                example: "sa_123456789"
+                              created_at:
+                                type: string
+                                format: date-time
+                                description: The creation timestamp of the assessment.
+                                example: "2023-07-15T10:30:00Z"
+              example:
+                conversations:
+                  - practitioner_uuid: "161467756044223"
+                    patient_uuid: "02b66c91-ce53-45b7-8794-14f4a640f9g4"
+                    unique_identifier: "173765761279834"
+                    transaction_id: "txn_aBcDeFgHiJkLmNoP"
+                    conversations:
+                      - conversationid: "sa_123456789"
+                        created_at: "2023-07-15T10:30:00Z"
+                      - conversationid: "sn_987654321"
+                        created_at: "2023-07-15T10:35:00Z"
+        '400':
+          description: Validation error, such as a missing required ID in the token or an invalid status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "patient_uuid is required."
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "An unexpected error occurred, sit tight, we are fixing.."
+      security:
+        - apiKeyAuth: []
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,250 @@
+openapi: "3.0.1"
+info:
+  title: voice-batch
+  version: "2024-12-01T12:09:09Z"
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+paths:
+  /voice/upload?mode={mode}&txnid={txnid}:
+    post:
+      description: |-
+        This API accepts audio files as input, transcribes the spoken content into text using advanced speech-to-text processing, and converts the transcribed data into a structured FHIR-compliant JSON format.
+
+        The generated FHIR JSON can be used for seamless integration with healthcare applications, ensuring compliance with healthcare data standards.
+      deprecated: true
+      parameters:
+        - name: txnid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - dictation
+              - consultation
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: string
+              format: binary
+
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "401":
+          description: Unauthorized. Invalid or missing authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unauthorized"
+      security:
+        - auth: []
+  /health/api/v1/fhir/retrieve:
+    get:
+      summary: Retrieve the prased data for the upload audio file
+      description: Retrieve a parsed transcibes based on the given identifier
+      parameters:
+        - name: identifier
+          in: query
+          required: true
+          description: The unique identifier for the health record is care_context_id.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful retrieval of health records.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: Bundle
+                  type:
+                    type: string
+                    example: document
+                  link:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        relation:
+                          type: string
+                  entry:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        resource:
+                          type: object
+                          properties:
+                            author:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  reference:
+                                    type: string
+                            date:
+                              type: string
+                              format: date-time
+                            extension:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  url:
+                                    type: string
+                                  valueString:
+                                    type: string
+                            id:
+                              type: string
+                            identifier:
+                              type: object
+                              properties:
+                                system:
+                                  type: string
+                                value:
+                                  type: string
+                            meta:
+                              type: object
+                              properties:
+                                lastUpdated:
+                                  type: string
+                                  format: date-time
+                            resourceType:
+                              type: string
+                            section:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  entry:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        reference:
+                                          type: string
+                                  title:
+                                    type: string
+                            status:
+                              type: string
+                            subject:
+                              type: object
+                              properties:
+                                reference:
+                                  type: string
+                            title:
+                              type: string
+                            type:
+                              type: object
+                              properties:
+                                text:
+                                  type: string
+                  id:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      versionId:
+                        type: string
+                      lastUpdated:
+                        type: string
+                        format: date-time
+                      profile:
+                        type: array
+                        items:
+                          type: string
+                      security:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                            display:
+                              type: string
+                            system:
+                              type: string
+                  identifier:
+                    type: object
+                    properties:
+                      system:
+                        type: string
+                      value:
+                        type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        "404":
+          description: when request identifier, hip_id, health_id has no data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: Bundle
+                  type:
+                    type: string
+                    example: document
+                  meta:
+                    type: object
+                    properties:
+                      lastUpdated:
+                        type: string
+                        format: date-time
+        "401":
+          description: Unauthorized. Invalid or missing authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unauthorized"
+      security:
+        - auth: []
+
+components:
+  schemas:
+    Success:
+      title: Successful reponse
+      type: object
+      properties:
+        message:
+          type: string
+        filename:
+          type: string
+      example:
+        message: Upload successful!
+        filename: voice-2rx.m4a
+    Unauthorized:
+      title: Unauthorized. Invalid or missing authentication.
+      type: object
+      properties:
+        message:
+          type: string
+          example: Unauthorized
+    Empty:
+      title: "Empty Schema"
+      type: "object"
+  securitySchemes:
+    auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

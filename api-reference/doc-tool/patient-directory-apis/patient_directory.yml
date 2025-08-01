@@ -1,0 +1,689 @@
+openapi: 3.0.3
+info:
+  title: Patient APIs
+  description: Patient Directory CRUD
+  version: 1.0.0
+
+servers:
+  - url: https://api.eka.care
+
+paths:
+  /profiles/v1/patient/:
+    post:
+      summary: Create a patient profile
+      description: |
+        Allows businesses to add new patient record by capturing personal, contact, and medical information.
+
+        **Name Field Requirement**:
+              - Either `fln` **must be provided**, or at least `fn` must be included (optionally with `mn` and `ln`).
+      tags:
+        - Patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fn:
+                  type: string
+                  description: First name (will be converted and stored in lowercase)
+                  example: eka
+                mn:
+                  type: string
+                  description: Middle name (will be converted and stored in lowercase)
+                  example: eka
+                ln:
+                  type: string
+                  description: Last name (will be converted and stored in lowercase)
+                  example: user
+                fln:
+                  type: string
+                  description: Full name (will be converted and stored in lowercase)
+                  example: eka user
+                s:
+                  type: string
+                  description: Salutation (optional)
+                  example: Dr
+                dob:
+                  type: string
+                  format: date
+                  example: "2000-01-02"
+                gen:
+                  type: string
+                  enum: [M, F, O]
+                  description: Gender
+                  example: M
+                bloodgroup:
+                  type: string
+                  enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]
+                  description: Blood group of the patient
+                  example: A+
+                mobile:
+                  type: string
+                  description: Mobile number of the patient ( with country code )
+                  example: "+916000000000"
+                email:
+                  type: string
+                  format: email
+                  example: testuser@eka.care
+                  description: Email address of the patient (will be converted and stored in lowercase)
+                username:
+                  type: string
+                  description: Unique UHID| partner id | username for the patient
+                  example: UH0001
+                abha:
+                  type: string
+                  description: ABHA address of the patient
+                  example: xyz@abdm
+                extras:
+                  type: object
+                  additionalProperties: true
+                  description: Additional arbitrary data as a JSON object
+                  example:
+                    dummyKey: "Dummy Value"
+              required:
+                - dob
+                - gen
+              oneOf:
+              - required: [fn]
+              - required: [fln]
+      responses:
+        '201':
+          description: Patient created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oid:
+                    type: string
+                    example: "1876816818618681"
+                    description: Unique identifier for the patient. Use this ID to retrieve the patient profile.
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: androiddoc
+      security:
+        - bearerAuth: []
+
+  /profiles/v1/patient/minified/:
+    get:
+      summary: List patient profiles
+      description : |
+        Retrieves a paginated list of patient profiles.
+
+        The following fields are **always included** in the response, regardless of the `select` parameter:
+          - `mobile`
+          - `oid`
+          - `username`
+          - `fln`
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: query
+          name: pageNo
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            example: 100
+          description: |
+            The number of records to return.
+            Default is 500. Maximum is 2000.
+        - in: query
+          name: select
+          required: false
+          description: |
+              Comma-separated list of additional fields to include in the response.
+              Example: `abha,dob,gen`
+
+              Valid optional fields:  "arc", "abha", "c_ate", "dob", "gen", "u_ate", "wid"
+          schema:
+            type: string
+          example: mobile, fln
+        - in: query
+          name: from
+          required: false
+          description: |
+            Get profiles created after this time
+            Format: epoch timestamp
+            Example: 1750745358
+          schema:
+            type: integer
+          example: 1750745358
+        - in: query
+          name: arc
+          required: false
+          description: |
+            Include archived profiles in the response.
+            Default is `false`. Set to `true` to include archived profiles.
+          schema:
+            type: boolean
+          example: false
+
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of patient profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientProfileMin'
+                  currPageMeta:
+                    type: object
+                    properties:
+                      currPageNo:
+                        type: integer
+                        example: 1
+                      pageSize:
+                        type: integer
+                        example: 10
+                      nextPage:
+                        type: integer
+                        example: 2
+        '500':
+          description: Server error
+
+  /profiles/v1/patient/search:
+    get:
+      summary: Search patient profiles
+      description: |
+        Search patient profiles by **username**, **mobile**, or **full name** (prefix match).
+
+        Search patient profiles by exactly **one** of the following (prefix match):
+            - `username`
+            - `mobile`
+            - `name`
+
+        The `limit` parameter controls the number of results fetched internally (default: 100, maximum: 100).
+        
+        However, **the actual number of results returned may be less than `limit`**, because archived profiles are **filtered out after fetch**.
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: query
+          name: mobile
+          schema:
+            type: string
+            example: "121"
+        - in: query
+          name: username
+          schema:
+            type: string
+            example: "EK001"
+        - in: query
+          name: name
+          schema:
+            type: string
+            example: "Eka"
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            example: 10
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of patient profiles matching search query (PREfix search)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchPatientProfile'
+        '500':
+          description: Server error
+
+  /profiles/v1/patient/{oid}:
+    get:
+      summary: Retrieve patient profile
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: path
+          name: oid
+          required: true
+          schema:
+            type: string
+            example: 18661861868168
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Patient profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '500':
+          description: Server error
+
+    patch:
+      summary: Update patient profile details
+      description: |
+          Payload for updating patient profile.
+
+          **Name Field Requirement**:
+            - Either `fln` **must be provided**, or at least `fn` must be included (optionally with `mn` and `ln`).
+            - If you do not want to change the name, omit all name fields.
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: path
+          name: oid
+          required: true
+          schema:
+            type: string
+            example: 18661861868168
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dob:
+                  type: string
+                  format: date
+                  example: "2000-01-02"
+                gen:
+                  type: string
+                  enum: [M, F, O]
+                  description: Gender
+                  example: M
+                mobile:
+                  type: string
+                  description: Mobile number of the patient
+                  example: "+916000000000"
+                fn:
+                  type: string
+                  description: First name (will be converted and stored in lowercase)
+                  example: eka
+                mn:
+                  type: string
+                  description: Middle name (will be converted and stored in lowercase)
+                  example: eka
+                ln:
+                  type: string
+                  description: Last name (will be converted and stored in lowercase)
+                  example: user
+                fln:
+                  type: string
+                  description: Full name (will be converted and stored in lowercase)
+                  example: eka user
+                bloodgroup:
+                  type: string
+                  enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]
+                  description: Blood group of the patient
+                  example: A+
+                s:
+                  type: string
+                  description: Salutation (will be converted and stored in lowercase)
+                  example: Dr
+                email:
+                  type: string
+                  format: email
+                  example: testuser@eka.care
+                  description: Email address of the patient (will be converted and stored in lowercase)
+                abha:
+                  type: string
+                  description: ABHA address of the patient
+                  example: xyz@abdm
+                username:
+                  type: string
+                  description: |
+                    Unique UHID| partner id | username for the patient.
+                    **Note:** username must be unique within a workspace. Please refrain from sending it unless it has changed.
+                  example: UH0001
+                extras:
+                  type: object
+                  additionalProperties: true
+                  description: Additional arbitrary data as a JSON object
+                  example:
+                    dummyKey: "Dummy Value"
+      responses:
+        '200':
+          description: Update Patient profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile updated successfully"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+        '500':
+          description: Server error
+
+    delete:
+      summary: Archive patient profile
+      description: |
+        **Note:** The patient profile is not deleted permanently — it is only archived.
+        Archived profiles can still be retrieved using the `arc=true` query parameter in the retrieve API.
+      tags:
+        - Patient
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: path
+          name: oid
+          required: true
+          schema:
+            type: string
+            example: 18661861868168
+        - in: query
+          name: arc
+          required: false
+          schema:
+            type: boolean
+            example: true
+            default: false
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Patient profile archived successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile archived successfully"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/404Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PatientProfile:
+      type: object
+      properties:
+        oid:
+          type: string
+          example: "175074536120088"
+        wid:
+          type: string
+          example: "77088166996724"
+        ps:
+          type: string
+          example: "P"
+        c_ate:
+          type: integer
+          example: 1750745358
+        u_ate:
+          type: integer
+          example: 1750745358
+        gen:
+          type: string
+          example: "M"
+        dob:
+          type: string
+          format: date
+          example: "2000-01-02"
+        fn:
+          type: string
+          example: "Eka"
+        ln:
+          type: string
+          example: "User"
+        fln:
+          type: string
+          example: "Eka User"
+        bg:
+          type: string
+          example: "B+"
+        mobile:
+          type: string
+          example: "+911201201201"
+
+    PatientProfileMin:
+      type: object
+      properties:
+        mobile:
+          type: string
+          example: "1212121212"
+        fln:
+          type: string
+          example: "Test user"
+        u_ate:
+          description: "updated at epoch"
+          type: number
+          example: 1750918049
+        c_ate:
+          description: "created at epoch"
+          type: number
+          example: 1750918049
+        arc:
+          type: boolean
+          example: false
+        dob:
+          type: string
+          format: date
+          example: "2000-01-02"
+        gen:
+          type: string
+          example: "M"
+        oid:
+          type: string
+          example: "175074536120088"
+        wid:
+          type: string
+          example: "77088111111111"
+
+    ListPatientProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "170563111111111"
+        uuid:
+          type: string
+        profile:
+          type: object
+          properties:
+            personal:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Eka User"
+                age:
+                  type: object
+                  properties:
+                    dob:
+                      type: string
+                      format: date
+                      example: "1998-02-12"
+                phone:
+                  type: object
+                  properties:
+                    c:
+                      type: string
+                      example: "+91"
+                    n:
+                      type: string
+                      example: "94003XXXXX"
+                onApp:
+                  type: boolean
+                  example: false
+                gender:
+                  type: string
+                  example: "M"
+        formData:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+                example: "UHID"
+              type:
+                type: string
+                example: "string"
+              key:
+                type: string
+                example: "uhid"
+              value:
+                type: string
+                example: "EK132"
+        archived:
+          type: boolean
+          example: false
+        link:
+          type: array
+          items:
+            type: string
+          example: []
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-19T04:01:03.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-19T04:01:14.000000Z"
+        workspace_id:
+          type: string
+          example: "b-111111111111"
+        referredBy:
+          type: string
+          nullable: true
+          example: null
+        refer_id:
+          type: string
+          nullable: true
+          example: null
+        relations:
+          type: array
+          items:
+            type: object
+          example: []
+        visits:
+          type: array
+          items:
+            type: object
+          example: []
+        docids:
+          type: array
+          items:
+            type: object
+          example: []
+
+
+    SearchPatientProfile:
+      type: array
+      items:
+        type: object
+        properties:
+          username:
+            type: string
+            example: "1111111111"
+          mobile:
+            type: string
+            example: "98765XXXXX"
+          oid:
+            type: string
+            example: "17552615662165"
+          fln:
+            type: string
+            example: "Veena"
+
+    400Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Invalid Gender Enum"
+            code:
+              type: string
+              example: "invalid_request"
+    
+    404Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Not found"  
+        code:
+          type: string
+          example: "profile_not_found"

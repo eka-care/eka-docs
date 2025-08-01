@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  version: 1.0.0
+servers:
+  - description: Production
+    url: https://api.eka.care
+  - description: Stage/Sandbox
+    url: https://api.dev.eka.care
+
+paths:
+  /assessment/api/v1/init/:
+    post:
+      tags:
+        - Assessments
+      summary: Step 1. Initialization
+      description: >-
+        This API is used to initialize the assessment. It returns an assessment_id that uniquely identifies the assessment session.
+        <Warning>This API must be called to initiate a user assessment</Warning>
+
+      security:
+        - authApiKey: []
+      
+      parameters:
+        - $ref: '#/components/parameters/client-id'
+        - $ref: '#/components/parameters/locale'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: Request Body
+              description: >-
+                The request body should contain the user information.
+                Users can either provide the date of birth or age using `dob` and `age` fields respectively, along with gender inside `user_info`.
+
+              properties:
+                user_info:
+                  type: object
+                  oneOf:
+                    - $ref: '#/components/schemas/AS-Age-Gender'
+                      title: MandatoryAgeGender
+                    - $ref: '#/components/schemas/AS-Dob-Gender'
+                      title: MandatoryDobGender
+                workflow_id:
+                  type: integer
+                  description: >-
+                    A unique id to identify the assessment to be taken. [Detailed list of Assessment Workflows](../../assessment-workflows)
+                  default: 1000
+                  example: 1000
+                practitioner_uuid:
+                  type: string
+                  description: >-
+                    A unique practitioner uuid to identify the practitioner to associate an assessment with, if applicable.
+                patient_uuid:
+                  type: string
+                  description: >-
+                    A unique patient uuid to identify the patient, if applicable.
+                unique_identifier:
+                  type: string
+                  description: >-
+                    A unique patient identifier to identify the patient's profile to associate as assessment with, if applicable.
+                transaction_id:
+                  type: string
+                  description: >-
+                    The transaction ID for a specific assessment session, that you wish to give.
+              required:
+                - user_info
+                - workflow_id
+              example:
+                user_info:
+                  dob: "2001-03-14"
+                  age: 23
+                  gender: "m"
+                workflow_id: 1000
+                practitioner_uuid: "TEST-DR-123"
+                patient_uuid: "TEST-PATIENT-123"
+                unique_identifier: "TEST-PATIENT-UNIQUE-123"
+                transaction_id: "txn_1234567890"
+      
+      responses:
+        '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AS-init-200'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-400'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error-500'
+
+components:
+  schemas:
+    gender:
+      type: string
+      enum: [M, F, O]
+      example: "M"
+    age:
+      type: integer
+      minimum: 0
+      maximum: 130
+      example: 23
+    dob:
+      type: string
+      format: date
+      example: "2001-01-01"
+      description: DOB should be in the form of "YYYY-MM-DD"
+    AS-Age-Gender:
+      description: >-
+        The user information should contain atleast the age of the user.
+      type: object
+      title: Gender and Age
+      properties:
+        gender:
+          $ref: '#/components/schemas/gender'
+        age:
+          $ref: '#/components/schemas/age'
+        dob:
+          $ref: '#/components/schemas/dob'
+      required:
+        - age
+        - gender
+    AS-Dob-Gender:
+      type: object
+      title: "Gender & Dob"
+      description: >-
+        The user information should contain atleast the dob of the user.
+      properties:
+        gender:
+          $ref: '#/components/schemas/gender'
+        dob:
+          $ref: '#/components/schemas/dob'
+        age:
+          $ref: '#/components/schemas/age'
+      required:
+        - dob
+        - gender
+    AS-init-200:
+      type: object
+      description: >-
+        The response object contains the assessment_id that uniquely identifies the assessment session.
+      properties:
+        assessment_id:
+          type: string
+          description: >-
+            A unique identifier for the assessment session.
+      required:
+        - assessment_id
+      example:  # Example for the entire object
+        assessment_id: sn_121212121218718
+    Generic-Error:
+      type: object
+      properties:
+        error_code:
+          type: string
+        display_message:
+          type: string
+        message:
+          type: string
+    Error-400:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: bad_request
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+    Error-500:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Generic-Error'
+      example:
+        error:
+          error_code: server_error
+          display_message: (Generic User friendly message)
+          message: (Server error message)
+
+  parameters:
+    client-id: 
+      name: client-id
+      in: header
+      required: true
+      description: >-
+        Any unique string to identify the logged in developer.
+      schema:
+        type: string
+      example: test-client
+    locale:
+      name: locale
+      in: header
+      description: >-
+        Locale is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively with default being `en`.
+      schema:
+        type: string
+        enum: [en, hi, kn]
+        example: en
+
+  securitySchemes:
+    authApiKey:
+      in: header
+      name: auth
+      description: >-
+        The authentication token of the developer (generated using Authorization API).
+      type: apiKey

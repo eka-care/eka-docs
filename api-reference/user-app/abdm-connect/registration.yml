@@ -1216,12 +1216,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericError'
           description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConsentCreateConsentResponse'
-          description: OK
         "204":
           content:
             application/json:
@@ -1303,12 +1297,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericError'
           description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConsentConsentDetailResp'
-          description: OK
         "204":
           content:
             application/json:
@@ -1348,12 +1336,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericError'
           description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConsentListConsentResponse'
-          description: OK
         "204":
           content:
             application/json:
@@ -1650,6 +1632,42 @@ paths:
           description: No Content
       security:
       - authApiKey: []
+  /abdm/v1/hip/care-context/data/on-fetch:
+    post:
+      description: API for HIP to push care context FHIR data to HIU
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsHipDataPushRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
   /abdm/v1/hip/onboard:
     post:
       description: Onboard facility
@@ -1709,6 +1727,42 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ScanandshareHipScanAndShareOnRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
+  /abdm/v1/hiu/care-context/data/on-push:
+    post:
+      description: API for HIU to push care context FHIR parsing status
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsHiuDataPushRequest'
       responses:
         4XX:
           content:
@@ -1943,9 +1997,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties:
-                  type: string
-                type: object
+                $ref: '#/components/schemas/AssetQRData'
           description: OK
       security:
       - authApiKey: []
@@ -2512,6 +2564,106 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v2/profile/share:
+    post:
+      description: Request to generate appointment token at the facility. <Note> Get
+        the hip_id and counter_id by reading the QR code of the Hospital/Clinic.</Note>
+        <Note>Use the device location for the location data</Note>
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: OID is used to Identify the user.
+        in: query
+        name: oid
+        schema:
+          description: OID is used to Identify the user.
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanandshareProfileShareRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  request_id:
+                    description: Request ID to track the status
+                    type: string
+                  status:
+                    enum:
+                    - success
+                    - ' processing'
+                    - ' failed'
+                    type: string
+                type: object
+          description: Accepted
+      security:
+      - authApiKey: []
+  /abdm/v2/profile/share/{request_id}:
+    get:
+      description: Get token number issued by the facility
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: request id received from the POST /abdm/v2/profile/share API
+        in: path
+        name: request_id
+        required: true
+        schema:
+          description: request id received from the POST /abdm/v2/profile/share API
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanandshareResponse'
+          description: OK
+      security:
+      - authApiKey: []
 components:
   schemas:
     ApproveConsent:
@@ -2555,6 +2707,35 @@ components:
       required:
       - id
       - consent_artefacts
+      type: object
+    AssetQRData:
+      properties:
+        address:
+          type: string
+        dist name:
+          type: string
+        distlgd:
+          type: string
+        district_name:
+          type: string
+        dob:
+          type: string
+        gender:
+          type: string
+        hid:
+          type: string
+        hidn:
+          type: string
+        mobile:
+          type: string
+        name:
+          type: string
+        phr:
+          type: string
+        state name:
+          type: string
+        statelgd:
+          type: string
       type: object
     ChangeRequest:
       properties:
@@ -3875,6 +4056,67 @@ components:
           - NoDataAvailable
           type: string
       type: object
+    RecordsDHPubKey:
+      properties:
+        expiry:
+          type: string
+        key_value:
+          type: string
+        parameters:
+          type: string
+      type: object
+    RecordsEntry:
+      properties:
+        care_context_id:
+          type: string
+        checksum:
+          description: Checksum of the non encrypted plain text fhir data
+          type: string
+        content:
+          description: Encrypted content
+          type: string
+        media:
+          enum:
+          - application/fhir+json
+          type: string
+      type: object
+    RecordsHipDataPushRequest:
+      properties:
+        entries:
+          items:
+            $ref: '#/components/schemas/RecordsEntry'
+          type:
+          - array
+          - "null"
+        key_information:
+          $ref: '#/components/schemas/RecordsKeyMaterial'
+        transaction_id:
+          type: string
+      type: object
+    RecordsHiuDataPushRequest:
+      properties:
+        consent_id:
+          type: string
+        status_response:
+          items:
+            $ref: '#/components/schemas/RecordsStatusResponse'
+          type:
+          - array
+          - "null"
+        transaction_id:
+          type: string
+      type: object
+    RecordsKeyMaterial:
+      properties:
+        crypto_alg:
+          type: string
+        curve:
+          type: string
+        dh_public_key:
+          $ref: '#/components/schemas/RecordsDHPubKey'
+        nonce:
+          type: string
+      type: object
     RecordsResponse:
       properties:
         care_contexts:
@@ -3885,6 +4127,15 @@ components:
           - "null"
       required:
       - care_contexts
+      type: object
+    RecordsStatusResponse:
+      properties:
+        care_context_id:
+          type: string
+        description:
+          type: string
+        success:
+          type: boolean
       type: object
     RegistrationEkaIds:
       properties:
@@ -4042,6 +4293,29 @@ components:
       - yearOfBirth
       - mobile_no
       type: object
+    ScanandshareProfileShareRequest:
+      properties:
+        counter_id:
+          description: Counter ID from QR Code
+          type: string
+        hip_id:
+          description: HIP ID from QR Code
+          type: string
+        location:
+          $ref: '#/components/schemas/HipLocation'
+          description: Location of the user
+        patient:
+          $ref: '#/components/schemas/ScanandsharePatient'
+        request_id:
+          description: Request ID to track the status of the profile share
+          type: string
+        user_x_token:
+          description: user authorization token
+          type: string
+      required:
+      - hip_id
+      - counter_id
+      type: object
     ScanandshareRequest:
       properties:
         counter_id:
@@ -4059,6 +4333,29 @@ components:
       required:
       - counter_id
       - hip_id
+      type: object
+    ScanandshareResponse:
+      properties:
+        expiry:
+          description: Expiry time for the token
+          examples:
+          - "2025-07-25T18:36:20+05:30"
+          format: date-time
+          type:
+          - "null"
+          - string
+        request_id:
+          description: Request ID to track the status
+          type: string
+        status:
+          enum:
+          - success
+          - ' processing'
+          - ' failed'
+          type: string
+        token_number:
+          description: Token number for the scan and share
+          type: string
       type: object
     ScanandshareToken:
       properties:

@@ -1,0 +1,81 @@
+## Overview
+
+The **Patient Directory** provides APIs for managing patient profiles in your system. 
+
+## Patient Profile
+
+A **Patient Profile** represents the core demographic and identifier data for a patient, used for managing and retrieving patient details across the system.  
+
+<AccordionGroup>
+<Accordion type="single" collapsible title="Profile Details">
+    
+    | Field      | Source           | Type       | Description                       |
+    |------------|------------------|------------|-----------------------------------| 
+    | `oid`      | System Generated | `string`   | unique identifier                 | 
+    | `wid`      | System Generated | `string`   | Workspace ID                      | 
+    | `ps`       | System Generated | `string`   | Persona type (allowed-> ["P"])    |                 
+    | `c_ate`    | System Generated | `integer`  | Creation timestamp (epoch)        | 
+    | `u_ate`    | System Generated | `integer`  | Last update timestamp (epoch)     | 
+    | `gen`      | User Input       | `"M" \| "F" \| "O"` | Gender (Refer below)     | 
+    | `dob`      | User Input       | `date`     | Date of birth                     | 
+    | `fn`       | User Input       | `string`   | First name (mandatory if fln not provided)                        | 
+    | `mn`       | User Input       | `string`   | Middle name                       | 
+    | `ln`       | User Input       | `string`   | Last name                         |
+    | `fln`      | User Input.      | `string`  | Full name (If not provided, derived as fn + mn + ln) |
+    | `ccd`      | User Input       | `string`   | Country code                      | 
+    | `mobile`   | User Input       | `string`   | Mobile number (ccd + mobile -> E.164 format)  | 
+    | `email`    | User Input       | `string`   | Valid email address               | 
+    | `username` | User Input       | `string`   | Unique user identifier like (UHID)| 
+    | `s`        | User Input       | `string`   | Salutation (Refer below)          | 
+    | `bg`       | User Input       | `string`   | Blood group (Refer Below)         | 
+    | `abha`     | User Input       | `string`   | ABHA address                      | 
+    | `arc`      | System Updated   | `boolean`  | Is profile archived               | 
+
+</Accordion>
+<Accordion type="single" collapsible title="Gender Enums">
+    Supported Genders 
+    | Enum  | Gender    |
+    |-------|-----------|
+    | F     | Female    |
+    | M     | Male      |
+    | O     | Others    |  
+</Accordion>
+<Accordion type="single" collapsible title="Blood Groups">
+    Supported Blood Groups 
+    - A+
+    - A-
+    - B+
+    - B-
+    - AB+
+    - AB-
+    - O+
+    - O-
+</Accordion>
+</AccordionGroup>
+
+It enables seamless **CRUD operations** (Create, Read, Update, Archive(Delete)) on patient profiles, allowing you to integrate profile management into your applications with ease.  
+
+In addition, it offers **search APIs** to locate patient profiles using:  
+- **Username** (a unique patient identifier like UHID)  
+- **Mobile number** (without country code)  
+- **Name** (prefix-based search)  
+
+Search results are limited to a **maximum of 100 records** to ensure performance.  
+
+For detailed usage, refer to the following API documentation:  
+- [Create Patient Profile API](/api-reference/doc-tool/patient-directory-apis/add-patient)
+- [Retrieve Single Patient Profile API](/api-reference/doc-tool/patient-directory-apis/retrieve-patient-details)
+- [List Workspace Patients API](/api-reference/doc-tool/patient-directory-apis/patients-list-minified)  
+- [Update Patient Profile API](/api-reference/doc-tool/patient-directory-apis/update-patient-details)
+- [Archive Patient Profile API](/api-reference/doc-tool/patient-directory-apis/delete-patient)  
+- [Search Patients API](/api-reference/doc-tool/patient-directory-apis/search-patient) 
+
+These APIs are designed to be **developer-friendly** and quick to adopt. Follow the links above for request/response formats, examples, and error handling guidelines.  
+
+## Usage Notes
+
+- Ensure that all required fields are provided when adding or editing patient information.
+- Use appropriate search criteria to narrow down patient records effectively.
+- Handle sensitive patient data with care and comply with relevant privacy regulations.
+- Currently, a patient can only be added in reference to a workspace. This automatically adds the patient profile to the workspace directory and allows searching at the workspace level.
+

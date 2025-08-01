@@ -1,0 +1,191 @@
+openapi: 3.0.3
+info:
+  title: Fetch Assessments APIs
+  version: 1.0.0
+servers:
+  - description: Production
+    url: https://api.eka.care
+  - description: Stage/Sandbox
+    url: https://api.dev.eka.care
+
+paths:
+  /assess/fetch_assessments/:
+    get:
+      summary: Fetch assessments (Deprecated)
+      deprecated: true
+      description: Fetch assessments for patients or doctors based on filters like status, workflow ID and date range.
+      parameters:
+        - name: pids
+          in: query
+          description: Comma-separated list of patient IDs.
+          required: false
+          schema:
+            type: string
+            example: "12345,67890"
+        - name: puuid
+          in: query
+          description: Patient UUID.
+          required: false
+          schema:
+            type: string
+            example: "430915f2-c802-4442-be8d-8c725fb83555"
+        - name: docid
+          in: query
+          description: Doctor ID.
+          required: false
+          schema:
+            type: string
+            example: "174359082080545"
+        - name: status
+          in: query
+          description: Status of the assessment.
+          required: false
+          schema:
+            type: string
+            enum: [COMPLETED, IN_REVIEW]
+            default: COMPLETED
+        - name: sd
+          in: query
+          description: Start date for filtering assessments (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2023-01-01"
+        - name: ed
+          in: query
+          description: End date for filtering assessments (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2023-12-31"
+        - name: wflowid
+          in: query
+          description: Comma-separated list of workflow IDs.
+          required: false
+          schema:
+            type: string
+            example: "1,2,3"
+        - name: is_abha_linkable
+          in: query
+          description: Filter assessments that are ABHA linkable.
+          required: false
+          schema:
+            type: boolean
+            example: true
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          schema:
+            type: integer
+            default: 30
+        - name: offset
+          in: query
+          description: Offset for pagination.
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: sort
+          in: query
+          description: Sort order for results.
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: Successful response with assessment data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          conversationid:
+                            type: string
+                            description: Unique conversation ID.
+                            example: "sa_123456"
+                          created_at:
+                            type: string
+                            format: date-time
+                            description: Creation timestamp of the assessment.
+                            example: "2023-06-15T12:34:56Z"
+                          created_epoch:
+                            type: integer
+                            description: Creation timestamp in epoch format.
+                            example: 1686820496
+                          wfid:
+                            type: integer
+                            description: Workflow ID associated with the assessment.
+                            example: 1
+                          share_to_abha:
+                            type: boolean
+                            description: Indicates if the assessment is ABHA linkable.
+                            example: true
+                    example:
+                      "12345":  # Key representing a group (e.g., patient ID or UUID)
+                        - conversationid: "sa_123456"
+                          created_at: "2023-06-15T12:34:56Z"
+                          created_epoch: 1686820496
+                          wfid: 1
+                          share_to_abha: true
+                        - conversationid: "sa_123457"
+                          created_at: "2023-06-16T12:34:56Z"
+                          created_epoch: 1686906896
+                          wfid: 2
+                          share_to_abha: false
+                      "67890":  # Another group
+                        - conversationid: "sn_987654"
+                          created_at: "2023-06-17T12:34:56Z"
+                          created_epoch: 1686993296
+                          wfid: 3
+                          share_to_abha: true
+        400:
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: boolean
+                    example: true
+                  msg:
+                    type: string
+                    example: "Invalid status value. Status should be among ['COMPLETED', 'IN_REVIEW']."
+        500:
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: boolean
+                    example: true
+                  msg:
+                    type: string
+                    example: "An unexpected error occurred."
+      security:
+        - apiKeyAuth: []
+        - auth: []
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: auth
+    auth:
+      type: apiKey
+      in: header
+      name: auth

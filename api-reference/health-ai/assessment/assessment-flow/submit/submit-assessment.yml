@@ -1,0 +1,322 @@
+openapi: 3.0.3
+info:
+  title: Assessment APIs
+  version: 1.0.0
+servers:
+  - description: Production
+    url: https://api.eka.care
+  - description: Stage/Sandbox
+    url: https://api.dev.eka.care
+paths:
+  /assessment/api/v1/submit/{hash}:
+    put:
+      tags:
+        - Assessments > Submit
+      summary: Step 4. Submit Assessment
+      description: >-
+        This API is used to Submit the assessment. This api should be called after the assessment is completed and progress reaches 100%.
+        <Tip>Use this API to submit the assessment and get assessment summary</Tip>
+      parameters:
+        - name: auth
+          in: header
+          required: True
+          description: >-
+            The auth token of the user. It is used to authenticate the user.
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: client-id
+          in: header
+          required: True
+          description: >-
+            The client id of the user. It is used to identify the user.
+          schema:
+            type: string
+          example: application/json
+        - name: locale
+          in: header
+          description: >-
+            The locale of the user. It is used to determine the language of the assessment. Supported locales are `en`, `hi`, `kn` for english, hindi and kannada respectively. Default value is `en`.
+          schema:
+            type: string
+          example: en
+        - name: Content-Type
+          in: header
+          description: >-
+            The content type of the request. It is used to determine the type of data being sent.
+          schema:
+            type: string
+          example: application/json
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: >-
+                  The assessment has been successfully submitted. The response contains the assessment summary.
+                  
+                  You can hit the [Get Assessment Data](/api-reference/health-ai/assessment/questionnaire_data) API to get the assessment data for the submitted assessment.
+              example:
+                explain:
+                - id: '111864006'
+                  label: Chikungunya fever
+                  support:
+                    values:
+                    - id: 47172c6c-a65c-11eb-8d02-1e003a340630
+                      wt: 0.42
+                      label: Stomach pain
+                      children: []
+                    - id: 4720607a-a65c-11eb-8d02-1e003a340630
+                      wt: 0.42
+                      label: Headache
+                      children: []
+                    - id: 47258974-a65c-11eb-8d02-1e003a340630
+                      wt: 0.84
+                      label: Fever
+                      children:
+                      - id: 472603f4-a65c-11eb-8d02-1e003a340630
+                        wt: 0.63
+                        label: chills or rigors
+                        relation: characteristic
+                    - id: 4728ddae-a65c-11eb-8d02-1e003a340630
+                      wt: 0.83
+                      label: Joint pain
+                      children:
+                      - id: 47297d40-a65c-11eb-8d02-1e003a340630
+                        wt: 0.62
+                        label: in multiple joints
+                        relation: location
+                    - id: '242635009'
+                      wt: 0.84
+                      label: Frequent mosquito bites
+                      children: []
+                  conflict:
+                    values: []
+                - id: '38362002'
+                  label: Dengue fever
+                  support:
+                    values:
+                    - id: 47172c6c-a65c-11eb-8d02-1e003a340630
+                      wt: 0.44
+                      label: Stomach pain
+                      children: []
+                    - id: 4720607a-a65c-11eb-8d02-1e003a340630
+                      wt: 0.84
+                      label: Headache
+                      children: []
+                    - id: 47258974-a65c-11eb-8d02-1e003a340630
+                      wt: 0.85
+                      label: Fever
+                      children:
+                      - id: 4726183a-a65c-11eb-8d02-1e003a340630
+                        wt: 0.61
+                        label: sweating
+                        relation: characteristic
+                    - id: 4728ddae-a65c-11eb-8d02-1e003a340630
+                      wt: 0.81
+                      label: Joint pain
+                      children:
+                      - id: 47297d40-a65c-11eb-8d02-1e003a340630
+                        wt: 0.81
+                        label: in multiple joints
+                        relation: location
+                    - id: '242635009'
+                      wt: 0.8
+                      label: Frequent mosquito bites
+                      children: []
+                  conflict:
+                    values:
+                    - id: 4781f86c-a65c-11eb-8d02-1e003a340630
+                      wt: 0.6
+                      label: Easy bruising
+                      children: []
+                - id: '61462000'
+                  label: Malaria
+                  support:
+                    values:
+                    - id: 4720607a-a65c-11eb-8d02-1e003a340630
+                      wt: 0.81
+                      label: Headache
+                      children: []
+                    - id: 47258974-a65c-11eb-8d02-1e003a340630
+                      wt: 0.82
+                      label: Fever
+                      children:
+                      - id: 472603f4-a65c-11eb-8d02-1e003a340630
+                        wt: 0.63
+                        label: chills or rigors
+                        relation: characteristic
+                      - id: 4726183a-a65c-11eb-8d02-1e003a340630
+                        wt: 0.82
+                        label: sweating
+                        relation: characteristic
+                    - id: 4728ddae-a65c-11eb-8d02-1e003a340630
+                      wt: 0.65
+                      label: Joint pain
+                      children:
+                      - id: 47297d40-a65c-11eb-8d02-1e003a340630
+                        wt: 0.43
+                        label: in multiple joints
+                        relation: location
+                    - id: '242635009'
+                      wt: 0.83
+                      label: Frequent mosquito bites
+                      children: []
+                  conflict:
+                    values:
+                    - id: 47172c6c-a65c-11eb-8d02-1e003a340630
+                      wt: 0.02
+                      label: Stomach pain
+                      children: []
+                likelihood:
+                - id: '111864006'
+                  desc: 'It is a viral fever caused by Chikungunya virus and is spreads by the bite
+                    of mosquitoes that carry this virus. Keeping mosquitoes away can help avoiding
+                    the spread of this disease '
+                  text: Chikungunya fever
+                  explain:
+                    support:
+                      values:
+                      - id: 47172c6c-a65c-11eb-8d02-1e003a340630
+                        wt: 0.42
+                        label: Stomach pain
+                        children: []
+                      - id: 4720607a-a65c-11eb-8d02-1e003a340630
+                        wt: 0.42
+                        label: Headache
+                        children: []
+                      - id: 47258974-a65c-11eb-8d02-1e003a340630
+                        wt: 0.84
+                        label: Fever
+                        children:
+                        - id: 472603f4-a65c-11eb-8d02-1e003a340630
+                          wt: 0.63
+                          label: chills or rigors
+                          relation: characteristic
+                      - id: 4728ddae-a65c-11eb-8d02-1e003a340630
+                        wt: 0.83
+                        label: Joint pain
+                        children:
+                        - id: 47297d40-a65c-11eb-8d02-1e003a340630
+                          wt: 0.62
+                          label: in multiple joints
+                          relation: location
+                      - id: '242635009'
+                        wt: 0.84
+                        label: Frequent mosquito bites
+                        children: []
+                    conflict:
+                      values: []
+                  likelihood: moderate
+                  relevant_doctor_specialities:
+                  - Internal medicine specialist
+                - id: '38362002'
+                  desc: It is viral fever caused by the dengue virus. This virus is carried by a type
+                    of mosquito called Aedes egypti and transmitted by a mosquito bite. Damage to
+                    blood platelets which are need for proper clotting of blood is often seen in this
+                    type of fever. Keeping mosquitoes away can help in avoiding the spread of this
+                    disease.
+                  text: Dengue fever
+                  explain:
+                    support:
+                      values:
+                      - id: 47172c6c-a65c-11eb-8d02-1e003a340630
+                        wt: 0.44
+                        label: Stomach pain
+                        children: []
+                      - id: 4720607a-a65c-11eb-8d02-1e003a340630
+                        wt: 0.84
+                        label: Headache
+                        children: []
+                      - id: 47258974-a65c-11eb-8d02-1e003a340630
+                        wt: 0.85
+                        label: Fever
+                        children:
+                        - id: 4726183a-a65c-11eb-8d02-1e003a340630
+                          wt: 0.61
+                          label: sweating
+                          relation: characteristic
+                      - id: 4728ddae-a65c-11eb-8d02-1e003a340630
+                        wt: 0.81
+                        label: Joint pain
+                        children:
+                        - id: 47297d40-a65c-11eb-8d02-1e003a340630
+                          wt: 0.81
+                          label: in multiple joints
+                          relation: location
+                      - id: '242635009'
+                        wt: 0.8
+                        label: Frequent mosquito bites
+                        children: []
+                    conflict:
+                      values:
+                      - id: 4781f86c-a65c-11eb-8d02-1e003a340630
+                        wt: 0.6
+                        label: Easy bruising
+                        children: []
+                  likelihood: mild
+                  relevant_doctor_specialities:
+                  - Internal medicine specialist
+                - id: '61462000'
+                  desc: Malaria is caused by a parasite called Plasmodium that is transmitted by the
+                    bite of Anopheles mosquito that carries this parasite. The parasites stays in
+                    the liver and red blood cells and causes damage to the red blood cells in the
+                    body.  Keeping mosquitoes away can help in avoiding spread of this disease.
+                  text: Malaria
+                  explain:
+                    support:
+                      values:
+                      - id: 4720607a-a65c-11eb-8d02-1e003a340630
+                        wt: 0.81
+                        label: Headache
+                        children: []
+                      - id: 47258974-a65c-11eb-8d02-1e003a340630
+                        wt: 0.82
+                        label: Fever
+                        children:
+                        - id: 472603f4-a65c-11eb-8d02-1e003a340630
+                          wt: 0.63
+                          label: chills or rigors
+                          relation: characteristic
+                        - id: 4726183a-a65c-11eb-8d02-1e003a340630
+                          wt: 0.82
+                          label: sweating
+                          relation: characteristic
+                      - id: 4728ddae-a65c-11eb-8d02-1e003a340630
+                        wt: 0.65
+                        label: Joint pain
+                        children:
+                        - id: 47297d40-a65c-11eb-8d02-1e003a340630
+                          wt: 0.43
+                          label: in multiple joints
+                          relation: location
+                      - id: '242635009'
+                        wt: 0.83
+                        label: Frequent mosquito bites
+                        children: []
+                    conflict:
+                      values:
+                      - id: 47172c6c-a65c-11eb-8d02-1e003a340630
+                        wt: 0.02
+                        label: Stomach pain
+                        children: []
+                  likelihood: mild
+                  relevant_doctor_specialities:
+                  - General Physician
+
+                success: true
+        '4XX':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error:
+                  error_code: bad_request
+                  display_message: "Something went wrong. Please try again."
+                  message: Bad Request
