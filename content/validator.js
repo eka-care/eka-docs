@@ -1,20 +1,17 @@
-// Mock JQ validation function (replaces server call)
-function mockJQValidation(payload, expression) {
-    try {
-        // Handle root object access
-        if (expression === '.') {
-            return {
-                valid: true,
-                result: payload,
-                error: null
-            };
-        }
+// Wrap everything in an IIFE to avoid global namespace pollution
+(function() {
+    // Prevent multiple script execution
+    if (window.validatorScriptLoaded) {
+        // Early exit if already loaded, but within a function context
+        return;
+    }
+    window.validatorScriptLoaded = true;
 
-        // Handle simple property access (.property)
-        if (expression.startsWith('.') && !expression.includes('[') && !expression.includes('|')) {
-            const key = expression.substring(1);
-
-            if (key === '') {
+    // Mock JQ validation function (replaces server call)
+    function mockJQValidation(payload, expression) {
+        try {
+            // Handle root object access
+            if (expression === '.') {
                 return {
                     valid: true,
                     result: payload,
@@ -22,340 +19,487 @@ function mockJQValidation(payload, expression) {
                 };
             }
 
-            if (key.includes('.')) {
-                const keys = key.split('.');
-                let current = payload;
+            // Handle simple property access (.property)
+            if (expression.startsWith('.') && !expression.includes('[') && !expression.includes('|')) {
+                const key = expression.substring(1);
 
-                for (const k of keys) {
-                    if (current && typeof current === 'object' && current.hasOwnProperty(k)) {
-                        current = current[k];
-                    } else {
-                        return {
-                            valid: false,
-                            result: null,
-                            error: `Property path '${key}' not found in JSON object`
-                        };
-                    }
+                if (key === '') {
+                    return {
+                        valid: true,
+                        result: payload,
+                        error: null
+                    };
                 }
-                return {
-                    valid: true,
-                    result: current,
-                    error: null
-                };
-            }
 
-            if (payload && typeof payload === 'object' && payload.hasOwnProperty(key)) {
-                return {
-                    valid: true,
-                    result: payload[key],
-                    error: null
-                };
-            } else {
-                return {
-                    valid: false,
-                    result: null,
-                    error: `Property '${key}' not found in JSON object`
-                };
-            }
-        }
+                if (key.includes('.')) {
+                    const keys = key.split('.');
+                    let current = payload;
 
-        // Handle array indexing
-        if (expression.match(/^\.\[\d+]$/)) {
-            const indexMatch = expression.match(/^\.\[(\d+)]$/);
-            if (indexMatch) {
-                const index = parseInt(indexMatch[1]);
-
-                if (Array.isArray(payload)) {
-                    if (index >= 0 && index < payload.length) {
-                        return {
-                            valid: true,
-                            result: payload[index],
-                            error: null
-                        };
-                    } else {
-                        return {
-                            valid: false,
-                            result: null,
-                            error: `Array index ${index} is out of bounds (array length: ${payload.length})`
-                        };
+                    for (const k of keys) {
+                        if (current && typeof current === 'object' && current.hasOwnProperty(k)) {
+                            current = current[k];
+                        } else {
+                            return {
+                                valid: false,
+                                result: null,
+                                error: `Property path '${key}' not found in JSON object`
+                            };
+                        }
                     }
+                    return {
+                        valid: true,
+                        result: current,
+                        error: null
+                    };
+                }
+
+                if (payload && typeof payload === 'object' && payload.hasOwnProperty(key)) {
+                    return {
+                        valid: true,
+                        result: payload[key],
+                        error: null
+                    };
                 } else {
                     return {
                         valid: false,
                         result: null,
-                        error: `Cannot index non-array value with [${index}]`
+                        error: `Property '${key}' not found in JSON object`
                     };
                 }
             }
-        }
 
-        // Handle length
-        if (expression === '.length' || expression === '. | length') {
-            if (Array.isArray(payload)) {
+            // Handle array indexing
+            if (expression.match(/^\.\[\d+]$/)) {
+                const indexMatch = expression.match(/^\.\[(\d+)]$/);
+                if (indexMatch) {
+                    const index = parseInt(indexMatch[1]);
+
+                    if (Array.isArray(payload)) {
+                        if (index >= 0 && index < payload.length) {
+                            return {
+                                valid: true,
+                                result: payload[index],
+                                error: null
+                            };
+                        } else {
+                            return {
+                                valid: false,
+                                result: null,
+                                error: `Array index ${index} is out of bounds (array length: ${payload.length})`
+                            };
+                        }
+                    } else {
+                        return {
+                            valid: false,
+                            result: null,
+                            error: `Cannot index non-array value with [${index}]`
+                        };
+                    }
+                }
+            }
+
+            // Handle length
+            if (expression === '.length' || expression === '. | length') {
+                if (Array.isArray(payload)) {
+                    return {
+                        valid: true,
+                        result: payload.length,
+                        error: null
+                    };
+                } else if (typeof payload === 'object' && payload !== null) {
+                    return {
+                        valid: true,
+                        result: Object.keys(payload).length,
+                        error: null
+                    };
+                } else {
+                    return {
+                        valid: false,
+                        result: null,
+                        error: "Cannot get length of non-array/non-object value"
+                    };
+                }
+            }
+
+            // Handle keys
+            if (expression === '. | keys' || expression === '.keys') {
+                if (typeof payload === 'object' && payload !== null) {
+                    return {
+                        valid: true,
+                        result: Array.isArray(payload)
+                            ? Array.from({ length: payload.length }, (_, i) => i)
+                            : Object.keys(payload),
+                        error: null
+                    };
+                } else {
+                    return {
+                        valid: false,
+                        result: null,
+                        error: "Cannot get keys of non-object value"
+                    };
+                }
+            }
+
+            // Handle type checking
+            if (expression === '. | type' || expression === '.type') {
+                let type;
+                if (payload === null) type = 'null';
+                else if (Array.isArray(payload)) type = 'array';
+                else if (typeof payload === 'object') type = 'object';
+                else type = typeof payload;
+
                 return {
                     valid: true,
-                    result: payload.length,
+                    result: type,
                     error: null
-                };
-            } else if (typeof payload === 'object' && payload !== null) {
-                return {
-                    valid: true,
-                    result: Object.keys(payload).length,
-                    error: null
-                };
-            } else {
-                return {
-                    valid: false,
-                    result: null,
-                    error: "Cannot get length of non-array/non-object value"
                 };
             }
-        }
-
-        // Handle keys
-        if (expression === '. | keys' || expression === '.keys') {
-            if (typeof payload === 'object' && payload !== null) {
-                return {
-                    valid: true,
-                    result: Array.isArray(payload)
-                        ? Array.from({ length: payload.length }, (_, i) => i)
-                        : Object.keys(payload),
-                    error: null
-                };
-            } else {
-                return {
-                    valid: false,
-                    result: null,
-                    error: "Cannot get keys of non-object value"
-                };
-            }
-        }
-
-        // Handle type checking
-        if (expression === '. | type' || expression === '.type') {
-            let type;
-            if (payload === null) type = 'null';
-            else if (Array.isArray(payload)) type = 'array';
-            else if (typeof payload === 'object') type = 'object';
-            else type = typeof payload;
 
             return {
-                valid: true,
-                result: type,
-                error: null
+                valid: false,
+                result: null,
+                error: `JQ expression '${expression}' is not supported in demo mode. Supported: ., .property, .[index], .length, . | keys, . | type`
+            };
+
+        } catch (error) {
+            return {
+                valid: false,
+                result: null,
+                error: `Error processing expression: ${error.message}`
             };
         }
-
-        return {
-            valid: false,
-            result: null,
-            error: `JQ expression '${expression}' is not supported in demo mode. Supported: ., .property, .[index], .length, . | keys, . | type`
-        };
-
-    } catch (error) {
-        return {
-            valid: false,
-            result: null,
-            error: `Error processing expression: ${error.message}`
-        };
-    }
-}
-
-function showValidationResult(valid, result, error) {
-    const out = document.getElementById('jq-validation-output');
-    if (!out) {
-        alert("Error: Output element not found!");
-        return;
     }
 
-    out.innerHTML = '';
+    function showValidationResult(valid, result, error) {
+        const out = document.getElementById('jq-validation-output');
+        if (!out) {
+            return;
+        }
 
-    const resultsContainer = document.createElement('div');
-    resultsContainer.style.cssText = `
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
+        out.innerHTML = '';
+
+        const resultsContainer = document.createElement('div');
+        resultsContainer.style.cssText = `
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     `;
 
-    // Validation Status Card
-    const statusCard = document.createElement('div');
-    statusCard.style.cssText = `
+        // Validation Status Card
+        const statusCard = document.createElement('div');
+        statusCard.style.cssText = `
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      background-color: ${valid ? '#f0f9ff' : '#fef2f2'};
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+
+        const statusTitle = document.createElement('h3');
+        statusTitle.textContent = 'Validation Status';
+        statusTitle.style.cssText = 'margin: 0 0 10px 0; color: #333;';
+        statusCard.appendChild(statusTitle);
+
+        const status = document.createElement('div');
+        status.innerHTML = valid
+            ? '<b style="color: #059669; font-size: 16px;">✓ Valid JQ Expression</b>'
+            : '<b style="color: #dc2626; font-size: 16px;">✗ Invalid JQ Expression</b>';
+        statusCard.appendChild(status);
+
+        resultsContainer.appendChild(statusCard);
+
+        // Result Card
+        if (typeof result !== 'undefined' && result !== null) {
+            const resultCard = document.createElement('div');
+            resultCard.style.cssText = `
         border: 1px solid #ddd;
         border-radius: 8px;
         padding: 20px;
-        background-color: ${valid ? '#f0f9ff' : '#fef2f2'};
+        background-color: #f9fafb;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    `;
+      `;
 
-    const statusTitle = document.createElement('h3');
-    statusTitle.textContent = 'Validation Status';
-    statusTitle.style.cssText = 'margin: 0 0 10px 0; color: #333;';
-    statusCard.appendChild(statusTitle);
+            const resultTitle = document.createElement('h3');
+            resultTitle.textContent = 'JQ Expression Result';
+            resultTitle.style.cssText = 'margin: 0 0 15px 0; color: #333;';
+            resultCard.appendChild(resultTitle);
 
-    const status = document.createElement('div');
-    status.innerHTML = valid
-        ? '<b style="color: #059669; font-size: 16px;">✓ Valid JQ Expression</b>'
-        : '<b style="color: #dc2626; font-size: 16px;">✗ Invalid JQ Expression</b>';
-    statusCard.appendChild(status);
+            const resultPre = document.createElement('pre');
+            resultPre.textContent = JSON.stringify(result, null, 2);
+            resultPre.style.cssText = `
+        background-color: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 15px;
+        overflow-x: auto;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        line-height: 1.4;
+        margin: 0;
+        white-space: pre-wrap;
+        color: #dc2626;
+      `;
+            resultCard.appendChild(resultPre);
 
-    resultsContainer.appendChild(statusCard);
-
-    // Result Card
-    if (typeof result !== 'undefined' && result !== null) {
-        const resultCard = document.createElement('div');
-        resultCard.style.cssText = `
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            background-color: #f9fafb;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        `;
-
-        const resultTitle = document.createElement('h3');
-        resultTitle.textContent = 'JQ Expression Result';
-        resultTitle.style.cssText = 'margin: 0 0 15px 0; color: #333;';
-        resultCard.appendChild(resultTitle);
-
-        const resultPre = document.createElement('pre');
-        resultPre.textContent = JSON.stringify(result, null, 2);
-        resultPre.style.cssText = `
-            background-color: #fff;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            padding: 15px;
-            overflow-x: auto;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 14px;
-            line-height: 1.4;
-            margin: 0;
-            white-space: pre-wrap;
-            color: #dc2626;
-        `;
-        resultCard.appendChild(resultPre);
-
-        resultsContainer.appendChild(resultCard);
-    }
-
-    // Error Card
-    if (error) {
-        const errorCard = document.createElement('div');
-        errorCard.style.cssText = `
-            border: 1px solid #fca5a5;
-            border-radius: 8px;
-            padding: 20px;
-            background-color: #fef2f2;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        `;
-
-        const errorTitle = document.createElement('h3');
-        errorTitle.textContent = 'Error Details';
-        errorTitle.style.cssText = 'margin: 0 0 10px 0; color: #dc2626;';
-        errorCard.appendChild(errorTitle);
-
-        const errorDiv = document.createElement('div');
-        errorDiv.innerHTML = `<span style="color: #dc2626; font-weight: 500;">${error}</span>`;
-        errorCard.appendChild(errorDiv);
-
-        resultsContainer.appendChild(errorCard);
-    }
-
-    out.appendChild(resultsContainer);
-}
-
-function validateJQ() {
-    const payloadInput = document.getElementById('payload');
-    const expressionInput = document.getElementById('jq-expression-input');
-
-    if (!payloadInput || !expressionInput) {
-        showValidationResult(false, undefined, 'Form elements not found');
-        return;
-    }
-
-    const payload = payloadInput.value.trim();
-    const expression = expressionInput.value.trim();
-
-    if (!payload) {
-        showValidationResult(false, undefined, 'Please enter a JSON payload');
-        return;
-    }
-
-    if (!expression) {
-        showValidationResult(false, undefined, 'Please enter a JQ expression');
-        return;
-    }
-
-    try {
-        const parsedPayload = JSON.parse(payload);
-        const result = mockJQValidation(parsedPayload, expression);
-        showValidationResult(result.valid, result.result, result.error);
-    } catch (parseError) {
-        showValidationResult(false, undefined, 'Invalid JSON format in payload');
-    }
-}
-
-// Make validateJQ available globally
-window.validateJQ = validateJQ;
-
-function handleSubmitClick(e) {
-    e.preventDefault();
-    validateJQ();
-}
-
-// Helper function to find the submit button in the event path
-function findSubmitButton(element) {
-    let current = element;
-    while (current && current !== document) {
-        if (current.id === 'submit') {
-            return current;
+            resultsContainer.appendChild(resultCard);
         }
-        current = current.parentElement;
-    }
-    return null;
-}
 
-// Initialize validator button
-function initializeValidatorButton() {
-    const submitButton = document.getElementById('submit');
+        // Error Card
+        if (error) {
+            const errorCard = document.createElement('div');
+            errorCard.style.cssText = `
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        padding: 20px;
+        background-color: #fef2f2;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      `;
 
-    if (submitButton) {
-        submitButton.removeEventListener('click', handleSubmitClick);
-        submitButton.addEventListener('click', handleSubmitClick);
-        submitButton.style.border = "2px solid green";
-        return true;
-    }
-    return false;
-}
+            const errorTitle = document.createElement('h3');
+            errorTitle.textContent = 'Error Details';
+            errorTitle.style.cssText = 'margin: 0 0 10px 0; color: #dc2626;';
+            errorCard.appendChild(errorTitle);
 
-// Try initialization with retries
-function tryInitialization() {
-    let attempts = 0;
-    const maxAttempts = 50;
+            const errorDiv = document.createElement('div');
+            errorDiv.innerHTML = `<span style="color: #dc2626; font-weight: 500;">${error}</span>`;
+            errorCard.appendChild(errorDiv);
 
-    const intervalId = setInterval(() => {
-        attempts++;
-
-        if (initializeValidatorButton() || attempts >= maxAttempts) {
-            clearInterval(intervalId);
+            resultsContainer.appendChild(errorCard);
         }
-    }, 100);
-}
 
-// Enhanced event delegation
-document.addEventListener('click', function(e) {
-    const submitButton = findSubmitButton(e.target);
+        out.appendChild(resultsContainer);
+    }
 
-    if (submitButton) {
-        e.preventDefault();
+    // Store the original textarea value if available
+    let savedTextareaValue = '';
+
+    // Function to use the existing textarea or create a new one if needed
+    function useExistingOrCreateTextarea() {
+        // First, try to get the existing textarea that's in the MDX document
+        const existingTextarea = document.getElementById('payload');
+
+        // If there is an existing textarea, just ensure its visibility and return it
+        if (existingTextarea) {
+            // Save the value if it has content
+            if (existingTextarea.value && existingTextarea.value.trim() !== '') {
+                savedTextareaValue = existingTextarea.value;
+            }
+
+            // Make sure it's visible and styled correctly
+            existingTextarea.style.display = 'block';
+            existingTextarea.style.visibility = 'visible';
+            existingTextarea.style.height = '200px';
+            existingTextarea.style.width = '100%';
+
+            // If we have a saved value and the textarea is empty, restore it
+            if (savedTextareaValue && existingTextarea.value.trim() === '') {
+                existingTextarea.value = savedTextareaValue;
+            } else if (!savedTextareaValue && existingTextarea.value.trim() === '') {
+                // If no saved value and textarea is empty, add example JSON
+            }
+
+            return existingTextarea;
+        }
+
+        // If there's no textarea, we need to create one
+
+        // First, find the right place to insert it
+        const form = document.getElementById('jq-validator-form');
+        if (!form) {
+            return null; // Can't proceed without the form
+        }
+
+        // Look for the container div for the JSON Payload
+        const jsonPayloadContainer = Array.from(form.querySelectorAll('div')).find(div => {
+            const label = div.querySelector('label');
+            return label && label.textContent && label.textContent.trim().includes('JSON Payload');
+        });
+
+        if (!jsonPayloadContainer) {
+            return null; // Can't find where to put the textarea
+        }
+
+        // Create a new textarea
+        const newTextarea = document.createElement('textarea');
+        newTextarea.id = 'payload';
+        newTextarea.name = 'payload';
+        newTextarea.placeholder = 'Enter JSON payload';
+
+        // Apply styles to make it visible
+        newTextarea.style.width = '100%';
+        newTextarea.style.height = '200px';
+        newTextarea.style.padding = '10px';
+        newTextarea.style.border = '1px solid #ccc';
+        newTextarea.style.borderRadius = '4px';
+        newTextarea.style.fontFamily = 'monospace';
+        newTextarea.style.fontSize = '14px';
+        newTextarea.style.resize = 'vertical';
+        newTextarea.style.display = 'block';
+        newTextarea.style.visibility = 'visible';
+        newTextarea.style.backgroundColor = '#454343';
+
+        // Insert after the label
+        const label = jsonPayloadContainer.querySelector('label');
+        if (label) {
+            label.parentNode.insertBefore(newTextarea, label.nextSibling);
+        } else {
+            jsonPayloadContainer.appendChild(newTextarea);
+        }
+
+        return newTextarea;
+    }
+
+    function validateJQ() {
+        const payloadInput = useExistingOrCreateTextarea();
+        const expressionInput = document.getElementById('jq-expression-input');
+
+        if (!payloadInput || !expressionInput) {
+            showValidationResult(false, undefined, 'Form elements not found');
+            return;
+        }
+
+        const payload = payloadInput.value.trim();
+        const expression = expressionInput.value.trim();
+
+        if (!payload) {
+            showValidationResult(false, undefined, 'Please enter a JSON payload');
+            return;
+        }
+
+        if (!expression) {
+            showValidationResult(false, undefined, 'Please enter a JQ expression');
+            return;
+        }
+
+        try {
+            const parsedPayload = JSON.parse(payload);
+            const result = mockJQValidation(parsedPayload, expression);
+            showValidationResult(result.valid, result.result, result.error);
+        } catch (parseError) {
+            showValidationResult(false, undefined, 'Invalid JSON format in payload');
+        }
+    }
+
+    // Make validateJQ available globally
+    window.validateJQ = validateJQ;
+
+    function handleSubmitClick(e) {
+        if (e) e.preventDefault();
         validateJQ();
     }
-});
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        tryInitialization();
+    // Helper function to find the submit button in the event path
+    function findSubmitButton(element) {
+        let current = element;
+        while (current && current !== document) {
+            if (current.id === 'submit') {
+                return current;
+            }
+            current = current.parentElement;
+        }
+        return null;
+    }
+
+    // Initialize validator button with safer approach
+    function initializeValidatorButton() {
+        const submitButton = document.getElementById('submit');
+        if (submitButton) {
+            // Remove any existing listeners to avoid duplicates
+            submitButton.removeEventListener('click', handleSubmitClick);
+            submitButton.addEventListener('click', handleSubmitClick);
+            return true;
+        }
+        return false;
+    }
+
+    // Use event delegation for click events
+    document.addEventListener('click', function(e) {
+        const submitButton = findSubmitButton(e.target);
+        if (submitButton) {
+            e.preventDefault();
+            validateJQ();
+        }
     });
-} else {
-    tryInitialization();
-}
+
+    // Use MutationObserver to detect when React removes or changes our textarea
+    function setupMutationObserver() {
+        // First ensure we have a reference point - the form
+        const form = document.getElementById('jq-validator-form');
+        if (!form) return;
+
+        const observer = new MutationObserver(function(mutations) {
+            // Check if our textarea was removed
+            const textareaExists = !!document.getElementById('payload');
+            if (!textareaExists) {
+                // If textarea is gone, recreate it
+                useExistingOrCreateTextarea();
+            }
+
+            // Also check if the submit button needs reinitialization
+            initializeValidatorButton();
+        });
+
+        // Observe the form and its descendants for changes
+        observer.observe(form, {
+            childList: true,
+            subtree: true,
+            attributes: true
+        });
+
+        // Also observe the body in case the form itself gets replaced
+        observer.observe(document.body, {
+            childList: true,
+            subtree: false
+        });
+
+        return observer;
+    }
+
+    // Function to periodically check and ensure textarea exists
+    function startPeriodicCheck() {
+        // Initially ensure the textarea exists
+        useExistingOrCreateTextarea();
+
+        // Then set up a periodic check
+         // Check every second
+        return setInterval(() => {
+            const textarea = document.getElementById('payload');
+            if (!textarea || textarea.style.display === 'none' || textarea.style.visibility === 'hidden') {
+                useExistingOrCreateTextarea();
+            }
+        }, 1000);
+    }
+
+    // Initialize everything needed for the validator to work
+    function init() {
+        // Immediately try to use or create the textarea
+        useExistingOrCreateTextarea();
+
+        // Set up the validation button
+        initializeValidatorButton();
+
+        // Set up mutation observer to detect DOM changes
+        const observer = setupMutationObserver();
+
+        // Start periodic checks for the textarea
+        const intervalId = startPeriodicCheck();
+
+        // Store references to cleanup if needed
+        window.validatorCleanup = function() {
+            if (observer) observer.disconnect();
+            if (intervalId) clearInterval(intervalId);
+        };
+    }
+
+    // Start initialization when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        // DOM already loaded, initialize now
+        init();
+    }
+
+    // Also initialize on window load as a fallback
+    window.addEventListener('load', init);
+})();
