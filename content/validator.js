@@ -167,7 +167,6 @@
                     };
                 }
             }
-
             // Handle type checking
             if (expression === '. | type' || expression === '.type') {
                 let type;
@@ -182,11 +181,328 @@
                     error: null
                 };
             }
+            if (expression.match(/^(all|any|map|select|group_by|min|max|min_by|max_by)\(.+\[];.+\)$/)) {
+                try {
+                    // Extract the function name and content
+                    const functionMatch = expression.match(/^(all|any|map|select|group_by|min|max|min_by|max_by)\((.+)\)$/);
+                    if (!functionMatch) {
+                        return {
+                            valid: false,
+                            result: null,
+                            error: `Invalid array iteration expression format: ${expression}`
+                        };
+                    }
+                    const functionName = functionMatch[1];
+                    const functionContent = functionMatch[2];
+
+                    // Split into array path and operation
+                    const parts = functionContent.split(';');
+                    if (parts.length < 2) {
+                        return {
+                            valid: false,
+                            result: null,
+                            error: `Array iteration expression must have format: ${functionName}(path[]; operation)`
+                        };
+                    }
+
+                    const arrayPath = parts[0].trim();
+                    const operation = parts.slice(1).join(';').trim();
+                    const arrayPathWithoutIteration = arrayPath.replace(/\[]$/, '');
+                    const arrayResult = mockJQValidation(payload, arrayPathWithoutIteration);
+                    if (!arrayResult.valid || !Array.isArray(arrayResult.result)) {
+                        return {
+                            valid: false,
+                            result: null,
+                            error: `Path '${arrayPathWithoutIteration}' does not resolve to an array or is invalid`
+                        };
+                    }
+
+                    const array = arrayResult.result;
+                    switch (functionName) {
+                        case 'all': {
+                            const conditionMatch = operation.match(/^\s*\.\s*==\s*"([^"]+)"\s*$/);
+                            if (!conditionMatch) {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `For 'all' function, only conditions in the form '. == "value"' are supported currently`
+                                };
+                            }
+                            const checkValue = conditionMatch[1];
+                            const allMatch = array.every(item => item === checkValue);
+                            return {
+                                valid: true,
+                                result: allMatch,
+                                error: null
+                            };
+                        }
+
+                        case 'any': {
+                            const conditionMatch = operation.match(/^\s*\.\s*==\s*"([^"]+)"\s*$/);
+                            if (!conditionMatch) {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `For 'any' function, only conditions in the form '. == "value"' are supported currently`
+                                };
+                            }
+                            const checkValue = conditionMatch[1];
+                            const anyMatch = array.some(item => item === checkValue);
+                            return {
+                                valid: true,
+                                result: anyMatch,
+                                error: null
+                            };
+                        }
+
+                        case 'map': {
+                            // Handle simple mappings like .property or .
+                            if (operation === '.') {
+                                return {
+                                    valid: true,
+                                    result: array,
+                                    error: null
+                                };
+                            } else if (operation.startsWith('.')) {
+                                const property = operation.substring(1);
+                                const mappedArray = array.map(item => {
+                                    if (typeof item === 'object' && item !== null && property in item) {
+                                        return item[property];
+                                    }
+                                    return null;
+                                });
+                                return {
+                                    valid: true,
+                                    result: mappedArray,
+                                    error: null
+                                };
+                            } else {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `For 'map' function, only operations in the form '.' or '.property' are supported currently`
+                                };
+                            }
+                        }
+
+                        case 'select': {
+                            if (operation.includes(' == ')) {
+                                const [leftSide, rightSide] = operation.split(' == ').map(s => s.trim());
+                                let propertyName = null;
+                                if (leftSide.startsWith('.')) {
+                                    propertyName = leftSide.substring(1);
+                                }
+                                let comparisonValue = rightSide;
+                                if ((rightSide.startsWith('"') && rightSide.endsWith('"')) ||
+                                    (rightSide.startsWith("'") && rightSide.endsWith("'"))) {
+                                    comparisonValue = rightSide.substring(1, rightSide.length - 1);
+                                }
+
+                                if (propertyName) {
+                                    const filteredArray = array.filter(item => {
+                                        return typeof item === 'object' &&
+                                            item !== null &&
+                                            propertyName in item &&
+                                            item[propertyName] === comparisonValue;
+                                    });
+                                    return {
+                                        valid: true,
+                                        result: filteredArray,
+                                        error: null
+                                    };
+                                } else {
+                                    // If it's just ".", compare the item directly
+                                    const filteredArray = array.filter(item => item === comparisonValue);
+                                    return {
+                                        valid: true,
+                                        result: filteredArray,
+                                        error: null
+                                    };
+                                }
+                            } else {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `For 'select' function, only conditions with equality operations (==) are supported currently`
+                                };
+                            }
+                        }
+
+                        case 'min':
+                            if (array.every(item => typeof item === 'number')) {
+                                return {
+                                    valid: true,
+                                    result: Math.min(...array),
+                                    error: null
+                                };
+                            } else {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `'min' function requires an array of numbers`
+                                };
+                            }
+
+                        case 'max':
+                            if (array.every(item => typeof item === 'number')) {
+                                return {
+                                    valid: true,
+                                    result: Math.max(...array),
+                                    error: null
+                                };
+                            } else {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `'max' function requires an array of numbers`
+                                };
+                            }
+
+                        case 'min_by': {
+                            if (operation.startsWith('.')) {
+                                const property = operation.substring(1);
+                                // Filter out objects that don't have the property or where it's not a number
+                                const validItems = array.filter(item =>
+                                    typeof item === 'object' &&
+                                    item !== null &&
+                                    property in item &&
+                                    typeof item[property] === 'number'
+                                );
+
+                                if (validItems.length === 0) {
+                                    return {
+                                        valid: false,
+                                        result: null,
+                                        error: `No items with numeric property '${property}' found in array`
+                                    };
+                                }
+
+                                const minItem = validItems.reduce((min, item) =>
+                                    item[property] < min[property] ? item : min, validItems[0]);
+
+                                return {
+                                    valid: true,
+                                    result: minItem,
+                                    error: null
+                                };
+                            } else {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `For 'min_by' function, only operations in the form '.property' are supported`
+                                };
+                            }
+                        }
+
+                        case 'max_by': {
+                            if (operation.startsWith('.')) {
+                                const property = operation.substring(1);
+                                const validItems = array.filter(item =>
+                                    typeof item === 'object' &&
+                                    item !== null &&
+                                    property in item &&
+                                    typeof item[property] === 'number'
+                                );
+
+                                if (validItems.length === 0) {
+                                    return {
+                                        valid: false,
+                                        result: null,
+                                        error: `No items with numeric property '${property}' found in array`
+                                    };
+                                }
+                                const maxItem = validItems.reduce((max, item) =>
+                                    item[property] > max[property] ? item : max, validItems[0]);
+
+                                return {
+                                    valid: true,
+                                    result: maxItem,
+                                    error: null
+                                };
+                            } else {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `For 'max_by' function, only operations in the form '.property' are supported`
+                                };
+                            }
+                        }
+                        case 'group_by': {
+                            if (operation.startsWith('.')) {
+                                const property = operation.substring(1);
+                                const grouped = {};
+
+                                array.forEach(item => {
+                                    if (typeof item === 'object' && item !== null && property in item) {
+                                        const key = String(item[property]);
+                                        if (!grouped[key]) {
+                                            grouped[key] = [];
+                                        }
+                                        grouped[key].push(item);
+                                    }
+                                });
+                                return {
+                                    valid: true,
+                                    result: grouped,
+                                    error: null
+                                };
+                            } else {
+                                return {
+                                    valid: false,
+                                    result: null,
+                                    error: `For 'group_by' function, only operations in the form '.property' are supported`
+                                };
+                            }
+                        }
+
+                        default:
+                            return {
+                                valid: false,
+                                result: null,
+                                error: `Function '${functionName}' is not implemented`
+                            };
+                    }
+                } catch (error) {
+                    return {
+                        valid: false,
+                        result: null,
+                        error: `Error processing array iteration expression: ${error.message}`
+                    };
+                }
+            }
+            // Handle example() function that showcases different expressions
+            if (expression.startsWith('example(') && expression.endsWith(')')) {
+                try {
+                    // Extract the expressions from inside example()
+                    const exampleContent = expression.substring(8, expression.length - 1);
+                    const expressions = exampleContent.split(',').map(expr => expr.trim());
+                    const exampleResults = {};
+                    for (const expr of expressions) {
+                        const result = mockJQValidation(payload, expr);
+                        exampleResults[expr] = {
+                            valid: result.valid,
+                            result: result.result,
+                            error: result.error
+                        };
+                    }
+                    return {
+                        valid: true,
+                        result: exampleResults,
+                        error: null
+                    };
+                } catch (error) {
+                    return {
+                        valid: false,
+                        result: null,
+                        error: `Error processing example expression: ${error.message}`
+                    };
+                }
+            }
 
             return {
                 valid: false,
                 result: null,
-                error: `JQ expression '${expression}' is not supported in demo mode. Supported: ., .property, .[index], .length, . | keys, . | type`
+                error: `JQ expression '${expression}' is not supported in demo mode. Supported: ., .property, .[index], .length, . | keys, . | type, all(), any(), map(), select(), min(), max(), min_by(), max_by(), group_by(), example()`
             };
 
         } catch (error) {
