@@ -1,16 +1,45 @@
+
 // Wrap everything in an IIFE to avoid global namespace pollution
 (function() {
-    // Prevent multiple script execution
     if (window.validatorScriptLoaded) {
-        // Early exit if already loaded, but within a function context
         return;
     }
     window.validatorScriptLoaded = true;
 
-    // Mock JQ validation function (replaces server call)
     function mockJQValidation(payload, expression) {
         try {
-            // Handle root object access
+            // Handle jq command style expressions (e.g., jq '.user.name')
+            if (expression.startsWith('jq ')) {
+                const jqExpression = expression.substring(3).trim();
+
+                // Extract the actual expression without quotes
+                let actualExpression;
+                if ((jqExpression.startsWith("'") && jqExpression.endsWith("'")) ||
+                    (jqExpression.startsWith('"') && jqExpression.endsWith('"'))) {
+                    actualExpression = jqExpression.substring(1, jqExpression.length - 1);
+                } else {
+                    actualExpression = jqExpression;
+                }
+
+                // Call the validation function with the extracted expression
+                const result = mockJQValidation(payload, actualExpression);
+
+                // Return true/false instead of the actual value
+                if (result.valid) {
+                    return {
+                        valid: true,
+                        result: true,
+                        error: null
+                    };
+                } else {
+                    return {
+                        valid: true,
+                        result: false,
+                        error: null
+                    };
+                }
+            }
+
             if (expression === '.') {
                 return {
                     valid: true,
@@ -19,7 +48,6 @@
                 };
             }
 
-            // Handle simple property access (.property)
             if (expression.startsWith('.') && !expression.includes('[') && !expression.includes('|')) {
                 const key = expression.substring(1);
 
@@ -169,7 +197,6 @@
             };
         }
     }
-
     function showValidationResult(valid, result, error) {
         const out = document.getElementById('jq-validation-output');
         if (!out) {
@@ -271,62 +298,45 @@
         out.appendChild(resultsContainer);
     }
 
-    // Store the original textarea value if available
     let savedTextareaValue = '';
 
-    // Function to use the existing textarea or create a new one if needed
-    function useExistingOrCreateTextarea() {
-        // First, try to get the existing textarea that's in the MDX document
-        const existingTextarea = document.getElementById('payload');
 
-        // If there is an existing textarea, just ensure its visibility and return it
+    function useExistingOrCreateTextarea() {
+        const existingTextarea = document.getElementById('payload');
         if (existingTextarea) {
-            // Save the value if it has content
             if (existingTextarea.value && existingTextarea.value.trim() !== '') {
                 savedTextareaValue = existingTextarea.value;
             }
-
-            // Make sure it's visible and styled correctly
             existingTextarea.style.display = 'block';
             existingTextarea.style.visibility = 'visible';
             existingTextarea.style.height = '200px';
             existingTextarea.style.width = '100%';
-
-            // If we have a saved value and the textarea is empty, restore it
             if (savedTextareaValue && existingTextarea.value.trim() === '') {
                 existingTextarea.value = savedTextareaValue;
             } else if (!savedTextareaValue && existingTextarea.value.trim() === '') {
-                // If no saved value and textarea is empty, add example JSON
             }
 
             return existingTextarea;
         }
-
-        // If there's no textarea, we need to create one
-
-        // First, find the right place to insert it
         const form = document.getElementById('jq-validator-form');
         if (!form) {
-            return null; // Can't proceed without the form
+            return null;
         }
 
-        // Look for the container div for the JSON Payload
         const jsonPayloadContainer = Array.from(form.querySelectorAll('div')).find(div => {
             const label = div.querySelector('label');
             return label && label.textContent && label.textContent.trim().includes('JSON Payload');
         });
 
         if (!jsonPayloadContainer) {
-            return null; // Can't find where to put the textarea
+            return null;
         }
 
-        // Create a new textarea
         const newTextarea = document.createElement('textarea');
         newTextarea.id = 'payload';
         newTextarea.name = 'payload';
         newTextarea.placeholder = 'Enter JSON payload';
 
-        // Apply styles to make it visible
         newTextarea.style.width = '100%';
         newTextarea.style.height = '200px';
         newTextarea.style.padding = '10px';
@@ -339,7 +349,6 @@
         newTextarea.style.visibility = 'visible';
         newTextarea.style.backgroundColor = '#454343';
 
-        // Insert after the label
         const label = jsonPayloadContainer.querySelector('label');
         if (label) {
             label.parentNode.insertBefore(newTextarea, label.nextSibling);
@@ -381,15 +390,12 @@
         }
     }
 
-    // Make validateJQ available globally
     window.validateJQ = validateJQ;
 
     function handleSubmitClick(e) {
         if (e) e.preventDefault();
         validateJQ();
     }
-
-    // Helper function to find the submit button in the event path
     function findSubmitButton(element) {
         let current = element;
         while (current && current !== document) {
@@ -401,11 +407,9 @@
         return null;
     }
 
-    // Initialize validator button with safer approach
     function initializeValidatorButton() {
         const submitButton = document.getElementById('submit');
         if (submitButton) {
-            // Remove any existing listeners to avoid duplicates
             submitButton.removeEventListener('click', handleSubmitClick);
             submitButton.addEventListener('click', handleSubmitClick);
             return true;
@@ -413,7 +417,6 @@
         return false;
     }
 
-    // Use event delegation for click events
     document.addEventListener('click', function(e) {
         const submitButton = findSubmitButton(e.target);
         if (submitButton) {
@@ -421,33 +424,23 @@
             validateJQ();
         }
     });
-
-    // Use MutationObserver to detect when React removes or changes our textarea
     function setupMutationObserver() {
-        // First ensure we have a reference point - the form
         const form = document.getElementById('jq-validator-form');
         if (!form) return;
 
-        const observer = new MutationObserver(function(mutations) {
-            // Check if our textarea was removed
+        const observer = new MutationObserver(function() {
+            // Removed 'mutations' parameter since it's not being used
             const textareaExists = !!document.getElementById('payload');
             if (!textareaExists) {
-                // If textarea is gone, recreate it
                 useExistingOrCreateTextarea();
             }
-
-            // Also check if the submit button needs reinitialization
             initializeValidatorButton();
         });
-
-        // Observe the form and its descendants for changes
         observer.observe(form, {
             childList: true,
             subtree: true,
             attributes: true
         });
-
-        // Also observe the body in case the form itself gets replaced
         observer.observe(document.body, {
             childList: true,
             subtree: false
@@ -456,13 +449,8 @@
         return observer;
     }
 
-    // Function to periodically check and ensure textarea exists
     function startPeriodicCheck() {
-        // Initially ensure the textarea exists
         useExistingOrCreateTextarea();
-
-        // Then set up a periodic check
-         // Check every second
         return setInterval(() => {
             const textarea = document.getElementById('payload');
             if (!textarea || textarea.style.display === 'none' || textarea.style.visibility === 'hidden') {
@@ -470,36 +458,20 @@
             }
         }, 1000);
     }
-
-    // Initialize everything needed for the validator to work
     function init() {
-        // Immediately try to use or create the textarea
         useExistingOrCreateTextarea();
-
-        // Set up the validation button
         initializeValidatorButton();
-
-        // Set up mutation observer to detect DOM changes
         const observer = setupMutationObserver();
-
-        // Start periodic checks for the textarea
         const intervalId = startPeriodicCheck();
-
-        // Store references to cleanup if needed
         window.validatorCleanup = function() {
             if (observer) observer.disconnect();
             if (intervalId) clearInterval(intervalId);
         };
     }
-
-    // Start initialization when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
-        // DOM already loaded, initialize now
         init();
     }
-
-    // Also initialize on window load as a fallback
     window.addEventListener('load', init);
 })();
