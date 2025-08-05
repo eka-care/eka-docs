@@ -2139,6 +2139,280 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/profile/scan-and-pay/open-order:
+    post:
+      description: Share patient profile to get open orders.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                counter_id:
+                  description: Counter ID from QR Code
+                  type: string
+                hip_id:
+                  description: HIP ID from QR Code
+                  type: string
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  request_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/scan-and-pay/open-order/{request_id}:
+    get:
+      description: Retrieve open orders by request ID.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: Request ID
+        in: path
+        name: request_id
+        required: true
+        schema:
+          description: Request ID
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      abha_address:
+                        type: string
+                      error:
+                        $ref: '#/components/schemas/ScanAndPayErrorCodeMessage'
+                      intent:
+                        type: string
+                      procedures:
+                        items:
+                          $ref: '#/components/schemas/ScanAndPayProcedures'
+                        type: array
+                    type: object
+                  request_id:
+                    type: string
+                  status:
+                    type:
+                    - "null"
+                    - string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/scan-and-pay/patient-select:
+    post:
+      description: To get payment link for selected Open Order with intent - 'PAYMENT_ORDER'
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanAndPayPatientSelectEkaRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  request_id:
+                    type: string
+                  status:
+                    type:
+                    - "null"
+                    - string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/scan-and-pay/patient-select/{request_id}:
+    get:
+      description: Retrieve open orders by request ID.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: Request ID
+        in: path
+        name: request_id
+        required: true
+        schema:
+          description: Request ID
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      abha_address:
+                        type: string
+                      error:
+                        $ref: '#/components/schemas/ScanAndPayErrorCodeMessage'
+                      intent:
+                        type: string
+                      payment_bundle:
+                        $ref: '#/components/schemas/ScanAndPayPaymentEka'
+                      procedures:
+                        items:
+                          $ref: '#/components/schemas/ScanAndPayProcedures'
+                        type: array
+                    type: object
+                  request_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/scan-and-pay/transaction-details/{request_id}:
+    get:
+      description: Retrieve open orders by request ID.
+      parameters:
+      - description: Partner user ID
+        in: header
+        name: X-User-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: Request ID
+        in: path
+        name: request_id
+        required: true
+        schema:
+          description: Request ID
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ScanAndPayAcknowledgement'
+                  request_id:
+                    type: string
+                  status:
+                    type:
+                    - "null"
+                    - string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/profile/share:
     post:
       description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
@@ -4219,6 +4493,84 @@ components:
           type:
           - array
           - "null"
+      type: object
+    ScanAndPayAcknowledgement:
+      properties:
+        abhaAddress:
+          type: string
+        openOrderRequestId:
+          type: string
+        orderNumber:
+          type: string
+        paymentDate:
+          type: string
+        paymentReceiptLink:
+          type: string
+        status:
+          type: string
+        transactionId:
+          type: string
+      type: object
+    ScanAndPayErrorCodeMessage:
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+      type: object
+    ScanAndPayPatientSelectEkaRequest:
+      properties:
+        intent:
+          type: string
+        procedures:
+          items:
+            $ref: '#/components/schemas/ScanAndPayProcedures'
+          type:
+          - array
+          - "null"
+        request_id:
+          type: string
+      required:
+      - intent
+      - request_id
+      - procedures
+      type: object
+    ScanAndPayPaymentEka:
+      properties:
+        amount:
+          type: number
+        description:
+          type: string
+        merchant_id:
+          type: string
+        order_number:
+          type: string
+        payment_mode:
+          type: string
+        payment_url:
+          type: string
+      type: object
+    ScanAndPayProcedures:
+      properties:
+        category:
+          type: string
+        services:
+          items:
+            $ref: '#/components/schemas/ScanAndPayService'
+          type:
+          - array
+          - "null"
+      type: object
+    ScanAndPayService:
+      properties:
+        amount:
+          type: number
+        description:
+          type: string
+        name:
+          type: string
+        serviceId:
+          type: string
       type: object
     ScanandshareAddress:
       properties:
