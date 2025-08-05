@@ -1,0 +1,174 @@
+---
+title: Communication Flow Reference - Appointment & Clinical Events
+description: "This document outlines how communication is triggered for various use cases within the Eka platform. Each communication is driven by a system event (called a trigger) and follows a predefined logic using appointment, patient, or doctor data. "
+---
+
+# 
+
+This version of the table shows high-level details for each use case in a simplified format.
+
+### Event Triggers
+
+<table>
+  <thead>
+    <tr>
+      <th>Event Description</th>
+      <th>Event Name</th>
+      <th>Applicable Mode</th>
+      <th>Trigger</th>
+      <th>Sample Payload Snippet</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>In-Clinic Appointment Booking</td>
+      <td><code>appointment.created</code></td>
+      <td>In-clinic</td>
+      <td>When a patient books an appointment</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          padding: '6px',
+          backgroundColor: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"status": "BK",<br />
+            &nbsp;&nbsp;"mode": "in-clinic",<br />
+            &nbsp;&nbsp;"start_time": 1730189586<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+      <td>“Mode” can be checked by calling <a href="/api-reference/doc-tool/appointment-api/get-appointment-details">get_appointment_details</a> API</td>
+    </tr>
+    <tr>
+      <td>Tele-Consultation Booking</td>
+      <td><code>appointment.created</code></td>
+      <td>Tele</td>
+      <td>When a patient books an appointment</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          background: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace',
+          padding: '6px'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"status": "BK",<br />
+            &nbsp;&nbsp;"mode": "in-clinic",<br />
+            &nbsp;&nbsp;"start_time": 1730189586<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+
+      <td>“Mode” can be checked by calling <a href="/api-reference/doc-tool/appointment-api/get-appointment-details">get_appointment_details</a> API</td>
+    </tr>
+    <tr>
+      <td>Doctor Joined Video Consultation</td>
+      <td><code>appointment.tele.dr_joined</code></td>
+      <td>Tele</td>
+      <td>When the doctor enters the video consultation</td>
+      <td>
+        <pre style={{whiteSpace: 'pre', fontSize: '12px', padding: '6px', background: 'black', borderRadius: '4px', maxWidth: '250px', overflowX: 'auto'}}>
+            {`{}`}
+        </pre>
+      </td>
+      <td>Indicates patient that doctor has joined the video room</td>
+    </tr>
+    <tr>
+      <td>Appointment Cancelled</td>
+      <td><code>appointment.updated</code></td>
+      <td>All</td>
+      <td>When the appointment status changes to CN/CND/CNS</td>
+      <td>
+        <pre style={{whiteSpace: 'pre', fontSize: '12px', padding: '6px', background: 'black', borderRadius: '4px', maxWidth: '250px', overflowX: 'auto'}}>
+        {`{ "status": "CND" / "CN" / "CNS" }`}
+        </pre>
+      </td>
+      <td>Status values: CN (Cancelled by patient), CND (Cancelled by Doctor), CNS (Cancelled by Staff)</td>
+    </tr>
+    <tr>
+      <td>Prescription Created</td>
+      <td><code>prescription.created</code></td>
+      <td>All</td>
+      <td>When the doctor clicks finish prescription</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          background: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace',
+          padding: '6px'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"prescription_id": "",<br />
+            &nbsp;&nbsp;"appointment_id": "",<br />
+            &nbsp;&nbsp;"doctor_id": "",<br />
+            &nbsp;&nbsp;"patient_id": "",<br />
+            &nbsp;&nbsp;"prescription_url": ""<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+
+      <td>Use “prescription_id” to fetch full clinical content by calling <a href="/api-reference/doc-tool/prescription-api/get-prescription-details">get_prescription_details</a> API.</td>
+    </tr>
+    <tr>
+      <td>Prescription Updated</td>
+      <td><code>prescription.updated</code></td>
+      <td>All</td>
+      <td>When the doctor modifies a saved prescription</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          background: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace',
+          padding: '6px'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"prescription_id": "",<br />
+            &nbsp;&nbsp;"appointment_id": "",<br />
+            &nbsp;&nbsp;"doctor_id": "",<br />
+            &nbsp;&nbsp;"patient_id": "",<br />
+            &nbsp;&nbsp;"prescription_url": ""<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+
+      <td>Use “prescription_id” to call <a href="/api-reference/doc-tool/prescription-api/get-prescription-details">get_prescription_details</a> API for updated info.</td>
+    </tr>
+
+    
+  </tbody>
+</table>
