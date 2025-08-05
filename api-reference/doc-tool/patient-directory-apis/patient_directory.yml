@@ -162,7 +162,7 @@ paths:
               Comma-separated list of additional fields to include in the response.
               Example: `abha,dob,gen`
 
-              Valid optional fields:  "arc", "abha", "c_ate", "dob", "gen", "u_ate", "wid"
+              Valid optional fields:  `abha`, `c_ate`, `dob`, `gen`, `u_ate`
           schema:
             type: string
           example: mobile, fln
@@ -182,6 +182,7 @@ paths:
           description: |
             Include archived profiles in the response.
             Default is `false`. Set to `true` to include archived profiles.
+            Setting this to `true` will also include `arc` field in the response wherever applicable.
           schema:
             type: boolean
           example: false
@@ -212,6 +213,8 @@ paths:
                       nextPage:
                         type: integer
                         example: 2
+                        description: |
+                          The next page number to fetch. If there are no more pages, this will be `-1`.
         '500':
           description: Server error
 
@@ -221,14 +224,7 @@ paths:
       description: |
         Search patient profiles by **username**, **mobile**, or **full name** (prefix match).
 
-        Search patient profiles by exactly **one** of the following (prefix match):
-            - `username`
-            - `mobile`
-            - `name`
-
-        The `limit` parameter controls the number of results fetched internally (default: 100, maximum: 100).
-        
-        However, **the actual number of results returned may be less than `limit`**, because archived profiles are **filtered out after fetch**.
+        The `limit` parameter controls the number of results fetched internally (default: 50, maximum: 50).
       tags:
         - Patient
       parameters:
@@ -239,25 +235,30 @@ paths:
             type: string
             example: EC_1431
         - in: query
-          name: mobile
+          name: prefix
+          required: true
+          description: |
+            The search term to match against patient profiles.
+            This can be a **username**, **mobile number**, or **full name** (prefix match).
           schema:
             type: string
             example: "121"
-        - in: query
-          name: username
-          schema:
-            type: string
-            example: "EK001"
-        - in: query
-          name: name
-          schema:
-            type: string
-            example: "Eka"
         - in: query
           name: limit
           schema:
             type: integer
             example: 10
+        - in: query
+          name: select
+          required: false
+          description: |
+              Comma-separated list of additional fields to include in the response.
+              Example: `abha,dob,gen`
+
+              Valid optional fields:  `abha`, `c_ate`, `dob`, `gen`, `u_ate`, `is_age`
+          schema:
+            type: string
+          example: mobile, fln
       security:
         - bearerAuth: []
       responses:
