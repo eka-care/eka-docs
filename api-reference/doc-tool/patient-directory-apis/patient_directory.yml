@@ -465,6 +465,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/404Error'
 
+  /profiles/v1/patient/by-mobile/:
+    get:
+      summary: Retrieve patient profiles by mobile number
+      description: |
+        Retrieves patient profiles using the mobile number in a workspace.
+        The mobile number must be in the format `+<country_code><number>`.
+
+        By default, it returns a minimal profile with `oid`, `username`, `fln`, `gen`, `dob`, `abha`, `ccd`, `ps`. To get the full profile, set `full_profile=true`.
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+        - in: query
+          name: mob
+          required: true
+          schema:
+            type: string
+            example: "+911234567890"
+        - in: query
+          name: full_profile
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: |
+            If `true`, returns the full patient profile details.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Patient profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchByMobilePatientProfile'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -665,6 +704,38 @@ components:
           fln:
             type: string
             example: "Veena"
+
+    FetchByMobilePatientProfile:
+      type: object
+      properties:
+        mobile:
+          type: string
+          example: "1212121212"
+        fln:
+          type: string
+          example: "Test user"
+        dob:
+          type: string
+          format: date
+          example: "2000-01-02"
+        gen:
+          type: string
+          example: "M"
+        oid:
+          type: string
+          example: "175074536120088"
+        username:
+          type: string
+          example: "US0001"
+        abha:
+          type: string
+          example: "xyz@abdm"
+        ccd:
+          type: string
+          example: "+91"
+        ps:
+          type: string
+          example: "P"
 
     400Error:
       type: object
