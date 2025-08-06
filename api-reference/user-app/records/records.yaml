@@ -902,7 +902,7 @@ paths:
             type: string
           description: Unique case ID
         - in: header
-          name: X-Pt-Oid
+          name: x-pt-id
           required: true
           schema:
             type: string
@@ -970,7 +970,7 @@ paths:
             type: string
           description: Unique case ID
         - in: header
-          name: X-Pt-Oid
+          name: x-pt-id
           required: true
           schema:
             type: string
@@ -983,17 +983,21 @@ paths:
           description: ETag to check for updates
       responses:
         "200":
-          description: >
-            FHIR Bundle of the case  
-            
-            **Header:** `ETag: <etag>`  
-            
+          description: FHIR Bundle of the case
+          headers:
+            ETag:
+              description: Entity tag for the returned bundle
+              schema:
+                type: string
+              example: bundle-version-001
           content:
             application/json:
               schema:
                 type: object
                 description: Refer [FHIR R4 Profiles](https://www.nrces.in/ndhm/fhir/r4/profiles.html)
-
+              example:
+                resourceType: "Bundle"
+                entry: [ ]
         "304":
           description: Not Modified – The case has not changed since the provided ETag
 
@@ -1055,7 +1059,7 @@ paths:
             type: string
           description: Unique case ID
         - in: header
-          name: X-Pt-Oid
+          name: x-pt-id
           required: true
           schema:
             type: string
@@ -1153,7 +1157,7 @@ paths:
         **Note**: Use the `offset` param (i.e. `next_token`) for pagination and `u_at__gt` for incremental sync.
       parameters:
         - in: header
-          name: X-Pt-Oid
+          name: x-pt-id
           required: true
           schema:
             type: string
@@ -1236,7 +1240,7 @@ paths:
 
       parameters:
         - in: header
-          name: X-Pt-Oid
+          name: x-pt-id
           required: true
           schema:
             type: string
