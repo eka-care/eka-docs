@@ -1,0 +1,44 @@
+---
+title: "Presigned URL"
+openapi: "POST /v1/file-upload"
+---
+
+
+### Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `txn_id` | string | Yes | Session ID for file upload |
+| `action` | string | No | Upload action: `ekascribe-v2` |
+
+
+### Response
+```json
+{
+    "uploadData": {
+        "url": "https://m-prod-ekascribe-batch.s3.amazonaws.com/",
+        "fields": {
+            "x-amz-meta-mode": "dictation",
+            "x-amz-meta-uhid": "unique_patient_id",
+            "x-amz-meta-hfid": "unique_health_facility_id",
+            "key": "EC_173210496011417/txn_301/20250617_105524/${filename}",
+            "x-amz-algorithm": "AWS4-HMAC-SHA256",
+            "x-amz-credential": "...",
+            "x-amz-date": "...",
+            "policy": "...",
+            "x-amz-signature": "..."
+        }
+    },
+    "folderPath": "EC_173210496011417/txn_301/20250617_105524/",
+    "txn_id": "txn_301"
+}
+```
+
+## HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Presigned URL generated successfully |
+| 204 | File uploaded successfully |
+| 403 | Upload failed (expired policy) |
+
+---

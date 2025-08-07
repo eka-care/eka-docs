@@ -9,15 +9,15 @@ servers:
   - url: https://api.dev.eka.care
     description: Development server
 paths:
-  /voice/api/v2/transaction/init/{session_id}:
+  /voice/api/v2/transaction/init/{txn_id}:
     post:
       summary: Initialize Transaction
       description: Start the transcription process for the uploaded audio files. This endpoint is called after uploading any audio files in S3 bucket for transcription and processing.
       parameters:
-        - name: session_id
+        - name: txn_id
           in: path
           required: true
-          description: Unique identifier for the transaction session
+          description: Unique Transaction ID - same as passed in presigned URL request
           schema:
             type: string
             example: "test_1234"
@@ -208,7 +208,7 @@ paths:
                     type: string
                     description: Error code
 
-  /voice/api/v3/status/{session_id}:
+  /voice/api/v3/status/{txn_id}:
     get:
       summary: Transaction Result
       description: |
@@ -220,10 +220,10 @@ paths:
         
         The API implements intelligent polling to wait for completion and returns different HTTP status codes based on the processing outcome.
       parameters:
-        - name: session_id
+        - name: txn_id
           in: path
           required: true
-          description: Unique identifier for the transcription session
+          description: Unique Transaction ID - same as passed in presigned URL request
           schema:
             type: string
             example: "test_1234"
@@ -407,9 +407,6 @@ paths:
       description: |
         This endpoint generates presigned URLs for uploading audio files to S3. It provides the necessary credentials and upload parameters to securely upload files directly to AWS S3.
         
-        The process involves two main steps:
-        - **Request Presigned URL**: Call this endpoint to get folderPath and uploadData
-        - **Upload File**: Use the returned `uploadData` and `folderPath` to upload your file to S3 using multipart form data
       parameters:
         - name: txn_id
           in: query

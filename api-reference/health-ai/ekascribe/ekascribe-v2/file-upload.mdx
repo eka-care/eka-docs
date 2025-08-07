@@ -1,0 +1,146 @@
+---
+title: "File Upload Process"
+---
+
+This document provides a guide on how to upload audio files using a presigned URL of previous step. 
+
+## Prerequisites
+
+Before uploading files, you must first obtain a presigned URL by calling the [Get Presigned URL](/api-reference/health-ai/ekascribe/ekascribe-v2/presigned-url) endpoint.
+
+## Upload Process
+
+### Step 1: Use the Presigned URL API Response
+
+Use the response from the presigned URL API call. The response will look like this:
+
+```json
+upload_response = {
+    "uploadData": {
+        "url": "https://m-prod-ekascribe-batch.s3.amazonaws.com/",
+        "fields": {
+            "x-amz-meta-mode": "dictation",
+            "x-amz-meta-uhid": "unique_patient_id",
+            "x-amz-meta-hfid": "unique_health_facility_id",
+            "key": "EC_173210496011417/txn_301/20250617_105524/${filename}",
+            "x-amz-algorithm": "AWS4-HMAC-SHA256",
+            "x-amz-credential": "...",
+            "x-amz-date": "...",
+            "policy": "...",
+            "x-amz-signature": "..."
+        }
+    },
+    "folderPath": "EC_173210496011417/txn_301/20250617_105524/",
+    "txn_id": "txn_301"
+}
+```
+
+### Step 2: Add Your Audio File Paths
+
+Specify the paths to your audio files that you want to upload:
+
+```python
+# Add your audio file paths here
+audio_files = [
+    "/path/to/your/first_audio.wav",
+    "/path/to/your/second_audio.mp3",
+    "/path/to/your/third_audio.m4a"
+]
+```
+
+### Step 3: Set the Correct Action
+
+For EkaScribe V2, use the following action:
+
+```python
+action = "ekascribe-v2"
+```
+
+## Complete Upload Workflow
+
+Here's the complete Python code combining all three steps:
+
+```python
+import requests
+import os
+
+def upload_file(upload_data, folder_path, file_path):
+    """Upload a single audio file"""
+    file_name = os.path.basename(file_path)
+    upload_data['fields']['key'] = folder_path + file_name
+    
+    with open(file_path, 'rb') as file:
+        files = {'file': (file_name, file)}
+        response = requests.post(upload_data['url'], data=upload_data['fields'], files=files)
+    
+    if response.status_code == 204:
+        return {'key': folder_path + file_name, 'size': os.path.getsize(file_path)}
+    else:
+        raise Exception(f"Upload failed: {response.status_code}")
+
+# Step 1: Use the presigned URL response (from previous API call)
+upload_response = {
+    "uploadData": {
+        "url": "https://m-prod-ekascribe-batch.s3.amazonaws.com/",
+        "fields": {
+            "x-amz-meta-mode": "dictation",
+            "x-amz-meta-uhid": "unique_patient_id",
+            "x-amz-meta-hfid": "unique_health_facility_id",
+            "key": "EC_173210496011417/txn_301/20250617_105524/${filename}",
+            "x-amz-algorithm": "AWS4-HMAC-SHA256",
+            "x-amz-credential": "...",
+            "x-amz-date": "...",
+            "policy": "...",
+            "x-amz-signature": "..."
+        }
+    },
+    "folderPath": "EC_173210496011417/txn_301/20250617_105524/",
+    "txn_id": "txn_301"
+}
+
+# Step 2: Add your audio file paths
+audio_files = [
+    "/path/to/your/first_audio.wav",
+    "/path/to/your/second_audio.mp3",
+    "/path/to/your/third_audio.m4a"
+]
+
+# Step 3: Set the correct action
+action = "ekascribe-v2"
+
+# Get transaction ID from upload response
+transaction_id = upload_response["txn_id"]
+
+# Upload audio files
+upload_results = []
+for audio_file in audio_files:
+    result = upload_file(
+        upload_response['uploadData'].copy(),  # Use copy to avoid modifying original
+        upload_response['folderPath'],
+        audio_file
+    )
+    upload_results.append(result)
+    print(f"Uploaded: {result['key']}")
+
+# Process responses
+for response in upload_results:
+    print(f"File: {response['key']}, Size: {response['size']} bytes")
+```
+
+## Expected Response
+
+After successful upload, you'll see output like:
+
+```
+Uploaded: EC_173210496011417/txn_301/20250617_105524/first_audio.wav
+File: EC_173210496011417/txn_301/20250617_105524/first_audio.wav, Size: 2847392 bytes
+Uploaded: EC_173210496011417/txn_301/20250617_105524/second_audio.mp3
+File: EC_173210496011417/txn_301/20250617_105524/second_audio.mp3, Size: 1823456 bytes
+```
+
+## Next Steps
+
+After successfully uploading your audio files, proceed to [Initialize Transaction](/api-reference/health-ai/ekascribe/ekascribe-v2/initialize-transaction) to start the transcription process.
+Keep in mind that the same txn_id should be used while initializing transaction and fetching the output.
+
+---
