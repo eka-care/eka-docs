@@ -1,0 +1,178 @@
+---
+title: Communication Flow Reference - Appointment & Clinical Events
+mode: "wide"
+---
+
+This section captures all the system-driven communication events that Eka currently supports through webhooks (events)  — such as appointment creation, cancellations, teleconsultation updates, prescription events, etc. Each entry includes the event name, when it's triggered, a sample payload, and guidance on how to use it.
+
+Each communication is driven by a system event (webhook) and follows a predefined logic using <a href="/api-reference/doc-tool/appointment-api/get-appointment-details">appointment</a>, <a href="/api-reference/doc-tool/patient-directory-apis/retrieve-patient-details">patient</a>, <a href="/api-reference/doc-tool/doctor-and-clinic-api/get-doctor-profile">doctor</a>, or <a href="/api-reference/doc-tool/doctor-and-clinic-api/get-clinic-details">clinic</a> data.
+
+These webhook events enable seamless communication between Eka and your systems, allowing you to respond to key actions in real time — whether it's updating records, sending notifications, or triggering downstream processes based on patient or doctor activity.
+
+This version of the table shows high-level details for each use case in a simplified format.
+
+### Event Triggers
+
+<table>
+  <thead>
+    <tr>
+      <th>Event Description</th>
+      <th>Event Name</th>
+      <th>Applicable Mode</th>
+      <th>Trigger</th>
+      <th>Sample Payload Snippet</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>In-Clinic Appointment Booking</td>
+      <td><code>appointment.created</code></td>
+      <td>In-clinic</td>
+      <td>When a patient books an appointment</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          padding: '6px',
+          backgroundColor: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace',
+          lineHeight:'0.9'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"status": "BK",<br />
+            &nbsp;&nbsp;"mode": "in-clinic",<br />
+            &nbsp;&nbsp;"start_time": 1730189586<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+      <td>“Mode” can be checked by calling <a href="/api-reference/doc-tool/appointment-api/get-appointment-details">get_appointment_details</a> API</td>
+    </tr>
+    <tr>
+      <td>Tele-Consultation Booking</td>
+      <td><code>appointment.created</code></td>
+      <td>Tele</td>
+      <td>When a patient books an appointment</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          background: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace',
+          padding: '6px',
+          lineHeight:'0.9'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"status": "BK",<br />
+            &nbsp;&nbsp;"mode": "in-clinic",<br />
+            &nbsp;&nbsp;"start_time": 1730189586<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+
+      <td>“Mode” can be checked by calling <a href="/api-reference/doc-tool/appointment-api/get-appointment-details">get_appointment_details</a> API</td>
+    </tr>
+    <tr>
+      <td>Doctor Joined Video Consultation</td>
+      <td><code>appointment.tele.dr_joined</code></td>
+      <td>Tele</td>
+      <td>When the doctor enters the video consultation</td>
+      <td>
+        <pre style={{whiteSpace: 'pre', fontSize: '12px', padding: '6px', background: 'black', borderRadius: '4px', maxWidth: '250px', overflowX: 'auto'}}>
+            {`{}`}
+        </pre>
+      </td>
+      <td>Indicates patient that doctor has joined the video room</td>
+    </tr>
+    <tr>
+      <td>Appointment Cancelled</td>
+      <td><code>appointment.updated</code></td>
+      <td>All</td>
+      <td>When the appointment status changes to CN/CND/CNS</td>
+      <td>
+        <pre style={{whiteSpace: 'pre', fontSize: '12px', padding: '6px', background: 'black', borderRadius: '4px', maxWidth: '250px', overflowX: 'auto'}}>
+        {`{ "status": "CND" / "CN" / "CNS" }`}
+        </pre>
+      </td>
+      <td>Status values: CN (Cancelled by patient), CND (Cancelled by Doctor), CNS (Cancelled by Staff).</td>
+    </tr>
+    <tr>
+      <td>Prescription Created</td>
+      <td><code>prescription.created</code></td>
+      <td>All</td>
+      <td>When the doctor clicks finish prescription</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          background: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace',
+          padding: '6px',
+          lineHeight:'0.9'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"prescription_id": "prescription_id",<br />
+            &nbsp;&nbsp;"appointment_id": "appointment_id1",<br />
+            &nbsp;&nbsp;"prescription_url": "prescription_url.pdf"<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+
+      <td>Use “prescription_id” to fetch full clinical content by calling <a href="/api-reference/doc-tool/prescription-api/get-prescription-details">get_prescription_details</a> API.</td>
+    </tr>
+    <tr>
+      <td>Prescription Updated</td>
+      <td><code>prescription.updated</code></td>
+      <td>All</td>
+      <td>When the doctor modifies a saved prescription</td>
+      <td>
+        <pre style={{
+          whiteSpace: 'pre',
+          fontSize: '12px',
+          background: 'black',
+          borderRadius: '4px',
+          maxWidth: '250px',
+          overflowX: 'auto',
+          color: 'white',
+          margin: 0,
+          fontFamily: 'monospace',
+          padding: '6px',
+          lineHeight:'0.9'
+        }}>
+          <code>
+            {'{'}<br />
+            &nbsp;&nbsp;"prescription_id": "prescription_id1",<br />
+            &nbsp;&nbsp;"appointment_id": "appointment_id1",<br />
+            &nbsp;&nbsp;"prescription_url": "prescription_url.pdf"<br />
+            {'}'}
+          </code>
+        </pre>
+      </td>
+
+      <td>Use “prescription_id” to call <a href="/api-reference/doc-tool/prescription-api/get-prescription-details">get_prescription_details</a> API for updated info.</td>
+    </tr>
+
+    
+  </tbody>
+</table>
