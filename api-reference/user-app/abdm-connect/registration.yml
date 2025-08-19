@@ -754,7 +754,62 @@ paths:
       security:
       - authApiKey: []
       summary: Suggest Abha Address
-  /abdm/uhi/v1/blood-bank/search/blood-banks/{request_id}:
+  /abdm/uhi/v1/blood-bank/search:
+    post:
+      description: Search for Blood Bank District Wise
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelSearchBloodBankPayload'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  request_id:
+                    type: string
+                  status:
+                    enum:
+                    - SUCCESS
+                    - FAILURE
+                    examples:
+                    - SUCCESS
+                    type: string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/uhi/v1/blood-bank/search/{request_id}:
     get:
       description: Get Blood Banks which is searched.
       parameters:
@@ -798,116 +853,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelBloodBankStateWiseResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/uhi/v1/blood-bank/search/gps:
-    post:
-      description: Search for Blood Bank using latitude & longitude
-      parameters:
-      - description: Eka User ID (OID)
-        in: header
-        name: X-Pt-Id
-        schema:
-          type: string
-      - description: Partner User ID
-        in: header
-        name: X-Partner-Pt-Id
-        schema:
-          type: string
-      - description: Partner HIP ID
-        in: header
-        name: X-Hip-Id
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ModelGPSWiseBloodBankPayload'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  request_id:
-                    type: string
-                  status:
-                    enum:
-                    - SUCCESS
-                    - FAILURE
-                    examples:
-                    - SUCCESS
-                    type: string
-                type: object
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/uhi/v1/blood-bank/search/state-district:
-    post:
-      description: Search for Blood Bank District Wise
-      parameters:
-      - description: Eka User ID (OID)
-        in: header
-        name: X-Pt-Id
-        schema:
-          type: string
-      - description: Partner User ID
-        in: header
-        name: X-Partner-Pt-Id
-        schema:
-          type: string
-      - description: Partner HIP ID
-        in: header
-        name: X-Hip-Id
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ModelSateWiseBloodBankPayload'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  request_id:
-                    type: string
-                  status:
-                    enum:
-                    - SUCCESS
-                    - FAILURE
-                    examples:
-                    - SUCCESS
-                    type: string
-                type: object
           description: OK
       security:
       - authApiKey: []
@@ -4562,19 +4507,6 @@ components:
         message:
           type: string
       type: object
-    ModelGPSWiseBloodBankPayload:
-      properties:
-        blood_component:
-          type: string
-        blood_group:
-          type: string
-        gps:
-          type: string
-        radius:
-          type: string
-        unit:
-          type: string
-      type: object
     ModelMeasure:
       properties:
         computed_value:
@@ -4622,16 +4554,39 @@ components:
         measure:
           $ref: '#/components/schemas/ModelMeasure'
       type: object
-    ModelSateWiseBloodBankPayload:
+    ModelRadiusAround:
+      properties:
+        unit:
+          examples:
+          - km
+          type: string
+        value:
+          type: integer
+      type: object
+    ModelSearchBloodBankPayload:
       properties:
         blood_component:
           type: string
         blood_group:
           type: string
         district:
+          description: district to search, mandatory for district search
+          type: string
+        location:
+          $ref: '#/components/schemas/NdhmeventLocation'
+          description: location to search, mandatory for location search
+        radius:
+          $ref: '#/components/schemas/ModelRadiusAround'
+          description: radius to search, mandatory for location search
+        search_type:
           type: string
         state:
+          description: State of the district, mandatory for district search
           type: string
+      required:
+      - search_type
+      - blood_group
+      - blood_component
       type: object
     ModelTimeSeries:
       properties:
@@ -4852,6 +4807,13 @@ components:
           type:
           - array
           - "null"
+      type: object
+    NdhmeventLocation:
+      properties:
+        lat:
+          type: number
+        long:
+          type: number
       type: object
     PhrLoginOTPRequest:
       properties:
@@ -5271,7 +5233,7 @@ components:
     ScanAndPayErrorCodeMessage:
       properties:
         code:
-          type: integer
+          type: string
         message:
           type: string
       type: object
