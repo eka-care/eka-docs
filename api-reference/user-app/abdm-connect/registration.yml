@@ -754,6 +754,108 @@ paths:
       security:
       - authApiKey: []
       summary: Suggest Abha Address
+  /abdm/uhi/v1/blood-bank/search:
+    post:
+      description: Search for Blood Bank District Wise
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelSearchBloodBankPayload'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  request_id:
+                    type: string
+                  status:
+                    enum:
+                    - SUCCESS
+                    - FAILURE
+                    examples:
+                    - SUCCESS
+                    type: string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/uhi/v1/blood-bank/search/{request_id}:
+    get:
+      description: Get Blood Banks which is searched.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: Request ID
+        in: path
+        name: request_id
+        required: true
+        schema:
+          description: Request ID
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelBloodBankStateWiseResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/care-contexts/discover:
     post:
       description: "ABDM allows a user to find their health records from any health
@@ -2398,9 +2500,14 @@ paths:
     post:
       description: Share patient profile to get open orders.
       parameters:
-      - description: Partner user ID
+      - description: Eka User ID (OID)
         in: header
-        name: X-User-Id
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
         schema:
           type: string
       - description: Partner HIP ID
@@ -2460,9 +2567,14 @@ paths:
     get:
       description: Retrieve open orders by request ID.
       parameters:
-      - description: Partner user ID
+      - description: Eka User ID (OID)
         in: header
-        name: X-User-Id
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
         schema:
           type: string
       - description: Partner HIP ID
@@ -2532,9 +2644,14 @@ paths:
     post:
       description: To get payment link for selected Open Order with intent - 'PAYMENT_ORDER'
       parameters:
-      - description: Partner user ID
+      - description: Eka User ID (OID)
         in: header
-        name: X-User-Id
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
         schema:
           type: string
       - description: Partner HIP ID
@@ -2589,9 +2706,14 @@ paths:
     get:
       description: Retrieve open orders by request ID.
       parameters:
-      - description: Partner user ID
+      - description: Eka User ID (OID)
         in: header
-        name: X-User-Id
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
         schema:
           type: string
       - description: Partner HIP ID
@@ -2661,9 +2783,14 @@ paths:
     get:
       description: Retrieve open orders by request ID.
       parameters:
-      - description: Partner user ID
+      - description: Eka User ID (OID)
         in: header
-        name: X-User-Id
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
         schema:
           type: string
       - description: Partner HIP ID
@@ -4303,6 +4430,236 @@ components:
           - array
           - "null"
       type: object
+    ModelBloodBankEkaResponse:
+      properties:
+        context:
+          $ref: '#/components/schemas/ModelContext'
+        error_code:
+          $ref: '#/components/schemas/ModelErrorCode'
+        message:
+          $ref: '#/components/schemas/ModelUHIMessage'
+      type: object
+    ModelBloodBankStateWiseResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/ModelBloodBankEkaResponse'
+        request_id:
+          type: string
+        status:
+          type: string
+      type: object
+    ModelCatalogDescriptor:
+      properties:
+        descriptor:
+          $ref: '#/components/schemas/ModelUHIDescriptor'
+        providers:
+          items:
+            $ref: '#/components/schemas/ModelProviders'
+          type:
+          - array
+          - "null"
+      type: object
+    ModelContact:
+      properties:
+        email:
+          type: string
+        phone:
+          type: string
+      type: object
+    ModelContext:
+      properties:
+        action:
+          type: string
+        city:
+          type: string
+        consumer_id:
+          type: string
+        consumer_uri:
+          type: string
+        core_version:
+          type: string
+        country:
+          type: string
+        domain:
+          type: string
+        message_id:
+          type: string
+        provider_id:
+          type: string
+        provider_uri:
+          type: string
+        timestamp:
+          type: string
+        transaction_id:
+          type: string
+      type: object
+    ModelDescriptor:
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+      type: object
+    ModelErrorCode:
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      type: object
+    ModelMeasure:
+      properties:
+        computed_value:
+          type: integer
+        eliminated_value:
+          type: integer
+        unit:
+          type: string
+        value:
+          type: integer
+      type: object
+    ModelProviders:
+      properties:
+        categories:
+          items:
+            $ref: '#/components/schemas/ModelUHICategory'
+          type:
+          - array
+          - "null"
+        contact:
+          $ref: '#/components/schemas/ModelContact'
+        descriptor:
+          $ref: '#/components/schemas/ModelUHIDescriptor'
+        fulfillments:
+          items:
+            $ref: '#/components/schemas/ModelUHIFulfillments'
+          type:
+          - array
+          - "null"
+        id:
+          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/ModelUHIItem'
+          type:
+          - array
+          - "null"
+        locations:
+          $ref: '#/components/schemas/ModelUHILocation'
+      type: object
+    ModelQuantity:
+      properties:
+        count:
+          type: integer
+        measure:
+          $ref: '#/components/schemas/ModelMeasure'
+      type: object
+    ModelRadiusAround:
+      properties:
+        unit:
+          examples:
+          - km
+          type: string
+        value:
+          type: integer
+      type: object
+    ModelSearchBloodBankPayload:
+      properties:
+        blood_component:
+          type: string
+        blood_group:
+          type: string
+        district:
+          description: district to search, mandatory for district search
+          type: string
+        location:
+          $ref: '#/components/schemas/NdhmeventLocation'
+          description: location to search, mandatory for location search
+        radius:
+          $ref: '#/components/schemas/ModelRadiusAround'
+          description: radius to search, mandatory for location search
+        search_type:
+          type: string
+        state:
+          description: State of the district, mandatory for district search
+          type: string
+      required:
+      - search_type
+      - blood_group
+      - blood_component
+      type: object
+    ModelTimeSeries:
+      properties:
+        time:
+          $ref: '#/components/schemas/ModelTimeStamp'
+      type: object
+    ModelTimeStamp:
+      properties:
+        timestamp:
+          type: string
+      type: object
+    ModelUHICategory:
+      properties:
+        descriptor:
+          $ref: '#/components/schemas/ModelDescriptor'
+        id:
+          type: string
+      type: object
+    ModelUHIDescriptor:
+      properties:
+        code:
+          type: string
+        images:
+          type: string
+        long_desc:
+          type: string
+        name:
+          type: string
+        short_desc:
+          type: string
+      type: object
+    ModelUHIFulfillments:
+      properties:
+        id:
+          type: string
+        start:
+          $ref: '#/components/schemas/ModelTimeSeries'
+        type:
+          type: string
+      type: object
+    ModelUHIItem:
+      properties:
+        category_id:
+          type: string
+        descriptor:
+          $ref: '#/components/schemas/ModelDescriptor'
+        fulfillment_id:
+          type: string
+        id:
+          type: string
+        quantity:
+          $ref: '#/components/schemas/ModelQuantity'
+      type: object
+    ModelUHILocation:
+      properties:
+        address:
+          type: string
+        city:
+          $ref: '#/components/schemas/ModelDescriptor'
+        country:
+          $ref: '#/components/schemas/ModelDescriptor'
+        descriptor:
+          $ref: '#/components/schemas/ModelUHIDescriptor'
+        gps:
+          type: string
+        id:
+          type: string
+      type: object
+    ModelUHIMessage:
+      properties:
+        catalog:
+          $ref: '#/components/schemas/ModelCatalogDescriptor'
+      type: object
     ModelsAddFacilityRequest:
       properties:
         clinic_id:
@@ -4450,6 +4807,13 @@ components:
           type:
           - array
           - "null"
+      type: object
+    NdhmeventLocation:
+      properties:
+        lat:
+          type: number
+        long:
+          type: number
       type: object
     PhrLoginOTPRequest:
       properties:
@@ -4869,7 +5233,7 @@ components:
     ScanAndPayErrorCodeMessage:
       properties:
         code:
-          type: integer
+          type: string
         message:
           type: string
       type: object
