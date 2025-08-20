@@ -145,6 +145,10 @@ paths:
                   next_token:
                     type: string
                     description: Token used for pagination to retrieve the next set of results in a paginated response.
+                  source_refreshed_at:
+                    type: integer
+                    format: int64
+                    nullable: true
 
         "400":
           description: Bad Request. Invalid or missing parameters.
@@ -557,6 +561,30 @@ paths:
           description: Unexpected error.
         "404":
           description: No such document.
+      security:
+        - auth: []
+
+  /mr/api/v1/docs/refresh:
+    get:
+      summary: Sends a refresh event to the origin
+      description: This endpoint triggers a refresh event for the specified document, prompting the origin to update its state.
+      operationId: sendRefreshEvent
+      parameters:
+        - name: X-Pt-Id
+          in: header
+          required: true
+          schema:
+            type: string
+          description: eka user id (OID)
+      responses:
+        "202":
+          description: Accepted. The refresh event has been triggered.
+        "204":
+          description: No origin present to send the refresh event.
+        "5XX":
+          description: Unexpected error.
+        "400":
+          description: Bad request. Invalid request parameters.
       security:
         - auth: []
 
