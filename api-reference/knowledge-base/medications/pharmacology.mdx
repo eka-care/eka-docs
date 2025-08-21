@@ -2,46 +2,39 @@
 openapi: get /eka-mcp/pharmacology/v1/search
 ---
 
-Based on the Pharmacology details published by the National Formulary of India (NFI), this endpoint provides comprehensive drug information including dosage, contraindications, interactions, and clinical guidance.
+## Why Use This API
 
+Access generic information from India's National Formulary through a simple REST API. Instead of manually compiling medication databases or scraping multiple sources, get structured generic data that's already standardized and ready to use in your application.
+
+This information has been extracted from guidelines published by the National Formulary of India from the Ministry of Health & Welfare (Government of India) - [Link](https://qps.nhsrcindia.org/sites/default/files/2022-01/National%20Formulary%20of%20India%20%28NFI%29%2C%202011.pdf)
+
+The details have been extracted through a vision LLM and every generic has been validated by a team of clinicians at eka.care
+
+## What You Get Per Generic
+
+Each response includes comprehensive information about the medication:
+
+### Clinical Information
+- **What it treats** (`indications`) - Medical conditions and symptoms
+- **How much to take** (`dose`) - Dosing instructions for adults and children  
+- **Drug interactions** (`precautions_appendix`) - Contraindications and safety warnings
+- **Side effects** (`adverse_effects`, `contraindications`) - Known adverse reactions and warnings
+- **Pregnancy safety** (`pregnancy_category`) - Safety classification for pregnant patients
+
+### Drug Details  
+- **Generic name** (`generic_name`) - Standard medication name
+- **Components** (`components`, `is_compound`) - Active ingredients and compound status
+- **Category** (`generic_category`) - Therapeutic classification 
+- **Available forms** (`availability`) - Tablets, capsules, injections, etc.
+- **Storage** (`storage`) - Temperature and storage requirements
+- **Schedule** (`schedule`) - Regulatory classification
+- **Notes** (`note`) - Additional clinical guidance
 
 ## Search Capabilities
 
 The search supports:
-- **Single drug searches**: Find specific medications by generic name
-- **Compound drug searches**: Search for combination drugs using separators like "+", ",", "and"
-- **Category filtering**: Filter by drug categories
+- **Single generic searches**: Find specific medications by generic name
+- **Compound generic searches**: Search for combination generics using separators like "+", ",", "and"
+- **Category filtering**: Filter by generic categories
 - **Exact matching**: Option for precise matches only
 - **Relevance threshold**: Adjustable filtering for result quality
-
-
-## Response Structure
-
-Each pharmacology entry contains detailed information about medications:
-
-### Basic Drug Information
-- **generic_name**: The generic name of the drug (e.g., "Rifampicin")
-- **components**: Array of active components
-- **is_compound**: Boolean indicating if it's a compound drug
-- **generic_category**: Drug classification (e.g., "Anti-Infectives")
-- **schedule**: Drug scheduling classification
-
-### Clinical Information
-- **indications**: Medical conditions the drug treats
-- **dose**: Detailed dosing instructions for adults and children
-- **contraindications**: Conditions where the drug should not be used
-- **precautions**: Important safety considerations and monitoring requirements
-- **adverse_effects**: Known side effects and adverse reactions
-- **pregnancy_category**: Pregnancy safety classification
-
-### Pharmaceutical Details
-- **availability**: Available formulations and strengths
-- **storage**: Storage requirements
-- **note**: Important clinical notes and warnings
-
-### Drug Interactions
-- **precautions_appendix**: Detailed interaction information organized by:
-  - **Appendix 6B**: Contraceptive interactions
-  - **Appendix 6C**: Drug-drug interactions with specific medications
-  - **Appendix 6D**: Absorption considerations
-  - **Appendix 7A**: Dosing adjustments for hepatic impairment
