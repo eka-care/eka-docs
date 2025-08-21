@@ -10,6 +10,8 @@ info:
 tags:
 -  name: protocols
 -  name: medications
+-  name: pharmacology
+-  name: snomed
 paths:
    /eka-mcp/protocols/v1/search:
       post:
@@ -43,50 +45,12 @@ paths:
                application/json:
                   schema:
                      $ref: '#/components/schemas/QueryProtocols.b6c8896'
-   /eka-mcp/protocols/v1/tags:
+   /eka-mcp/protocols/v1/publishers/all:
       get:
-         summary: Get all Tags
-         description: This endpoint returns the complete list of tags that are supported
-            through search
+         summary: Get all Publishers
+         description: This endpoint returns a list of all protocols publishers
          tags:
          - protocols
-         parameters: []
-         responses:
-            '200':
-               description: OK
-               content:
-                  application/json:
-                     schema:
-                        $ref: '#/components/schemas/TagList.a9993e3'
-            '500':
-               description: Internal Server Error
-               content:
-                  application/json:
-                     schema:
-                        $ref: '#/components/schemas/GenericErr.82b01e4'
-            '403':
-               description: Forbidden
-               content:
-                  application/json:
-                     schema:
-                        $ref: '#/components/schemas/GenericErr.82b01e4'
-   /eka-mcp/protocols/v1/publishers/tag:
-      get:
-         summary: Get Publishers by Tag
-         description: This endpoint returns a list of all protocols publishers for
-            given tag.
-         tags:
-         - protocols
-         parameters:
-         -  name: tag
-            in: query
-            schema:
-               default: null
-               description: The tag/condition for which the publisher is being fetched
-               title: Tag
-               type: string
-            required: false
-            description: The tag/condition for which the publisher is being fetched
          responses:
             '200':
                description: OK
@@ -111,8 +75,7 @@ paths:
          summary: Search Medications
          description: 'This endpoint returns suggested/similar drugs from the Eka
             medical database for the given parameters - drug name, generics, form
-            or volume used by server.
-
+            or volume.
 
             Suggestions are ranked based on similarity and also popularity (custom
             eka metric) of the medicine'
@@ -150,7 +113,7 @@ paths:
                default: null
                description: The generic name of the medicine like 'Glimeperide', 'Metformin'.
                   In case of compound generics, pass the name only with comma separated
-                  like Glimeperide,Metformin
+                  like Glimeperide, Metformin
                title: Generic Names
             required: false
             description: The generic name of the medicine like 'Glimeperide', 'Metformin'.
@@ -187,38 +150,174 @@ paths:
                   application/json:
                      schema:
                         $ref: '#/components/schemas/GenericErr.82b01e4'
-   /eka-mcp/medications/v1/interaction:
-      post:
-         summary: Check Drugs Interactions
-         description: 'This endpoint is used to check if given the list of drugs interact
-            with each other. It check drugs interaction on the basis of generics composition.
+   /eka-mcp/pharmacology/v1/autocomplete:
+      get:
+         summary: Get Drug Names for Autocomplete
+         description: 'This endpoint returns lists of generic and brand drug names for autocomplete purposes.
 
-
-            The interactions can be of any of the given categories: x,a,b,c,d or not
-            have any interactions.'
+            Returns:
+            - generic_names: List of generic drug names
+            - brand_names: List of brand drug names (if available)
+            - compound_drugs: List of compound drug names containing multiple components'
          tags:
-         - medications
+         - pharmacology
          parameters:
-         -  name: drug_names
+         -  name: query
             in: query
             schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
                default: null
-               description: 'List of drug names to check for interactions. Eg: [''Bencid
-                  tablet'', ''Fluvir 75Mg capsule'']'
-               items:
-                  type: string
-               title: Drug Names
-               type: array
+               description: Text to filter drug names (optional)
+               title: Query
             required: false
-            description: 'List of drug names to check for interactions. Eg: [''Bencid
-               tablet'', ''Fluvir 75Mg capsule'']'
+            description: Text to filter drug names (optional)
+         -  name: limit
+            in: query
+            schema:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               default: 100
+               description: Maximum number of results to return
+               title: Limit
+            required: false
+            description: Maximum number of results to return
          responses:
             '200':
                description: OK
                content:
                   application/json:
                      schema:
-                        $ref: '#/components/schemas/Interaction.e57b7a5'
+                        $ref: '#/components/schemas/AutocompleteResponse.a9993e3'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+   /eka-mcp/pharmacology/v1/search:
+      get:
+         summary: Search Pharmacology Entries
+         description: 'This endpoint returns pharmacology entries from the NFI (National Formulary of India)
+            database based on the provided search parameters.
+
+            The search looks across drug names with special support for compound drugs:
+            - Single drug searches (e.g., "Rifampicin") will prioritize exact matches
+            - Compound drug searches (e.g., "Rifampicin + Isoniazid") will find combinations
+            - The order of components in compound searches doesn''t matter
+            - Separators like "+", ",", "and", or spaces are all supported
+
+            Results are ranked by relevance, with exact matches first, followed by
+            compound matches containing all search terms.'
+         tags:
+         - pharmacology
+         parameters:
+         -  name: query
+            in: query
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: Text to search for across all fields. Can be a single drug name (e.g., 'Rifampicin') or compound drugs (e.g., 'Rifampicin + Isoniazid')
+               title: Query
+            required: false
+            description: Text to search for across all fields. Can be a single drug name (e.g., 'Rifampicin') or compound drugs (e.g., 'Rifampicin + Isoniazid')
+         -  name: category
+            in: query
+            schema:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               default: null
+               description: Filter by category (e.g., 'Antibiotics', 'Analgesics')
+               title: Category
+            required: false
+            description: Filter by category (e.g., 'Antibiotics', 'Analgesics')
+         -  name: limit
+            in: query
+            schema:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               default: 10
+               description: Maximum number of results to return
+               title: Limit
+            required: false
+            description: Maximum number of results to return
+         -  name: exact_match
+            in: query
+            schema:
+               anyOf:
+               -  type: boolean
+               -  type: 'null'
+               default: false
+               description: If true, only return exact matches for the query
+               title: Exact Match
+            required: false
+            description: If true, only return exact matches for the query
+         -  name: relevance_threshold
+            in: query
+            schema:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               default: 100
+               description: Minimum relevance score for results (higher = more strict filtering)
+               title: Relevance Threshold
+            required: false
+            description: Minimum relevance score for results (higher = more strict filtering)
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/PharmacologySearchResponse.a9993e3'
+            '500':
+               description: Internal Server Error
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+            '403':
+               description: Forbidden
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/GenericErr.82b01e4'
+   /eka-mcp/linking/v1/snomed:
+      get:
+         summary: Get SNOMED ID
+         description: Link SNOMED ID for the given text
+         tags:
+         - snomed
+         parameters:
+         -  name: text_to_link
+            in: query
+            schema:
+               type: array
+               items:
+                  type: string
+               description: Array of text strings to link to SNOMED codes (e.g., ["dm2", "htn"])
+               title: Text to Link
+            required: true
+            description: Array of text strings to link to SNOMED codes (e.g., ["dm2", "htn"])
+         responses:
+            '200':
+               description: OK
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/SNOMEDLinkingList.a9993e3'
             '500':
                description: Internal Server Error
                content:
@@ -308,7 +407,7 @@ components:
                default: null
                description: The generic name of the medicine like 'Glimeperide', 'Metformin'.
                   In case of compound generics, pass the name only with comma separated
-                  like Glimeperide,Metformin
+                  like Glimeperide, Metformin
                title: Generic Names
             volumes:
                anyOf:
@@ -325,72 +424,6 @@ components:
             $ref: '#/components/schemas/MedicationList.a9993e3.Medication'
          title: MedicationList
          type: array
-      MedicationInteraction.b6c8896:
-         properties:
-            drug_names:
-               default: null
-               description: 'List of drug names to check for interactions. Eg: [''Bencid
-                  tablet'', ''Fluvir 75Mg capsule'']'
-               items:
-                  type: string
-               title: Drug Names
-               type: array
-         title: MedicationInteraction
-         type: object
-      Interaction.e57b7a5:
-         properties:
-            a:
-               anyOf:
-               -  items:
-                     items:
-                        type: string
-                     type: array
-                  type: array
-               -  type: 'null'
-               default: null
-               title: A
-            b:
-               anyOf:
-               -  items:
-                     items:
-                        type: string
-                     type: array
-                  type: array
-               -  type: 'null'
-               default: null
-               title: B
-            c:
-               anyOf:
-               -  items:
-                     items:
-                        type: string
-                     type: array
-                  type: array
-               -  type: 'null'
-               default: null
-               title: C
-            d:
-               anyOf:
-               -  items:
-                     items:
-                        type: string
-                     type: array
-                  type: array
-               -  type: 'null'
-               default: null
-               title: D
-            x:
-               anyOf:
-               -  items:
-                     items:
-                        type: string
-                     type: array
-                  type: array
-               -  type: 'null'
-               default: null
-               title: X
-         title: Interaction
-         type: object
       TagList.a9993e3.Tag:
          properties:
             tag_id:
@@ -527,6 +560,185 @@ components:
          - manufacturer_name
          - product_type
          title: Medication
+         type: object
+      AutocompleteResponse.a9993e3:
+         type: object
+         additionalProperties:
+            type: array
+            items:
+               type: string
+         title: AutocompleteResponse
+      PharmacologySearchResponse.a9993e3:
+         properties:
+            results:
+               items:
+                  $ref: '#/components/schemas/PharmacologyEntry.a9993e3'
+               type: array
+               title: Results
+            search_info:
+               additionalProperties: true
+               type: object
+               title: Search Info
+               default: {}
+         required:
+         - results
+         title: PharmacologySearchResponse
+         type: object
+      PharmacologyEntry.a9993e3:
+         properties:
+            generic_name:
+               type: string
+               title: Generic Name
+               description: The generic name of the drug
+            components:
+               items:
+                  type: string
+               type: array
+               title: Components
+               description: Array of active components
+            is_compound:
+               type: boolean
+               title: Is Compound
+               description: Boolean indicating if it's a compound drug
+            page_number:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               title: Page Number
+               description: NFI page number reference
+            reference_page_number:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               title: Reference Page Number
+               description: Reference page number if applicable
+            has_references:
+               anyOf:
+               -  type: integer
+               -  type: 'null'
+               title: Has References
+               description: Indicates if drug has references
+            is_a_reference:
+               anyOf:
+               -  type: boolean
+               -  type: 'null'
+               title: Is A Reference
+               description: Indicates if this entry is a reference
+            pregnancy_category:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Pregnancy Category
+               description: FDA pregnancy category (A, B, C, D, X)
+            indications:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Indications
+               description: Medical conditions the drug treats
+            availability:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Availability
+               description: Available formulations and strengths
+            dose:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Dose
+               description: Detailed dosing instructions for adults and children
+            contraindications:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Contraindications
+               description: Conditions where the drug should not be used
+            precautions:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Precautions
+               description: Important safety considerations and monitoring requirements
+            precautions_appendix:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Precautions Appendix
+               description: Detailed interaction information organized by appendices
+            adverse_effects:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Adverse Effects
+               description: Known side effects and adverse reactions
+            storage:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Storage
+               description: Storage requirements
+            schedule:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Schedule
+               description: Drug scheduling classification
+            note:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Note
+               description: Important clinical notes and warnings
+            additional_keys:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Additional Keys
+               description: Extended clinical information including combination therapy protocols
+            generic_category:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Generic Category
+               description: Drug classification (e.g., Anti-Infectives, Analgesics)
+            comments:
+               anyOf:
+               -  type: string
+               -  type: 'null'
+               title: Comments
+               description: Editorial comments and additional notes
+         required:
+         - generic_name
+         - components
+         - is_compound
+         title: PharmacologyEntry
+         type: object
+      SNOMEDLinkingList.a9993e3:
+         items:
+            $ref: '#/components/schemas/SNOMEDLinkingList.a9993e3.SNOMEDLinking'
+         title: SNOMEDLinkingList
+         type: array
+      SNOMEDLinkingList.a9993e3.SNOMEDLinking:
+         properties:
+            snomed_id:
+               title: SNOMED Id
+               type: string
+               description: The SNOMED ID of the condition
+            text:
+               title: Text
+               type: string
+               description: The original text that was linked
+            confidence:
+               anyOf:
+               -  type: number
+               -  type: 'null'
+               title: Confidence
+               description: Confidence score of the SNOMED linking
+         required:
+         - snomed_id
+         - text
+         title: SNOMEDLinking
          type: object
    securitySchemes:
       BearerAuth:
