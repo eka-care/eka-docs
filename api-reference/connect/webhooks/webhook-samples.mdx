@@ -42,7 +42,7 @@ These are the samples of the webhook payloads that you will receive from Eka Car
     <Step title="Fetch Appointment Details">
         After receiving the appointment webhook, use the appointment ID to fetch full details using the Get Appointment Details API.
 
-        **Endpoint:** `GET {{HOST}}/dr/v1/business/appointments/{{appointment_id}}`
+        **Endpoint:** `GET {{HOST}}/dr/v1/appointment/{{appointment_id}}`
 
         This step allows you to retrieve comprehensive information about the appointment, including any additional details not included in the webhook payload.
     </Step>
@@ -74,9 +74,6 @@ These are the samples of the webhook payloads that you will receive from Eka Car
                 "patient_id": "{{patient_id}}",
                 "clinic_id": "{{clinic_id}}",
                 "created_at": "2023-07-30T18:07:24.000Z"
-            },
-            "client_meta": {
-                "visit_id": "98765-zyxwv-43210-utsrq"
             }
         }
         ```
@@ -85,18 +82,70 @@ These are the samples of the webhook payloads that you will receive from Eka Car
     <Step title="Fetch Prescription Details">
         After receiving the prescription webhook, use the prescription ID to fetch full details using the Get Prescription Details API.
 
-        **Endpoint:** `GET {{HOST}}/dr/v1/business/prescription/{{prescription_id}}`
+        **Endpoint:** `GET {{HOST}}/dr/v1/prescription/{{prescription_id}}`
 
         This step allows you to retrieve comprehensive information about the prescription, including medication details and other relevant information not included in the webhook payload.
     </Step>
 
 </Steps>
 
-### Voice2RX
+### Receipts
 
 <Steps>
 
-    <Step title="Voice2RX Webhook">
+    <Step title="Receipt Webhook">
+        When a receipt is created, Eka Care will send a webhook event to your registered URL.
+
+        **Example Payload:**
+        ```json
+        {
+            "service": "appointment",
+            "event_type": "receipt.created",
+            "event_time": 1730189586,
+            "timestamp": 1730189588,
+            "client_id": "{{client_id}}",
+            "business_id": "{{business_id}}",
+            "transaction_id": "{{transaction_id}}",
+            "data": {
+                "additional_discount_amount": 10,
+                "additional_discount_type": "AMOUNT",
+                "additional_discount_value": 10,
+                "aid": "{{aid}}",
+                "amount_due": 0,
+                "amount_paid": null,
+                "archive": 0,
+                "business_receipt_number": null,
+                "clinic_id": "{{clinic_id}}",
+                "created_at": 1755851612670,
+                "doctor_oid": "{{doctor_oid}}",
+                "flavour": null,
+                "mobile": "+919999999999",
+                "name": "test patient",
+                "net_amount": 750,
+                "patient_oid": "{{patient_oid}}",
+                "payment_id": null,
+                "payment_link": null,
+                "receipt_amount": 760,
+                "receipt_id": "{{receipt_id}}",
+                "receipt_number": null,
+                "receipt_status": "SUCCESS",
+                "receipt_url": "{{receipt_url}}",
+                "ref_trx_id": "",
+                "remarks": "",
+                "sku_discount_amount": 0,
+                "updated_at": 1755851612670
+            }
+        }
+        ```
+    </Step>
+
+</Steps>
+
+### EkaScribe
+
+<Steps>
+
+    <Step title="EkaScribe Webhook">
         When a medical audio file is uploaded, Eka Care will send a webhook event to your registered URL.
         ```json
         {
