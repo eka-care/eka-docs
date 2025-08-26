@@ -856,6 +856,195 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/uhi/v1/physical-consultation/search/doctors:
+    get:
+      description: Fetches a list of doctors matching the given search criteria.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ModelsSearchResponse'
+                type:
+                - "null"
+                - array
+          description: OK
+      security:
+      - authApiKey: []
+    post:
+      description: This api is used to search for doctors.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsDoctorsSearchRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsGetPhysConsCommonResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/uhi/v1/physical-consultation/search/doctors/slots:
+    get:
+      description: Fetches the list of a doctor available consultation slots.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - in: query
+        name: txn_id
+        schema:
+          type: string
+      - description: Unique Identifier of a Provider in the system.
+        in: query
+        name: provider_id
+        schema:
+          description: Unique Identifier of a Provider in the system.
+          type: string
+      - description: Unique Identifier of any booking.
+        in: query
+        name: order_id
+        schema:
+          description: Unique Identifier of any booking.
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsGetPhysConsCommonResponse'
+          description: OK
+      security:
+      - authApiKey: []
+    post:
+      description: This API is used to search for available consultation slots for
+        booking.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsSlotSearchRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsGetPhysConsCommonResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/care-contexts/discover:
     post:
       description: "ABDM allows a user to find their health records from any health
@@ -4544,7 +4733,7 @@ components:
           type:
           - array
           - "null"
-        locations:
+        location:
           $ref: '#/components/schemas/ModelUHILocation'
       type: object
     ModelQuantity:
@@ -4579,6 +4768,8 @@ components:
           $ref: '#/components/schemas/ModelRadiusAround'
           description: radius to search, mandatory for location search
         search_type:
+          examples:
+          - location
           type: string
         state:
           description: State of the district, mandatory for district search
@@ -4716,6 +4907,101 @@ components:
       - txn_id
       - request_id
       type: object
+    ModelsDoctorsSearchRequest:
+      properties:
+        district_code:
+          description: Search doctor by District code
+          examples:
+          - "295"
+          type:
+          - "null"
+          - string
+        district_name:
+          description: Search doctor by District name
+          examples:
+          - Bengaluru Urban
+          type:
+          - "null"
+          - string
+        doctor_name:
+          description: Search doctor by Name
+          examples:
+          - Ganesh
+          type:
+          - "null"
+          - string
+        end_time:
+          description: End time for doctor availability (24H format)
+          examples:
+          - "2025-08-05T23:59:59Z"
+          type: string
+        facility_name:
+          description: Search doctor by Facility/Hospital name
+          examples:
+          - Apollo Hospital
+          type:
+          - "null"
+          - string
+        hpr_id:
+          description: Search doctor by HPR ID
+          type:
+          - "null"
+          - string
+        latitude:
+          description: Latitude for location-based search
+          examples:
+          - "12.9716"
+          type:
+          - "null"
+          - string
+        longitude:
+          description: Longitude for location-based search
+          examples:
+          - "77.5946"
+          type:
+          - "null"
+          - string
+        pincode:
+          description: Search doctor by Pincode
+          examples:
+          - "560001"
+          type:
+          - "null"
+          - string
+        radius_km:
+          description: Radius in kilometers for location-based search
+          examples:
+          - "10"
+          type:
+          - "null"
+          - string
+        speciality:
+          description: Search doctor by Speciality
+          examples:
+          - CARDIOLOGY
+          type:
+          - "null"
+          - string
+        start_time:
+          description: Start time for doctor availability (24H format)
+          examples:
+          - "2025-08-05T00:00:00Z"
+          type: string
+        state_code:
+          description: Search doctor by State code
+          examples:
+          - "29"
+          type:
+          - "null"
+          - string
+        state_name:
+          description: Search doctor by State name
+          examples:
+          - Karnataka
+          type:
+          - "null"
+          - string
+      type: object
     ModelsDoesHealthIdExistResponse:
       properties:
         exists:
@@ -4729,6 +5015,18 @@ components:
           type: integer
         message:
           description: Detailed error message
+          type: string
+      type: object
+    ModelsGetPhysConsCommonResponse:
+      properties:
+        order_id:
+          description: Unique booking/order ID
+          type: string
+        provider_id:
+          description: Provider ID for the next API call
+          type: string
+        txn_id:
+          description: Unique transaction ID for the next API call
           type: string
       type: object
     ModelsLinkOnConfirmHmisConnect:
@@ -4797,6 +5095,101 @@ components:
         ref_num:
           description: patient reference number.
           type: string
+      type: object
+    ModelsPrice:
+      properties:
+        currency:
+          type: string
+        value:
+          type: string
+      type: object
+    ModelsSearchResponse:
+      properties:
+        consultation_type:
+          type: string
+        doctor_name:
+          type: string
+        education:
+          type: string
+        gender:
+          type: string
+        hpr_id:
+          type: string
+        image:
+          type: string
+        languages:
+          items:
+            type: string
+          type: array
+        message_id:
+          type: string
+        price:
+          $ref: '#/components/schemas/ModelsPrice'
+        provider_address:
+          type: string
+        provider_city:
+          type: string
+        provider_country:
+          type: string
+        provider_gps:
+          type: string
+        provider_id:
+          type: string
+        provider_name:
+          type: string
+        slots:
+          items:
+            $ref: '#/components/schemas/ModelsSlot'
+          type: array
+        specialities:
+          items:
+            type: string
+          type: array
+        transaction_id:
+          type: string
+        year_of_experience:
+          type: integer
+      type: object
+    ModelsSlot:
+      properties:
+        end:
+          type: string
+        slot_id:
+          type: string
+        start:
+          type: string
+      type: object
+    ModelsSlotSearchRequest:
+      properties:
+        end_time:
+          description: End date/time until which available slots should be searched
+          examples:
+          - 2025-08-24T08:50:00
+          type: string
+        hrp_id:
+          description: Health Professional Registry (HPR) ID of the doctor
+          type: string
+        provider_id:
+          description: Identifier of the doctor in the system
+          type: string
+        ref_id:
+          description: Reference ID of the provider
+          type: string
+        start_time:
+          description: Start date/time from which available slots should be searched
+          examples:
+          - 2025-08-24T08:40:00
+          type: string
+        transaction_id:
+          description: Unique transaction ID for tracking the request
+          type: string
+      required:
+      - provider_id
+      - hrp_id
+      - start_time
+      - end_time
+      - transaction_id
+      - ref_id
       type: object
     ModelsSuggestHealthIdResponse:
       properties:
