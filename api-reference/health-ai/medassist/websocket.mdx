@@ -1,0 +1,199 @@
+---
+title: "WebSocket API"
+description: "Real-time communication with MedAssist through WebSocket connection"
+---
+
+## WebSocket Endpoint
+
+Connect to the MedAssist WebSocket for real-time medical consultations:
+
+```
+wss://matrix-ws.eka.care/ws/med-assist/session/<session-id>
+```
+
+Replace `<session-id>` with the session ID obtained from the [Create Session API](/api-reference/health-ai/medassist/create-session).
+
+## Authentication
+
+After establishing the WebSocket connection, authenticate using the session token:
+
+```json
+{
+  "ev": "auth",
+  "data": {
+    "token": "{{matrix-token}}"
+  }
+}
+```
+
+## Message Types
+
+### Text Messages
+
+Send text-based medical queries:
+
+```json
+{
+  "ev": "chat",
+  "ct": "text",
+  "ts": 1757343458000,
+  "_id": "1757343458010",
+  "data": {
+    "text": "I have a headache"
+  }
+}
+```
+
+### Audio Messages
+
+Send base64-encoded audio for voice consultations:
+
+```json
+{
+  "ev": "chat",
+  "ct": "audio",
+  "ts": 175510119698,
+  "_id": "175510119699",
+  "data": {
+    "audio": "base64_encoded_audio_data",
+    "audio_format": "audio/mp3"
+  }
+}
+```
+
+### File Upload
+
+File uploads require a two-step process:
+
+#### Step 1: Request presigned URL
+
+```json
+{
+  "ev": "chat",
+  "ct": "file",
+  "_id": "175510119698"
+}
+```
+
+#### Step 2: Send file URL after upload
+
+```json
+{
+  "ev": "chat",
+  "ct": "file",
+  "_id": "175510119698",
+  "data": {
+    "url": "presigned-url-after-upload"
+  }
+}
+```
+
+## Message Fields
+
+<ParamField body="ev" type="string" required>
+  Event type. Use "auth" for authentication, "chat" for messages
+</ParamField>
+
+<ParamField body="ct" type="string">
+  Content type. Options: "text", "audio", "file"
+</ParamField>
+
+<ParamField body="ts" type="number">
+  Timestamp in milliseconds
+</ParamField>
+
+<ParamField body="_id" type="string" required>
+  Unique message identifier
+</ParamField>
+
+<ParamField body="data" type="object" required>
+  Message payload containing the actual content
+</ParamField>
+
+## Example Implementation
+
+<CodeGroup>
+```javascript JavaScript
+const socket = new WebSocket('wss://matrix-ws.eka.care/ws/med-assist/session/your-session-id');
+
+// Authenticate on connection
+socket.onopen = function(event) {
+  socket.send(JSON.stringify({
+    "ev": "auth",
+    "data": {
+      "token": "your-session-token"
+    }
+  }));
+};
+
+// Send text message
+function sendTextMessage(text) {
+  const message = {
+    "ev": "chat",
+    "ct": "text",
+    "ts": Date.now(),
+    "_id": Date.now().toString(),
+    "data": {
+      "text": text
+    }
+  };
+  socket.send(JSON.stringify(message));
+}
+
+// Handle responses
+socket.onmessage = function(event) {
+  const response = JSON.parse(event.data);
+  console.log('Received:', response);
+};
+```
+
+```python Python
+import websocket
+import json
+import time
+
+def on_open(ws):
+    # Authenticate
+    auth_message = {
+        "ev": "auth",
+        "data": {
+            "token": "your-session-token"
+        }
+    }
+    ws.send(json.dumps(auth_message))
+
+def on_message(ws, message):
+    response = json.loads(message)
+    print("Received:", response)
+
+def send_text_message(ws, text):
+    message = {
+        "ev": "chat",
+        "ct": "text",
+        "ts": int(time.time() * 1000),
+        "_id": str(int(time.time() * 1000)),
+        "data": {
+            "text": text
+        }
+    }
+    ws.send(json.dumps(message))
+
+# Create WebSocket connection
+ws = websocket.WebSocketApp("wss://matrix-ws.eka.care/ws/med-assist/session/your-session-id",
+                          on_open=on_open,
+                          on_message=on_message)
+
+ws.run_forever()
+```
+</CodeGroup>
+
+## Error Handling
+
+The WebSocket may return error messages for various scenarios:
+
+- **Authentication failure**: Invalid or expired token
+- **Invalid message format**: Malformed JSON or missing required fields
+- **Rate limiting**: Too many messages sent in a short period
+- **Session expired**: Session has exceeded its lifetime
+
+Always implement proper error handling and reconnection logic in your WebSocket client.
