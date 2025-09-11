@@ -1,0 +1,58 @@
+---
+title: "Refresh Session Token"
+openapi: "GET /med-assist/session/{session_id}/refresh"
+---
+
+<RequestExample>
+```bash cURL
+curl --location --request GET 'https://api.eka.care/med-assist/session/a349a41e-5d49-488a-b300-66ccbfdf16b3/refresh' \
+--header 'x-agent-id: <agent-id>' \
+--header 'x-sess-token: <old_token>'
+```
+
+```python Python
+import requests
+
+url = "https://api.eka.care/med-assist/session/a349a41e-5d49-488a-b300-66ccbfdf16b3/refresh"
+
+payload = {}
+headers = {
+  'x-agent-id': '<agent-id>',
+  'x-sess-token': '<old_token>'
+}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+```javascript JavaScript
+const url = "https://api.eka.care/med-assist/session/a349a41e-5d49-488a-b300-66ccbfdf16b3/refresh";
+
+const headers = {
+  'x-agent-id': '<agent-id>',
+  'x-sess-token': '<old_token>'
+};
+
+fetch(url, {
+  method: 'GET',
+  headers: headers
+})
+.then(response => response.text())
+.then(result => console.log(result));
+```
+</RequestExample>
+
+## When to Use
+
+Use this endpoint when your session token has expired but you want to continue the medical consultation. The refresh endpoint allows you to extend the session lifetime without creating a new session.
+
+## Next Steps
+
+After refreshing the token, use the new `session_token` to:
+
+1. Update your WebSocket authentication
+2. Continue the medical conversation seamlessly
+3. The session ID remains the same, only the token is renewed
+
+For WebSocket implementation details, see the [WebSocket documentation](/api-reference/health-ai/medassist/websocket).

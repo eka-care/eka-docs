@@ -1,0 +1,242 @@
+openapi: 3.0.1
+info:
+  title: MedAssist APIs
+  description: Medical assistant chat functionality for healthcare consultations
+  version: 1.0.0
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+paths:
+  /med-assist/session:
+    post:
+      summary: Create Session
+      description: |
+        Creates a new MedAssist session that provides a session ID and session token for WebSocket communication.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    format: uuid
+                    description: Unique session identifier
+                    example: "a349a41e-5d49-488a-b300-66ccbfdf16b3"
+                  session_token:
+                    type: string
+                    description: JWT token for WebSocket authentication
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '403':
+          description: Forbidden. Missing agent or malformed token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "forbidden"
+                  msg: "No agent id provided"
+        '404':
+          description: Not found. Agent ID not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "not_found"
+                  msg: "Agent not found"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "internal_server_error"
+                  msg: "Internal server error"
+      security:
+        - agentAuth: []
+  /med-assist/session/{session_id}:
+    get:
+      summary: Get Session
+      description: |
+        Retrieves the current status and details of an existing MedAssist session.
+        
+        Use this endpoint to check session status, expiration, and metadata.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique session identifier
+          example: "a349a41e-5d49-488a-b300-66ccbfdf16b3"
+      responses:
+        '200':
+          description: Session retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    format: uuid
+                    description: Unique session identifier
+                    example: "a349a41e-5d49-488a-b300-66ccbfdf16b3"
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: Session expiration timestamp
+                    example: "2024-01-01T12:00:00Z"
+        '403':
+          description: Forbidden. Missing agent or malformed token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "forbidden"
+                  msg: "No agent id provided"
+        '404':
+          description: Session not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "not_found"
+                  msg: "Session not found"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "internal_server_error"
+                  msg: "Internal server error"
+      security:
+        - agentAuth: []
+  /med-assist/session/{session_id}/refresh:
+    get:
+      summary: Refresh Session Token
+      description: |
+        Refreshes an expired session token to extend the session lifetime.
+        
+        Use this endpoint when the session token has expired but you want to continue the conversation.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique session identifier
+          example: "a349a41e-5d49-488a-b300-66ccbfdf16b3"
+        - name: x-sess-token
+          in: header
+          required: true
+          schema:
+            type: string
+          description: The expired session token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    format: uuid
+                    description: Unique session identifier
+                    example: "a349a41e-5d49-488a-b300-66ccbfdf16b3"
+                  token:
+                    type: string
+                    description: New JWT token for WebSocket authentication
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: New token expiration timestamp
+                    example: "2024-01-01T14:00:00Z"
+        '403':
+          description: Forbidden. Missing agent or invalid session token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "forbidden"
+                  msg: "Invalid session token"
+        '404':
+          description: Session not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "not_found"
+                  msg: "Session not found"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "internal_server_error"
+                  msg: "Internal server error"
+      security:
+        - agentAuth: []
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code identifying the type of error
+              example: "internal_server_error"
+            msg:
+              type: string
+              description: Human-readable error message
+              example: "No agent id provided"
+          required:
+            - code
+            - msg
+      required:
+        - error
+  securitySchemes:
+    agentAuth:
+      type: apiKey
+      in: header
+      name: x-agent-id
+      description: Your API key for authentication
