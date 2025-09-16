@@ -856,7 +856,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/uhi/v1/physical-consultation/cancel:
+  /abdm/uhi/v1/physical-consultation/booking/cancel:
     get:
       description: Retrieve the cancellation status of a physical consultation booking.
       parameters:
@@ -956,7 +956,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/uhi/v1/physical-consultation/confirm:
+  /abdm/uhi/v1/physical-consultation/booking/confirm:
     get:
       description: Retrieve booking confirmation details, including the OTP that must
         be presented to the doctor before consultation.
@@ -1057,7 +1057,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/uhi/v1/physical-consultation/init:
+  /abdm/uhi/v1/physical-consultation/booking/init:
     get:
       description: Fetch initiation response for a physical consultation, including
         terms and conditions, payment modes, and pricing details.
@@ -1158,7 +1158,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/uhi/v1/physical-consultation/order-status:
+  /abdm/uhi/v1/physical-consultation/booking/order-status:
     get:
       description: Retrieve the current status of a physical consultation booking.
       parameters:
@@ -1237,6 +1237,51 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ModelsOrderStatusRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsGetPhysConsCommonResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/uhi/v1/physical-consultation/booking/update:
+    post:
+      description: Update the details of a physical consultation appointment.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsUpdateOrderRequest'
       responses:
         4XX:
           content:
@@ -1422,51 +1467,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ModelsSlotSearchRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ModelsGetPhysConsCommonResponse'
-          description: OK
-      security:
-      - authApiKey: []
-  /abdm/uhi/v1/physical-consultation/update:
-    post:
-      description: Update the details of a physical consultation appointment.
-      parameters:
-      - description: Eka User ID (OID)
-        in: header
-        name: X-Pt-Id
-        schema:
-          type: string
-      - description: Partner User ID
-        in: header
-        name: X-Partner-Pt-Id
-        schema:
-          type: string
-      - description: Partner HIP ID
-        in: header
-        name: X-Hip-Id
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ModelsUpdateOrderRequest'
       responses:
         4XX:
           content:
@@ -4528,7 +4528,7 @@ components:
           - abha_create
           type: string
         token:
-          description: Access token for the user
+          description: Abha token of the user, issued by abdm
           type:
           - "null"
           - string
@@ -4543,7 +4543,7 @@ components:
         profile:
           $ref: '#/components/schemas/ProfileResponse'
         refresh_token:
-          description: Refresh token for the user
+          description: Refresh token of the user, issued by abdm
           type:
           - "null"
           - string
@@ -4558,8 +4558,7 @@ components:
           description: Indicates whether the API response is successful
           type: boolean
         token:
-          description: Access token for the user, will be present if SkipState is
-            abha_end
+          description: Abha token of the user, issued by abdm
           type:
           - "null"
           - string
@@ -5006,6 +5005,9 @@ components:
       properties:
         care_context_id:
           type: string
+        data:
+          description: ABDM compliant FHIR bundle (optional, required if not opting
+            for webhook based implementation)
         display:
           type: string
         hi_type:
@@ -5018,6 +5020,14 @@ components:
           - HealthDocumentRecord
           - WellnessRecord
           type: string
+        hi_types:
+          description: List of HI types if care context fhir bundle is present in
+            data field
+          items:
+            type: string
+          type:
+          - array
+          - "null"
       type: object
     ListsRequestDetail:
       properties:
@@ -5372,15 +5382,19 @@ components:
     ModelsCancelOrderRequest:
       properties:
         order_id:
+          description: Unique identifier of the order to be cancelled
           type: string
         provider_id:
+          description: Unique identifier of the healthcare provider or hospital
           type: string
         transaction_id:
+          description: Unique transaction identifier associated with the order
           type: string
       type: object
     ModelsCancelStatusResponse:
       properties:
         status:
+          description: Cancellation status of the order (e.g., SUCCESS, FAILED, PENDING)
           type: string
       type: object
     ModelsCareContext:
@@ -5395,8 +5409,10 @@ components:
     ModelsConfirmRequest:
       properties:
         provider_id:
+          description: Unique identifier of the healthcare provider or hospital
           type: string
         transaction_id:
+          description: Unique transaction identifier for confirming the appointment
           type: string
       type: object
     ModelsConsultation:
@@ -5451,18 +5467,24 @@ components:
     ModelsDoctorInfo:
       properties:
         education:
+          description: Educational qualifications of the doctor
           type: string
         experience:
+          description: Years of experience of doctor.
           type: string
         gender:
+          description: Gender of the doctor (e.g., Male, Female, Other)
           type: string
         id:
+          description: Unique identifier of the doctor
           type: string
         languages:
+          description: Languages spoken by the doctor
           items:
             type: string
           type: array
         name:
+          description: Full name of the doctor
           type: string
       type: object
     ModelsDoctorsSearchRequest:
@@ -5588,13 +5610,19 @@ components:
       properties:
         doctor_info:
           $ref: '#/components/schemas/ModelsDoctorInfo'
+          description: Detailed information about the doctor associated with the confirmed
+            appointment
         order_id:
+          description: Unique identifier of the confirmed order or booking
           type: string
         pin:
+          description: PIN to start the confirmation
           type: string
         slot:
           $ref: '#/components/schemas/ModelsSlot'
+          description: Details of the confirmed slot including start and end time
         state:
+          description: Current Status of the appointment
           type: string
       type: object
     ModelsGetPhysConsCommonResponse:
@@ -5613,30 +5641,43 @@ components:
       properties:
         address:
           $ref: '#/components/schemas/ModelsAddress'
+          description: Billing address details
         name:
+          description: Full name of the person or entity responsible for billing
           type: string
         phone:
+          description: Contact phone number for billing
           type: string
       type: object
     ModelsInitRequest:
       properties:
         billing:
           $ref: '#/components/schemas/ModelsInitBilling'
+          description: Billing information for the appointment
         doctor_id:
+          description: Unique identifier of the doctor associated with the slot
           type: string
         end_time:
+          description: End time of the appointment (24H format, ISO 8601 supported)
           type: string
         facility_id:
+          description: Optional facility or branch identifier if applicable
           type: string
         price:
           $ref: '#/components/schemas/ModelsPrice'
+          description: Price details of the consultation
         provider_id:
+          description: Unique identifier of the healthcare provider or hospital
           type: string
         slot_id:
+          description: Unique identifier of the selected slot
           type: string
         start_time:
+          description: Start time of the appointment (24H format, ISO 8601 supported)
           type: string
         transaction_id:
+          description: Unique transaction identifier for slot booking received in
+            the previous api response
           type: string
       type: object
     ModelsLinkOnConfirmHmisConnect:
@@ -5751,21 +5792,28 @@ components:
     ModelsPrice:
       properties:
         currency:
+          description: Currency code in ISO 4217 format (e.g., INR, USD)
           type: string
         value:
+          description: Consultation fee amount in the specified currency
           type: string
       type: object
     ModelsProviderInfo:
       properties:
         address:
+          description: Full address of the healthcare provider or facility
           type: string
         city:
+          description: City where the provider or facility is located
           type: string
         id:
+          description: Unique identifier of the healthcare provider or facility
           type: string
         name:
+          description: Name of the healthcare provider or facility
           type: string
         phone:
+          description: Contact phone number of the provider or facility
           type: string
       type: object
     ModelsQuote:
@@ -5789,64 +5837,89 @@ components:
     ModelsSearchResponse:
       properties:
         doctor_name:
+          description: Full name of the doctor
           type: string
         education:
+          description: Educational qualifications of the doctor
           type: string
         facility_id:
+          description: Unique identifier of the healthcare facility
           type: string
         gender:
+          description: Gender of the doctor (e.g., Male, Female, Other)
           type: string
         hpr_id:
+          description: Unique Health Professional Registry (HPR) ID of the doctor
           type: string
         image:
+          description: Profile image URL of the doctor
           type: string
         languages:
+          description: Languages spoken by the doctor
           items:
             type: string
           type: array
         provider_address:
+          description: Address of the healthcare facility or hospital
           type: string
         provider_city:
+          description: City where the provider is located
           type: string
         provider_country:
+          description: Country where the provider is located
           type: string
         provider_gps:
+          description: GPS coordinates of the healthcare facility
           type: string
         provider_name:
+          description: Name of the healthcare provider or hospital
           type: string
         specialities:
+          description: Specialities or fields of expertise of the doctor
           items:
             type: string
           type: array
         transaction_id:
+          description: Unique transaction ID for tracking the search response
           type: string
         year_of_experience:
+          description: Number of years of professional experience
           type: integer
       type: object
     ModelsSlot:
       properties:
         end:
+          description: End time of the slot.
           type: string
         slot_id:
+          description: Unique identifier for the slot
           type: string
         start:
+          description: Start time of the slot.
           type: string
       type: object
     ModelsSlotDetail:
       properties:
         currency:
+          description: Currency code in ISO 4217 format (e.g., INR, USD)
           type: string
         date:
+          description: Date of the slot (YYYY-MM-DD format)
           type: string
         end_time:
+          description: End time of the slot
           type: string
         id:
+          description: Unique identifier for the slot
           type: string
         price:
+          description: Price of the consultation in specified currency
           type: string
         start_time:
+          description: Start time of the slot
           type: string
         type:
+          description: Type of consultation (e.g., Physical, Video, Telephonic)
           type: string
       type: object
     ModelsSlotSearchRequest:
@@ -5885,9 +5958,12 @@ components:
       properties:
         doctor:
           $ref: '#/components/schemas/ModelsDoctorInfo'
+          description: Information about the doctor offering the slots
         provider_info:
           $ref: '#/components/schemas/ModelsProviderInfo'
+          description: Information about the healthcare provider or facility
         slots:
+          description: List of available slots for the doctor
           items:
             $ref: '#/components/schemas/ModelsSlotDetail'
           type: array
@@ -5916,18 +5992,28 @@ components:
     ModelsUpdateOrderRequest:
       properties:
         end_time:
+          description: Updated end time of the appointment (24H format, ISO 8601 supported)
           type: string
         facility_id:
+          description: Unique identifier of the facility where the appointment will
+            take place
           type: string
         order_id:
+          description: Unique identifier of the order to be updated
           type: string
         provider_id:
+          description: Unique identifier of the healthcare provider or hospital
           type: string
         slot_id:
+          description: Unique identifier of the new slot to be updated
           type: string
         start_time:
+          description: Updated start time of the appointment (24H format, ISO 8601
+            supported)
           type: string
         transaction_id:
+          description: Unique transaction identifier associated with the order, received
+            in the previous api response
           type: string
       type: object
     NdhmeventLocation:
@@ -6687,8 +6773,7 @@ components:
         profile:
           $ref: '#/components/schemas/ProfileResponse'
         refresh_token:
-          description: Refresh token for the user, will be present if SkipState is
-            abha_end
+          description: Refresh token of the user, issued by abdm
           type:
           - "null"
           - string
@@ -6700,8 +6785,7 @@ components:
           - abha_create
           type: string
         token:
-          description: Access token for the user, will be present if SkipState is
-            abha_end
+          description: Abha token of the user, issued by abdm
           type:
           - "null"
           - string
@@ -6720,6 +6804,7 @@ components:
         profile:
           $ref: '#/components/schemas/ProfileResponse'
         refresh_token:
+          description: Refresh token of the user, issued by abdm
           type:
           - "null"
           - string
@@ -6731,6 +6816,7 @@ components:
           - abha_create
           type: string
         token:
+          description: Abha token of the user, issued by abdm
           type:
           - "null"
           - string
