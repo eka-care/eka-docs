@@ -1,0 +1,254 @@
+---
+title: "TypeScript SDK"
+description: "Complete TypeScript SDK for MedAssist with configurable UI components"
+---
+
+# MedAssist TypeScript SDK
+
+The MedAssist TypeScript SDK provides a complete solution for integrating medical AI chat functionality into your web applications. It includes all chatbot functionalities with a configurable UI layer that can be customized to match your application's design.
+
+## Installation
+
+The SDK will be available on NPM soon:
+
+```bash npm
+npm install @eka-care/medassist-sdk
+```
+
+```bash yarn
+yarn add @eka-care/medassist-sdk
+```
+
+## Features
+
+### Core Functionality
+- **Session Management**: Automatic session creation, token refresh, and lifecycle management
+- **WebSocket Integration**: Real-time communication with MedAssist AI
+- **Multi-format Support**: Text, audio, and file message handling
+- **Error Handling**: Built-in retry logic and error recovery
+- **TypeScript Support**: Full type definitions for enhanced developer experience
+
+### UI Components
+- **Configurable Chat Interface**: Customizable chat UI that matches your app's design
+- **Message Components**: Pre-built components for different message types
+- **Audio Recording**: Built-in voice message recording capabilities
+- **File Upload**: Drag-and-drop file upload with progress indicators
+- **Typing Indicators**: Real-time typing and processing status
+- **Theme Support**: Light/dark mode and custom color schemes
+
+## Quick Start
+
+```typescript
+import { MedAssist, MedAssistConfig } from '@eka-care/medassist-sdk';
+
+// Initialize the SDK
+const config: MedAssistConfig = {
+  apiKey: 'your-agent-id',
+  theme: {
+    primaryColor: '#6B5CE0',
+    mode: 'light'
+  },
+  ui: {
+    showAvatar: true,
+    enableAudio: true,
+    enableFileUpload: true
+  }
+};
+
+const medAssist = new MedAssist(config);
+
+// Mount the chat interface
+medAssist.mount('#chat-container');
+```
+
+## Configuration Options
+
+### Basic Configuration
+
+```typescript
+interface MedAssistConfig {
+  apiKey: string;                    // Your agent ID
+  baseUrl?: string;                  // API base URL (optional)
+  wsUrl?: string;                    // WebSocket URL (optional)
+  theme?: ThemeConfig;               // UI theme configuration
+  ui?: UIConfig;                     // UI component settings
+  callbacks?: CallbackConfig;        // Event callbacks
+}
+```
+
+### Theme Customization
+
+```typescript
+interface ThemeConfig {
+  mode?: 'light' | 'dark';
+  primaryColor?: string;
+  backgroundColor?: string;
+  messageColors?: {
+    user: string;
+    assistant: string;
+  };
+  borderRadius?: string;
+  fontFamily?: string;
+}
+```
+
+### UI Configuration
+
+```typescript
+interface UIConfig {
+  showAvatar?: boolean;              // Show user/assistant avatars
+  enableAudio?: boolean;             // Enable voice messages
+  enableFileUpload?: boolean;        // Enable file attachments
+  placeholder?: string;              // Input placeholder text
+  maxFileSize?: number;              // Max file upload size (MB)
+  supportedFormats?: string[];       // Supported file formats
+}
+```
+
+## Usage Examples
+
+### Basic Chat Implementation
+
+```typescript
+import { MedAssist } from '@eka-care/medassist-sdk';
+
+const medAssist = new MedAssist({
+  apiKey: 'your-agent-id',
+  callbacks: {
+    onMessage: (message) => {
+      console.log('New message:', message);
+    },
+    onError: (error) => {
+      console.error('Chat error:', error);
+    }
+  }
+});
+
+medAssist.mount('#chat-container');
+```
+
+### Custom UI Integration
+
+```typescript
+const medAssist = new MedAssist({
+  apiKey: 'your-agent-id',
+  theme: {
+    mode: 'dark',
+    primaryColor: '#00D4AA',
+    backgroundColor: '#1A1A1A',
+    borderRadius: '12px'
+  },
+  ui: {
+    showAvatar: false,
+    placeholder: 'Ask me about your health...',
+    maxFileSize: 10
+  }
+});
+```
+
+### Event Handling
+
+```typescript
+medAssist.on('sessionCreated', (session) => {
+  console.log('Session started:', session.id);
+});
+
+medAssist.on('messageReceived', (message) => {
+  // Handle incoming messages
+  if (message.type === 'text') {
+    console.log('AI Response:', message.content);
+  }
+});
+
+medAssist.on('error', (error) => {
+  // Handle errors
+  console.error('MedAssist Error:', error);
+});
+```
+
+### Programmatic Message Sending
+
+```typescript
+// Send text message
+await medAssist.sendMessage({
+  type: 'text',
+  content: 'I have been experiencing headaches'
+});
+
+// Send audio message
+await medAssist.sendMessage({
+  type: 'audio',
+  content: base64AudioData,
+  format: 'audio/mp3'
+});
+
+// Upload and send file
+await medAssist.sendFile(fileObject);
+```
+
+## Advanced Features
+
+### Session Management
+
+```typescript
+// Access current session
+const session = medAssist.getSession();
+
+// Manually refresh session
+await medAssist.refreshSession();
+
+// Clear chat history
+medAssist.clearHistory();
+
+// End session
+await medAssist.endSession();
+```
+
+### Custom Components
+
+```typescript
+// Register custom message renderer
+medAssist.registerMessageRenderer('prescription', (message) => {
+  return `
+    <div class="prescription-message">
+      <h4>Prescription</h4>
+      <p>${message.content}</p>
+    </div>
+  `;
+});
+```
+
+### Integration with Existing UI
+
+```typescript
+// Use headless mode (no UI)
+const medAssist = new MedAssist({
+  apiKey: 'your-agent-id',
+  headless: true
+});
+
+// Handle messages in your own UI
+medAssist.on('messageReceived', (message) => {
+  // Update your custom chat interface
+  updateCustomChatUI(message);
+});
+```
+
+## Coming Soon
+
+- **React Components**: Pre-built React components for easy integration
+- **Vue.js Support**: Vue 3 compatible components
+- **Angular Integration**: Angular service and component library
+- **Mobile SDKs**: React Native and Flutter SDK versions
+- **Advanced Analytics**: Usage metrics and conversation insights
+
+## Support
+
+The TypeScript SDK will be available soon on NPM. For early access or custom integration support, please contact our developer team through [Discord](https://discord.gg/THgd5S22EK).
+
+## API Reference
+
+For detailed API documentation, see:
+- [Create Session](/api-reference/health-ai/medassist/create-session)
+- [WebSocket Communication](/api-reference/health-ai/medassist/websocket)
+- [Session Management](/api-reference/health-ai/medassist/get-session)
