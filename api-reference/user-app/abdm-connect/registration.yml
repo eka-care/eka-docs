@@ -1158,7 +1158,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/uhi/v1/physical-consultation/booking/order-status:
+  /abdm/uhi/v1/physical-consultation/booking/status:
     get:
       description: Retrieve the current status of a physical consultation booking.
       parameters:
@@ -3477,59 +3477,6 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/v1/profile/share:
-    post:
-      description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
-        by reading the QR code of the Hospital/Clinic.</Note> <Note>Use the device
-        location for the location data</Note>
-      parameters:
-      - description: Eka User ID (OID)
-        in: header
-        name: X-Pt-Id
-        schema:
-          type: string
-      - description: Partner User ID
-        in: header
-        name: X-Partner-Pt-Id
-        schema:
-          type: string
-      - description: Partner HIP ID
-        in: header
-        name: X-Hip-Id
-        schema:
-          type: string
-      - description: OID is used to Identify the user.
-        in: query
-        name: oid
-        schema:
-          description: OID is used to Identify the user.
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ScanandshareRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HipQRScanShareProfileResponseV2'
-          description: OK
-      security:
-      - authApiKey: []
   /abdm/v1/provider/{hip_id}:
     get:
       description: Fetches the Providers based on the HIP ID.
@@ -4799,33 +4746,6 @@ components:
           type:
           - "null"
           - string
-      type: object
-    HipQRScanShareProfileResponseV2:
-      properties:
-        address:
-          description: Address associated with the HIP.
-          type: string
-        created_at:
-          format: date-time
-          type: string
-        footer:
-          type: string
-        hip_id:
-          description: Health Information Provider (HIP) identifier
-          type: string
-        hip_name:
-          description: Name of the Health Information Provider (HIP)
-          type: string
-        request_id:
-          description: Unique identifier for the request
-          type: string
-        show_token_screen:
-          type: boolean
-        token_expiry:
-          format: date-time
-          type: string
-        token_number:
-          type: string
       type: object
     InitRequest:
       properties:
@@ -6594,24 +6514,6 @@ components:
       required:
       - hip_id
       - counter_id
-      type: object
-    ScanandshareRequest:
-      properties:
-        counter_id:
-          description: Counter ID from QR Code
-          type: string
-        hip_id:
-          description: HIP ID from QR Code
-          type: string
-        location:
-          $ref: '#/components/schemas/HipLocation'
-          description: Location of the user
-        patient:
-          $ref: '#/components/schemas/ScanandsharePatient'
-          description: Patient details
-      required:
-      - counter_id
-      - hip_id
       type: object
     ScanandshareResponse:
       properties:
