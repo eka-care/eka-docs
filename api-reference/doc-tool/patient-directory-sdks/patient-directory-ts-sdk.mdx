@@ -1,0 +1,328 @@
+---
+title: Trinity Profiles SDK (TypeScript)
+description: Type-safe SDK for managing patient profiles through the Trinity API.
+---
+
+## Installation
+```bash
+npm install @eka-care/patient-ts-sdk
+```
+
+Or, if using source:
+```bash
+cd trinity-profiles-sdk
+npm install
+```
+
+---
+
+## Quick Start
+```ts
+import { TrinityProfilesSDK } from '@eka-care/patient-ts-sdk';
+
+// Initialize SDK
+const sdk = new TrinityProfilesSDK({
+  baseUrl: 'https://your-trinity-api.com',
+  accessToken: 'your-jwt-token',
+  workspaceId: 'your-workspace-id',
+  enableLocalSearch: true, // optional
+  timeout: 30000 // optional, defaults to 30s
+});
+
+ /* 
+    enableLocalSearch: true enables local storage of patient data in IndexedDB.
+    Searches are performed locally for fast, offline-capable results. If local data
+    is unavailable or local search fails, the SDK automatically falls back to the API.
+    Using IndexedDB is recommended for optimal performance.
+ */
+
+// Initialize local search (optional)
+await sdk.initializeLocalSearch();
+
+// Start background sync
+await sdk.startLocalSync({
+  onProgress: (p, total) => console.log(`Synced ${p}/${total}`),
+  onComplete: () => console.log('Sync complete!'),
+  onError: (err) => console.error('Sync failed:', err)
+});
+```
+
+---
+
+## Patient Operations
+
+### Create Patient
+
+#### Required Fields
+- `oid` – Unique identifier
+- `wid` – Workspace ID
+- `gen` – Gender (`M` | `F` | `O`)
+- `dob` – Date of birth (`YYYY-MM-DD`)
+- At least one name field (`fn`, `mn`, `ln`, or `fln`)
+- `mobile` must be **digits only** (no country code). Use `ccd` for country code (e.g., "+91").
+
+#### Example Request
+```ts
+const patient = await sdk.patients.create({
+  oid: 'unique-patient-id',
+  gen: 'M',
+  dob: '1990-01-01',
+  fn: 'John',
+  ln: 'Doe',
+  mobile: '1234567890',
+  ccd: '+1',
+  email: 'john@example.com'
+});
+```
+
+#### Sample Response
+```json
+{
+  "oid": "unique-patient-id",
+  "wid": "workspace-id",
+  "gen": "M",
+  "dob": "1990-01-01",
+  "fn": "John",
+  "ln": "Doe",
+  "mobile": "1234567890",
+  "ccd": "+1",
+  "email": "john@example.com",
+  "c_ate": 1695472000,
+  "u_ate": 1695472000
+}
+```
+
+---
+
+### Get Patient
+
+#### Example Request
+```ts
+const patient = await sdk.patients.get('patient-oid');
+```
+
+#### Sample Response
+```json
+{
+  "oid": "patient-oid",
+  "wid": "workspace-id",
+  "gen": "F",
+  "dob": "1985-05-20",
+  "fn": "Jane",
+  "ln": "Doe",
+  "email": "jane@example.com",
+  "mobile": "9876543210",
+  "ccd": "+91",
+  "c_ate": 1695472000,
+  "u_ate": 1695480000
+}
+```
+
+---
+
+### Update Patient
+
+#### Example Request
+```ts
+const updated = await sdk.patients.update('patient-oid', {
+  fn: 'Jane',
+  email: 'jane@example.com'
+});
+```
+
+#### Sample Response
+```json
+    {"message" : "Profile updated successfully"}
+```
+
+---
+
+### Delete Patient
+
+#### Example Request
+```ts
+await sdk.patients.delete('patient-oid');
+```
+
+#### Sample Response
+```json
+{"message": "Profile archived successfully" }
+```
+
+---
+
+### Bulk Get
+
+#### Example Request
+```ts
+const patients = await sdk.search.bulkGet(['oid1', 'oid2']);
+```
+
+#### Sample Response
+```json
+[
+  { "oid": "oid1", "fln": "Alice Johnson", "mobile": "1111111111" },
+  { "oid": "oid2", "fln": "Bob Smith", "mobile": "2222222222" }
+]
+```
+
+---
+
+## Search Operations
+
+### Get by Username
+
+#### Example Request
+```ts
+const patients = await sdk.patients.getByUsername('john.doe');
+```
+
+#### Sample Response
+```json
+[
+  {
+    "oid": "patient-oid-1",
+    "wid": "workspace-id",
+    "username": "john.doe",
+    "fln": "John Doe",
+    "mobile": "1234567890"
+  }
+]
+```
+
+### Search by Mobile
+
+#### Example Request
+```ts
+const patients = await sdk.search.getByMobile('1234567890');
+```
+
+#### Sample Response
+```json
+[
+  {
+    "oid": "patient-oid",
+    "fln": "John Doe",
+    "mobile": "1234567890"
+  }
+]
+```
+
+### Prefix Search
+
+#### Example Request
+```ts
+const patients = await sdk.search.searchByPrefix('jo', 15, 'oid,fln,mobile');
+```
+
+#### Sample Response
+```json
+[
+  { "oid": "oid1", "fln": "John Doe", "mobile": "1234567890" },
+  { "oid": "oid2", "fln": "Josh Adams", "mobile": "9876543210" }
+]
+```
+
+---
+
+## Utility Operations
+
+### Remove Fields
+
+#### Example Request
+```ts
+await sdk.utils.removeFields('patient-oid', ['email', 'mobile']);
+```
+
+#### Sample Response
+```json
+{"message": "Fields removed successfully"}
+```
+
+### Validate Patient Data
+
+#### Example Request
+```ts
+const validation = sdk.utils.validatePatientData({
+  gen: 'M',
+  dob: '1990-01-01',
+  fn: 'John'
+});
+
+if (!validation.isValid) {
+  console.log(validation.errors);
+}
+```
+
+#### Sample Response
+```json
+{ "isValid": true, "errors": [] }
+```
+
+---
+
+## Data Types
+
+### Gender
+```ts
+type Gender = 'M' | 'F' | 'O';
+```
+
+### Blood Groups
+```ts
+type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
+```
+
+### Patient Interface
+```ts
+interface Patient {
+  oid: string;
+  wid: string;
+  gen: Gender;
+  dob: string;
+  fn?: string;
+  mn?: string;
+  ln?: string;
+  fln?: string;
+  ccd?: string;
+  mobile?: string;
+  email?: string;
+  username?: string;
+  bg?: BloodGroup;
+  abha?: string;
+  arc?: boolean;
+  extras?: Record<string, any>;
+}
+```
+
+---
+
+## Error Handling
+
+#### Example Request
+```ts
+import { ValidationError, AuthenticationError, NotFoundError, TrinitySDKError } from '@eka-care/patient-ts-sdk';
+
+try {
+  const patient = await sdk.patients.get('invalid-id');
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log('Validation failed:', err.validationErrors);
+  } else if (err instanceof AuthenticationError) {
+    console.log('Invalid token');
+  } else if (err instanceof NotFoundError) {
+    console.log('Patient not found');
+  } else if (err instanceof TrinitySDKError) {
+    console.log('API error:', err.message);
+  }
+}
+```
+
+#### Sample Error Response
+```json
+{
+  "error": "ValidationError",
+  "message": "Missing required field: dob",
+  "validationErrors": ["dob is required"]
+}
+```
