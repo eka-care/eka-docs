@@ -5,16 +5,17 @@ description: "Guide for implementing client-side encryption using JWE for Eka Ca
 
 # Encrypted API Requests & Responses
 
-Our APIs support end-to-end encryption for sensitive data and file uploads using JWE (JSON Web Encryption) RFC 7516. This ensures that even over HTTPS, payloads remain confidential and tamper-proof.
+Our APIs support end-to-end encryption for sensitive data and file uploads using [JWE (JSON Web Encryption) RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516). This ensures that even over HTTPS, payloads remain confidential and tamper-proof.
+
 
 ## Key Details
-
-- **Algorithm (alg):** `dir` (direct mode, shared symmetric key)
-- **Encryption Method (enc):** `A128CBC-HS256` (AES-128 CBC with PKCS7 padding)
-- **IV:** Random per request, Base64URL-encoded
-- **Ciphertext:** Base64URL-encoded encrypted content
-- **Tag:** Authentication tag for integrity, Base64URL-encoded
-- **Key (kid):** Identifier for the shared AES key
+- **Protected (`protected`)**: Base64URL-encoded JSON object containing the algorithm (`alg`) and encryption method (`enc`).
+- **Algorithm (`alg`)**: Currently `dir` (direct mode, uses a shared symmetric key for encryption); other algorithms may be supported in the future
+- **Encryption Method (`enc`)**: Currently `A128CBC-HS256` (AES-128 CBC with PKCS7 padding); other methods may be supported in the future
+- **IV**: Random per request, Base64URL-encoded initialization vector
+- **Ciphertext**: Base64URL-encoded encrypted content
+- **Tag**: Authentication tag for integrity, Base64URL-encoded
+- **Key (`kid`)**: Identifier for the shared AES key
 
 ## JSON API Requests
 
@@ -72,15 +73,14 @@ Server responses can also be encrypted. Clients must decrypt using the shared ke
 
 ```json
 {
-  "protected": "eyJhbGciOiAiZGlyIiwgImVuYyI6ICJBMTI4Q0JDLUhTMjU2In0",
-  "iv": "xW6Lk8Qpzpzv8b9QFfhm8A",
-  "ciphertext": "k77ljWl6rM_yGhLxX5Z0aA",
-  "tag": "4m7N0d8lmKZVbJYJfIY"
+  "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+  "iv": "NTgyMTIzNDU2MjM0NDU2Nw",
+  "ciphertext": "SXNXEHqvd9PT15ELzuGScYNUS7RwXP9H3yqWl-Mml6bgwNdWoV3OdZ-Nuzz6C0tHX12Z82VnOL6q5_40vuIxDA",
+  "tag": "kOLTuvgzaoxeN79DtGva_6Kf5FlpccclESO0XzoJZ2Y"
 }
 ```
 
 After decryption, the payload is your usual JSON object:
-
 ```json
 {
   "id": "123",
@@ -90,10 +90,78 @@ After decryption, the payload is your usual JSON object:
 }
 ```
 
-## Steps to Decrypt Response
 
-1. **Base64URL-decode** `protected`, `iv`, `ciphertext`, and `tag` components
-2. **Decrypt** `ciphertext` using the shared AES key + IV
-3. **Verify** data integrity using the authentication `tag`
-4. **Parse** the decrypted JSON as the actual API response
+
+## Example: Encrypting a Payload (Python)
+
+```python
+import json, base64, hashlib, hmac
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+
+def encrypt_jwe(payload, key_hex="5821234562344567", iv_hex="5821234562344567"):
+    key_bytes = (key_hex * 2).encode()
+    iv_bytes = iv_hex.encode()
+
+    b64url = lambda d: base64.urlsafe_b64encode(d).rstrip(b"=").decode()
+
+    header = b64url(b'{"alg":"dir","enc":"A128CBC-HS256"}')
+    payload_json = json.dumps(payload, separators=(',', ':')).encode()
+
+    pad_len = 16 - len(payload_json) % 16
+    padded = payload_json + bytes([pad_len] * pad_len)
+
+    cipher = Cipher(algorithms.AES(key_bytes[:16]), modes.CBC(iv_bytes))
+    ciphertext = cipher.encryptor().update(padded)
+
+    tag = hmac.new(key_bytes[16:], ciphertext, hashlib.sha256).digest()
+
+    return {
+        "protected": header,
+        "iv": b64url(iv_bytes),
+        "ciphertext": b64url(ciphertext),
+        "tag": b64url(tag)
+    }
+
+
+payload = {"id": "123", "name": "Rakesh", "dob": "1990-01-01", "gender": "male"}
+result = encrypt_jwe(payload)
+print(json.dumps(result, indent=2))
+```
+
+
+
+## Example: Decrypting a Payload (Python)
+```python
+import json, base64, hashlib, hmac
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+jwe_obj =  {
+"protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+"iv": "NTgyMTIzNDU2MjM0NDU2Nw",
+"ciphertext": "SXNXEHqvd9PT15ELzuGScYNUS7RwXP9H3yqWl-Mml6bgwNdWoV3OdZ-Nuzz6C0tHX12Z82VnOL6q5_40vuIxDA",
+"tag": "kOLTuvgzaoxeN79DtGva_6Kf5FlpccclESO0XzoJZ2Y" }
+
+key_hex = "5821234562344567"
+def decrypt_jwe(jwe_obj, key_hex):
+    key_bytes = (key_hex * 2).encode()
+    b64url_decode = lambda s: base64.urlsafe_b64decode(s + '===')
+
+    iv = b64url_decode(jwe_obj["iv"])
+    ciphertext = b64url_decode(jwe_obj["ciphertext"])
+    tag = b64url_decode(jwe_obj["tag"])
+    expected_tag = hmac.new(key_bytes[16:], ciphertext, hashlib.sha256).digest()
+    if not hmac.compare_digest(tag, expected_tag):
+        raise ValueError("Invalid authentication tag!")
+
+    cipher = Cipher(algorithms.AES(key_bytes[:16]), modes.CBC(iv))
+    padded = cipher.decryptor().update(ciphertext)
+
+    pad_len = padded[-1]
+    payload_json = padded[:-pad_len]
+    return json.loads(payload_json)
+
+decrypted_payload = decrypt_jwe(jwe_obj, key_hex)
+print(json.dumps(decrypted_payload, indent=2))
+```
 
