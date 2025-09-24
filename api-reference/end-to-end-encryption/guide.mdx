@@ -1,0 +1,99 @@
+---
+title: "Encrypted API Requests and Responses"
+description: "Guide for implementing client-side encryption using JWE for Eka Care APIs"
+---
+
+# Encrypted API Requests & Responses
+
+Eka Care APIs support end-to-end encryption for sensitive data and file uploads using **JWE (JSON Web Encryption) RFC 7516**. This ensures that even over HTTPS, payloads remain confidential and tamper-proof.
+
+## Key Details
+
+- **Algorithm (alg):** `dir` (direct mode, shared symmetric key)
+- **Encryption Method (enc):** `A128CBC-HS256` (AES-128 CBC with PKCS7 padding)
+- **IV:** Random per request, Base64URL-encoded
+- **Ciphertext:** Base64URL-encoded encrypted content
+- **Tag:** Authentication tag for integrity, Base64URL-encoded
+- **Key (kid):** Identifier for the shared AES key
+
+## JSON API Requests
+
+For APIs using `Content-Type: application/json`, encrypt the payload and send as JWE JSON serialization:
+
+```json
+{
+  "protected": "eyJhbGciOiAiZGlyIiwgImVuYyI6ICJBMTI4Q0JDLUhTMjU2In0",
+  "iv": "0--10mVIyBcO_0GO",
+  "ciphertext": "U2FsdGVkX1+...",
+  "tag": "QmFzZTY0VGVzdFRhZw",
+  "kid": "client-key-1"
+}
+```
+
+### Example cURL Request
+
+```bash
+curl --request POST \
+  --url https://api.eka.care/abdm/na/v1/registration/aadhaar/init \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "protected": "eyJhbGciOiAiZGlyIiwgImVuYyI6ICJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "0--10mVIyBcO_0GO",
+    "ciphertext": "U2FsdGVkX1+...",
+    "tag": "QmFzZTY0VGVzdFRhZw",
+    "kid": "client-key-1"
+  }'
+```
+
+## File Upload APIs
+
+For APIs using `multipart/form-data`:
+
+```bash
+curl --request POST \
+  --url https://api.eka.care/mr/api/v2/docs \
+  --header 'Authorization: Bearer <token>' \
+  --header 'X-Pt-Id: <x-pt-id>' \
+  --header 'X-Encryption: JWE' \
+  --form 'protected=eyJhbGciOiAiZGlyIiwgImVuYyI6ICJBMTI4Q0JDLUhTMjU2In0' \
+  --form 'iv=0--10mVIyBcO_0GO' \
+  --form 'tag=QmFzZTY0VGVzdFRhZw' \
+  --form 'file=@encrypted-file.dat;type=application/octet-stream'
+```
+
+**Form Fields:**
+- `file` → Encrypted file content
+- `protected`, `iv`, `tag` → Encryption metadata
+
+## Encrypted API Responses
+
+Server responses can also be encrypted. Clients must decrypt using the shared key:
+
+```json
+{
+  "protected": "eyJhbGciOiAiZGlyIiwgImVuYyI6ICJBMTI4Q0JDLUhTMjU2In0",
+  "iv": "xW6Lk8Qpzpzv8b9QFfhm8A",
+  "ciphertext": "k77ljWl6rM_yGhLxX5Z0aA",
+  "tag": "4m7N0d8lmKZVbJYJfIY"
+}
+```
+
+After decryption, the payload is your usual JSON object:
+
+```json
+{
+  "id": "123",
+  "name": "Rakesh",
+  "dob": "1990-01-01",
+  "gender": "male"
+}
+```
+
+## Steps to Decrypt Response
+
+1. **Base64URL-decode** `protected`, `iv`, `ciphertext`, and `tag` components
+2. **Decrypt** `ciphertext` using the shared AES key + IV
+3. **Verify** data integrity using the authentication `tag`
+4. **Parse** the decrypted JSON as the actual API response
+
