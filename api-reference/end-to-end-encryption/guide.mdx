@@ -73,8 +73,6 @@ Server responses can also be encrypted. Clients must decrypt using the shared ke
 
 ```json
 {
-  "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
-  "iv": "NTgyMTIzNDU2MjM0NDU2Nw",
   "ciphertext": "SXNXEHqvd9PT15ELzuGScYNUS7RwXP9H3yqWl-Mml6bgwNdWoV3OdZ-Nuzz6C0tHX12Z82VnOL6q5_40vuIxDA",
   "tag": "kOLTuvgzaoxeN79DtGva_6Kf5FlpccclESO0XzoJZ2Y"
 }
@@ -99,7 +97,7 @@ import json, base64, hashlib, hmac
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
-def encrypt_jwe(payload, key_hex="5821234562344567", iv_hex="5821234562344567"):
+def encrypt_jwe(payload, key_hex: str, iv_hex: str):
     key_bytes = (key_hex * 2).encode()
     iv_bytes = iv_hex.encode()
 
@@ -125,7 +123,7 @@ def encrypt_jwe(payload, key_hex="5821234562344567", iv_hex="5821234562344567"):
 
 
 payload = {"id": "123", "name": "Rakesh", "dob": "1990-01-01", "gender": "male"}
-result = encrypt_jwe(payload)
+result = encrypt_jwe(payload, '5821234562344567', '5821234562344567')
 print(json.dumps(result, indent=2))
 ```
 
