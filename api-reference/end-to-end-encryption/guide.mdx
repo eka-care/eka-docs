@@ -129,8 +129,13 @@ print("Encrypted JWE:", encrypted_jwe)
 from jwcrypto import jwk, jwe
 import json, base64
 
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
+
 def decrypt_jwe(jwe_dict: dict, key_str: str) -> dict:
-    key = jwk.JWK(kty="oct", k=base64.urlsafe_b64encode((key_str*2).encode()).rstrip(b"=").decode())
+    key_bytes = (key_str * 2).encode('utf-8')
+    key_b64 = b64url(key_bytes)
+    key = jwk.JWK(kty='oct', k=key_b64)
     token = jwe.JWE()
     token.deserialize(json.dumps(jwe_dict))
     token.decrypt(key)
