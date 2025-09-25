@@ -92,73 +92,74 @@ After decryption, the payload is your usual JSON object:
 ## Example: Encrypting a Payload (Python)
 
 ```python
-import json, base64, hashlib, hmac
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from jwcrypto import jwk, jwe
+import json
+import base64
 
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
 
-def encrypt_jwe(payload, key_hex: str, iv_hex: str):
-    key_bytes = (key_hex * 2).encode()
-    iv_bytes = iv_hex.encode()
+def encrypt_jwe(payload: dict, key_str: str) -> dict:
+    payload_json = json.dumps(payload).encode('utf-8')
+    key_bytes = (key_str * 2).encode('utf-8')
+    key_b64 = b64url(key_bytes)
+    key = jwk.JWK(kty='oct', k=key_b64)
 
-    b64url = lambda d: base64.urlsafe_b64encode(d).rstrip(b"=").decode()
+    header = {"alg": "dir", "enc": "A128CBC-HS256"}
+    jwetoken = jwe.JWE(payload_json, protected=header)
+    jwetoken.add_recipient(key)
 
-    header = b64url(b'{"alg":"dir","enc":"A128CBC-HS256"}')
-    payload_json = json.dumps(payload, separators=(',', ':')).encode()
-
-    pad_len = 16 - len(payload_json) % 16
-    padded = payload_json + bytes([pad_len] * pad_len)
-
-    cipher = Cipher(algorithms.AES(key_bytes[:16]), modes.CBC(iv_bytes))
-    ciphertext = cipher.encryptor().update(padded)
-
-    tag = hmac.new(key_bytes[16:], ciphertext, hashlib.sha256).digest()
-
+    jwe_json = json.loads(jwetoken.serialize(compact=False))
     return {
-        "protected": header,
-        "iv": b64url(iv_bytes),
-        "ciphertext": b64url(ciphertext),
-        "tag": b64url(tag)
+        "protected": jwe_json["protected"],
+        "iv": jwe_json["iv"],
+        "ciphertext": jwe_json["ciphertext"],
+        "tag": jwe_json["tag"]
     }
 
+payload = {"aadhaar_number": "123456789012"}
+encrypted_jwe = encrypt_jwe(payload, "5821234562344567")
+print(encrypted_jwe)
+```
 
-payload = {"id": "123", "name": "Rakesh", "dob": "1990-01-01", "gender": "male"}
-result = encrypt_jwe(payload, '5821234562344567', '5821234562344567')
-print(json.dumps(result, indent=2))
+```shell
+{
+    "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "oAvH6vVV_UYK7vrYsj2b8A",
+    "ciphertext": "T0jZQGWh6WP_TMz_1aUyqm06FGxi8FdQVK-0eleFDD7OBhxr3Bt2a1gt4OtbpuSn",
+    "tag": "LW3ikoOIGvtDY4TeH_ezfg"
+}
 ```
 
 
 
 ## Example: Decrypting a Payload (Python)
 ```python
-import json, base64, hashlib, hmac
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from jwcrypto import jwk, jwe
+import json, base64
 
-jwe_obj =  {
-"protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
-"iv": "NTgyMTIzNDU2MjM0NDU2Nw",
-"ciphertext": "SXNXEHqvd9PT15ELzuGScYNUS7RwXP9H3yqWl-Mml6bgwNdWoV3OdZ-Nuzz6C0tHX12Z82VnOL6q5_40vuIxDA",
-"tag": "kOLTuvgzaoxeN79DtGva_6Kf5FlpccclESO0XzoJZ2Y" }
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
 
-key_hex = "5821234562344567"
-def decrypt_jwe(jwe_obj, key_hex):
-    key_bytes = (key_hex * 2).encode()
-    b64url_decode = lambda s: base64.urlsafe_b64decode(s + '===')
+def decrypt_jwe(jwe_dict: dict, key_str: str) -> dict:
+    key_bytes = (key_str * 2).encode('utf-8')
+    key_b64 = b64url(key_bytes)
+    key = jwk.JWK(kty='oct', k=key_b64)
+    token = jwe.JWE()
+    token.deserialize(json.dumps(jwe_dict))
+    token.decrypt(key)
+    return json.loads(token.payload.decode())
 
-    iv = b64url_decode(jwe_obj["iv"])
-    ciphertext = b64url_decode(jwe_obj["ciphertext"])
-    tag = b64url_decode(jwe_obj["tag"])
-    expected_tag = hmac.new(key_bytes[16:], ciphertext, hashlib.sha256).digest()
-    if not hmac.compare_digest(tag, expected_tag):
-        raise ValueError("Invalid authentication tag!")
+encrypted_jwe = {
+    "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "oAvH6vVV_UYK7vrYsj2b8A",
+    "ciphertext": "T0jZQGWh6WP_TMz_1aUyqm06FGxi8FdQVK-0eleFDD7OBhxr3Bt2a1gt4OtbpuSn",
+    "tag": "LW3ikoOIGvtDY4TeH_ezfg"
+}
 
-    cipher = Cipher(algorithms.AES(key_bytes[:16]), modes.CBC(iv))
-    padded = cipher.decryptor().update(ciphertext)
-
-    pad_len = padded[-1]
-    payload_json = padded[:-pad_len]
-    return json.loads(payload_json)
-
-decrypted_payload = decrypt_jwe(jwe_obj, key_hex)
-print(json.dumps(decrypted_payload, indent=2))
+print(decrypt_jwe(encrypted_jwe, "5821234562344567"))
 ```
 
+```shell
+{"aadhaar_number": "123456789012"}
+```
