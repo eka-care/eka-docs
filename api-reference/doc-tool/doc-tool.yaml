@@ -2384,78 +2384,98 @@ paths:
     get:
       tags:
         - Appointment API
-      summary: Get Appointments By date
+      summary: Get Business Appointments
       description: >-
         
         
         ### Overview
 
         This API endpoint is used to retrieve all the appointments scheduled for a
-        specific date. It provides a comprehensive list of appointments. The response includes comprehensive
-        information about the appointment, including patient and doctor details,
-        appointment status, timings and related services.
-        
-        
-        Appointment_statuses:
-          - BK    : Booked
-          - OG    : Ongoing
-          - CM	  : Completed with Prescription
-          - CMNP  : Completed without a Prescription
-          - CN    : Cancelled
-          - CND   : Cancelled by Doctor
-          - CNS   : Cancelled by Staff
+        business with flexible filters.
 
-      operationId: GetappointmentDetails
+        ### Additional Information:
+        
+          - Valid filter combinations:
+            1. `patient_id` (alone)
+            2. `doctor_id`, `start_date`, `end_date`
+            3. `clinic_id`, `start_date`, `end_date`
+            4. `start_date`, `end_date`
+            5. `doctor_id`, `clinic_id`, `start_date`, `end_date`
+          - Dates must follow `YYYY-MM-DD` format.
+          - The date range must not exceed **7 days**.
+          - `end_date` cannot be before `start_date`.
+          - There is a `limit` i.e the maximum number of appointments returned per page. The value of `limit` is automatically set based on the filters used:  
+              - **20** → when filtering by `patient_id` (alone).  
+              - **50** → when filtering by (`doctor_id`, `start_date`, `end_date`) OR (`clinic_id`, `start_date`, `end_date`) OR (`doctor_id`, `clinic_id`, `start_date`, `end_date`).  
+              - **30** → when filtering only by (`start_date`, `end_date`).  
+
+        ### Appointment Status Codes
+          - BK    : Booked  
+          - OG    : Ongoing  
+          - CM    : Completed with Prescription  
+          - CMNP  : Completed without a Prescription  
+          - CN    : Cancelled  
+          - CND   : Cancelled by Doctor  
+          - CNS   : Cancelled by Staff
+      operationId: GetBusinessAppointments
       parameters:
-        - name: auth
+        - name: Authorization
           in: header
-          description: ''
           required: true
           style: simple
           schema:
             type: string
             example: 'auth'
-        - name: date
+        - name: patient_id
           in: query
-          description: 'Date of scheduled appointments. Format should be YYYY-MM-DD'
-          required: true
-          style: form
-          explode: true
+          description: Filter by patient. Cannot be combined with any other filter.
+          required: false
           schema:
             type: string
+        - name: doctor_id
+          in: query
+          description: Filter by doctor (must be combined with start_date and end_date).
+          required: false
+          schema:
+            type: string
+        - name: clinic_id
+          in: query
+          description: Filter by clinic (must be combined with start_date and end_date).
+          required: false
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          description: Start date of appointments.
+          required: false
+          schema:
+            type: string
+            format: date
             example: "2025-05-01"
+        - name: end_date
+          in: query
+          description: End date of appointments.
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2025-05-07"
+        - name: page_no
+          in: query
+          description: >
+            Page number for pagination (starts from 0).  
+              - Each page contains up to say **50 appointments** (`limit=50`).  
+              - `page_no=0` means the first page.  
+              - If the `"appointments"` array has exactly 50 items, there may be more results. Continue with `page_no=1`, `page_no=2`, etc.  
+              - If the `"appointments"` array has fewer than 50 items, there are no more results and you can stop fetching.  
+          required: false
+          schema:
+            type: integer
+            example: 0
+
       responses:
         '200':
-          description: OK
-          headers:
-            Date:
-              schema:
-                type: string
-              example: Sun, 12 Apr 2020 11:09:57 GMT
-            Content-Length:
-              schema:
-                type: string
-              example: '377'
-            Connection:
-              schema:
-                type: string
-              example: keep-alive
-            Server:
-              schema:
-                type: string
-              example: nginx/1.10.3 (Ubuntu)
-            Vary:
-              schema:
-                type: string
-              example: Cookie, Accept-Encoding
-            Content-Encoding:
-              schema:
-                type: string
-              example: gzip
-            Strict-Transport-Security:
-              schema:
-                type: string
-              example: max-age=15768000
+          description: Successful response with appointment list
           content:
             application/json:
               schema:
@@ -2464,8 +2484,8 @@ paths:
                   appointments:
                     type: array
                     items:
-                     type: object
-                     properties:
+                      type: object
+                      properties:
                         appointment_id:
                           type: string
                         created_at:
@@ -2511,64 +2531,27 @@ paths:
                           type: string
                         partner_patient_id:
                           type: string
-                        # sa_ids:
-                        #   type: array
-                example:
-                  appointments:
-                    - appointment_id: "{{eka_appointment_id}}"
-                      partner_appointment_id: "{{partner_appointment_id}}"
-                      created_at: 1730189586
-                      doctor_id: "{{doctor_id}}"
-                      clinic_id: "{{clinic_id}}"
-                      channel: "Walkin"
-                      patient_id: "{{patient_id}}"
-                      partner_doctor_id: "{{partner_doctor_id}}"
-                      partner_clinic_id: "{{partner_clinic_id}}"
-                      partner_patient_id: "{{partner_patient_id}}"
-                      status: CM
-                      mode: in_clinic
-                      start_time: 1730189586
-                      end_time: 1730189586
-                      prescription_id: "{{prescription_id}}"
-                      prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
-                      # sa_ids: []
-                    - appointment_id: "{{eka_appointment_id}}"
-                      partner_appointment_id: "{{partner_appointment_id}}"
-                      created_at: 1730189586
-                      doctor_id: "{{doctor_id}}"
-                      clinic_id: "{{clinic_id}}"
-                      channel: "Walkin"
-                      patient_id: "{{patient_id}}"
-                      partner_doctor_id: "{{partner_doctor_id}}"
-                      partner_clinic_id: "{{partner_clinic_id}}"
-                      partner_patient_id: "{{partner_patient_id}}"
-                      status: CM
-                      mode: in_clinic
-                      start_time: 1730189586
-                      end_time: 1730189586
-                      prescription_id: "{{prescription_id}}"
-                      prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
-                      # sa_ids: []
-                    
+              example:
+                appointments:
+                  - appointment_id: "apt_001"
+                    partner_appointment_id: "p_001"
+                    created_at: 1730189586
+                    doctor_id: "doc_123"
+                    clinic_id: "cln_456"
+                    patient_id: "pat_789"
+                    channel: "Walkin"
+                    status: "CM"
+                    mode: "in_clinic"
+                    start_time: 1730189586
+                    end_time: 1730189586
+                    prescription_id: "presc_001"
+                    prescription_url: "https://prescription-store-s3.eka.care/P-DW-1234.pdf"
+                    partner_patient_id: "partner_patient_id1"
+                    partner_doctor_id: "partner_doc_id1"
+                    partner_clinic_id: "partner_clinic_id1"
+                
         '400':
-          description: Bad Request
-          headers:
-            Date:
-              schema:
-                type: string
-              example: Sun, 12 Apr 2024 11:10:57 GMT
-            Content-Length:
-              schema:
-                type: string
-              example: '152'
-            Connection:
-              schema:
-                type: string
-              example: keep-alive
-            Server:
-              schema:
-                type: string
-              example: nginx/1.10.3 (Ubuntu)
+          description: Invalid request (validation error)
           content:
             application/json:
               schema:
@@ -2584,61 +2567,20 @@ paths:
               example:
                 error:
                   code: INVALID_REQUEST_PARAMETERS
-                  message: The request contains invalid parameters
+                  message: "You must provide one of the valid filter combinations."
         '403':
-          description: Forbidden
-          headers:
-            Date:
-              schema:
-                type: string
-              example: Sun, 12 Apr 2024 11:11:57 GMT
-            Content-Length:
-              schema:
-                type: string
-              example: '145'
-            Connection:
-              schema:
-                type: string
-              example: keep-alive
-            Server:
-              schema:
-                type: string
-              example: nginx/1.10.3 (Ubuntu)
+          description: Forbidden (no permission to access resource)
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
-                    type: object
-                    properties:
-                      code:
-                        type: string
-                      message:
-                        type: string
+                  message:
+                    type: string
               example:
-                error:
-                  code: ACCESS_DENIED
-                  message: "Access denied. You do not have permission to view this appointment." 
+                message: "Forbidden"
         '500':
           description: Internal Server Error
-          headers:
-            Date:
-              schema:
-                type: string
-              example: Sun, 12 Apr 2024 11:13:57 GMT
-            Content-Length:
-              schema:
-                type: string
-              example: '158'
-            Connection:
-              schema:
-                type: string
-              example: keep-alive
-            Server:
-              schema:
-                type: string
-              example: nginx/1.10.3 (Ubuntu)
           content:
             application/json:
               schema:
@@ -2654,9 +2596,9 @@ paths:
               example:
                 error:
                   code: SERVER_ERROR
-                  message: An unexpected error occurred while processing your request. Please try again later.
-      
+                  message: "An unexpected error occurred while processing your request. Please try again later."
       deprecated: false
+
   /dr/v1/appointment/slots/reserve:
     post:
       tags:
