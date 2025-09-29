@@ -56,8 +56,8 @@ Without encryption
 curl --request POST \
   --url https://api.eka.care/mr/api/v2/docs \
   --header 'Authorization: Bearer <token>' \
-  --header 'X-Pt-Id: <x-pt-id>' \
-  --form file=@example-file \
+  --header 'Content-Type: multipart/form-data' \
+  --form file=@example-file
 ```
 
 With encryption
@@ -65,6 +65,7 @@ With encryption
 ``` bash
 curl --location 'https://api.eka.care/mr/api/v2/docs' \
 --header 'Authorization: Bearer <token>' \
+--header 'X-Encryption: JWE' \
 --header 'Content-Type: application/json' \
 --data '{
 "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
@@ -75,9 +76,7 @@ curl --location 'https://api.eka.care/mr/api/v2/docs' \
 }'
 ```
 
-**Form Fields:**
-- `file` → Encrypted file content
-- `protected`, `iv`, `tag` → Encryption metadata
+
 
 ## Encrypted API Responses
 
@@ -102,6 +101,52 @@ After decryption, the payload is your usual JSON object:
 ```
 
 
+## Example: Encrypting a File (Python)
+```python
+from jwcrypto import jwk, jwe
+import base64
+import json
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
+
+def encrypt_file(file_path: str, key_str: str) -> dict:
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
+
+    key_bytes = (key_str * 2).encode("utf-8")
+    key_b64 = b64url(key_bytes)
+    key = jwk.JWK(kty="oct", k=key_b64)
+
+    header = {"alg": "dir", "enc": "A128CBC-HS256"}
+    jwetoken = jwe.JWE(file_bytes, protected=header)
+    jwetoken.add_recipient(key)
+
+    jwe_dict = json.loads(jwetoken.serialize(compact=False))
+
+    return {
+        "protected": jwe_dict["protected"],
+        "iv": jwe_dict["iv"],
+        "ciphertext": jwe_dict["ciphertext"],
+        "tag": jwe_dict["tag"]
+    }
+
+encrypted_file = encrypt_file(
+    "/Users/admin/Library/Application Support/JetBrains/PyCharm2024.2/scratches/Lab_Report_Sample.pdf",
+    "5821234562344567"
+)
+
+print(json.dumps(encrypted_file, indent=4))
+```
+
+```shell
+{
+    "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "oAvH6vVV_UYK7vrYsj2b8A",
+    "ciphertext": "T0jZQGWh6WP+......",
+    "tag": "LW3ikoOIGvtDY4TeH_ezfg"
+}
+```
 
 ## Example: Encrypting a Payload (Python)
 
