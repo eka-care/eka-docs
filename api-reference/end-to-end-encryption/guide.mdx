@@ -197,6 +197,56 @@ print(encrypted_jwe)
 }
 ```
 
+## Example: Encrypting a Payload (.net)
+```.net
+using System;
+using System.Text;
+using Jose;
+using Newtonsoft.Json.Linq;
+
+public class Program
+{
+    public static JObject EncryptJwe(JObject payload, string keyStr)
+    {
+        string payloadJson = payload.ToString(Newtonsoft.Json.Formatting.None);
+
+        string doubled = keyStr + keyStr;
+        byte[] key = Encoding.UTF8.GetBytes(doubled);
+
+        string jweCompact = JWT.Encode(payloadJson, key, JweAlgorithm.DIR, JweEncryption.A128CBC_HS256);
+
+        string[] parts = jweCompact.Split('.');
+
+        return new JObject
+        {
+            ["protected"] = parts[0],
+            ["iv"] = parts[2],
+            ["ciphertext"] = parts[3],
+            ["tag"] = parts[4]
+        };
+    }
+
+    public static void Main()
+    {
+        var payload = new JObject
+        {
+            ["aadhaar_number"] = "123456789012"
+        };
+
+        var encrypted_jwe = EncryptJwe(payload, "5821234562344567");
+        Console.WriteLine(encrypted_jwe);
+    }
+}
+```
+
+```shell
+{
+  "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+  "iv": "-xRt08Nui-LIEUhYMaAODg",
+  "ciphertext": "IMCGMlpPmV2DMkYJMeqLqlGj4pL74OZn-koLVNyDESrJU_LE6fnJJhrorRwBoIyh",
+  "tag": "TAi3Yok9KU0FLTSL0WEWnQ"
+}
+```
 
 
 ## Example: Decrypting a Payload (Python)
@@ -229,3 +279,44 @@ print(decrypt_jwe(encrypted_jwe, "5821234562344567"))
 ```shell
 {"aadhaar_number": "123456789012"}
 ```
+
+## Example: Decrypting a Payload (.net)
+```.net
+using System;
+using System.Text;
+using Jose;
+using Newtonsoft.Json.Linq;
+
+public class Program
+{
+    public static JObject DecryptJwe(JObject jweDict, string keyStr)
+    {
+        string doubled = keyStr + keyStr;
+        byte[] key = Encoding.UTF8.GetBytes(doubled);
+
+        string jweCompact = $"{jweDict["protected"]}..{jweDict["iv"]}.{jweDict["ciphertext"]}.{jweDict["tag"]}";
+
+        string decryptedJson = JWT.Decode(jweCompact, key);
+
+        return JObject.Parse(decryptedJson);
+    }
+
+    public static void Main()
+    {
+        var encrypted_jwe = new JObject
+        {
+            ["protected"] = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+            ["iv"] = "oAvH6vVV_UYK7vrYsj2b8A",
+            ["ciphertext"] = "T0jZQGWh6WP_TMz_1aUyqm06FGxi8FdQVK-0eleFDD7OBhxr3Bt2a1gt4OtbpuSn",
+            ["tag"] = "LW3ikoOIGvtDY4TeH_ezfg"
+        };
+
+        Console.WriteLine(DecryptJwe(encrypted_jwe, "5821234562344567"));
+    }
+}
+```
+
+```shell
+{"aadhaar_number": "123456789012"}
+```
+
