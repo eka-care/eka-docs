@@ -1,13 +1,164 @@
-The EkaScribe API provides a set of endpoints for working with voice data. This API is designed to be easy to use and integrate into your applications, allowing you to leverage the power of voice recognition and transcription technologies to get desired formatted results.
+# EkaScribe API Overview
 
-Each flow from audio upload to get results is linked with particular business-id and transaction-id. This allows you to track the status of associated transcriptions.
+The EkaScribe API provides a powerful set of REST endpoints for converting voice recordings into structured medical documentation. This API is designed to be easy to integrate into your applications, allowing you to leverage advanced voice recognition and medical transcription technologies.
 
-## Process Overview
+## 🎯 What You'll Build
 
-**1. Presigned URL**: Get a presigned URL for uploading audio files to an S3 bucket. This step needs to provide txn-id and action.
+With the EkaScribe API, you can:
+- Upload audio recordings securely to the cloud
+- Convert voice data into structured medical notes
+- Support multiple languages and medical templates
+- Track transcription status in real-time
+- Receive webhook notifications when transcription completes
 
-**2. File upload on Presigned URL**: Use the presigned URL to upload your audio files. This step needs to provide the audio file, action and the response received in the previous step.
+## 🔐 Authentication
 
-**3. Start Transcription**: Start the transcription process for the uploaded audio files.
+All API requests require authentication using your API key. Include it in the request headers:
 
-**4. Transcription Result**: Get the results of the transcription process once it is complete.
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+**Don't have an API key?** Contact the Eka Care team to get started.
+
+## 📋 API Flow Overview
+
+The EkaScribe API follows a **4-step process** from audio upload to receiving structured results:
+
+**1. 🔑 Get Presigned URL**  
+   Request secure upload credentials for your audio file
+
+**2. ⬆️ Upload Audio File**  
+   Upload your audio file using the presigned URL to cloud storage
+
+**3. 🚀 Initialize Transcription**  
+   Start the AI processing to convert audio into medical documentation
+
+**4. 📄 Fetch Results**  
+   Retrieve the structured medical notes once processing is complete
+
+### Complete API Workflow
+
+Each transcription flow is tracked using a unique `transaction_id (txn_id)`, allowing you to monitor the status of your transcriptions.
+
+## 🔄 Step-by-Step API Process
+
+### Step 1: Get Presigned URL 🔑
+
+**Endpoint**: `POST /v1/file-upload`
+
+Generate a secure presigned URL for uploading audio files to cloud storage.
+
+- **Purpose**: Obtain secure upload credentials
+- **Input**: Transaction ID (`txn_id`) and action type
+- **Output**: Presigned URL with authentication fields
+- **Documentation**: [Get Presigned URL API →](/api-reference/health-ai/ekascribe/ekascribe-v2/presigned-url)
+
+**Key Points**:
+- Each `txn_id` uniquely identifies your transcription session
+- The presigned URL is temporary and expires after a set time
+- Use action type: `ekascribe-v2`
+
+---
+
+### Step 2: Upload Audio File ⬆️
+
+Using the presigned URL from Step 1, upload your audio file(s) to the cloud.
+
+- **Purpose**: Securely upload audio files to cloud storage
+- **Input**: Audio file(s) + presigned URL response from Step 1
+- **Output**: Upload confirmation with file metadata
+- **Documentation**: [File Upload Guide →](/api-reference/health-ai/ekascribe/ekascribe-v2/file-upload)
+
+**Key Points**:
+- Upload directly to S3 using the presigned URL
+- Multiple files can be uploaded for a single session
+- Each file is associated with the same `txn_id`
+
+---
+
+### Step 3: Initialize Transcription 🚀
+
+**Endpoint**: `POST /voice/api/v2/transaction/init/{txn_id}`
+
+Start the AI transcription process for your uploaded audio files.
+
+- **Purpose**: Begin processing audio into structured medical documentation
+- **Input**: Transaction ID + template selection + language preference
+- **Output**: Transcription job initialization confirmation
+- **Documentation**: [Initialize Transcription API →](/api-reference/health-ai/ekascribe/ekascribe-v2/init)
+
+**Configure Your Transcription**:
+- **Template ID**: Choose your output format
+  - `clinical_notes_template` - Comprehensive clinical notes
+  - `eka_emr_template` - EMR-compatible format
+  - `transcript_template` - Basic transcription
+- **Model Type**: Select accuracy vs. speed
+  - `pro` - Highest accuracy (recommended)
+  - `lite` - Faster processing, lower latency
+- **Input Language**: Support for 10+ languages including English, Hindi, Tamil, Telugu, Gujarati, and more
+
+---
+
+### Step 4: Fetch Transcription Results 📄
+
+**Endpoint**: `GET /voice/api/v3/status/{txn_id}`
+
+Retrieve the structured medical documentation once transcription is complete.
+
+- **Purpose**: Get the final structured medical notes
+- **Input**: Transaction ID (`txn_id`)
+- **Output**: Structured medical documentation in your chosen template format
+- **Documentation**: [Get Results API →](/api-reference/health-ai/ekascribe/ekascribe-v2/result)
+
+**Response Status Codes**:
+- `200` - Success: All templates processed successfully
+- `202` - Accepted: Transcription still in progress
+- `206` - Partial Content: Some templates succeeded, others failed
+- `400` - Bad Request: Invalid transaction ID
+- `500` - Internal Server Error: Processing failed
+
+**Key Points**:
+- Poll this endpoint to check transcription status
+- Alternatively, use webhooks for automatic notifications
+- Results include structured medical data in your chosen template
+
+---
+
+## 🔔 Optional: Webhook Notifications
+
+Instead of polling the results endpoint, you can register a webhook to receive automatic notifications when transcription completes.
+
+**Setup**: [Register Webhook →](/api-reference/connect/webhooks/register-webhook)
+
+**Sample Webhook Payload**:
+```json
+{
+  "event": "v2rx.completed",
+  "data": {
+    "transaction_id": "txn_301",
+    "status": "completed",
+    "session_id": "session_123456"
+  },
+  "timestamp": "2025-10-08T10:30:00Z"
+}
+```
+
+---
+
+## 📚 API Reference Links
+
+| API Endpoint | Description | Documentation |
+|-------------|-------------|---------------|
+| **Get Presigned URL** | Generate secure upload credentials | [View Docs →](/api-reference/health-ai/ekascribe/ekascribe-v2/presigned-url) |
+| **Upload Audio** | Upload audio files to cloud storage | [View Docs →](/api-reference/health-ai/ekascribe/ekascribe-v2/file-upload) |
+| **Initialize Transcription** | Start the transcription process | [View Docs →](/api-reference/health-ai/ekascribe/ekascribe-v2/init) |
+| **Get Results** | Retrieve structured medical notes | [View Docs →](/api-reference/health-ai/ekascribe/ekascribe-v2/result) |
+
+---
+
+## ❓ Need Help?
+
+- **General Overview**: [EkaScribe Main Documentation →](/api-reference/health-ai/ekascribe/overview)
+- **SDK Options**: Looking for easier integration? Check out our [SDKs →](/api-reference/health-ai/ekascribe/overview#integration-products)
+- **Webhooks**: [Webhook Setup Guide →](/api-reference/connect/webhooks/register-webhook)
