@@ -45,6 +45,29 @@ Webhook event is sent when processing of PII completes
 }
 
 ```
+### Field Descriptions
+
+- **`data`**: Contains additional details related to the event.
+    - **`status`**: Current parsing state (e.g., parsing_complete).
+    - **`document_id`**: ID of the document that was parsed.
+    - **`data`**: Additional Data.
+        - **`Pii`**: PII Data.
+            - **`file_index`**: Zero-based index of the source file within the document.
+            - **`page_num`**: One-based page number within that file.
+            - **`document_date`**: Document timestamp (Unix epoch seconds).
+            - **`patient`** : Patient metadata extracted from the page.
+                - `age` Age at document_date.
+                    - `years` Whole years.
+                    - `months` Months remainder.
+                    - `days` Days remainder.
+                - `gender` gender (Male, Female, Other)
+                - `name` Patient display name as printed on the report.
+            - **`report_info`** : Laboratory/report details.
+                - `date_sample_collection` Sample collection datetime.
+                - `date_sample_received` Sample received datetime.
+                - `date_report_generated` Report generated datetime.
+                - `doctor` Ordering/referring physician.
+                - `facility` Lab or organization name.
 
 Note: The status field is an enum with following possible values:
  - parsing_complete
