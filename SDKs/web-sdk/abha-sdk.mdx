@@ -59,6 +59,12 @@ Add the following HTML and script tags to your webpage:
       function mountABHASDK() {
         window.initAbhaApp({
           containerId: "sdk_container",
+        
+         // Pass access token and oid
+          data: {
+            accessToken: "<your_access_token>", // Pass the access token you have
+            oid: "<your_oid_if_available>", // Pass if you have the OID
+          },
 
           // Success callback
           onSuccess: async (params) => {
@@ -91,18 +97,22 @@ Initializes and renders the ABHA SDK in your specified container.
 
 **Parameters:**
 
-| Name | Type | Required | Description |
-|------|------|-----------|-------------|
-| `containerId` | `string` | ✅ | The HTML element ID where the SDK will mount. |
-| `onSuccess` | `(params: AbhaSuccessParams) => void` | ✅ | Callback triggered when the user successfully creates or logs in to ABHA. |
-| `onError` | `(params: AbhaErrorParams) => void` | ✅ | Callback triggered when an error occurs during the ABHA flow. |
-
+| Name          | Type                                    | Required    | Description                                                                                                                                    |
+| ------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `containerId` | `string`                                | ✅           | The HTML element ID where the SDK will mount.                                                                                                  |
+| `data`        | `{ accessToken: string; oid?: string }` | ⚙️ Optional |  Configuration data for secure API integration. <br/>- `accessToken`: Pass the access token you have. <br/>- `oid`: Pass if available. |
+| `onSuccess`   | `(params: AbhaSuccessParams) => void`   | ✅           | Triggered when the user successfully creates or logs in to ABHA.                                                                               |
+| `onError`     | `(params: AbhaErrorParams) => void`     | ✅           | Triggered when an error occurs during the ABHA flow.                                                                                           |
 
 **Example:**
 
 ```javascript
 window.initAbhaApp({
   containerId: "sdk_container",
+  data: {
+    accessToken: "your_access_token_here",
+    oid: "optional_oid_here",
+  },
   onSuccess: (params) => {
     console.log("ABHA created successfully!", params);
   },
@@ -125,7 +135,7 @@ It returns verified user details and tokens, which can be used to log in or cont
 onSuccess: (params: TOnAbhaSuccessParams) => void;
 ```
 
-**Type Definitions*
+**Type Definitions**
 
 ```typescript
 export type TOnAbhaSuccessParams = {
@@ -185,7 +195,7 @@ It provides details about the failure through structured parameters, allowing yo
 onError: (params: TOnAbhaFailureParams) => void;
 ```
 
-**Type Definitions*
+**Type Definitions**
 
 ```typescript
 type TOnAbhaFailureParams = {
@@ -289,6 +299,10 @@ Ensure your container has sufficient space:
       function mountABHASDK() {
         window.initAbhaApp({
           containerId: "sdk_container",
+          data: {
+            accessToken: "<your_access_token>", 
+            oid: "<your_oid_if_available>", 
+          },
           onSuccess: (params) => {
             console.log("ABHA flow completed successfully:", params);
           },
@@ -307,6 +321,10 @@ Ensure your container has sufficient space:
 ```typescript
 interface InitAbhaAppParams {
   containerId: string;
+  data?: {
+    accessToken: string;
+    oid?: string;
+  };
   onSuccess: (params: AbhaSuccessParams) => void;
   onError: (params: AbhaErrorParams) => void;
 }
