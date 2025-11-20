@@ -2413,14 +2413,38 @@ paths:
               - **50** → when filtering by (`doctor_id`, `start_date`, `end_date`) OR (`clinic_id`, `start_date`, `end_date`) OR (`doctor_id`, `clinic_id`, `start_date`, `end_date`).  
               - **30** → when filtering only by (`start_date`, `end_date`).  
 
-        ### Appointment Status Codes
-          - BK    : Booked  
-          - OG    : Ongoing  
-          - CM    : Completed with Prescription  
-          - CMNP  : Completed without a Prescription  
-          - CN    : Cancelled  
-          - CND   : Cancelled by Doctor  
-          - CNS   : Cancelled by Staff
+        ### Appointment_statuses:
+
+              Booked / Queue States:
+                - BK (Booked) : Appointment created/confirmed.
+                - CK (Checked-in) : Booked appointment added to the Queue (Checked-in).
+                - RV (Reserved) : Appointment marked as Reserved, when patient said they will come for the appointment on the follow-up appointment message.
+                - IN (Initiated) : Appointment marked as Initiated, when patient received follow-up appointment message.
+                - PA  (Parked) : Appointment moved to Parked state.
+
+              Ongoing States:
+                - OG (Ongoing): Consultation is in progress.
+
+              Completion Statuses:
+                - CM (Completed): Appointment completed with a prescription created.
+                - CMNP (Completed No Prescription) : Appointment marked Exit from Queue / Completed without a prescription.
+                - AB (Aborted) : Appointment was started (Start Visit) but not completed. Automatically marked AB at 12:00 AM next day.
+                - NS (No Show) : Appointment was added to Queue but not started/completed. Automatically marked NS at 12:00 AM next day.
+                - NSD (No Show Doctor) : No-show tagged specifically from a doctor’s action (if implemented).
+                - NSS (No Show Staff) : No-show tagged specifically from a staff action (if implemented).
+
+              Cancellation Statuses:
+                - CN (Cancelled) : Appointment cancelled via API.
+                - CND (Cancelled Doctor) : Cancelled from the doctor’s account in the tool.
+                - CNS (Cancelled Staff) : Cancelled from the staff’s account in the tool.
+                - PC (Provisional Cancelled) : Appointment marked as provisional cancellation, when patient said they will not come for the appointment on the follow-up appointment message.
+                - PNR (Payment Not Received) : Appointment marked as PNR, when patient tried paying for a pre-paid appointment but the payment failed.
+
+              Reschedule Statuses:
+                - RE : Rescheduled via API.
+                - RES : Rescheduled from staff account.
+                - RED : Rescheduled from doctor account.
+
       operationId: GetBusinessAppointments
       parameters:
         - name: Authorization
@@ -3095,14 +3119,39 @@ paths:
         appointment status, and related services.
         
         
-        Appointment_statuses:
-          - BK    : Booked
-          - OG    : Ongoing
-          - CM	  : Completed with Prescription
-          - CMNP  : Completed without a Prescription
-          - CN    : Cancelled
-          - CND   : Cancelled by Doctor
-          - CNS   : Cancelled by Staff
+        
+        ### Appointment_statuses:
+
+              Booked / Queue States:
+                - BK (Booked) : Appointment created/confirmed.
+                - CK (Checked-in) : Booked appointment added to the Queue (Checked-in).
+                - RV (Reserved) : Appointment marked as Reserved, when patient said they will come for the appointment on the follow-up appointment message.
+                - IN (Initiated) : Appointment marked as Initiated, when patient received follow-up appointment message.
+                - PA  (Parked) : Appointment moved to Parked state.
+
+              Ongoing States:
+                - OG (Ongoing): Consultation is in progress.
+
+              Completion Statuses:
+                - CM (Completed): Appointment completed with a prescription created.
+                - CMNP (Completed No Prescription) : Appointment marked Exit from Queue / Completed without a prescription.
+                - AB (Aborted) : Appointment was started (Start Visit) but not completed. Automatically marked AB at 12:00 AM next day.
+                - NS (No Show) : Appointment was added to Queue but not started/completed. Automatically marked NS at 12:00 AM next day.
+                - NSD (No Show Doctor) : No-show tagged specifically from a doctor’s action (if implemented).
+                - NSS (No Show Staff) : No-show tagged specifically from a staff action (if implemented).
+
+              Cancellation Statuses:
+                - CN (Cancelled) : Appointment cancelled via API.
+                - CND (Cancelled Doctor) : Cancelled from the doctor’s account in the tool.
+                - CNS (Cancelled Staff) : Cancelled from the staff’s account in the tool.
+                - PC (Provisional Cancelled) : Appointment marked as provisional cancellation, when patient said they will not come for the appointment on the follow-up appointment message.
+                - PNR (Payment Not Received) : Appointment marked as PNR, when patient tried paying for a pre-paid appointment but the payment failed.
+
+              Reschedule Statuses:
+                - RE : Rescheduled via API.
+                - RES : Rescheduled from staff account.
+                - RED : Rescheduled from doctor account.
+
 
       operationId: GetappointmentDetails
       parameters:
