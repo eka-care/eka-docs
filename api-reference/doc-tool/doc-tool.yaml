@@ -5815,7 +5815,265 @@ paths:
                         conf_id: "25e4acd4eb5fbc0b8523d8de315555a9ee7b5700b0b89a07879daff1be1510e6"
 
       deprecated: false
-  
+  /cdr/v1/hipusers/{hip_user_id}:
+    get:
+      tags:
+        - HIP Users API
+      summary: Get HIP User Details by ID
+      description: >
+        This API retrieves detailed information about a specific HIP user
+        registered under a business. The response includes the user's personal
+        details, assigned doctors, and associated clinics.
+
+        > _Use this API to get complete profile details of a single HIP user by their Eka user ID._
+      operationId: GetHIPUserById
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          description: >
+            The authentication token for the business. It is used to verify the business making the request. The token can be fetched from the Auth API.
+          schema:
+            type: string
+          example: >
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkb2Mtd2ViIiwiYi1pZCI6IjcxNzYzMzgwMzI2NzY4MjQiLCJjYyI6eyJlc2MiOjAsInBleCI6MTc5NDc4NzIwMCwicHN0IjoidHJ1ZSIsInN0eSI6InAifSwiZG9iIjoiMTk2My0wNS0wMyIsImV4cCI6MTc2Mzk4MDc5MSwiZm4iOiJNYW5vaGFyYW4iLCJnZW4iOiJNIiwiaWF0IjoxNzYzOTc4OTkxLCJpZHAiOiJtb2IiLCJpc3MiOiJlbXIuZWthLmNhcmUiLCJqdGkiOiI5NzlhMmM5Yy03ODkwLTQ5NDUtYWU2YS1kZjQzNGQxNjMyOTQiLCJsbiI6Ik1vaGFuIiwib2lkIjoiMTc2MzM4MDMyNjkyMDU3IiwicHJpIjp0cnVlLCJwcyI6IkFEIiwiciI6IklOIiwicyI6IkRyIiwidXVpZCI6IjgyNmEzZDU3LWVkMmUtNDNjYi1iODg0LTc0OGQyOTcwMzI1NyIsInctaWQiOiI3MTc2MzM4MDMyNjc2ODI0Iiwidy1uIjoiTWFudXNocmVlIEhvc3BpdGFsIn0.zFZtvgcNVV0iEEvmmjmCOh79HRHsAcvrc6jff71E7Xo
+        - name: hip_user_id
+          in: path
+          required: true
+          description: The unique Eka Care ID of the HIP user.
+          schema:
+            type: string
+          example: "176338032692057"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "176338032692057"
+                      firstname:
+                        type: string
+                        example: "Manoharan"
+                      lastname:
+                        type: string
+                        example: "Mohan"
+                      mobile:
+                        type: string
+                        example: "9840254450"
+                      email:
+                        type: string
+                        example: "criticcaredr@gmail.com"
+                      is_admin:
+                        type: boolean
+                        example: true
+                      seat_type:
+                        type: string
+                        description: >
+                          Indicates the type of seat or subscription plan assigned to the HIP user.
+                          - **p** → Premium user (full access to advanced features)
+                          - **b** → Basic user (access to standard features only)
+                        example: "p"
+                      doctors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "do1763380327031"
+                            firstname:
+                              type: string
+                              example: "Manoharan"
+                            lastname:
+                              type: string
+                              example: "Mohan"
+                      clinics:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "c-1506ace382e94bf5ba9751fb"
+                            name:
+                              type: string
+                              example: "Manushree Hospital"
+                      partner_id:
+                        type: string
+                        nullable: true
+                        example: null
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "You do not have permission to access this HIP user"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "NOT_FOUND"
+                      message:
+                        type: string
+                        example: "User not found. Please check the provided ID."
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "An unexpected error occurred on the server"
+  /cdr/v1/hipusers/:
+    get:
+      tags:
+        - HIP Users API
+      summary: Get All HIP Users of a Business
+      description: >
+        This API retrieves the list of all HIP users associated with a business.
+        The response includes each user's details along with their linked doctors
+        and clinics.
+
+        > _Use this API to fetch all HIP users for a business account in one call._
+      operationId: GetAllHIPUsers
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          description: >
+            The authentication token for the business. It is used to verify the business making the request. The token can be fetched from the Auth API.
+          schema:
+            type: string
+          example: >
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkb2Mtd2ViIiwiYi1pZCI6IjcxNzYzMzgwMzI2NzY4MjQiLCJjYyI6eyJlc2MiOjAsInBleCI6MTc5NDc4NzIwMCwicHN0IjoidHJ1ZSIsInN0eSI6InAifSwiZG9iIjoiMTk2My0wNS0wMyIsImV4cCI6MTc2Mzk4MDc5MSwiZm4iOiJNYW5vaGFyYW4iLCJnZW4iOiJNIiwiaWF0IjoxNzYzOTc4OTkxLCJpZHAiOiJtb2IiLCJpc3MiOiJlbXIuZWthLmNhcmUiLCJqdGkiOiI5NzlhMmM5Yy03ODkwLTQ5NDUtYWU2YS1kZjQzNGQxNjMyOTQiLCJsbiI6Ik1vaGFuIiwib2lkIjoiMTc2MzM4MDMyNjkyMDU3IiwicHJpIjp0cnVlLCJwcyI6IkFEIiwiciI6IklOIiwicyI6IkRyIiwidXVpZCI6IjgyNmEzZDU3LWVkMmUtNDNjYi1iODg0LTc0OGQyOTcwMzI1NyIsInctaWQiOiI3MTc2MzM4MDMyNjc2ODI0Iiwidy1uIjoiTWFudXNocmVlIEhvc3BpdGFsIn0.zFZtvgcNVV0iEEvmmjmCOh79HRHsAcvrc6jff71E7Xo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "176338032692057"
+                        firstname:
+                          type: string
+                          example: "Manoharan"
+                        lastname:
+                          type: string
+                          example: "Mohan"
+                        mobile:
+                          type: string
+                          example: "9840254450"
+                        email:
+                          type: string
+                          example: "criticcaredr@gmail.com"
+                        is_admin:
+                          type: boolean
+                          example: true
+                        seat_type:
+                          type: string
+                          description: >
+                            Indicates the type of seat or subscription plan assigned to the HIP user.
+                            - **p** → Premium user (full access to advanced features)
+                            - **b** → Basic user (access to standard features only)
+                          example: "p"
+                        doctors:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "do1763380327031"
+                              firstname:
+                                type: string
+                                example: "Manoharan"
+                              lastname:
+                                type: string
+                                example: "Mohan"
+                        clinics:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "c-1506ace382e94bf5ba9751fb"
+                              name:
+                                type: string
+                                example: "Manushree Hospital"
+                        partner_id:
+                          type: string
+                          nullable: true
+                          example: null
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "You do not have permission to access HIP users for this business"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "An unexpected error occurred on the server"
+
 components:
   schemas:
     AuthLoginRequest:
