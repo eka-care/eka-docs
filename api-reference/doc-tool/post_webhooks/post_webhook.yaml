@@ -1096,6 +1096,357 @@ paths:
           description: "Successfully received the schedule event"
           headers: {}
       deprecated: false
+  /registered_url_for_google_review_events:
+    post:
+      tags:
+        - Doctor Webhooks
+      summary: Google Review Events
+      description: >-
+        When a Google review request event occurs, a webhook is sent to the registered endpoint containing the Doctor ID, Google review link, and Patient ID.
+
+        The receiving system can use these details to update or manage Google review information as needed.
+      operationId: GoogleReviewRequestWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - event_time
+                - timestamp
+                - client_id
+                - business_id
+                - data
+              properties:
+                event:
+                  type: string
+                  enum:
+                    - "google_review.request"
+                  example: "google_review.request"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1730189586
+                  description: "Event occurred timestamp"
+                timestamp:
+                  type: integer
+                  example: 1730189586
+                  description: "Timestamp of the event"
+                client_id:
+                  type: string
+                  example: "67978400352a61001d64e9fb"
+                  description: "Client ID for the schedule"
+                business_id:
+                  type: string
+                  example: "174159057718553"
+                  description: "Business ID for the schedule"
+                data:
+                  type: object
+                  required:
+                    - doctor_id
+                    - google_review_link
+                    - patient_id
+                  properties:
+                    doctor_id:
+                      type: string
+                      example: "174159057723920"
+                      description: "Identifier for the respective doctor in Eka"
+                    google_review_link:
+                      type: string
+                      example : "https://g.page/r/CRVNub8JgYWLEA0/review"
+                      description: "Google review link"
+                    patient_id:
+                      type: string
+                      example: "174159057723925"
+                      description: "Identified for the respective patient in Eka"
+                    appointment_id:
+                      type: string
+                      example: "api-abb67007-1e53-4f0f-b428-a4bc025468a4"
+                      description: "Unique identifier for the appointment."
+                    clinic_id:
+                      type: string
+                      example: "67978400352a61001d64e9fb"
+                      description: "Unique identifier of the clinic"
+      deprecated: false
+
+  /registered_url_for_consent_form:
+    post:
+      tags:
+        - Doctor Webhooks
+      summary: Consent Form Events
+      description: >-
+        When a consent form is created or updated, a webhook is sent to the registered endpoint containing the Doctor Id, Patient Id, Consent form url etc.
+
+        The receiving system can use these details as per their need.
+        
+      operationId: McertEventsWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - event_time
+                - timestamp
+                - client_id
+                - business_id
+                - data
+              properties:
+                event:
+                  type: string
+                  enum:
+                    - "mcert.created"
+                    - "mcert.updated"
+                  example: "mcert.created"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1730189586
+                  description: "Event occurred timestamp"
+                timestamp:
+                  type: integer
+                  example: 1730189586
+                  description: "Timestamp of the event"
+                client_id:
+                  type: string
+                  example: "67978400352a61001d64e9fb"
+                  description: "Client ID for the schedule"
+                business_id:
+                  type: string
+                  example: "174159057718553"
+                  description: "Business ID for the schedule"
+                data:
+                  type: object
+                  required:
+                    - docid
+                    - id
+                    - owner
+                    - patientid
+                    - sendurlpdf
+                    - url
+                  properties:
+                    docid:
+                      type: string
+                      example: "174159057723920"
+                      description: "Identifier for the respective doctor in Eka"
+                    id:
+                      type: string
+                      example : "eaaf7c24-ebcd-4340-975a-851d6e31478f"
+                      description: "Unique identifier for the consent form"
+                    owner:
+                      type: string
+                      example: "174159057723925"
+                      description: "Business Id"
+                    patientid:
+                      type: string
+                      example: "175465638609726"
+                      description: "Unique identifier for the patient."
+                    sendurlpdf:
+                      type: string
+                      example: "https://mcertificate.dev.eka.care/b-161467756044203/eaaf7c24-ebcd-4340-975a-851d6e31478f.pdf"
+                      description: "Consent form url which is sent on whatsapp"
+                    url:
+                      type: string
+                      example: "https://mcertificate.dev.eka.care/b-161467756044203/eaaf7c24-ebcd-4340-975a-851d6e31478f.pdf"
+                      description: "Consent form url"
+      deprecated: false
+  
+  /registered_url_for_receipt_events:
+    post:
+      tags:
+        - Receipt Webhooks
+      summary: Receipt Events
+      description: >-
+        When a Receipt is created, updated or deleted, a webhook is sent to the registered endpoint containing the Doctor Id, Patient Id, Clinic Id etc.
+
+        The receiving system can use these details as per their need.
+        
+      operationId: McertEventsWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - event_time
+                - timestamp
+                - client_id
+                - business_id
+                - data
+              properties:
+                event:
+                  type: string
+                  enum:
+                    - "mcert.created"
+                    - "mcert.updated"
+                  example: "mcert.created"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1730189586
+                  description: "Event occurred timestamp"
+                timestamp:
+                  type: integer
+                  example: 1730189586
+                  description: "Timestamp of the event"
+                client_id:
+                  type: string
+                  example: "67978400352a61001d64e9fb"
+                  description: "Client ID for the schedule"
+                business_id:
+                  type: string
+                  example: "174159057718553"
+                  description: "Business ID for the schedule"
+                data:
+                  type: object
+                  required:
+                    - receipt_id
+                    - aid
+                    - doctor_oid
+                    - clinic_id
+                    - patient_oid
+                    - created_at
+                    - updated_at
+                    - receipt_url
+                    - receipt_status
+                    - receipt_amount
+                    - additional_discount_value
+                    - additional_discount_type
+                    - additional_discount_amount
+                    - net_amount
+                    - name
+                    - mobile
+                    - sku_discount_amount
+                    - amount_due
+                    - archive
+                    - receipt_number
+                    - flavour
+                    - remarks
+                    - ref_trx_id
+                    - payment_id
+                    - payment_link
+                    - amount_paid
+                    - actor
+                  properties:
+                    receipt_id:
+                      type: integer
+                      example: 2579
+                      description: "Unique identifier for the receipt"
+                    aid:
+                      type: string
+                      example: "d-75f3dcf1-5de3-40fc-8ccd-f42c8d54e8e8"
+                      description: "Appointment Id"
+                    doctor_oid:
+                      type: string
+                      example: "161467756044203"
+                      description: "Unique identifier for the doctor"
+                    clinic_id:
+                      type: string
+                      example: "60b0ee0c0b5804795509aefb"
+                      description: "Clinic identifier"
+                    patient_oid:
+                      type: string
+                      example: "176345969121476"
+                      description: "Unique identifier for the patient"
+                    created_at:
+                      type: integer
+                      example: 1763476917560
+                      description: "Timestamp when the receipt was created (in milliseconds)"
+                    updated_at:
+                      type: integer
+                      example: 1763476917560
+                      description: "Timestamp when the receipt was last updated (in milliseconds)"
+                    receipt_number:
+                      type: string
+                      example: null
+                      description: "Human-readable receipt number"
+                    receipt_url:
+                      type: string
+                      example: "https://doc-receipt.s3.ap-south-1.amazonaws.com/v2/b-161467756044203/161467756044203/60b0ee0c0b5804795509aefb/1763476916985.pdf"
+                      description: "URL to download/view the receipt"
+                    receipt_status:
+                      type: string
+                      example: "SUCCESS"
+                      description: "Status of the receipt"
+                    receipt_amount:
+                      type: number
+                      example: 120
+                      description: "Total amount on the receipt"
+                    additional_discount_value:
+                      type: number
+                      example: 10
+                      description: "Value of any additional discount"
+                    additional_discount_type:
+                      type: string
+                      example: "AMOUNT"
+                      description: "Type of additional discount"
+                    additional_discount_amount:
+                      type: number
+                      example: 10
+                      description: "Amount reduced due to additional discount"
+                    net_amount:
+                      type: number
+                      example: 120
+                      description: "Net payable amount after discounts"
+                    name:
+                      type: string
+                      example: "gc baby normal"
+                      description: "Name of the patient"
+                    mobile:
+                      type: string
+                      example: "+919008888888"
+                      description: "Patient's mobile number"
+                    flavour:
+                      type: string
+                      example: null
+                      description: "Flavour or type of receipt/service"
+                    sku_discount_amount:
+                      type: number
+                      example: 10
+                      description: "Discount amount applied per SKU/item"
+                    amount_due:
+                      type: number
+                      example: 10
+                      description: "Remaining amount to be paid"
+                    archive:
+                      type: integer
+                      example: 0
+                      description: "Whether the receipt is archived (0 or 1)"
+                    remarks:
+                      type: string
+                      example: ""
+                      description: "Additional remarks about the transaction"
+                    ref_trx_id:
+                      type: string
+                      example: ""
+                      description: "Reference transaction ID"
+                    payment_id:
+                      type: string
+                      example: "ret-dfwef-dsfsd-fwefdsf"
+                      description: "Unique identifier for the payment"
+                    payment_link:
+                      type: string
+                      example: "https://example.link.com"
+                      description: "URL for payment completion"
+                    amount_paid:
+                      type: number
+                      example: 10
+                      description: "Amount already paid"
+                    actor:
+                      type: string
+                      example: "doctor"
+                      description: "Who performed the action or update"
+      deprecated: false
+  
   
   /registered_url_for_appointment_tele_dr_joined_webhook_events:
     post:
