@@ -3477,6 +3477,50 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/profile/search:
+    get:
+      description: Search KYCed ABHA profiles using mobile number
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - in: query
+        name: mobile
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDiscoverAbhaResponse'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/profile/share:
     post:
       description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
@@ -4713,6 +4757,17 @@ components:
           type: string
         updated_at:
           format: date-time
+          type: string
+      type: object
+    DiscoverAbha:
+      properties:
+        ABHANumber:
+          type: string
+        gender:
+          type: string
+        index:
+          type: integer
+        name:
           type: string
       type: object
     DiscoverCareContext:
@@ -6119,6 +6174,17 @@ components:
           description: Name of the state
           examples:
           - Jharkhand
+          type: string
+      type: object
+    ProfileDiscoverAbhaResponse:
+      properties:
+        abha:
+          items:
+            $ref: '#/components/schemas/DiscoverAbha'
+          type:
+          - array
+          - "null"
+        txnId:
           type: string
       type: object
     ProfileResponse:
