@@ -3481,23 +3481,9 @@ paths:
     get:
       description: Search KYCed ABHA profiles using mobile number
       parameters:
-      - description: Eka User ID (OID)
-        in: header
-        name: X-Pt-Id
-        schema:
-          type: string
-      - description: Partner User ID
-        in: header
-        name: X-Partner-Pt-Id
-        schema:
-          type: string
-      - description: Partner HIP ID
-        in: header
-        name: X-Hip-Id
-        schema:
-          type: string
       - in: query
         name: mobile
+        required: true
         schema:
           type: string
       responses:
@@ -3517,7 +3503,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileDiscoverAbhaResponse'
+                $ref: '#/components/schemas/ProfileSearchKycAbhaResponse'
           description: OK
       security:
       - authApiKey: []
@@ -4757,25 +4743,6 @@ components:
           type: string
         updated_at:
           format: date-time
-          type: string
-      type: object
-    DiscoverAbha:
-      properties:
-        ABHANumber:
-          examples:
-          - xx-xxxx-xxxx-1525
-          type: string
-        gender:
-          examples:
-          - M
-          type: string
-        index:
-          examples:
-          - 1
-          type: integer
-        name:
-          examples:
-          - John Doe
           type: string
       type: object
     DiscoverCareContext:
@@ -6184,15 +6151,19 @@ components:
           - Jharkhand
           type: string
       type: object
-    ProfileDiscoverAbhaResponse:
+    ProfileAbha:
       properties:
-        abha:
-          items:
-            $ref: '#/components/schemas/DiscoverAbha'
-          type:
-          - array
-          - "null"
-        txnId:
+        abha_number:
+          examples:
+          - xx-xxxx-xxxx-1525
+          type: string
+        gender:
+          examples:
+          - M
+          type: string
+        name:
+          examples:
+          - John Doe
           type: string
       type: object
     ProfileResponse:
@@ -6273,6 +6244,15 @@ components:
           type:
           - "null"
           - integer
+      type: object
+    ProfileSearchKycAbhaResponse:
+      properties:
+        profiles:
+          items:
+            $ref: '#/components/schemas/ProfileAbha'
+          type:
+          - array
+          - "null"
       type: object
     ProviderHipDetail:
       properties:
