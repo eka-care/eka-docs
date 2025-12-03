@@ -4886,6 +4886,116 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
+  
+  /dr/v1/appointment/{appointment_id}/change-status:
+    post:
+      tags:
+        - Appointment API
+      summary: Change Status Appointment
+      description: >-
+
+        ### Overview
+
+
+        This API endpoint is used to change status of an existing appointment.
+
+        ### Currently supported statuses:
+            - NS (No Show) : Appointment was added to Queue but not started/completed.
+
+      operationId: ChangeStatusAppointment
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: appointment_id
+          in: path
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+        
+        - name: partner_id
+          in: query
+          description: 'If set to 1 then appointment_id in path parameter should be partner_appointment_id else eka apppointment_id'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '1'
+           
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Thu, 16 Apr 2020 08:47:12 GMT
+            Transfer-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: chunked
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+            Vary:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Accept-Encoding
+            Strict-Transport-Security:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: max-age=15768000
+            Content-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: gzip
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "INVALID_REQUEST"
+                  message: "The request is invalid or missing required parameters"
+        
+      deprecated: false
   /dr/v1/appointment/patient/{patient_id}:
     get:
       tags:
