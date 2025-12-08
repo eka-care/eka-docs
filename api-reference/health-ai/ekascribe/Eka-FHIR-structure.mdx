@@ -173,6 +173,34 @@ Patient vitals and health trackers are stored using the FHIR Observation resourc
 
 ---
 
+## Medications
+
+**FHIR Resource:** `MedicationRequest`
+
+Medication prescriptions are stored using the FHIR MedicationRequest resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| medication.name, medication.id | MedicationRequest.medicationCodeableConcept | [Medication Codes](https://www.hl7.org/fhir/valueset-medication-codes.html) | MDB, SNOMED, Partner codes |
+| medication.partner_chemist_id | MedicationRequest.extension | [Extension](https://www.hl7.org/fhir/extensibility.html) | url: https://eka.care/partner_clinic_id |
+| medication.vendor | MedicationRequest.extension | [Extension](https://www.hl7.org/fhir/extensibility.html) | url: https://eka.care/vendor |
+| medication.status | MedicationRequest.status | [MedicationRequest Status](https://www.hl7.org/fhir/valueset-medicationrequest-status.html) | `active` |
+| medication.intent | MedicationRequest.intent | [MedicationRequest Intent](https://www.hl7.org/fhir/valueset-medicationrequest-intent.html) | `order` |
+| patient.id, patient.profile.personal.name | MedicationRequest.subject | [Reference](https://www.hl7.org/fhir/references.html) | Patient reference |
+| visitid | MedicationRequest.encounter | [Reference](https://www.hl7.org/fhir/references.html) | Encounter reference |
+| doctor.id, doctor.profile.personal.name | MedicationRequest.requester | [Reference](https://www.hl7.org/fhir/references.html) | Practitioner reference |
+| date | MedicationRequest.authoredOn | [dateTime](https://www.hl7.org/fhir/datatypes.html#dateTime) | ISO 8601 format |
+| medication.instruction | MedicationRequest.dosageInstruction.text | [Dosage](https://www.hl7.org/fhir/dosage.html) | String |
+| medication.dose.value, dose.unit, dose.id, dose.custom | MedicationRequest.dosageInstruction.doseAndRate.doseQuantity | [Quantity](https://www.hl7.org/fhir/datatypes.html#Quantity) | value, unit, code |
+| medication.dose-rate-type | MedicationRequest.dosageInstruction.doseAndRate.type | [Dose Rate Type](https://www.hl7.org/fhir/valueset-dose-rate-type.html) | `ordered` |
+| medication.frequency.id, frequency.value, frequency.custom | MedicationRequest.dosageInstruction.additionalInstruction | [Additional Instruction](https://www.hl7.org/fhir/valueset-additional-instruction-codes.html) | CodeableConcept |
+| medication.frequency.frequency, frequency.period, frequency.period_unit | MedicationRequest.dosageInstruction.timing.repeat | [Timing](https://www.hl7.org/fhir/datatypes.html#Timing) | frequency, period, periodUnit |
+| medication.duration.custom | MedicationRequest.dosageInstruction.timing.repeat | [Timing](https://www.hl7.org/fhir/datatypes.html#Timing) | duration, durationUnit |
+| medication.timing | MedicationRequest.dosageInstruction.timing.repeat.when | [Event Timing](https://www.hl7.org/fhir/valueset-event-timing.html) | PCM, PCD, PCV, ACM, ACD, ACV, etc. |
+| medication.timing_code | MedicationRequest.dosageInstruction.timing.code | [Timing Abbreviation](https://www.hl7.org/fhir/valueset-timing-abbreviation.html) | CodeableConcept |
+| calculated | MedicationRequest.dispenseRequest.quantity | [Quantity](https://www.hl7.org/fhir/datatypes.html#Quantity) | frequency × duration × dose |
+---
+
 ## Summary Table
 
 | Data Type | FHIR Resource | Category/Type |
@@ -186,4 +214,5 @@ Patient vitals and health trackers are stored using the FHIR Observation resourc
 | Follow-Up | Appointment | FOLLOWUP |
 | Family History | FamilyMemberHistory | - |
 | Vitals | Observation | vital-signs |
+| Medications | MedicationRequest | intent: order |
 
