@@ -195,7 +195,45 @@ Medication prescriptions are stored using the FHIR MedicationRequest resource.
 | calculated | MedicationRequest.dispenseRequest.quantity | [Quantity](https://www.hl7.org/fhir/datatypes.html#Quantity) | frequency × duration × dose |
 ---
 
-## Summary Table
+## Lab Tests / Imaging / Surgical Procedures
+**FHIR Resource:** `ServiceRequest`
+
+Lab tests, imaging requests ( radiology) and surgical procedure are stored using the FHIR ServiceRequest resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|-------------|---------------|-----------|-----------------|
+| status | ServiceRequest.status | [Request Status](https://www.hl7.org/fhir/valueset-request-status.html) | `active` |
+| intent | ServiceRequest.intent | [Request Intent](https://www.hl7.org/fhir/valueset-request-intent.html) | `order` |
+| category | ServiceRequest.category | [Service Request Category](https://www.hl7.org/fhir/valueset-servicerequest-category.html) | Supported categories are imaging, lab_test, surgical_procedure |
+| labTests.id, labTests.name | ServiceRequest.code | [Procedure Codes](https://www.hl7.org/fhir/valueset-procedure-code.html) | CodeableConcept from `http://eka.care/mdb`, `http://loinc.org`, `https://parchi.eka.care/local` |
+| patient_oid, patient_name | ServiceRequest.subject | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Patient resource |
+| visitid | ServiceRequest.encounter | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Encounter resource |
+| doctor_oid, doctor_name | ServiceRequest.requester | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Practitioner resource |
+| date | ServiceRequest.authoredOn | [dateTime](https://www.hl7.org/fhir/datatypes.html#dateTime) | ISO 8601 format |
+| remark/notes | ServiceRequest.note | [Annotation](https://www.hl7.org/fhir/datatypes.html#Annotation) | Text note |
+
+---
+
+## DrugAllergy / FoodAllergy Intolerance
+**FHIR Resource:** `AllergyIntolerance`
+
+Food and medication allergies are stored using the FHIR AllergyIntolerance resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|-------------|---------------|-----------|-----------------|
+| doctor_oid, doctor_name | AllergyIntolerance.asserter | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Practitioner resource |
+| category | AllergyIntolerance.category | [Allergy Category](https://www.hl7.org/fhir/valueset-allergy-intolerance-category.html) | `food` or `medication` |
+| clinicalStatus | AllergyIntolerance.clinicalStatus | [Clinical Status](https://www.hl7.org/fhir/valueset-allergyintolerance-clinical.html) | code: `active`, display: `Active` |
+| drugAllergy.id, foodOtherAllergy.id | AllergyIntolerance.code | [Allergy Codes](https://www.hl7.org/fhir/valueset-allergyintolerance-code.html) | CodeableConcept from `http://snomed.info/sct`, `http://eka.care/mdb`, `https://parchi.eka.care/local` |
+| criticality | AllergyIntolerance.criticality | [Allergy Criticality](https://www.hl7.org/fhir/valueset-allergy-intolerance-criticality.html) | `high` |
+| notes | AllergyIntolerance.note | [Annotation](https://www.hl7.org/fhir/datatypes.html#Annotation) | Text note |
+| patient_oid, patient_name | AllergyIntolerance.patient | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Patient resource |
+| type | AllergyIntolerance.type | [Allergy Type](https://www.hl7.org/fhir/valueset-allergy-intolerance-type.html) | `allergy` |
+| recordedDate | AllergyIntolerance.recordedDate | [dateTime](https://www.hl7.org/fhir/datatypes.html#dateTime) | ISO 8601 format (current time) |
+| verificationStatus | AllergyIntolerance.verificationStatus | [Verification Status](https://www.hl7.org/fhir/valueset-allergyintolerance-verification.html) | code: `confirmed`, display: `Confirmed` |
+---
+
+# Summary Table
 
 | Data Type | FHIR Resource | Category/Type |
 |-----------|---------------|---------------|
@@ -209,4 +247,6 @@ Medication prescriptions are stored using the FHIR MedicationRequest resource.
 | Family History | FamilyMemberHistory | - |
 | Vitals | Observation | vital-signs |
 | Medications | MedicationRequest | intent: order |
+| Lab Tests/Imaging/Surgical Procedures | ServiceRequest | imaging/lab_test/surgical_procedure |
+| Food and drug Allergies | AllergyIntolerance | food/medication |
 
