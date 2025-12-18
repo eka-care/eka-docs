@@ -1,0 +1,127 @@
+---
+title: Supported Tools
+description: Complete list of available MCP tools and their capabilities
+---
+
+# Supported Tools
+
+Eka MCP provides 20+ tools across patient management, appointments, prescriptions, and clinic operations. All tools support natural language queries through your AI assistant.
+
+## Patient Management
+
+| Tool Name | Description | Input Parameters | Returns |
+|-----------|-------------|------------------|---------|
+| `search_patients` | Search for patients by name, mobile, email, or patient ID | `query` (string), `limit` (optional) | List of matching patients with IDs, contact info, and basic details |
+| `get_patient_details` | Retrieve complete patient information | `patient_id` (string) | Full patient profile including medical history, demographics, and appointments |
+| `add_patient` | Register a new patient | `name`, `mobile`, `email` (optional), `dob` (optional), `gender` (optional) | New patient ID and confirmation |
+| `update_patient` | Modify existing patient information | `patient_id`, fields to update | Updated patient details |
+
+## Appointment Management
+
+| Tool Name | Description | Input Parameters | Returns |
+|-----------|-------------|------------------|---------|
+| `get_available_slots` | Check doctor's availability | `doctor_id`, `date`, `clinic_id` (optional) | List of available time slots |
+| `book_appointment` | Schedule a new appointment | `patient_id`, `doctor_id`, `slot_time`, `clinic_id` | Appointment ID and confirmation |
+| `get_appointments` | List appointments by various filters | `patient_id` OR `doctor_id` OR `date`, `status` (optional) | List of appointments with details |
+| `reschedule_appointment` | Change appointment timing | `appointment_id`, `new_slot_time` | Updated appointment details |
+| `cancel_appointment` | Cancel scheduled appointment | `appointment_id`, `reason` (optional) | Cancellation confirmation |
+| `get_appointment_details` | Retrieve specific appointment info | `appointment_id` | Complete appointment information |
+
+## Prescription Management
+
+| Tool Name | Description | Input Parameters | Returns |
+|-----------|-------------|------------------|---------|
+| `create_prescription` | Generate digital prescription | `patient_id`, `medications` (array), `doctor_id`, `advice` (optional) | Prescription ID and details |
+| `get_prescriptions` | View prescription history | `patient_id`, `from_date` (optional), `to_date` (optional) | List of prescriptions |
+| `get_prescription_details` | Retrieve specific prescription | `prescription_id` | Complete prescription with medications and advice |
+| `update_prescription` | Modify existing prescription | `prescription_id`, fields to update | Updated prescription |
+
+## Doctor & Clinic Operations
+
+| Tool Name | Description | Input Parameters | Returns |
+|-----------|-------------|------------------|---------|
+| `get_doctor_profile` | Access doctor information | `doctor_id` | Doctor details, qualifications, specializations |
+| `search_doctors` | Find doctors by name or specialization | `query`, `specialization` (optional) | List of matching doctors |
+| `get_clinic_details` | Retrieve clinic information | `clinic_id` | Clinic address, services, contact info |
+| `get_doctor_clinics` | List clinics associated with doctor | `doctor_id` | Array of clinic details |
+| `get_clinic_services` | View services offered by clinic | `clinic_id` | List of available services |
+
+## Medication Database
+
+| Tool Name | Description | Input Parameters | Returns |
+|-----------|-------------|------------------|---------|
+| `search_medications` | Look up medicine information | `query` (drug name) | Medicine details, dosage forms, manufacturers |
+| `get_medication_details` | Get complete drug information | `medication_id` | Full drug profile with interactions and contraindications |
+
+## Tool Parameters
+
+
+## Usage Examples
+
+### Simple Queries
+```text
+"Search for patient Raj Kumar"
+→ Uses: search_patients
+
+"Show Dr. Singh's available slots tomorrow"
+→ Uses: get_available_slots
+
+"Get prescription history for patient 12345"
+→ Uses: get_prescriptions
+```
+
+### Complex Workflows
+```text
+"Book appointment for Raj Kumar with Dr. Singh tomorrow at 10 AM 
+and create prescription for Amoxicillin"
+→ Uses: search_patients → book_appointment → create_prescription
+```
+
+## Rate Limits
+
+| Plan | Requests/Minute | Requests/Day |
+|------|-----------------|--------------|
+| Free | 10 | 1,000 |
+| Pro | 60 | 10,000 |
+| Enterprise | Unlimited | Unlimited |
+
+## Error Handling
+
+All tools return standardized error responses:
+
+```json
+{
+  "error": true,
+  "message": "Patient not found",
+  "code": "PATIENT_NOT_FOUND"
+}
+```
+
+### Common Error Codes
+
+- `PATIENT_NOT_FOUND` - Patient ID doesn't exist
+- `SLOT_UNAVAILABLE` - Appointment slot already booked
+- `INVALID_PARAMETERS` - Missing or incorrect parameters
+- `UNAUTHORIZED` - Authentication required
+- `RATE_LIMIT_EXCEEDED` - Too many requests
+
+## Need More Details?
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/mcp/quickstart">
+    Get started in 5 minutes
+  </Card>
+  <Card title="Examples" icon="lightbulb" href="/mcp/advanced/examples">
+    See real-world workflows
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Complete API documentation
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/mcp/advanced/troubleshooting">
+    Common issues and fixes
+  </Card>
+</CardGroup>
+
+---
+
+**Questions?** Email ekaconnect@eka.care

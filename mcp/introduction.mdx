@@ -1,0 +1,382 @@
+---
+title: Eka MCP Server
+description: Connect your AI assistant to Eka.care's healthcare platform
+---
+
+<Frame>
+  <img src="/images/eka-remote-mcp.png" alt="MCP Overview" />
+  {/* Screenshot placeholder: Show diagram of AI Assistant <-> MCP <-> Eka.care APIs */}
+</Frame>
+
+**Model Context Protocol (MCP)** is an open standard that lets AI assistants like Claude connect directly to your applications and data securely. Think of it as a universal adapter that helps AI understand and work with your healthcare systems.
+
+Eka's MCP server follows the authenticated remote [MCP spec](https://modelcontextprotocol.io/specification/2025-03-26), so the server is centrally hosted and managed. Instead of copying and pasting patient data or manually creating appointments, your AI assistant can handle appointment booking, prescription creation, and patient lookups automatically with built in Authentication and HIPAA-compliant data handling.
+
+
+## Setup Instructions
+
+### General
+
+Eka's MCP server is currently supporting Streamable HTTP transport. It uses OAuth 2.0 with OpenID Connect (OIDC) flow for dynamic client registration for authentication at the following address:
+
+- HTTP : `https://mcp.eka.care/mcp`
+
+For setup instructions on specific clients, continue reading .. 
+
+
+<AccordionGroup>
+  <Accordion title="VS Code (macOS)" icon="apple">
+    
+**Requirements:** VS Code 1.95+ with GitHub Copilot
+
+1. Press `Cmd + Shift + P`
+2. Type and select **MCP: Add Server**
+3. Choose **HTTP** *(HTTP or Server-Sent Events)*
+4. Enter URL: `https://mcp.eka.care/mcp`
+5. Enter server name: `eka-care-mcp`
+6. Authenticate with your Eka.care email
+
+Done! Test by asking Copilot: *"Search for patient Raj Kumar"*
+
+  </Accordion>
+
+  <Accordion title="VS Code (Windows)" icon="windows">
+    
+**Requirements:** VS Code 1.95+ with GitHub Copilot
+
+1. Press `Ctrl + Shift + P`
+2. Type and select **MCP: Add Server**
+3. Choose **HTTP** *(HTTP or Server-Sent Events)*
+4. Enter URL: `https://mcp.eka.care/mcp`
+5. Enter server name: `eka-care-mcp`
+6. Authenticate with your Eka.care email
+
+Configuration saved to: `%APPDATA%\Code\User\globalStorage\github.copilot-chat\mcp.json`
+
+  </Accordion>
+
+  <Accordion title="Claude Desktop Paid(macOS/Windows)" icon="crown">
+    
+**Requirements:** Claude Paid subscription
+
+1. Open Claude Desktop
+2. Click **Settings** → **Connectors** → **Add custom connector**
+3. Type the name as **Eka-Care-mcp**
+4. Type the URL as **https://mcp.eka.care/mcp**
+5. Tap **Add**
+6. Authenticate with Eka.care
+7. Save and restart
+
+Pro users get higher rate limits and priority access.
+
+Config(macOS): `~/Library/Application Support/Claude/claude_desktop_config.json`
+Config(Windows): `%APPDATA%\Claude\claude_desktop_config.json`
+
+  </Accordion>
+
+  <Accordion title="Claude Desktop Free(macOS)" icon="message">
+    
+**Requirements:** Claude Desktop app (Free tier)
+
+1. Open Claude Desktop
+2. Click **Settings** (bottom-left gear icon)
+3. Navigate to **Developer** → **Edit Config**
+4. Add this configuration:
+
+```json
+{
+  "mcpServers": {
+    "eka-care": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.eka.care/mcp"]
+    }
+  }
+}
+```
+
+5. Save and restart Claude Desktop
+6. Authenticate when prompted
+
+Config location: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+  </Accordion>
+
+  <Accordion title="Claude Desktop Free(Windows)" icon="message">
+    
+**Requirements:** Claude Desktop app (Free tier)
+
+1. Open Claude Desktop
+2. Click **Settings** (gear icon)
+3. Go to **Developer** → **Edit Config**
+4. Add:
+
+```json
+{
+  "mcpServers": {
+    "eka-care": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.eka.care/mcp"]
+    }
+  }
+}
+```
+
+5. Save and restart Claude
+6. Authenticate when prompted
+
+Config location: `%APPDATA%\Claude\claude_desktop_config.json`
+
+  </Accordion>
+  <Accordion title="ChatGPT (Go/Paid)" icon="code">
+    
+**Requirements:** Free chatgpt does not provide the remote mcp connectors currently, You should have >Go model.
+
+1. Open https://chatgpt.com/
+2. Go to profile (Left bottom)
+3. Click **Settings**
+4. Navigate to **Apps and Connectors** 
+5. Scroll down and inside the Developer mode, switch it on
+6. Inside Apps and Connectors, tap **Create app**
+7. Enter the name **eka-care-mcp**
+8. Enter the URL **https://mcp.eka.care/mcp** and tap **Create**
+9. Authenticate when prompted
+
+  </Accordion>
+  <Accordion title="Cursor (macOS)" icon="code">
+    
+**Requirements:** Cursor IDE
+
+1. Open Cursor
+2. Press `Cmd + Shift + P`
+3. Type **Cursor settings**
+4. Select **Tools & MCP**
+5. Tap on **New MCP Server** 
+6. Add server configuration:
+
+```json
+{
+  "mcpServers": {
+    "eka-care": {
+      "url": "https://mcp.eka.care/mcp",
+      "transport": {
+        "type": "http"
+      }
+    }
+  }
+}
+```
+
+7. Tap on Connect to Authenticate with Eka.care 
+8. Restart Cursor
+
+Config location: `~/Library/Application Support/Cursor/User/globalStorage/mcp.json`
+
+  </Accordion>
+
+  <Accordion title="Cursor (Windows)" icon="code">
+    
+**Requirements:** Cursor IDE
+
+1. Open Cursor
+2. Press `Ctrl + Shift + P`
+3. Type **Cursor settings**
+4. Select **Tools & MCP**
+5. Tap on **New MCP Server** 
+6. Add server configuration:
+
+```json
+{
+  "mcpServers": {
+    "eka-care": {
+      "url": "https://mcp.eka.care/mcp",
+      "transport": {
+        "type": "http"
+      }
+    }
+  }
+}
+```
+
+7. Restart Cursor
+8. Complete authentication
+
+Config: `%APPDATA%\Cursor\User\globalStorage\mcp.json`
+
+
+  </Accordion>
+
+  <Accordion title="Zed (macOS)" icon="z">
+    
+**Requirements:** Zed Editor with AI features enabled
+
+1. Open Zed
+2. Go to **Zed** → **Settings** → **Language Models**
+3. Scroll to **MCP Servers**
+4. Click **Add Server**
+5. Enter:
+   - Name: `eka-care`
+   - URL: `https://mcp.eka.care/mcp`
+   - Transport: `HTTP`
+
+6. Save and restart Zed
+7. Authenticate when prompted
+
+Config location: `~/.config/zed/settings.json`
+
+  </Accordion>
+
+  <Accordion title="Zed (Windows)" icon="z">
+    
+**Requirements:** Zed Editor with AI features
+
+1. Open Zed
+2. Settings → Language Models
+3. MCP Servers → Add Server
+4. Configure:
+   - Name: `eka-care`
+   - URL: `https://mcp.eka.care/mcp`
+   - Transport: `HTTP`
+
+5. Save and restart
+6. Complete authentication
+
+Config: `%APPDATA%\Zed\settings.json`
+
+<Frame>
+  <img src="/images/mcp-zed-windows.png" alt="Zed Windows Setup" />
+</Frame>
+
+  </Accordion>
+
+  <Accordion title="Windsurf (macOS)" icon="wind">
+    
+**Requirements:** Windsurf IDE
+
+1. Open Windsurf
+2. Press `Cmd + ,` for Settings
+3. Navigate to **Extensions** → **MCP**
+4. Add server:
+
+```json
+{
+  "mcpServers": {
+    "eka-care": {
+      "url": "https://mcp.eka.care/mcp",
+      "transport": {
+        "type": "http"
+      }
+    }
+  }
+}
+```
+
+5. Restart Windsurf
+6. Authenticate with Eka.care
+
+<Frame>
+  <img src="/images/mcp-windsurf-mac.png" alt="Windsurf macOS Setup" />
+</Frame>
+
+  </Accordion>
+
+  <Accordion title="Windsurf (Windows)" icon="wind">
+    
+**Requirements:** Windsurf IDE
+
+1. Open Windsurf
+2. Press `Ctrl + ,` for Settings
+3. Extensions → MCP
+4. Add configuration:
+
+```json
+{
+  "mcpServers": {
+    "eka-care": {
+      "url": "https://mcp.eka.care/mcp",
+      "transport": {
+        "type": "http"
+      }
+    }
+  }
+}
+```
+
+5. Restart Windsurf
+6. Complete authentication
+
+<Frame>
+  <img src="/images/mcp-windsurf-windows.png" alt="Windsurf Windows Setup" />
+</Frame>
+
+  </Accordion>
+
+</AccordionGroup>
+
+You simply tell your AI assistant:
+
+<CodeGroup>
+```text Natural Language
+"Book an appointment for patient Raj Kumar with Dr. Singh tomorrow at 10 AM, 
+and create a prescription for Amoxicillin 500mg, 3 times daily for 7 days"
+```
+</CodeGroup>
+
+And it's done! ✨
+
+<Frame>
+  <img src="/images/claude-prompt.png" alt="Example Conversation" />
+  {/* Screenshot placeholder: Show actual Claude Desktop conversation doing this task */}
+</Frame>
+
+## Who Should Use This?
+
+<CardGroup cols={2}>
+  <Card title="Healthcare Providers" icon="user-doctor">
+    Doctors, clinics, and hospitals using Eka.care for patient management
+  </Card>
+  <Card title="Health Tech Companies" icon="hospital">
+    Platforms building healthcare workflows and automation
+  </Card>
+  <Card title="Medical Administrators" icon="clipboard-user">
+    Staff managing appointments, records, and prescriptions
+  </Card>
+  <Card title="Developers" icon="code">
+    Engineers building AI-powered healthcare applications
+  </Card>
+</CardGroup>
+
+## What Can You Do?
+
+<AccordionGroup>
+  <Accordion title="👥 Patient Management">
+    - Search and retrieve patient records
+    - Add new patients
+    - Update patient information
+    - View complete medical history
+  </Accordion>
+
+  <Accordion title="📅 Appointment Management">
+    - Check available slots
+    - Book appointments
+    - Reschedule or cancel
+    - View appointment history
+  </Accordion>
+
+  <Accordion title="💊 Prescriptions">
+    - Generate digital prescriptions
+    - View prescription history
+    - Access medication details
+  </Accordion>
+
+  <Accordion title="🏥 Doctor & Clinic Operations">
+    - Retrieve doctor profiles
+    - Access clinic information
+    - View available services
+  </Accordion>
+</AccordionGroup>
+
+For more details on supported tools visit - https://developer.eka.care/mcp/supported-tools
+
+<Note>
+**Need Help?** Email us at ekaconnect@eka.care
+</Note>
