@@ -1,0 +1,245 @@
+---
+title: Custom MCP Client
+description: Integrate Eka.care MCP into your own application
+---
+
+## Overview
+
+Want to build your own AI-powered healthcare application? You can integrate Eka.care MCP into any application that supports the Model Context Protocol standard.
+
+<CardGroup cols={2}>
+  <Card title="📱 Build AI Health Apps" icon="mobile">
+    Create custom healthcare assistants
+  </Card>
+  <Card title="🤖 Automation Tools" icon="robot">
+    Automate clinic workflows
+  </Card>
+  <Card title="🔧 Internal Tools" icon="wrench">
+    Custom admin dashboards
+  </Card>
+  <Card title="🌐 Web Services" icon="globe">
+    API-powered AI services
+  </Card>
+</CardGroup>
+
+---
+
+## Quick Integration
+
+### Using the MCP SDK
+
+The easiest way is to use the official MCP SDK in your preferred language:
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    # Create MCP client connection
+    server_params = StdioServerParameters(
+        command="/path/to/.venv/bin/python",
+        args=["-m", "eka_mcp_sdk.server"],
+        env={
+            "EKA_CLIENT_ID": "your_client_id",
+            "EKA_CLIENT_SECRET": "your_client_secret",
+            "EKA_API_KEY": "your_api_key"
+        }
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            # Initialize connection
+            await session.initialize()
+            
+            # List available tools
+            tools = await session.list_tools()
+            print(f"Available tools: {[t.name for t in tools]}")
+            
+            # Call a tool
+            result = await session.call_tool(
+                "search_patients",
+                arguments={"prefix": "Kumar"}
+            )
+            print(result)
+    ```
+  </Tab>
+  
+  <Tab title="TypeScript">
+    ```typescript
+    import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+    import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+    const transport = new StdioClientTransport({
+      command: "/path/to/.venv/bin/python",
+      args: ["-m", "eka_mcp_sdk.server"],
+      env: {
+        EKA_CLIENT_ID: "your_client_id",
+        EKA_CLIENT_SECRET: "your_client_secret",
+        EKA_API_KEY: "your_api_key"
+      }
+    });
+
+    const client = new Client({
+      name: "my-healthcare-app",
+      version: "1.0.0"
+    }, {
+      capabilities: {}
+    });
+
+    await client.connect(transport);
+
+    // List available tools
+    const tools = await client.listTools();
+    console.log("Available tools:", tools.tools.map(t => t.name));
+
+    // Call a tool
+    const result = await client.callTool({
+      name: "search_patients",
+      arguments: { prefix: "Kumar" }
+    });
+    console.log(result);
+    ```
+  </Tab>
+  
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "github.com/modelcontextprotocol/sdk-go/client"
+    )
+
+    func main() {
+        // Create MCP client
+        c := client.NewStdioClient(
+            "/path/to/.venv/bin/python",
+            []string{"-m", "eka_mcp_sdk.server"},
+            map[string]string{
+                "EKA_CLIENT_ID":     "your_client_id",
+                "EKA_CLIENT_SECRET": "your_client_secret",
+                "EKA_API_KEY":       "your_api_key",
+            },
+        )
+
+        // Connect
+        ctx := context.Background()
+        if err := c.Connect(ctx); err != nil {
+            panic(err)
+        }
+        defer c.Close()
+
+        // List tools
+        tools, err := c.ListTools(ctx)
+        if err != nil {
+            panic(err)
+        }
+        fmt.Printf("Available tools: %+v\n", tools)
+
+        // Call a tool
+        result, err := c.CallTool(ctx, "search_patients", map[string]interface{}{
+            "prefix": "Kumar",
+        })
+        if err != nil {
+            panic(err)
+        }
+        fmt.Printf("Result: %+v\n", result)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## HTTP Integration
+
+Prefer REST APIs? Deploy the MCP server with HTTP transport:
+
+### Setup HTTP Server
+
+```python server.py
+from fastmcp import FastMCP
+from eka_mcp_sdk.tools.patient_tools import register_patient_tools
+from eka_mcp_sdk.tools.appointment_tools import register_appointment_tools
+
+# Create FastMCP instance
+mcp = FastMCP("Eka.care MCP")
+
+# Register tools
+register_patient_tools(mcp)
+register_appointment_tools(mcp)
+
+# Run with HTTP transport
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(mcp.get_asgi_app(), host="0.0.0.0", port=8000)
+```
+
+### Call via HTTP
+
+```bash
+# List available tools
+curl http://localhost:8000/tools
+
+# Call a tool
+curl -X POST http://localhost:8000/call_tool \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "search_patients",
+    "arguments": {"prefix": "Kumar"}
+  }'
+```
+
+---
+
+## Docker Deployment
+
+Deploy as a containerized service:
+
+```dockerfile Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copy MCP server code
+COPY . .
+
+# Install package
+RUN pip install -e .
+
+# Expose port
+EXPOSE 8000
+
+# Run server
+CMD ["python", "-m", "eka_mcp_sdk.server"]
+```
+
+```yaml docker-compose.yml
+version: '3.8'
+
+services:
+  eka-mcp:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - EKA_CLIENT_ID=${EKA_CLIENT_ID}
+      - EKA_CLIENT_SECRET=${EKA_CLIENT_SECRET}
+      - EKA_API_KEY=${EKA_API_KEY}
+      - EKA_API_BASE_URL=https://api.eka.care
+    restart: unless-stopped
+```
+
+---
+
+<Note>
+**Building Something Cool?** We'd love to hear about it!
+- Email us: ekaconnect@eka.care
+- Get featured in our showcase!
+</Note>
