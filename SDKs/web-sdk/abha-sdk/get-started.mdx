@@ -1,0 +1,461 @@
+---
+title: Get Started
+description: "Complete implementation guide for the ABHA[Ayushman Bharat Digital Mission] SDK"
+---
+
+# ABHA SDK Implementation
+
+This guide provides everything you need to integrate the ABHA SDK into your application.
+
+## Overview
+
+The ABHA SDK allows you to integrate Create ABHA, Login with ABHA, ABHA Consent Management, ABHA Profile KYC flows into your healthcare applications. It provides:
+
+- **Create ABHA**: Create a new ABHA using Mobile or Aadhaar.
+- **Login with ABHA**: Login to your exisiting ABHA using PHR Address, ABHA number, Aadhaar number or Mobile number.
+- **ABHA Consent Management**: Manage Consent requests raised by healthcare providers to share medical records securely.
+- **ABHA Profile KYC**: Get your ABHA address KYC verified.
+
+## Installation
+
+### Prerequisites
+
+- A modern web browser.
+- Your domain must be whitelisted with Eka Care to avoid CORS(Cross-Origin Resource Sharing) error.
+  (Contact Eka Care to request API access and domain whitelisting.)
+- A valid HTML container element where the SDK will mount.
+
+### Setup
+
+Add the following HTML and script tags to your webpage:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ABHA SDK Integration</title>
+
+    <!-- Include ABHA SDK CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@eka-care/abha/dist/sdk/abha/css/abha.css"
+    />
+  </head>
+  <body>
+    <h1>ABHA SDK Demo</h1>
+
+    <!-- Mount Button -->
+    <button class="button" onclick="mountABHASDK()">Mount SDK</button>
+
+    <!-- Container for ABHA SDK -->
+    <div id="sdk_container"></div>
+
+    <!-- Include ABHA SDK JS -->
+    <script
+      type="module"
+      src="https://unpkg.com/@eka-care/abha/dist/sdk/abha/js/abha.js"
+    ></script>
+
+    <script>
+      function mountABHASDK() {
+        window.initAbhaApp({
+          containerId: "sdk_container",
+          clientId: "ext",
+        
+         // data object 
+          data: {
+            // pass the required data as per the flow
+           },
+
+          // Success callback
+          onSuccess: (params) => {
+            console.log("ABHA Registration flow completed successfully:", params);
+          },
+
+          //KYC Successs callback
+          onKYCSuccess: (params) => {
+            console.log("ABHA KYC Verified successfully:", params);
+          },
+
+          //Consent Successs callback
+          onConsentSuccess: (params) => {
+            console.log("ABHA Consent flow completed successfully:", params);
+          },
+
+          // Error callback
+          onError: (params) => {
+            console.error("ABHA SDK failed:", params);
+          },
+          
+          // Abha Close callback
+          onAbhaClose: () => {
+            console.log("ABHA SDK closed");
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
+```
+## Core Functions
+
+### 1. initAbhaApp
+
+Initializes and renders the ABHA SDK in your specified container.
+
+**Parameters:**
+
+| Name          | Type                                    | Required    | Description                                                                                                                                    |
+| ------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `containerId` | `string`                                | ✅           | The HTML element ID where the SDK will mount.                                                                                                  |
+| `clientId` | `string`                                | ✅           | Provide clientId as `ext`.                                                                                                  |
+| `data` | `{`<br/>`accessToken: string;`<br/>`oid?: string;`<br/>`identifier?: string;`<br/>`identifier_type?: string;`<br/>`consent_id?: string;`<br/>`flow?: string;`<br/>`orgIcon?: string;`<br/>`linkToOrgIcon?: string;`<br/>`}` | ⚙️ Optional | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>accessToken:</strong> Pass the access token you have generated from [Connect Login ](https://developer.eka.care/api-reference/authorization/client-login) API without the word `Bearer`. <br/>- <strong>oid:</strong> Pass oid of patient if available / needed in the flow. <br/>- <strong>identifier:</strong> Pass the login identifier value i.e. mobile number / aadhaar number / phr address / abha number.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "mobile" / "aadhaar_number" / "phr_address" / "abha_number" /. If not known pass undefined.  <br/>- <strong>consent_id:</strong> Pass the consent_id of the consent request raised. <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `abha-kyc` for KYC flow  / `consent` for Consent flow.  <br/>- <strong>orgIcon:</strong> Public CDN URL of your organisation's icon to display inside the SDK url should start with https://. [Example](https://cdn.eka.care/vagus/cl56w6zg3001f0scsaqrh16is.jpg)  <br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp) <br/><br/> `keys with ? are optional and needs to be passed as per flow requirement.` |
+| `onSuccess`   | `(params: TOnAbhaSuccessParams) => void`   | ✅           | Triggered when the user successfully creates or logs in to ABHA.                                                                               |
+| `onKYCSuccess`   | `(params: TOnAbhaKycSuccessParams) => void`   | ⚙️ Optional | Triggered when the user KYC verified successfully.
+| `onConsentSuccess`   | `(params: TOnAbhaConsentSuccessParams) => void`   | ⚙️ Optional | Triggered when the consent flow completes successfully.
+| `onError`     | `(params: TOnAbhaFailureParams) => void`     | ✅           | Triggered when an error occurs during the ABHA flow.       
+| `onAbhaClose`     | `() => void`     | ✅           | Triggered when SDK closes.                                                                                           |
+
+
+## Callback Parameters
+
+### onSuccess Callback
+
+The onSuccess callback is triggered when the ABHA flow completes successfully.
+It returns verified user details and tokens, which can be used to log in or continue the user’s session.
+
+**Callback Signature:**
+
+```typescript
+onSuccess: (params: TOnAbhaSuccessParams) => void;
+```
+
+**Type Definitions**
+
+```typescript
+type TOnAbhaSuccessParams = {
+  response: TAuthVerifyV2Response;
+};
+
+type TAuthVerifyV2Response = {
+  skip_state: number;
+  method: AUTH_METHOD;
+  data?: {
+    tokens: {
+      sess: string;
+      refresh: string;
+    };
+    profile: TProfileRecord;
+  };
+  txn_id: string;
+  error?: {
+    code: number;
+    message: string;
+  };
+};
+
+enum AUTH_METHOD {
+  EMAIL = 1,
+  MOBILE = 2,
+  ABHA = 7,
+}
+
+type TProfileRecord = {
+  fln: string;
+  fn: string;
+  mn?: string;
+  ln?: string;
+  gen?: "M" | "F" | "O" | "U" | undefined; // 'male' | 'female' | 'other' | 'unknown'
+  dob?: string;
+  mobile?: string;
+  email?: string;
+  uuid?: string;
+  bloodgroup?: "" | "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
+  pic?: string;
+  as?: string;
+  "dob-valid"?: boolean;
+  "is-d"?: boolean;
+  "is-d-s"?: boolean;
+  "is-p"?: boolean;
+  oid: string;
+  at: string;
+  type?: 1 | 2 | 3 | 4 | 5 | 6;
+  "health-ids"?: Array<string>;
+  abha_number?: string;
+  kyc_verified?: boolean;
+};
+
+```
+
+**Parameters**
+| Key        | Type                    | Description                                                                                                |
+| ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `response` | `TAuthVerifyV2Response` | The complete ABHA verification response, containing session tokens, user profile, and transaction details. |
+
+
+
+**Example:**
+
+```javascript
+const onSuccess = (params) => {
+  console.log("ABHA Success:", params.response);
+
+  const abhaNumber = params.response.data?.profile?.abha_number;
+  const userName = params.response.data?.profile?.name;
+
+  alert(`Welcome ${userName}! Your ABHA Number: ${abhaNumber}`);
+
+  // Optionally pass data to native bridge if available
+  if (window.EkaAbha) {
+    window.EkaAbha.onAbhaSuccess(JSON.stringify(params));
+  }
+};
+```
+
+### onKYCSuccess Callback
+
+The onKYCSuccess callback is triggered when the ABHA KYC flow completes successfully. 
+It returns a confirmation message indicating that the KYC has been verified.
+
+**Callback Signature:**
+
+```typescript
+onKYCSuccess: (params: TOnAbhaKycSuccessParams) => void;
+```
+
+**Type Definitions**
+
+```typescript
+type TOnAbhaKycSuccess = string;
+```
+
+**Parameters**
+|         | Type                    | Description                                                                                                |
+| ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `TOnAbhaKycSuccess` | `string` | A confirmation message from SDK post KYC verification |
+
+
+
+**Example:**
+
+```javascript
+const onKYCSuccess = (params) => {
+  console.log("KYC verification Success:", params);
+
+  alert("KYC was verified successfully!");
+
+  // Optionally pass data to native bridge if available
+  if (window.EkaAbha) {
+    window.EkaAbha.onAbhaKYCSuccess(params);
+  }
+};
+```
+
+### onConsentSuccess Callback
+
+The onConsentSuccess callback is triggered when the ABHA Consent flow completes successfully. 
+It returns a confirmation message indicating that the Consent flow ended successfully.
+
+**Callback Signature:**
+
+```typescript
+onConsentSuccess: (params: TOnAbhaConsentSuccessParams) => void;
+```
+
+**Type Definitions**
+
+```typescript
+type TOnAbhaConsentSuccessParams = string;
+```
+
+**Parameters**
+|         | Type                    | Description                                                                                                |
+| ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `TOnAbhaConsentSuccessParams` | `string` | A confirmation message from SDK post Consent flow completion |
+
+
+
+**Example:**
+
+```javascript
+const onConsentSuccess = (params) => {
+  console.log("Consent Flow completed:", params);
+
+  alert("Consent flow completed successfully!");
+
+  // Optionally pass data to native bridge if available
+  if (window.EkaAbha) {
+    window.EkaAbha.onAbhaConsentSuccess(params);
+  }
+};
+```
+
+### onError Callback
+The onError callback is triggered whenever an ABHA flow fails or is interrupted.
+It provides details about the failure through structured parameters, allowing you to handle or forward the error appropriately (for example, to native apps or monitoring tools).
+
+**Callback Signature:**
+
+```typescript
+onError: (params: TOnAbhaFailureParams) => void;
+```
+
+**Type Definitions**
+
+```typescript
+type TOnAbhaFailureParams = {
+  error?: string;
+  response?: TAuthVerifyV2Response;
+};
+
+type TAuthVerifyV2Response = {
+  skip_state: number;
+  method: AUTH_METHOD;
+  data?: {
+    tokens: {
+      sess: string;
+      refresh: string;
+    };
+    profile: TProfileRecord;
+  };
+  txn_id: string;
+  error?: {
+    code: number;
+    message: string;
+  };
+};
+
+enum AUTH_METHOD {
+  EMAIL = 1,
+  MOBILE = 2,
+  ABHA = 7,
+}
+
+type TProfileRecord = {
+  fln: string;
+  fn: string;
+  mn?: string;
+  ln?: string;
+  gen?: "M" | "F" | "O" | "U" | undefined; // 'male' | 'female' | 'other' | 'unknown'
+  dob?: string;
+  mobile?: string;
+  email?: string;
+  uuid?: string;
+  bloodgroup?: "" | "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
+  pic?: string;
+  as?: string;
+  "dob-valid"?: boolean;
+  "is-d"?: boolean;
+  "is-d-s"?: boolean;
+  "is-p"?: boolean;
+  oid: string;
+  at: string;
+  type?: 1 | 2 | 3 | 4 | 5 | 6;
+  "health-ids"?: Array<string>;
+  abha_number?: string;
+  kyc_verified?: boolean;
+};
+
+```
+
+**Parameters**
+| Key        | Type                     | Description                                                      |
+| ---------- | ------------------------ | ---------------------------------------------------------------- |
+| `error`    | `string?`                | Short description of the failure or error message.               |
+| `response` | `TAuthVerifyV2Response?` | Partial or full API response object returned from ABHA services. |
+
+
+**Example:**
+
+```javascript
+const onError = (params) => {
+  console.error("ABHA Error:", params);
+
+  if (params.response?.error?.code === 1001) {
+    alert("Authentication failed. Please try again.");
+  } else if (params.error === "NETWORK_ERROR") {
+    alert("Please check your internet connection.");
+  } else {
+    alert("Something went wrong. Please retry.");
+  }
+
+  // Forward the error to native handler if available
+  if (window.EkaAbha) {
+    window.EkaAbha.onAbhaFailure(JSON.stringify(params));
+  }
+};
+```
+
+### onAbhaClose Callback
+
+The onAbhaClose callback is triggered when the ABHA SDK flow gets closed. 
+
+**Callback Signature:**
+
+```typescript
+onAbhaClose: () => void;
+```
+
+**Example:**
+
+```javascript
+const onAbhaClose = () => {
+  console.log("ABHA SDK Closed");
+};
+```
+
+**Suggest Handling**
+-Always log the full error response (params) for debugging.
+-Display friendly error messages for known error.code values.
+-If params.response is present, inspect response.error.message for more detail.
+-If integrating with native apps, forward the serialized error object:
+```javascript
+window.EkaAbha.onAbhaFailure(JSON.stringify(params));
+```
+
+## Container Styling
+Ensure your container has sufficient space:
+```html
+<div
+  id="sdk_container"
+  style="width: 100%; height: 600px; border: 1px solid #ddd;"
+></div>
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. SDK Not Rendering
+
+**Problem**: Nothing appears in the container.
+
+**Solution**:
+- Ensure containerId matches an existing HTML element.
+- Verify the SDK JS and CSS are correctly loaded.
+- Check browser console for errors.
+
+#### 2. APIs Not Being Called
+
+**Problem**: API requests are not triggered after the SDK is mounted.
+
+**Solution**:
+- Ensure that the accessToken is passed correctly (do not include the Bearer prefix) and that the token has not expired.
+- To prevent CORS-related issues, ensure that your domain is whitelisted.
+
+#### 3. Callback Not Triggered
+
+**Problem**: onSuccess, onError, onKYCSuccess, onConsentSuccess, onAbhaClose isn’t firing.
+
+**Solution**:
+- Make sure callbacks are passed as valid functions.
+- Avoid race conditions (e.g., calling before SDK fully loads).
+
+#### 4. Styling Issues
+
+**Problem**: SDK content appears misaligned or clipped.
+
+**Solution**:
+- Give your container a fixed height (e.g., 600px).
+- Ensure no parent element uses overflow: hidden.
+
