@@ -4081,6 +4081,585 @@ paths:
           description: OK
       security:
       - authApiKey: []
+
+  /abdm/v1/hfr/search/{hfrId}:
+    get:
+      summary: Search Facility
+      description: Search for an existing facility using its HFR ID.
+      parameters:
+        - description: Health Facility Registry ID
+          in: path
+          name: hfrId
+          required: true
+          schema:
+            type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    description: Facility details object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      address:
+                        type: object
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hfr/onboard:
+    post:
+      summary: Onboard Facility
+      description: Onboard a facility into the NHPR/ABDM registry.
+      parameters:
+        - description: Doctor Object ID (OID)
+          in: query
+          name: doctor_oid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                facility_name:
+                  description: Name of the facility
+                  type: string
+                address:
+                  description: Facility address
+                  type: object
+                district:
+                  type: string
+                  state:
+                    type: string
+              required:
+                - facility_name
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bind Error
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: Onboarding response details
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+  /abdm/v1/hfr/link:
+    post:
+      summary: Link Facility (Update Bridge)
+      description: Link a facility to the ABDM Bridge.
+      parameters:
+        - description: Doctor Object ID (OID)
+          in: query
+          name: doctor_oid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                bridge_id:
+                  description: The ABDM Bridge ID
+                  type: string
+                facility_id:
+                  description: The internal Facility ID
+                  type: string
+              required:
+                - bridge_id
+                - facility_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bind Error
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: Bridge update response
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hpr/aadhaar/init:
+    post:
+      summary: HPR Aadhaar Init
+      description: Initialize HPR creation by generating an OTP for the provided Aadhaar number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                aadhaar_number:
+                  description: The Aadhaar number of the professional
+                  type: string
+              required:
+                - aadhaar_number
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    properties:
+                      txn_id:
+                        description: Transaction ID for subsequent calls
+                        type: string
+                    type: object
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+  /abdm/v1/hpr/aadhaar/verify:
+    post:
+      summary: Verify Aadhaar OTP
+      description: Verify the OTP sent to the Aadhaar-linked mobile number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                txn_id:
+                  description: Transaction ID from the Init step
+                  type: string
+                otp:
+                  description: The OTP received on Aadhaar mobile
+                  type: string
+              required:
+                - txn_id
+                - otp
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    description: Verification response
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hpr/aadhaar/create:
+    post:
+      summary: Create HPR ID
+      description: Finalize the creation of the HPR ID.
+      parameters:
+        - description: Doctor Object ID (OID)
+          in: query
+          name: doctor_oid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                txn_id:
+                  type: string
+                hpr_id:
+                  description: The chosen HPR ID
+                  type: string
+              required:
+                - txn_id
+                - hpr_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    description: Created HPR profile details
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hpr/aadhaar/mobile/init:
+    post:
+      summary: Generate Mobile OTP
+      description: Generate an OTP for the professional's mobile number (for linking).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                txn_id:
+                  type: string
+                mobile:
+                  description: Mobile number to send OTP to
+                  type: string
+              required:
+                - txn_id
+                - mobile
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+
+  /abdm/v1/hpr/aadhaar/mobile/verify:
+    post:
+      summary: Verify Mobile OTP
+      description: Verify the OTP sent to the professional's mobile number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                txn_id:
+                  type: string
+                otp:
+                  type: string
+              required:
+                - txn_id
+                - otp
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hpr/aadhaar/demo/verify:
+    post:
+      summary: Verify Aadhaar Linked Mobile
+      description: Verify if the mobile number provided matches the one linked with Aadhaar.
+      parameters:
+        - description: Doctor Object ID (OID)
+          in: query
+          name: doctor_oid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                txn_id:
+                  type: string
+                mobile:
+                  description: Mobile number to verify against Aadhaar record
+                  type: string
+              required:
+                - txn_id
+                - mobile
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hpr/aadhaar/check/available:
+    post:
+      summary: Check HPR ID Availability
+      description: Check if a specific custom HPR ID string is available for registration.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                hpr_id:
+                  description: The custom HPR ID to check (e.g., doctor.name)
+                  type: string
+              required:
+                - hpr_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    properties:
+                      available:
+                        type: boolean
+                    type: object
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hpr/aadhaar/check/exist:
+    post:
+      summary: Check if HPR ID Exists
+      description: Check if an HPR ID already exists for the current transaction context.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                txn_id:
+                  type: string
+              required:
+                - txn_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      exists:
+                        type: boolean
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
+  /abdm/v1/hpr/aadhaar/suggest:
+    post:
+      summary: Get Suggested HPR IDs
+      description: Get a list of suggested HPR IDs based on the user's profile/txn.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                txn_id:
+                  type: string
+              required:
+                - txn_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Bad Request
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Internal Server Error
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: string
+                    example: [ "dr.name@hpr", "name.123@hpr" ]
+                type: object
+          description: OK
+      security:
+        - authApiKey: [ ]
+
 components:
   schemas:
     ApproveConsent:
@@ -6167,10 +6746,14 @@ components:
       type: object
     ProfileAbha:
       properties:
+        abha_address:
+          type: string
         abha_number:
           examples:
           - xx-xxxx-xxxx-1525
           type: string
+        age:
+          type: integer
         gender:
           examples:
           - M
@@ -6179,6 +6762,10 @@ components:
           examples:
           - 1
           type: integer
+        internal:
+          examples:
+          - true
+          type: boolean
         kyc_verified:
           examples:
           - "true"

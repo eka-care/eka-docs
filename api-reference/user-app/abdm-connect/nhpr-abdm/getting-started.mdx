@@ -1,0 +1,48 @@
+---
+title: "Overview"
+---
+
+This guide explains how to integrate with the **National Health Provider Registry (NHPR)** under the ABDM ecosystem. The integration is divided into two main workflows: registering **Healthcare Professionals (HPR)** and managing **Health Facilities (HFR)** .
+
+> **Prerequisite:** Ensure you have the necessary `doctor_oid` (Doctor Object ID) or authentication tokens before initiating these requests.
+
+## 1. Healthcare Professional Registry (HPR)
+
+This workflow guides a doctor or nurse through creating their unique **HPR ID** via Aadhaar-based verification.
+
+<Steps>
+    <Step title="Aadhaar Authentication">
+        Initiate the process by sending an OTP to the professional's Aadhaar-linked mobile number. Verify the OTP to establish identity.
+        *APIs: `/hpr/aadhaar/init` & `/hpr/aadhaar/verify`*
+    </Step>
+    <Step title="Create HPR ID">
+        Finalize the registration by creating the HPR ID. This generates the professional's digital profile in the ABDM network.
+        *API: `/hpr/aadhaar/create`*
+    </Step>
+
+
+</Steps>
+
+## 2. Health Facility Registry (HFR)
+
+This workflow focuses on managing physical institutions. You must follow this sequence to ensure data integrity.
+
+### 1. Search Facility
+It checks if the facility already exists in the registry.
+<Card title="Search Facility API" icon="magnifying-glass" href="/api-reference/user-app/abdm-connect/nhpr-abdm/search-facility">
+  **GET** `/nhpr/search/{hfrId}`
+</Card>
+
+### 2. Onboard Facility
+This endpoint is used to onboard the Facility. This requires submitting official details such as the facility name, physical address, and the authorizing doctor's OID.
+<Card title="Onboard Facility API" icon="hospital" href="/api-reference/user-app/abdm-connect/nhpr-abdm/onboard-facility">
+  **POST** `/nhpr/onboard`
+</Card>
+
+### 3. Link Facility (Update Bridge)
+Once a facility is identified or onboarded, it must be connected to the ABDM Bridge software. This linkage allows the facility to exchange health data and participate in the digital health network securely.
+<Card title="Link Facility API" icon="link" href="/api-reference/user-app/abdm-connect/nhpr-abdm/link-facility">
+  **POST** `/nhpr/link`
+</Card>
+
+---
