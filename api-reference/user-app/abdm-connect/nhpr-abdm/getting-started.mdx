@@ -1,0 +1,60 @@
+---
+title: "Overview"
+---
+
+This guide explains how to integrate with the **National Health Provider Registry (NHPR)** under the ABDM ecosystem. The integration is divided into two main workflows: registering **Healthcare Professionals (HPR)** and managing **Health Facilities (HFR)** .
+
+## 1. Healthcare Professional Registry (HPR)
+
+This workflow guides a doctor or nurse through creating their unique **HPR ID** via Aadhaar-based verification.
+
+<Steps>
+    <Step title="Aadhaar Authentication">
+        Initiate the process by sending an OTP to the professional's Aadhaar-linked mobile number. Verify the OTP to establish identity.
+        *APIs: `nhpr/v1/hpr/aadhaar/init` & `nhpr/v1/hpr/aadhaar/verify`*
+    </Step>
+    <Step title="2. Verify Linked Mobile">
+            Verify that the mobile number provided by the user matches the one linked with their Aadhaar record. This ensures the contact details are authentic.
+            *API: `nhpr/v1/hpr/aadhaar/demo/verify`*
+    </Step>
+
+    <Step title="3. Check Existing HPR ID">
+        Check if an HPR ID already exists for the current transaction or Aadhaar profile. If it exists, you may skip creation; otherwise, proceed to generate a new ID.
+        *API: `nhpr/v1/hpr/aadhaar/check/exist`*
+    </Step>
+
+    <Step title="4. Get ID Suggestions">
+            If no ID exists, retrieve a list of system-suggested HPR IDs (e.g., `dr.name@hpr`) based on the user's profile to help them choose a valid handle.
+            *API: `nhpr/v1/hpr/aadhaar/suggest`*
+    </Step>
+
+    <Step title="5. Create HPR ID">
+        Finalize the registration by creating the HPR ID using a chosen or available handle. This generates the professional's digital profile in the ABDM network.
+        *API: `nhpr/v1/hpr/aadhaar/create`*
+    </Step>
+
+</Steps>
+
+## 2. Health Facility Registry (HFR)
+
+This workflow focuses on managing physical institutions. You must follow this sequence to ensure data integrity.
+
+### 1. Search Facility
+It checks if the facility already exists in the registry.
+<Card title="Search Facility API" icon="magnifying-glass" href="/api-reference/user-app/abdm-connect/nhpr-abdm/hfr/search-facility">
+  **GET** `/nhpr/v1/hfr/search/{hfrId}`
+</Card>
+
+### 2. Onboard Facility
+This endpoint is used to onboard the Facility. This requires submitting official details such as the facility name, physical address, and the authorizing doctor's OID.
+<Card title="Onboard Facility API" icon="hospital" href="/api-reference/user-app/abdm-connect/nhpr-abdm/hfr/onboard-facility">
+  **POST** `/nhpr/v1/hfr/onboard`
+</Card>
+
+### 3. Link Facility (Update Bridge)
+Once a facility is identified or onboarded, it must be connected to the ABDM Bridge software. This linkage allows the facility to exchange health data and participate in the digital health network securely.
+<Card title="Link Facility API" icon="link" href="/api-reference/user-app/abdm-connect/nhpr-abdm/hfr/link-facility">
+  **POST** `/nhpr/v1/hfr/link`
+</Card>
+
+---
