@@ -91,6 +91,11 @@ Add the following HTML and script tags to your webpage:
           onAbhaClose: () => {
             console.log("ABHA SDK closed");
           },
+
+          // Skip ABHA callback
+          onSkipAbha: (params) => {
+            console.log("ABHA flow SKIPPED:", params);
+          },
         });
       }
     </script>
@@ -109,13 +114,14 @@ Initializes and renders the ABHA SDK in your specified container.
 | ------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `containerId` | `string`                                | ✅           | The HTML element ID where the SDK will mount.                                                                                                  |
 | `clientId` | `string`                                | ✅           | Provide clientId as `ext`.                                                                                                  |
-| `data` | `{`<br/>`accessToken: string;`<br/>`oid?: string;`<br/>`identifier?: string;`<br/>`identifier_type?: string;`<br/>`consent_id?: string;`<br/>`flow?: string;`<br/>`orgIcon?: string;`<br/>`linkToOrgIcon?: string;`<br/>`}` | ⚙️ Optional | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>accessToken:</strong> Pass the access token you have generated from [Connect Login ](https://developer.eka.care/api-reference/authorization/client-login) API without the word `Bearer`. <br/>- <strong>oid:</strong> Pass oid of patient if available / needed in the flow. <br/>- <strong>identifier:</strong> Pass the login identifier value i.e. mobile number / aadhaar number / phr address / abha number.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "mobile" / "aadhaar_number" / "phr_address" / "abha_number" /. If not known pass undefined.  <br/>- <strong>consent_id:</strong> Pass the consent_id of the consent request raised. <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `abha-kyc` for KYC flow  / `consent` for Consent flow.  <br/>- <strong>orgIcon:</strong> Public CDN URL of your organisation's icon to display inside the SDK url should start with https://. [Example](https://cdn.eka.care/vagus/cl56w6zg3001f0scsaqrh16is.jpg)  <br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp) <br/><br/> `keys with ? are optional and needs to be passed as per flow requirement.` |
+| `data` | `{`<br/>`accessToken: string;`<br/>`hipId: string;`<br/>`oid?: string;`<br/>`identifier?: string;`<br/>`identifier_type?: string;`<br/>`consent_id?: string;`<br/>`flow?: string;`<br/>`linkToOrgIcon?: string;`<br/>`skipABHAEnable?: boolean;`<br/>`}` | ⚙️ Optional | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>accessToken:</strong> Pass the access token you have generated from [Connect Login ](https://developer.eka.care/api-reference/authorization/client-login) API without the word `Bearer`. <br/>- <strong>hipId:</strong> Pass the HFR ID you have. <br/>- <strong>oid:</strong> Pass oid of patient if available / needed in the flow. <br/>- <strong>identifier:</strong> Pass the login identifier value i.e. mobile number / aadhaar number / phr address / abha number.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "mobile" / "aadhaar_number" / "phr_address" / "abha_number" /. If not known pass undefined.  <br/>- <strong>consent_id:</strong> Pass the consent_id of the consent request raised. <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `abha-kyc` for KYC flow  / `consent` for Consent flow. <br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp)<br/>- <strong>skipABHAEnable:</strong> Pass the boolean as true if you want Skip ABHA button to be enabled on login screen. <br/><br/> `keys with ? are optional and needs to be passed as per flow requirement.` |
 | `onSuccess`   | `(params: TOnAbhaSuccessParams) => void`   | ✅           | Triggered when the user successfully creates or logs in to ABHA.                                                                               |
 | `onKYCSuccess`   | `(params: TOnAbhaKycSuccessParams) => void`   | ⚙️ Optional | Triggered when the user KYC verified successfully.
 | `onConsentSuccess`   | `(params: TOnAbhaConsentSuccessParams) => void`   | ⚙️ Optional | Triggered when the consent flow completes successfully.
 | `onError`     | `(params: TOnAbhaFailureParams) => void`     | ✅           | Triggered when an error occurs during the ABHA flow.       
-| `onAbhaClose`     | `() => void`     | ✅           | Triggered when SDK closes.                                                                                           |
-
+| `onAbhaClose`     | `() => void`     | ✅           | Triggered when SDK closes.   
+| `onSkipAbha`   | `(params: TOnSkipABHA) => void`   | ⚙️ Optional | Triggered if the ABHA flow is skipped.                                                                                       |
+ 
 
 ## Callback Parameters
 
@@ -403,6 +409,41 @@ const onAbhaClose = () => {
   console.log("ABHA SDK Closed");
 };
 ```
+
+### onSkipAbha Callback
+
+The onSkipAbha callback is triggered when the ABHA SDK flow is skipped. The callback is functional when skipABHAEnable is set to true in the data parameter while initializing the SDK.
+
+**Callback Signature:**
+
+```typescript
+onSkipAbha: (params: TOnSkipABHA) => void;
+```
+
+**Example:**
+
+```javascript
+const onSkipAbha = (params) => {
+  console.log("ABHA SDK Skipped:", params);
+};
+```
+**Type Definitions**
+
+```typescript
+ type IdentifierType = "mobile" | "aadhaar_number" | "abha_number" | "phr_address";
+
+ type TOnSkipABHA = {
+  identifier?: string;
+  identifier_type?: IdentifierType[]; // No default value here
+};
+```
+
+**Parameters**
+| Key        | Type                     | Description                                                      |
+| ---------- | ------------------------ | ---------------------------------------------------------------- |
+| `identifier`    | `string?`                | It will be login identifier value filled by user.               |
+| `identifier_type` | `IdentifierType[]?` | It will be type of login identifier. |
+
 
 **Suggest Handling**
 -Always log the full error response (params) for debugging.
