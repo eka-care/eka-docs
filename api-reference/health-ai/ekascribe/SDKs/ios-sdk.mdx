@@ -1,1 +1,808 @@
-## Coming Soon
+# EkaScribe
+
+A Swift package for voice-to-prescription functionality with floating UI components, audio recording, and real-time transcription capabilities for medical consultation applications.
+
+[![Swift Version](https://img.shields.io/badge/Swift-5.5+-orange.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2014.0+-blue.svg)](https://developer.apple.com/ios/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+## Overview
+
+EkaScribe empowers healthcare applications with advanced voice recording and transcription capabilities. It provides a seamless integration for medical consultation workflows, enabling doctors to record patient interactions and automatically generate prescriptions through AI-powered voice analysis.
+
+### Key Features
+
+- 🎙️ **Voice Activity Detection (VAD)** - Intelligent audio recording with automatic speech detection
+- 🔄 **Real-time Transcription** - Live audio-to-text conversion during consultations
+- 📱 **Floating UI Interface** - Picture-in-picture recording interface that stays accessible
+- 🏥 **Medical Context Aware** - Specialized for healthcare terminology and prescription generation
+- 📊 **Session Management** - Complete recording session lifecycle management
+- ☁️ **Cloud Integration** - Automatic audio upload and processing
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core Components](#core-components)
+- [Integration Guide](#integration-guide)
+- [Configuration](#configuration)
+- [Usage Examples](#usage-examples)
+- [Best Practices](#best-practices)
+- [API Reference](#api-reference)
+
+## Requirements
+
+- **iOS**: 14.0+
+- **Swift**: 5.5+
+- **Xcode**: 13.0+
+
+### System Permissions
+
+Add the following permissions to your app's `Info.plist`:
+
+```xml
+<key>NSMicrophoneUsageDescription</key>
+<string>This app needs microphone access to record medical consultations</string>
+<key>NSLocalNetworkUsageDescription</key>
+<string>This app needs network access to upload and process audio recordings</string>
+```
+
+## Installation
+
+### Swift Package Manager
+
+Add EkaScribe to your project using Swift Package Manager:
+
+1. In Xcode, select **File → Add Package Dependencies**
+2. Enter the repository URL:
+   ```
+   https://github.com/eka-care/EkaVoiceToRx.git
+   ```
+3. Choose the version or branch
+4. Add to your target
+
+### Package.swift
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.0.0")
+]
+```
+
+## Quick Start
+
+Here's a minimal example to get you started:
+
+```swift
+import EkaScribe
+import SwiftUI
+
+class ConsultationViewController: UIViewController {
+    private var viewModel: VoiceToRxViewModel?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupVoiceToRx()
+    }
+    
+    private func setupVoiceToRx() {
+        // Configure the package
+        configureEkaScribe()
+        
+        // Initialize view model
+        viewModel = VoiceToRxViewModel(
+            voiceToRxInitConfig: V2RxInitConfigurations.shared,
+            voiceToRxDelegate: self
+        )
+        
+        // Show floating interface
+        Task {
+            await showFloatingRecordingInterface()
+        }
+    }
+    
+    private func configureEkaScribe() {
+        let config = V2RxInitConfigurations.shared
+        config.ownerName = "Dr. Smith"
+        config.ownerOID = "doctor123"
+        config.subOwnerName = "John Doe"
+        config.subOwnerOID = "patient456"
+        config.appointmentID = "appointment789"
+    }
+    
+    private func showFloatingRecordingInterface() async {
+        await FloatingVoiceToRxViewController.shared.showFloatingButton(
+            viewModel: viewModel!,
+            conversationType: .conversation,
+            liveActivityDelegate: nil
+        )
+    }
+}
+
+// MARK: - FloatingVoiceToRxDelegate
+extension ConsultationViewController: FloatingVoiceToRxDelegate {
+    func onCreateVoiceToRxSession(id: UUID?, params: VoiceToRxContextParams?) {
+        print("Session created with ID: \(id?.uuidString ?? "unknown")")
+    }
+    
+    func moveToDeepthoughtPage(id: UUID) {
+        // Navigate to prescription results page
+        print("Moving to results page for session: \(id)")
+    }
+    
+    func errorReceivingPrescription(id: UUID, errorCode: VoiceToRxErrorCode, transcriptText: String) {
+        print("Error in session \(id): \(errorCode)")
+    }
+    
+    func updateAppointmentsData(appointmentID: String, voiceToRxID: String) {
+        print("Updated appointment \(appointmentID) with voice session \(voiceToRxID)")
+    }
+}
+```
+
+## Core Components
+
+### VoiceToRxViewModel
+
+The central view model that manages the entire voice recording and processing workflow.
+
+```swift
+public class VoiceToRxViewModel: ObservableObject {
+    @Published public var screenState: RecordConsultationState
+    @Published public var filesProcessed: Set<String>
+    @Published public var uploadedFiles: Set<String>
+    
+    public var sessionID: UUID?
+    public var contextParams: VoiceToRxContextParams?
+}
+```
+
+#### Recording States
+
+```swift
+public enum RecordConsultationState {
+    case retry                          // Ready to retry after error
+    case startRecording                 // Initial state, ready to start
+    case listening(conversationType: VoiceConversationType) // Currently recording
+    case paused                        // Recording paused
+    case processing                    // Processing audio/generating prescription
+    case resultDisplay(success: Bool)  // Showing results
+    case deletedRecording             // Recording deleted
+}
+```
+
+#### Conversation Types
+
+```swift
+public enum VoiceConversationType: String, CaseIterable {
+    case conversation = "consultation"  // Doctor-patient conversation
+    case dictation                     // Direct prescription dictation
+}
+```
+
+### FloatingVoiceToRxViewController
+
+Provides a system-wide floating interface for recording control, similar to FaceTime's picture-in-picture.
+
+```swift
+public class FloatingVoiceToRxViewController: UIViewController {
+    public static let shared = FloatingVoiceToRxViewController()
+    
+    public func showFloatingButton(
+        viewModel: VoiceToRxViewModel,
+        conversationType: VoiceConversationType,
+        liveActivityDelegate: LiveActivityDelegate?
+    ) async
+    
+    public func hideFloatingButton()
+}
+```
+
+### Configuration Classes
+
+#### V2RxInitConfigurations
+
+Central configuration object for session parameters:
+
+```swift
+public class V2RxInitConfigurations {
+    public static let shared = V2RxInitConfigurations()
+    
+    public var modelContainer: ModelContainer?
+    public var ownerName: String?          // Doctor name
+    public var ownerOID: String?           // Doctor ID
+    public var ownerUUID: String?          // Doctor UUID
+    public var subOwnerOID: String?        // Patient ID
+    public var appointmentID: String?      // Appointment identifier
+    public var subOwnerName: String?       // Patient name
+}
+```
+
+## Integration Guide
+
+### Step 1: Configure Dependencies
+
+Set up authentication and core configurations:
+
+```swift
+private func configureAuthentication() {
+    // Set up authentication tokens
+    AuthTokenHolder.shared.authToken = KeychainHelper.fetchAuthToken()
+    AuthTokenHolder.shared.refreshToken = KeychainHelper.fetchRefreshToken()
+    AuthTokenHolder.shared.bid = JWTDecoder.shared.businessId
+}
+
+private func configureSessionParameters() {
+    let config = V2RxInitConfigurations.shared
+    
+    // Doctor information
+    config.ownerName = doctorName
+    config.ownerOID = doctorOID
+    config.ownerUUID = doctorUUID
+    
+    // Patient information
+    config.subOwnerName = patientName
+    config.subOwnerOID = patientOID
+    
+    // Appointment context
+    config.appointmentID = appointmentID
+    
+    // Database context
+    config.modelContainer = SwiftDataRepoContext.modelContext.container
+}
+```
+
+### Step 2: Implement Required Delegates
+
+#### FloatingVoiceToRxDelegate (Required)
+
+```swift
+extension YourViewController: FloatingVoiceToRxDelegate {
+    func onCreateVoiceToRxSession(id: UUID?, params: VoiceToRxContextParams?) {
+        guard let sessionId = id,
+              let patientId = params?.patient?.id else {
+            print("Failed to create session - missing required parameters")
+            return
+        }
+        
+        // Create local database entry
+        createLocalSessionRecord(sessionId: sessionId, patientId: patientId)
+        
+        // Update UI to reflect active session
+        updateUIForActiveSession(sessionId)
+    }
+    
+    func moveToDeepthoughtPage(id: UUID) {
+        // Navigate to prescription review/edit page
+        let storyboard = UIStoryboard(name: "Prescription", bundle: nil)
+        guard let prescriptionVC = storyboard.instantiateViewController(
+            withIdentifier: "PrescriptionViewController"
+        ) as? PrescriptionViewController else { return }
+        
+        prescriptionVC.sessionID = id
+        prescriptionVC.isEditMode = true
+        
+        navigationController?.pushViewController(prescriptionVC, animated: true)
+    }
+    
+    func errorReceivingPrescription(id: UUID, errorCode: VoiceToRxErrorCode, transcriptText: String) {
+        handleTranscriptionError(
+            sessionId: id,
+            error: errorCode,
+            transcript: transcriptText
+        )
+    }
+    
+    func updateAppointmentsData(appointmentID: String, voiceToRxID: String) {
+        // Update appointment record with voice session reference
+        Task {
+            await AppointmentService.shared.updateAppointment(
+                id: appointmentID,
+                voiceSessionId: voiceToRxID
+            )
+        }
+    }
+}
+```
+
+#### LiveActivityDelegate (Optional)
+
+For iOS Live Activities support during recording:
+
+```swift
+extension YourViewController: LiveActivityDelegate {
+    func startLiveActivity(patientName: String) async {
+        guard #available(iOS 16.1, *) else { return }
+        
+        let attributes = RecordingActivityAttributes(patientName: patientName)
+        let initialState = RecordingActivityState(
+            status: "Recording consultation...",
+            startTime: Date()
+        )
+        
+        do {
+            let activity = try Activity<RecordingActivityAttributes>.request(
+                attributes: attributes,
+                content: .init(state: initialState, staleDate: nil)
+            )
+            print("Live Activity started: \(activity.id)")
+        } catch {
+            print("Failed to start Live Activity: \(error)")
+        }
+    }
+    
+    func endLiveActivity() async {
+        guard #available(iOS 16.1, *) else { return }
+        
+        for activity in Activity<RecordingActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+    }
+}
+```
+
+### Step 3: Initialize and Control Recording
+
+```swift
+class ConsultationViewController: UIViewController {
+    private var viewModel: VoiceToRxViewModel?
+    private var cancellables = Set<AnyCancellable>()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupVoiceToRx()
+        observeRecordingStates()
+    }
+    
+    private func setupVoiceToRx() {
+        viewModel = VoiceToRxViewModel(
+            voiceToRxInitConfig: V2RxInitConfigurations.shared,
+            voiceToRxDelegate: self
+        )
+    }
+    
+    private func observeRecordingStates() {
+        viewModel?.$screenState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.handleStateChange(state)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handleStateChange(_ state: RecordConsultationState) {
+        switch state {
+        case .startRecording:
+            updateUI(status: "Ready to record")
+            
+        case .listening(let conversationType):
+            updateUI(status: "Recording \(conversationType.rawValue)...")
+            
+        case .paused:
+            updateUI(status: "Recording paused")
+            
+        case .processing:
+            updateUI(status: "Processing audio...")
+            showProcessingIndicator()
+            
+        case .resultDisplay(let success):
+            hideProcessingIndicator()
+            if success {
+                showSuccessMessage()
+            } else {
+                showErrorMessage()
+            }
+            
+        case .deletedRecording:
+            updateUI(status: "Recording deleted")
+            
+        case .retry:
+            updateUI(status: "Ready to retry")
+        }
+    }
+    
+    // MARK: - Recording Controls
+    
+    @IBAction func startRecordingTapped(_ sender: UIButton) {
+        Task {
+            await startRecording()
+        }
+    }
+    
+    @IBAction func pauseRecordingTapped(_ sender: UIButton) {
+        viewModel?.pauseRecording()
+    }
+    
+    @IBAction func resumeRecordingTapped(_ sender: UIButton) {
+        do {
+            try viewModel?.resumeRecording()
+        } catch {
+            showError("Failed to resume recording: \(error.localizedDescription)")
+        }
+    }
+    
+    @IBAction func stopRecordingTapped(_ sender: UIButton) {
+        Task {
+            await viewModel?.stopRecording()
+        }
+    }
+    
+    private func startRecording() async {
+        // Show floating interface first
+        await FloatingVoiceToRxViewController.shared.showFloatingButton(
+            viewModel: viewModel!,
+            conversationType: .conversation,
+            liveActivityDelegate: self
+        )
+        
+        // Start the actual recording
+        await viewModel?.startRecording(conversationType: .conversation)
+    }
+}
+```
+
+## Configuration
+
+### Audio Configuration
+
+EkaScribe automatically configures optimal audio settings, but you can customize them:
+
+```swift
+// Access the recording configuration
+let audioConfig = RecordingConfiguration.shared
+
+// Customize audio parameters (optional)
+audioConfig.sampleRate = 48000           // Default: 48kHz
+audioConfig.audioBufferSize = 4800       // Default: 4800 samples
+audioConfig.requiredSampleRate = 16000   // Processing rate: 16kHz
+```
+
+### Network Configuration
+
+Configure upload and processing endpoints:
+
+```swift
+// These are typically configured automatically through your app's backend integration
+// Contact your backend team for the proper endpoint configuration
+```
+
+## Usage Examples
+
+### Basic Recording Session
+
+```swift
+// Start a consultation recording
+await viewModel.startRecording(conversationType: .conversation)
+
+// The floating UI will appear automatically
+// User can control recording through the floating interface
+
+### Dictation Mode
+
+```swift
+// For direct prescription dictation
+await viewModel.startRecording(conversationType: .dictation)
+
+// This mode is optimized for single-speaker medical dictation
+// Less background noise filtering, more focused on medical terminology
+```
+
+### Session Management
+
+```swift
+// Delete current recording
+if let sessionID = viewModel.sessionID {
+    viewModel.deleteRecording(id: sessionID)
+}
+
+// Clear session data
+viewModel.clearSession()
+
+// Retry failed operations
+viewModel.retryIfNeeded()
+```
+
+### Custom UI Integration
+
+```swift
+// Create custom SwiftUI view with EkaScribe
+struct CustomRecordingView: View {
+    @ObservedObject var viewModel: VoiceToRxViewModel
+    
+    var body: some View {
+        VStack {
+            // Recording status
+            Text(recordingStatusText)
+                .font(.headline)
+                .foregroundColor(statusColor)
+            
+            // Control buttons
+            HStack {
+                Button(action: startRecording) {
+                    Image(systemName: "mic.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(.red)
+                }
+                
+                Button(action: pauseRecording) {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(.orange)
+                }
+                
+                Button(action: stopRecording) {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            // Progress indicator
+            if case .processing = viewModel.screenState {
+                ProgressView("Processing audio...")
+                    .padding()
+            }
+        }
+        .padding()
+    }
+    
+    private var recordingStatusText: String {
+        switch viewModel.screenState {
+        case .startRecording: return "Ready to Record"
+        case .listening(let type): return "Recording \(type.rawValue.capitalized)"
+        case .paused: return "Paused"
+        case .processing: return "Processing..."
+        case .resultDisplay(let success): return success ? "Complete" : "Error"
+        case .deletedRecording: return "Deleted"
+        case .retry: return "Ready to Retry"
+        }
+    }
+    
+    private var statusColor: Color {
+        switch viewModel.screenState {
+        case .listening: return .red
+        case .paused: return .orange
+        case .processing: return .blue
+        case .resultDisplay(let success): return success ? .green : .red
+        default: return .primary
+        }
+    }
+}
+```
+
+## Best Practices
+
+### Memory Management
+
+```swift
+class ConsultationViewController: UIViewController {
+    private var viewModel: VoiceToRxViewModel?
+    private var cancellables = Set<AnyCancellable>()
+    
+    deinit {
+        // Clean up resources
+        viewModel?.clearSession()
+        cancellables.removeAll()
+        
+        // Hide floating interface
+        Task {
+            await FloatingVoiceToRxViewController.shared.hideFloatingButton()
+        }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        // Pause recording when leaving screen
+        if case .listening = viewModel?.screenState {
+            viewModel?.pauseRecording()
+        }
+    }
+}
+```
+
+### Network Optimization
+
+```swift
+private func setupNetworkMonitoring() {
+    // Monitor network connectivity for reliable uploads
+    let monitor = NWPathMonitor()
+    monitor.pathUpdateHandler = { [weak self] path in
+        DispatchQueue.main.async {
+            if path.status == .satisfied {
+                // Network available - retry failed uploads
+                self?.viewModel?.retryIfNeeded()
+            } else {
+                // Network unavailable - inform user
+                self?.showNetworkUnavailableWarning()
+            }
+        }
+    }
+    
+    let queue = DispatchQueue(label: "NetworkMonitor")
+    monitor.start(queue: queue)
+}
+```
+
+### Performance Optimization
+
+```swift
+// Optimize for long recording sessions
+private func optimizeForLongSessions() {
+    // Configure audio session for extended use
+    let audioSession = AVAudioSession.sharedInstance()
+    try? audioSession.setCategory(
+        .playAndRecord,
+        mode: .voiceChat,
+        options: [.defaultToSpeaker, .allowBluetooth]
+    )
+    
+    // Enable low-power mode optimizations
+    ProcessInfo.processInfo.performActivity(
+        options: .automaticTerminationDisabled,
+        reason: "Recording medical consultation"
+    ) { /* recording activity */ }
+}
+```
+
+## API Reference
+
+### VoiceToRxViewModel
+
+#### Properties
+
+```swift
+// Published properties for UI binding
+@Published public var screenState: RecordConsultationState
+@Published public var filesProcessed: Set<String>
+@Published public var uploadedFiles: Set<String>
+
+// Session information
+public var sessionID: UUID?
+public var contextParams: VoiceToRxContextParams?
+```
+
+#### Methods
+
+```swift
+// Core recording methods
+public func startRecording(conversationType: VoiceConversationType) async
+public func stopRecording() async
+public func pauseRecording()
+public func resumeRecording() throws
+
+// Session management
+public func deleteRecording(id: UUID)
+public func clearSession()
+public func retryIfNeeded()
+
+// Initialization
+public init(
+    voiceToRxInitConfig: V2RxInitConfigurations,
+    voiceToRxDelegate: FloatingVoiceToRxDelegate
+)
+```
+
+### FloatingVoiceToRxViewController
+
+#### Methods
+
+```swift
+// Show/hide floating interface
+public func showFloatingButton(
+    viewModel: VoiceToRxViewModel,
+    conversationType: VoiceConversationType,
+    liveActivityDelegate: LiveActivityDelegate?
+) async
+
+public func hideFloatingButton()
+```
+
+### Delegate Protocols
+
+#### FloatingVoiceToRxDelegate
+
+```swift
+protocol FloatingVoiceToRxDelegate {
+    func onCreateVoiceToRxSession(id: UUID?, params: VoiceToRxContextParams?)
+    func moveToDeepthoughtPage(id: UUID)
+    func errorReceivingPrescription(id: UUID, errorCode: VoiceToRxErrorCode, transcriptText: String)
+    func updateAppointmentsData(appointmentID: String, voiceToRxID: String)
+}
+```
+
+#### LiveActivityDelegate
+
+```swift
+protocol LiveActivityDelegate {
+    func startLiveActivity(patientName: String) async
+    func endLiveActivity() async
+}
+```
+
+### Configuration Classes
+
+#### V2RxInitConfigurations
+
+```swift
+public class V2RxInitConfigurations {
+    public static let shared: V2RxInitConfigurations
+    
+    // Core identifiers
+    public var ownerName: String?      // Doctor name
+    public var ownerOID: String?       // Doctor OID
+    public var ownerUUID: String?      // Doctor UUID
+    public var subOwnerOID: String?    // Patient OID
+    public var subOwnerName: String?   // Patient name
+    public var appointmentID: String?  // Appointment ID
+    
+    // Data context
+    public var modelContainer: ModelContainer?
+}
+```
+
+#### AuthTokenHolder
+
+```swift
+public class AuthTokenHolder {
+    public static let shared: AuthTokenHolder
+    
+    public var authToken: String?
+    public var refreshToken: String?
+    public var bid: String?
+}
+```
+
+#### 3. Session Creation Failures
+
+**Symptoms**: `onCreateVoiceToRxSession` not called or called with nil values
+
+**Solutions**:
+```swift
+// Verify all required configurations are set
+let config = V2RxInitConfigurations.shared
+assert(config.ownerOID != nil, "Doctor OID is required")
+assert(config.subOwnerOID != nil, "Patient OID is required")
+assert(config.appointmentID != nil, "Appointment ID is required")
+
+// Check authentication
+assert(AuthTokenHolder.shared.authToken != nil, "Auth token is required")
+```
+
+### Debug Mode
+
+Enable detailed logging for troubleshooting:
+
+```swift
+#if DEBUG
+// EkaScribe provides debug prints automatically
+// Check Xcode console for detailed logs including:
+// - Audio engine status
+// - Upload progress
+// - Session lifecycle
+// - Error details
+#endif
+```
+
+### Support Resources
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/eka-care/EkaVoiceToRx/issues)
+- **Documentation**: Check this guide and inline code documentation
+- **Sample Project**: Request access to the sample integration project
+- **Technical Support**: Contact the EkaScribe team for integration assistance
+
+---
+
+## License
+
+EkaScribe is available under the MIT license. See the LICENSE file for more info.
+
+## Contributing
+
+We welcome contributions! Please see our contributing guidelines for details on how to submit pull requests, report issues, and suggest improvements.
+
+---
+
+*Made with ❤️ by the Eka.Care team*
+
