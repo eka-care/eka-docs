@@ -29,9 +29,9 @@ The SDK requires **iOS 17.0+** and provides a simple, straightforward API for vo
 
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Configuration](#configuration)
 - [Integration Guide](#integration-guide)
 - [Core Components](#core-components)
+- [Configuration](#configuration)
 - [Recording Management](#recording-management)
 - [Template Management](#template-management)
 - [Session History](#session-history)
@@ -92,11 +92,13 @@ After adding the package, import it in your Swift files:
 import EkaVoiceToRx
 ```
 
-## Configuration
+## Integration Guide
 
-### App-Level Setup
+Follow these steps to integrate the SDK into your app:
 
-Configure the SDK when your app launches. This should be done once at app startup:
+### Step 1: Configure Authentication and Doctor Information
+
+Set up authentication tokens and doctor information when your app launches. This should be done once at app startup:
 
 ```swift
 import SwiftUI
@@ -116,9 +118,9 @@ struct YourApp: App {
     
     private func configureEkaScribe() {
         // 1. Set authentication tokens (required)
-        AuthTokenHolder.shared.authToken = KeychainHelper.fetchAuthToken()
-        AuthTokenHolder.shared.refreshToken = KeychainHelper.fetchRefreshToken()
-        AuthTokenHolder.shared.bid = JWTDecoder.shared.businessId
+        AuthTokenHolder.shared.authToken = "your_auth_token"
+        AuthTokenHolder.shared.refreshToken = "your_refresh_token"
+        AuthTokenHolder.shared.bid = "your_business_id"
         
         // 2. Configure doctor/user information (required)
         let config = V2RxInitConfigurations.shared
@@ -126,73 +128,13 @@ struct YourApp: App {
         config.ownerName = "Dr. Smith"
         config.ownerOID = "doctor_oid_123"
         config.ownerUUID = "doctor_uuid_456"
-        
-        // 3. Set up data container (optional - only if using SwiftData)
-        // config.modelContainer = SwiftDataRepoContext.modelContext.container
     }
 }
 ```
 
 **Important**: Make sure to set authentication tokens and doctor information before making any SDK calls.
 
-### Session-Specific Configuration
-
-Before starting a recording session, configure patient-specific information. This should be done each time you start a new recording:
-
-```swift
-// Set patient information for the current session (required before recording)
-V2RxInitConfigurations.shared.subOwnerOID = selectedPatientOid
-V2RxInitConfigurations.shared.subOwnerName = patientName
-
-// Optional: Set appointment ID for context
-V2RxInitConfigurations.shared.appointmentID = appointmentID
-```
-
-**Note**: Patient information can be set to empty strings if not applicable:
-```swift
-V2RxInitConfigurations.shared.subOwnerOID = ""
-V2RxInitConfigurations.shared.subOwnerName = ""
-```
-
-### Configuration Properties
-
-```swift
-public class V2RxInitConfigurations {
-    public static let shared: V2RxInitConfigurations
-    
-    // Doctor/User Information
-    public var ownerName: String?          // Doctor name
-    public var ownerOID: String?            // Doctor OID
-    public var ownerUUID: String?            // Doctor UUID
-    public var clientId: String?             // Client identifier
-    
-    // Patient Information (set per session)
-    public var subOwnerOID: String?         // Patient OID
-    public var subOwnerName: String?        // Patient name
-    
-    // Optional Context
-    public var appointmentID: String?       // Appointment identifier
-    
-    // Data Storage
-    public var modelContainer: ModelContainer?  // SwiftData container (optional)
-}
-```
-
-### Authentication
-
-Set authentication tokens before making any SDK calls:
-
-```swift
-AuthTokenHolder.shared.authToken = "your_auth_token"
-AuthTokenHolder.shared.refreshToken = "your_refresh_token"
-AuthTokenHolder.shared.bid = "your_business_id"
-```
-
-## Integration Guide
-
-Follow these steps to integrate the SDK into your app:
-
-### Step 1: Initialize the View Model
+### Step 2: Initialize the View Model
 
 Create a `VoiceToRxViewModel` instance in your SwiftUI view or UIKit view controller:
 
@@ -212,7 +154,7 @@ private let viewModel = VoiceToRxViewModel(
 )
 ```
 
-### Step 2: Check Microphone Permission
+### Step 3: Check Microphone Permission
 
 Before starting recording, always check microphone availability:
 
@@ -232,7 +174,7 @@ case .microphoneIsInUse:
 }
 ```
 
-### Step 3: Start Recording
+### Step 4: Start Recording
 
 Start a recording session with your desired configuration:
 
@@ -342,6 +284,102 @@ public enum InputLanguageType {
     case odia
     case assamese
 }
+```
+
+## Configuration
+
+### App-Level Setup
+
+Configure the SDK when your app launches. This should be done once at app startup:
+
+```swift
+import SwiftUI
+import EkaVoiceToRx
+
+@main
+struct YourApp: App {
+    init() {
+        configureEkaScribe()
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+    
+    private func configureEkaScribe() {
+        // 1. Set authentication tokens (required)
+        AuthTokenHolder.shared.authToken = KeychainHelper.fetchAuthToken()
+        AuthTokenHolder.shared.refreshToken = KeychainHelper.fetchRefreshToken()
+        AuthTokenHolder.shared.bid = JWTDecoder.shared.businessId
+        
+        // 2. Configure doctor/user information (required)
+        let config = V2RxInitConfigurations.shared
+        config.clientId = "your_client_id"
+        config.ownerName = "Dr. Smith"
+        config.ownerOID = "doctor_oid_123"
+        config.ownerUUID = "doctor_uuid_456"
+        
+        // 3. Set up data container (optional - only if using SwiftData)
+        // config.modelContainer = SwiftDataRepoContext.modelContext.container
+    }
+}
+```
+
+**Important**: Make sure to set authentication tokens and doctor information before making any SDK calls.
+
+### Session-Specific Configuration
+
+Before starting a recording session, configure patient-specific information. This should be done each time you start a new recording:
+
+```swift
+// Set patient information for the current session (required before recording)
+V2RxInitConfigurations.shared.subOwnerOID = selectedPatientOid
+V2RxInitConfigurations.shared.subOwnerName = patientName
+
+// Optional: Set appointment ID for context
+V2RxInitConfigurations.shared.appointmentID = appointmentID
+```
+
+**Note**: Patient information can be set to empty strings if not applicable:
+```swift
+V2RxInitConfigurations.shared.subOwnerOID = ""
+V2RxInitConfigurations.shared.subOwnerName = ""
+```
+
+### Configuration Properties
+
+```swift
+public class V2RxInitConfigurations {
+    public static let shared: V2RxInitConfigurations
+    
+    // Doctor/User Information
+    public var ownerName: String?          // Doctor name
+    public var ownerOID: String?            // Doctor OID
+    public var ownerUUID: String?            // Doctor UUID
+    public var clientId: String?             // Client identifier
+    
+    // Patient Information (set per session)
+    public var subOwnerOID: String?         // Patient OID
+    public var subOwnerName: String?        // Patient name
+    
+    // Optional Context
+    public var appointmentID: String?       // Appointment identifier
+    
+    // Data Storage
+    public var modelContainer: ModelContainer?  // SwiftData container (optional)
+}
+```
+
+### Authentication
+
+Set authentication tokens before making any SDK calls:
+
+```swift
+AuthTokenHolder.shared.authToken = "your_auth_token"
+AuthTokenHolder.shared.refreshToken = "your_refresh_token"
+AuthTokenHolder.shared.bid = "your_business_id"
 ```
 
 ## Recording Management
