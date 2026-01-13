@@ -154,33 +154,23 @@ private let viewModel = VoiceToRxViewModel(
 )
 ```
 
-### Step 3: Check Microphone Permission
-
-Before starting recording, always check microphone availability:
-
-```swift
-let micStatus = MicrophoneManager.checkMicrophoneStatus()
-
-switch micStatus {
-case .available:
-    // Proceed with recording
-    await startRecording()
-case .microphonePermissionDenied:
-    // Show permission alert
-    showPermissionAlert = true
-case .microphoneIsInUse:
-    // Show microphone in use alert
-    showMicrophoneInUseAlert = true
-}
-```
-
-### Step 4: Start Recording
+### Step 3: Start Recording
 
 Start a recording session with your desired configuration:
 
+**Note**: To set templates, first fetch available templates using the `getTemplates` API (see [Template Management](#template-management) section), then create the `OutputFormatTemplate` array using the template data from the API response.
+
 ```swift
+// Your implementation
 private func startRecording() async {
     // 1. Configure templates
+    // Use getTemplates API to fetch available templates first
+    // VoiceToRxRepo.shared.getTemplates { result in
+    //     case .success(let response):
+    //         let templates = response.items
+    //         // Use template data to create OutputFormatTemplate
+    // }
+    // Then create OutputFormatTemplate array using the fetched template data
     let outputFormat = [
         OutputFormatTemplate(
             templateID: "template-id-here",
@@ -194,6 +184,7 @@ private func startRecording() async {
     V2RxInitConfigurations.shared.subOwnerName = patientName
     
     // 3. Start recording
+    // Calling SDK function
     let error = await viewModel.startRecording(
         conversationType: .conversation,
         inputLanguage: [.english, .hindi],
@@ -387,14 +378,8 @@ AuthTokenHolder.shared.bid = "your_business_id"
 ### Starting Recording
 
 ```swift
+// Your implementation
 private func startRecording() async {
-    // Check microphone status
-    let micStatus = MicrophoneManager.checkMicrophoneStatus()
-    guard micStatus == .available else {
-        // Handle permission error
-        return
-    }
-    
     // Configure templates
     let templates = [
         OutputFormatTemplate(
@@ -409,11 +394,12 @@ private func startRecording() async {
     V2RxInitConfigurations.shared.subOwnerName = patientName
     
     // Start recording
+    // Calling SDK function
     let error = await viewModel.startRecording(
-        conversationType: .conversation,
-        inputLanguage: [.english, .hindi],
-        templates: templates,
-        modelType: .lite
+        conversationType: VoiceConversationType,
+        inputLanguage: [InputLanguageType],
+        templates: [OutputFormatTemplate],
+        modelType: ModelType
     )
     
     if let error = error {
@@ -453,20 +439,23 @@ Monitor the `screenState` for result availability. Results are automatically pro
 
 ```swift
 case .resultDisplay(success: let success, value: let value):
-            if success {
-        // Get the result text
-        let resultText = value ?? ""
-        // Get the session ID for future reference
-        let sessionID = viewModel.sessionID?.uuidString ?? ""
-        // Display results to user
-        showResults(resultText, sessionID: sessionID)
-            } else {
+    if success {
+        // Get the result text (base64 encoded)
+        if let base64Value = value,
+           let data = Data(base64Encoded: base64Value),
+           let decodedString = String(data: data, encoding: .utf8) {
+            // Get the session ID for future reference
+            let sessionID = viewModel.sessionID?.uuidString ?? ""
+            // Display decoded results to user
+            showResults(decodedString, sessionID: sessionID)
+        }
+    } else {
         // Handle error
         showError("Failed to process recording")
     }
 ```
 
-**Note**: The `value` parameter contains the formatted output based on your selected template. For more detailed results including multiple template outputs, use `VoiceToRxRepo.shared.fetchResultStatusResponse()`.
+**Note**: The `value` parameter contains the formatted output based on your selected template, encoded as **base64**. You'll need to decode it before displaying to users. For more detailed results including multiple template outputs, use `VoiceToRxRepo.shared.fetchResultStatusResponse()`.
 
 ## Template Management
 
@@ -569,7 +558,14 @@ VoiceToRxRepo.shared.fetchResultStatus(sessionID: sessionId) { result in
     switch result {
     case .success(let (status, value)):
         // status: current processing status
-        // value: result text if available
+        // value: result text if available (base64 encoded)
+        if let base64Value = value {
+            // Decode base64 string to get the actual result
+            if let data = Data(base64Encoded: base64Value),
+               let decodedString = String(data: data, encoding: .utf8) {
+                // Use decodedString
+            }
+        }
         break
     case .failure(let error):
         print("Failed to fetch status: \(error.localizedDescription)")
@@ -577,6 +573,8 @@ VoiceToRxRepo.shared.fetchResultStatus(sessionID: sessionId) { result in
     }
 }
 ```
+
+**Note**: The `value` parameter is **base64 encoded**. You need to decode it to get the actual result text.
 
 ### Fetching Full Result Response
 
@@ -586,9 +584,9 @@ Get the complete result response with all template outputs:
 VoiceToRxRepo.shared.fetchResultStatusResponse(sessionID: sessionID) { result in
     switch result {
     case .success(let response):
-        // response.data.templateResults.custom - custom template results
-        // response.data.templateResults.transcript - transcript results
-        // response.data.output - general output
+        // response.data.templateResults.custom - custom template results (base64 encoded)
+        // response.data.templateResults.transcript - transcript results (base64 encoded)
+        // response.data.output - general output (base64 encoded)
         // response.data.audioMatrix - audio quality metrics
         break
     case .failure(let error):
@@ -597,6 +595,8 @@ VoiceToRxRepo.shared.fetchResultStatusResponse(sessionID: sessionID) { result in
     }
 }
 ```
+
+**Note**: The result values in `templateResults` and `output` are **base64 encoded**. Decode them before displaying to users.
 
 ### Switching Templates
 
@@ -660,6 +660,7 @@ public enum EkaScribeError: Error {
 Here's a complete example of handling errors when starting a recording:
 
 ```swift
+// Calling SDK function
 let error = await viewModel.startRecording(
     conversationType: .conversation,
     inputLanguage: [.english, .hindi],
@@ -907,6 +908,7 @@ Always observe `screenState` changes to keep your UI in sync:
 Always handle errors from async operations:
 
 ```swift
+// Calling SDK function
 let error = await viewModel.startRecording(...)
 
 if let error = error {
