@@ -58,17 +58,83 @@ Initializes and runs a Self Assessment application.
 - `container_id` (string, required): The HTML element ID where the assessment will be rendered
 - `auth_token` (string, required): JWT authentication token for API access
 - `refresh_token` (string, required): Token used to refresh the auth token when it expires
-- `params` (object, optional): Additional parameters for the assessment (e.g., age, gender)
-- `practice_info` (object, optional): Information about the practice and patient
+- `params` (object, required): Patient parameters for the assessment
+  - `age` (number, required): Patient's age
+  - `gender` (string, required): Patient's gender (e.g., "M", "F", "O")
+- `practice_info` (object, required): Practice and patient identification. See [Practice Info Configuration](#practice-info-configuration) below
 - `transaction_id` (string, optional): Unique transaction identifier
 - `onEndCallback` (function, optional): Callback function called when assessment ends
 - `onSaRedirectCallback` (function, optional): Callback function called when assessment redirects
 - `onSaSubmitCallback` (function, optional): Callback function called when assessment is submitted
 - `onSaInitCallback` (function, optional): Callback function called when assessment is initialized
 
-**Example:**
+#### Practice Info Configuration
+
+The `practice_info` object is required and has two different use cases:
+
+<AccordionGroup>
+  <Accordion title="Patient-Initiated Assessment">
+    When a patient is taking the assessment for themselves:
+    
+    **Required fields (at least one must be provided):**
+    - `patient_uuid` (string): Unique identifier for the patient
+    - `unique_identifier` (string): Alternative unique identifier for the patient
+    
+    ```javascript
+    practice_info: {
+      patient_uuid: "9531778f-030c-11223344-38488c",
+      unique_identifier: "17345678765"
+    }
+    ```
+    
+    <Note>You can provide either `patient_uuid`, `unique_identifier`, or both.</Note>
+  </Accordion>
+
+  <Accordion title="Doctor-Initiated Assessment">
+    When a doctor is conducting the assessment for a patient:
+    
+    **Required fields:**
+    - At least one patient identifier:
+      - `patient_uuid` (string): Unique identifier for the patient
+      - `unique_identifier` (string): Alternative unique identifier for the patient
+    - `practitioner_uuid` (string): Unique identifier for the doctor/practitioner
+    
+    ```javascript
+    practice_info: {
+      practitioner_uuid: "161461111111111",
+      patient_uuid: "9531778f-030c-11223344-38488c",
+      unique_identifier: "17345678765"
+    }
+    ```
+    
+    <Note>When `practitioner_uuid` is included, the assessment is associated with the doctor's practice.</Note>
+  </Accordion>
+</AccordionGroup>
+
+**Examples:**
 
 ```javascript
+// Patient-initiated assessment
+window.runSaApp({
+  workflow_id: 4014,
+  container_id: "sa-container",
+  auth_token: "your-jwt-token",
+  refresh_token: "your-refresh-token",
+  params: {
+    age: 25,
+    gender: "M",
+  },
+  practice_info: {
+    patient_uuid: "9531778f-030c-11223344-38488c",
+    unique_identifier: "17345678765",
+  },
+  transaction_id: "appt_1234",
+  onSaInitCallback: (params) => {
+    console.log("Assessment initialized:", params);
+  },
+});
+
+// Doctor-initiated assessment
 window.runSaApp({
   workflow_id: 4014,
   container_id: "sa-container",
@@ -408,15 +474,15 @@ interface TRunSaApp {
   container_id: string;
   auth_token: string;
   refresh_token: string;
-  params?: {
-    age?: number;
-    gender?: string;
+  params: {
+    age: number;
+    gender: string;
     [key: string]: any;
   };
-  practice_info?: {
-    practitioner_uuid: string;
-    patient_uuid: string;
-    unique_identifier: string;
+  practice_info: {
+    patient_uuid?: string;
+    unique_identifier?: string;
+    practitioner_uuid?: string;
   };
   transaction_id?: string;
   onEndCallback?: (params: {
@@ -559,5 +625,32 @@ All functions return consistent error objects with:
 // Check available workflows
 window.getWorkflowList().then((response) => {
   console.log("Available workflows:", response.workflows);
+});
+```
+
+#### 4. Missing Required Parameters
+
+**Problem**: Assessment fails to initialize due to missing parameters.
+
+**Solution**:
+
+- Ensure `params` object includes both `age` and `gender`
+- Verify `practice_info` contains at least one patient identifier (`patient_uuid` or `unique_identifier`)
+- For doctor-initiated assessments, include `practitioner_uuid`
+
+```javascript
+// Correct: All required fields present
+window.runSaApp({
+  workflow_id: 4014,
+  container_id: "sa-container",
+  auth_token: "your-jwt-token",
+  refresh_token: "your-refresh-token",
+  params: {
+    age: 25,
+    gender: "M"
+  },
+  practice_info: {
+    patient_uuid: "9531778f-030c-11223344-38488c"
+  }
 });
 ```
