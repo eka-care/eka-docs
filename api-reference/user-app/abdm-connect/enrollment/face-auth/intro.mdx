@@ -1,0 +1,62 @@
+---
+title: Overview
+description: Authenticate users via Aadhaar-based facial recognition
+---
+
+Face Authentication provides a secure and convenient way for users to verify their identity using Aadhaar-based facial recognition. This method allows users to authenticate themselves by scanning a QR code and completing face verification on their mobile device.
+
+## How It Works
+
+The Face Authentication flow consists of three sequential API calls:
+
+<Steps>
+  <Step title="Initialize Face Auth">
+    Call the [Init API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-init) with the user's Aadhaar number to start a face authentication session. This generates a unique transaction ID and a QR code that the user scans with their mobile device.
+  </Step>
+  <Step title="Poll for Status">
+    Use the [Capture API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-capture) to poll the authentication status. Continue polling until the status changes from `Pending` to `Verified`. This indicates the user has successfully completed face verification on their device.
+  </Step>
+  <Step title="Retrieve User Information">
+    Once verified, call the [Verify API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-verify) to fetch the authenticated user's demographic information from Aadhaar. This includes details like name, date of birth, gender, and address.
+  </Step>
+</Steps>
+
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant User
+    participant UIDAI
+
+    Client->>API: POST /face-auth/init (Aadhaar number)
+    API-->>Client: Transaction ID + QR Code
+    Client->>User: Display QR Code
+    User->>UIDAI: Scan QR & Complete Face Auth
+
+    loop Poll until verified
+        Client->>API: POST /face-auth/capture (Transaction ID)
+        API-->>Client: Status (Pending/Verified)
+    end
+
+    Client->>API: POST /face-auth/verify (Transaction ID)
+    API-->>Client: User Information
+    Client->>Client: Proceed to ABHA Creation
+```
+
+## Next Steps
+
+After successfully retrieving user information through face authentication, users can proceed to create their ABHA address using the verified demographic details.
+
+<CardGroup cols={3}>
+  <Card title="Init API" icon="play" href="/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-init">
+    Start a face authentication session
+  </Card>
+  <Card title="Capture API" icon="rotate" href="/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-capture">
+    Poll authentication status
+  </Card>
+  <Card title="Verify API" icon="check" href="/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-verify">
+    Retrieve verified user information
+  </Card>
+</CardGroup>
