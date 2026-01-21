@@ -9,6 +9,139 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/na/v1/face-auth/capture:
+    post:
+      description: Capture PID endpoint is used to capture face-auth pid.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceAuthCapturePIDRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceAuthCapturePIDResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Capture Face
+  /abdm/na/v1/face-auth/init:
+    post:
+      description: Face Auth endpoint is used to init face-auth endpoint.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceAuthInitFaceAuthResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Face Auth Init
+  /abdm/na/v1/face-auth/verify:
+    post:
+      description: Verify PID endpoint is used to verify face-auth pid.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceAuthVerifyFaceAuthRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Verify Face
   /abdm/na/v1/profile/login/init:
     post:
       description: Generates an OTP for login. Supports login via Aadhaar number,
@@ -5364,6 +5497,38 @@ components:
         exist:
           description: Indicates if the user has already set the consent PIN.
           type: boolean
+      type: object
+    FaceAuthCapturePIDRequest:
+      properties:
+        txn_id:
+          type: string
+      type: object
+    FaceAuthCapturePIDResponse:
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+        txn_id:
+          type: string
+      type: object
+    FaceAuthInitFaceAuthResponse:
+      properties:
+        hint:
+          type:
+          - "null"
+          - string
+        txn_id:
+          type: string
+        url:
+          type: string
+      type: object
+    FaceAuthVerifyFaceAuthRequest:
+      properties:
+        aadhaar:
+          type: string
+        txn_id:
+          type: string
       type: object
     FormDataSettingsRequest:
       properties:
