@@ -11,13 +11,13 @@ The Face Authentication flow consists of three sequential API calls:
 
 <Steps>
   <Step title="Initialize Face Auth">
-    Call the [Init API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-init) with the user's Aadhaar number to start a face authentication session. This generates a unique transaction ID and a QR code that the user scans with their mobile device.
+    Call the [Init API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-init) to start a face authentication session. This generates a unique transaction ID and a QR code that the user scans with their mobile device.
   </Step>
   <Step title="Poll for Status">
     Use the [Capture API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-capture) to poll the authentication status. Continue polling until the status changes from `Pending` to `Verified`. This indicates the user has successfully completed face verification on their device.
   </Step>
   <Step title="Retrieve User Information">
-    Once verified, call the [Verify API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-verify) to fetch the authenticated user's demographic information from Aadhaar. This includes details like name, date of birth, gender, and address.
+    Once verified, call the [Verify API](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-verify) with the user's Aadhaar number to fetch the authenticated user's demographic information. This includes details like name, date of birth, gender, and address.
   </Step>
 </Steps>
 
@@ -30,7 +30,7 @@ sequenceDiagram
     participant User
     participant UIDAI
 
-    Client->>API: POST /face-auth/init (Aadhaar number)
+    Client->>API: POST /face-auth/init
     API-->>Client: Transaction ID + QR Code
     Client->>User: Display QR Code
     User->>UIDAI: Scan QR & Complete Face Auth
@@ -40,14 +40,10 @@ sequenceDiagram
         API-->>Client: Status (Pending/Verified)
     end
 
-    Client->>API: POST /face-auth/verify (Transaction ID)
+    Client->>API: POST /face-auth/verify (Transaction ID + Aadhaar)
     API-->>Client: User Information
     Client->>Client: Proceed to ABHA Creation
 ```
-
-## Next Steps
-
-After successfully retrieving user information through face authentication, users can proceed to create their ABHA address using the verified demographic details.
 
 <CardGroup cols={3}>
   <Card title="Init API" icon="play" href="/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-init">
@@ -60,3 +56,7 @@ After successfully retrieving user information through face authentication, user
     Retrieve verified user information
   </Card>
 </CardGroup>
+
+## Next Steps
+
+After successfully retrieving user information through face authentication, users can proceed to create their ABHA address using the verified demographic details.
