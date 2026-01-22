@@ -11,24 +11,12 @@ A comprehensive Python SDK for interacting with the Eka Care Medical Records API
 
 ## Installation
 
-Install the SDK via pip:
-
-```bash
-pip install ekacare-sdk
-```
-
-Or install from source:
+Install from source:
 
 ```bash
 git clone https://github.com/eka-care/reports-parsing-sdk.git
 cd reports-parsing-sdk/python
 pip install -e .
-```
-
-For development setup:
-
-```bash
-pip install -e ".[dev]"
 ```
 
 ---
@@ -91,31 +79,6 @@ sdk = EkaCareSDK(config.client_id, config.client_secret)
 
 ---
 
-## CLI Usage
-
-After installation, the `ekacare-cli` command is available for quick document processing:
-
-```bash
-# Basic usage
-ekacare-cli --client-id YOUR_ID --client-secret YOUR_SECRET --file document.jpg
-
-# Process with PII detection
-ekacare-cli --file document.pdf --task pii
-
-# Output results as JSON
-ekacare-cli --file document.jpg --json
-
-# Configure polling interval and timeout
-ekacare-cli --file document.jpg --poll-interval 5 --timeout 120
-```
-
-View all available options:
-
-```bash
-ekacare-cli --help
-```
-
----
 
 ## Features
 
@@ -125,10 +88,6 @@ The SDK provides the following capabilities:
 - **Document Processing**: Upload and process medical documents
 - **Polling Support**: Built-in polling for asynchronous results
 - **Environment Configuration**: Easy setup via environment variables
-- **CLI Tool**: Command-line interface for quick processing
-- **Type Hints**: Complete type annotations for better IDE support
-- **Context Manager**: Support for proper resource management
-- **Custom Exceptions**: Structured error handling
 
 ---
 
@@ -165,18 +124,3 @@ result = sdk.process_document("/path/to/report.pdf", task="both")
 |--------|-------------|
 | `process_document(file_path, doc_type="lr", task="smart")` | Upload and process a document |
 | `get_document_result(document_id)` | Retrieve processing results for a document |
-| `close()` | Clean up HTTP sessions |
-
-### Context Manager Support
-
-The SDK supports context managers for proper resource management:
-
-```python
-from ekacare_sdk import EkaCareSDK
-
-with EkaCareSDK(client_id="your_id", client_secret="your_secret") as sdk:
-    result = sdk.process_document("/path/to/report.pdf")
-    response = sdk.get_document_result(result['document_id'])
-    print(response['data'])
-# Resources are automatically cleaned up
-```
