@@ -4,18 +4,32 @@ title: Overview
 
 ## User Session
 
-
 Upon registration or creation of an ABHA, a user session is maintained with the ABHA Gateway.
 This session expires after a certain period. When the session expires, APIs requiring ABHA Gateway authentication will return a `491` HTTP response code.
-
 
 A ABHA Gateway Session creation requires a Mobile OTP (One-Time Password) Authentication.
 
 <Steps>
-    <Step title="Generate Mobile OTP">
-        Use the [Initiate Session: Generate Mobile OTP](/api-reference/user-app/abdm-connect/session/init) endpoint to start a new session by generating a mobile OTP. This session is linked to the provided ABHA address, and a `txn_id` (Transaction ID) will be returned for tracking and verification.
-    </Step>
-    <Step title="Verify Mobile OTP">
-        Use the [Verify Mobile OTP: Get User Session Token](/api-reference/user-app/abdm-connect/session/verify) endpoint to verify the OTP generated in the previous step. Provide the OTP and `txn_id` associated with the session to receive an access token for further authentication.
-    </Step>
+  <Step title="Generate Mobile OTP">
+    Use the [Initiate Session: Generate Mobile OTP](/api-reference/user-app/abdm-connect/session/init) endpoint to start a new session by generating a mobile OTP.
+    This session is linked to the provided ABHA address, and a `txn_id` (Transaction ID) will be returned for tracking and verification.
+  </Step>
+
+  <Step title="Verify Mobile OTP">
+    Use the [Verify Mobile OTP: Get User Session Token](/api-reference/user-app/abdm-connect/session/verify) endpoint to verify the OTP generated in the previous step.
+    Provide the OTP and `txn_id` associated with the session to receive an access token for further authentication.
+  </Step>
 </Steps>
+
+---
+
+## Check User Session Status
+
+Before initiating OTP authentication, clients **should first check whether a valid ABHA Gateway session already exists**.
+
+Use the **Session Status API** to get the current authentication status of the user.
+
+- If a valid session exists, continue using the existing session token
+- If no valid session exists or the session has expired, users should call:
+  - **Generate Mobile OTP**
+  - **Verify Mobile OTP**

@@ -4418,12 +4418,12 @@ paths:
         name: X-Hip-Id
         schema:
           type: string
-      - description: Consent/Subscription/Authorization ID
+      - description: Consent/Subscription ID
         in: query
         name: id
         required: true
         schema:
-          description: Consent/Subscription/Authorization ID
+          description: Consent/Subscription ID
           type: string
       - description: Request type
         in: query
@@ -4433,7 +4433,6 @@ paths:
           enum:
           - consent
           - subscription
-          - authorization
           type: string
       - description: Status of the request
         in: query
@@ -4476,7 +4475,7 @@ paths:
       - authApiKey: []
   /abdm/v1/requests:
     get:
-      description: API to list all the Subscriptions / Authorization and Consent requests
+      description: API to list all the Subscriptions and Consent requests
       parameters:
       - description: Eka User ID (OID)
         in: header
@@ -4597,6 +4596,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InitResponseType5'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/session/status:
+    get:
+      description: Session status
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoggedInStatusResponse'
           description: OK
       security:
       - authApiKey: []
@@ -4848,6 +4887,13 @@ components:
           type: string
         statelgd:
           type: string
+      type: object
+    AuthLoggedInStatusResponse:
+      properties:
+        kyc_verified:
+          type: boolean
+        logged_in:
+          type: boolean
       type: object
     ChangeRequest:
       properties:
