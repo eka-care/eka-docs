@@ -1038,6 +1038,88 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
+  /cdr/v1/get_business_info:
+    get:
+      tags:
+        - Doctor and clinic API
+      summary: Get Workspace Information
+      description: >-
+        
+        ### Overview
+        
+        The Get Workspace Information API retrieves basic information about a business including the business ID and business name. This API is designed to provide essential business details for authenticated requests.
+        
+        ### Endpoint
+        
+        **URL:** `{{HOST}}/cdr/v1/get_business_info`
+        
+        
+        **Method:** GET
+        
+        ### Request Parameters
+        
+        This endpoint does not require any parameters. The auth header contains business-id information which will be used to fetch the details.
+        
+        ### Response Parameters
+        
+        | Parameter | Type | Description |
+        
+        | --- | --- | --- |
+        
+        | status | string | Status of the response (success) |
+        
+        | bid | string | Unique identifier of the business |
+        
+        | business_name | string | Name of the business |
+
+      operationId: GetBusinessInformation
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK
+          headers: { }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  bid:
+                    type: string
+                    example: "789235904342534"
+                  business_name:
+                    type: string
+                    example: "Example business"
+              example:
+                status: "success"
+                bid: "789235904342534"
+                business_name: "Example business"
+        '401':
+          description: Unauthorized
+          headers: { }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Unauthorized"
+              example:
+                message: "Unauthorized"
+      deprecated: false
   /dr/v1/business/clinic/{clinic_id}:
     get:
       tags:
