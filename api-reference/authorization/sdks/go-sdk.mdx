@@ -1,0 +1,117 @@
+---
+title: 'Go SDK'
+description: 'A GO SDK for parsing medical documents using Eka Care APIs'
+---
+
+A Go SDK for integrating with Eka Care’s healthcare APIs, including ABDM (Ayushman Bharat Digital Mission) services.
+
+## Overview
+
+Use this SDK to authenticate with Eka Care, call ABDM services, and build backend integrations in Go with minimal boilerplate.
+
+## Prerequisites
+
+- Go 1.24+ (matches the SDK’s go.mod)
+- Eka Care developer account and credentials (client_id and client_secret)
+
+## Installation
+
+```bash
+go get github.com/eka-care/eka-sdk-go
+```
+
+Install a specific version (recommended for reproducible builds):
+
+```bash
+go get github.com/eka-care/eka-sdk-go@latest
+# or pin to a specific release
+go get github.com/eka-care/eka-sdk-go@vX.Y.Z
+```
+
+## Authentication and Setup
+
+The SDK supports configuration via environment variables (recommended) or explicit options in code.
+
+### Recommended: Environment variables
+
+Set the following variables in your environment or a .env file:
+
+```bash
+# Required
+export EKA_ENVIRONMENT=production   # or development
+export EKA_CLIENT_ID=your-client-id
+export EKA_CLIENT_SECRET=your-client-secret
+```
+
+Then initialize the client from environment variables:
+
+```go
+client := ekasdk.NewFromEnv()
+```
+
+### Alternative: Explicit configuration (not recommended for production)
+
+```go
+client := ekasdk.New(
+	ekasdk.WithEnvironment(ekasdk.EnvironmentProduction),
+	ekasdk.WithClientID("your-client-id"),
+	ekasdk.WithClientSecret("your-client-secret"),
+)
+```
+
+## Quickstart
+
+Authenticate and call an ABDM API (login init via PHR address):
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	ekasdk "github.com/eka-care/eka-sdk-go"
+	"github.com/eka-care/eka-sdk-go/internal/interfaces"
+	"github.com/eka-care/eka-sdk-go/services/abdm/abha/login"
+)
+
+func auth() {
+	ctx := context.Background()
+
+	// Create SDK client from environment variables
+	client := ekasdk.NewFromEnv()
+
+	// Authenticate with Eka platform
+	if err := client.Login(ctx); err != nil {
+		log.Fatalf("Authentication failed: %v", err)
+	}
+}
+```
+
+## Configuration reference
+
+- EKA_CLIENT_ID: Client ID from the developer portal (required)
+- EKA_CLIENT_SECRET: Client secret from the developer portal (required)
+- EKA_ENVIRONMENT: production or development (required)
+
+Configuration priority (highest to lowest):
+- Environment variables
+- Explicit options via WithXxx() functions
+- Built-in defaults
+
+## Troubleshooting
+
+Typical auth/config errors when calling `client.Login(ctx)`:
+
+```text
+"client ID is required for authentication. Set EKA_CLIENT_ID environment variable or use WithClientID() option"
+"client secret is required for authentication. Set EKA_CLIENT_SECRET environment variable or use WithClientSecret() option"
+"failed to authenticate with provided credentials: invalid client credentials"
+```
+
+## Examples and resources
+
+- GitHub repository: https://github.com/eka-care/eka-sdk-go
+- Examples: https://github.com/eka-care/eka-sdk-go/tree/main/examples/quickstart
+- Issues & support: https://github.com/eka-care/eka-sdk-go/issues
+

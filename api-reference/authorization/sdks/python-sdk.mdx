@@ -1,0 +1,77 @@
+---
+title: 'Python SDK'
+description: 'A comprehensive Python SDK for interacting with Eka Care APIs, including medical records, ABDM Connect, appointments, assessments, vitals, webhooks, and more.'
+---
+
+You can install it as a python package as below
+
+```bash
+pip install ekacare
+```
+
+## Features
+
+The SDK provides easy access to the following Eka Care APIs:
+
+- Authentication
+- Records Management (upload, list, update, delete)
+- ABDM Connect (profile, consents, care contexts)
+- Appointment Management
+- Doctor & Clinic Management
+- Patient Management
+- Webhooks (register, manage, verify)
+- Vitals (update patient vitals)
+- Medical Document Parsing
+- Assessment APIs
+- Notifications
+- Privacy Management
+
+---
+## Quick Start
+### Authentication
+
+```python
+from ekacare import EkaCareClient
+
+# Initialize with client credentials
+client = EkaCareClient(
+    client_id="your_client_id",
+    client_secret="your_client_secret"
+)
+
+# Or initialize with an existing access token
+client = EkaCareClient(
+    client_id="your_client_id",
+    client_secret="your_client_secret",
+    access_token="your_access_token"
+)
+
+# Manually get an access token
+token_response = client.auth.login()
+access_token = token_response["access_token"]
+```
+---
+
+## Error Handling
+
+The SDK uses custom exceptions to handle errors:
+
+```python
+from ekacare import EkaCareClient, EkaCareAPIError, EkaCareAuthError
+
+client = EkaCareClient(
+    client_id="your_client_id",
+    client_secret="your_client_secret"
+)
+
+try:
+    documents = client.records.list_documents()
+except EkaCareAuthError as e:
+    print(f"Authentication error: {e}")
+except EkaCareAPIError as e:
+    print(f"API error: {e}")
+```
+
+## License
+
+This SDK is distributed under the MIT License.
