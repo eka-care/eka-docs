@@ -1,0 +1,264 @@
+---
+title: "Eka FHIR Structure"
+description: "FHIR resource mappings for Eka Care medical data"
+---
+
+# Eka FHIR Resource Mappings
+
+This document provides the FHIR (Fast Healthcare Interoperability Resources) mappings used by Eka Care for structured medical data. Each section details how Eka properties map to standard FHIR resources.
+
+---
+
+## Symptoms
+
+**FHIR Resource:** `Observation`
+
+Symptoms observed during patient consultations are stored using the FHIR Observation resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| symptoms.name, code | Observation.code | [Manifestation or Symptom](https://www.hl7.org/fhir/valueset-manifestation-or-symptom.html) | SNOMED, Eka codes |
+| symptoms.category | Observation.category | [Observation Category](https://terminology.hl7.org/5.1.0/CodeSystem-observation-category.html) | SNOMED: 418799008, MDB: s-8068301606 |
+| symptoms.status | Observation.status | [Observation Status](https://www.hl7.org/fhir/valueset-observation-status.html) | Voice2RX: `preliminary`, Rx: `final` |
+| symptoms.since | Observation.effective | - | effectiveDateTime \| effectivePeriod |
+| symptom.notes | Observation.note | [Annotation](https://www.hl7.org/fhir/datatypes.html#Annotation) | String text |
+| symptom.is-recorded-for | Observation.subject | - | Patient Reference |
+| symptoms.severity | Observation.value | [CodeableConcept](https://www.hl7.org/fhir/datatypes.html#CodeableConcept) | ValueCodeableConcept |
+| symptoms.laterality | Observation.bodySite | [Body Site](https://www.hl7.org/fhir/valueset-body-site.html#expansion) | CodeableConcept.coding.code |
+
+---
+
+## Conditions / Diagnoses
+
+**FHIR Resource:** `Condition`
+
+Medical conditions and diagnoses are stored using the FHIR Condition resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| condition.name, code | Condition.code | - | SNOMED |
+| condition.current_status | Condition.clinicalStatus | [Condition Clinical](https://build.fhir.org/valueset-condition-clinical.html) | Ruled-out: `inactive`, Confirmed: `active`, Suspected: `unknown` |
+| condition.verification | Condition.verificationStatus | [Verification Status](https://build.fhir.org/valueset-condition-ver-status.html) | Ruled-out: `refuted`, Confirmed: `confirmed`, Suspected: `unconfirmed` |
+| condition.severity | Condition.severity | [Condition Severity](https://build.fhir.org/valueset-condition-severity.html) | SNOMED: 24484000 (severe), 6736007 (moderate), 255604002 (mild) |
+| condition.category | Condition.category | [Condition Category](https://build.fhir.org/valueset-condition-category.html) | FHIR: `encounter-diagnosis` |
+| condition.since | Condition.onset | - | datetime \| period \| age \| string |
+| condition.is-recorded-for | Condition.subject | - | Patient |
+| condition.first-time-on | Condition.recordedDate | - | - |
+| condition.evidence | Condition.evidence | - | Evidence pointing to condition |
+| condition.where | Condition.bodyStructure | - | Has bodysite + other details |
+| condition.stage | Condition.stage | - | e.g., cancer stages |
+| condition.notes | Condition.note | - | Strings |
+| condition.laterality | Condition.bodySite | [Body Site](https://www.hl7.org/fhir/valueset-body-site.html#expansion) | CodeableConcept.coding.code |
+
+---
+
+## Medical History
+
+**FHIR Resource:** `Condition`
+
+Past medical history is also stored using the FHIR Condition resource with different category.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| condition.name, code | Condition.code | - | SNOMED |
+| condition.current_status | Condition.clinicalStatus | [Condition Clinical](https://build.fhir.org/valueset-condition-clinical.html) | Ruled-out: `inactive`, Confirmed: `active`, Suspected: `unknown` |
+| condition.verification | Condition.verificationStatus | [Verification Status](https://build.fhir.org/valueset-condition-ver-status.html) | Ruled-out: `refuted`, Confirmed: `confirmed`, Suspected: `unconfirmed` |
+| condition.severity | Condition.severity | [Condition Severity](https://build.fhir.org/valueset-condition-severity.html) | SNOMED codes for severity |
+| condition.category | Condition.category | [Condition Category](https://build.fhir.org/valueset-condition-category.html) | `problem-list-item` |
+| condition.since | Condition.onset | - | datetime \| period \| age \| string |
+| condition.is-recorded-for | Condition.subject | - | Patient |
+| condition.first-time-on | Condition.recordedDate | - | - |
+| condition.stage | Condition.stage | - | e.g., cancer stages |
+| condition.notes | Condition.note | - | Strings |
+
+---
+
+## Advices
+
+**FHIR Resource:** `CarePlan`
+
+Doctor's advice to patients is stored using the FHIR CarePlan resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| advice.status | CarePlan.status | - | `active` |
+| advice.intent | CarePlan.intent | [Care Plan Intent](https://build.fhir.org/valueset-care-plan-intent.html) | `plan` |
+| advice.category | CarePlan.category | - | Custom: SNOMED for advice |
+| advice.for | CarePlan.subject | - | Patient |
+| advice.details | CarePlan.activity.performedActivity | [CodeableReference](https://build.fhir.org/references.html#CodeableReference) | CodeableReference.concept.text |
+| advice.details | CarePlan.description | [CarePlan Description](https://build.fhir.org/careplan-definitions.html#CarePlan.description) | - |
+
+---
+
+## Notes
+
+**FHIR Resource:** `CarePlan`
+
+Clinical notes are stored using the FHIR CarePlan resource with different intent.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| notes.status | CarePlan.status | - | `active` |
+| notes.intent | CarePlan.intent | [Care Plan Intent](https://build.fhir.org/valueset-care-plan-intent.html) | `proposal` |
+| notes.category | CarePlan.category | - | Custom: for notes |
+| notes.for | CarePlan.subject | - | Patient |
+| notes.details | CarePlan.description | [CodeableReference](https://build.fhir.org/references.html#CodeableReference) | CodeableReference.concept.text |
+
+---
+
+## Examinations
+
+**FHIR Resource:** `Observation`
+
+Physical examination findings are stored using the FHIR Observation resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| exam.name, code | Observation.code | [Manifestation or Symptom](https://www.hl7.org/fhir/valueset-manifestation-or-symptom.html) | SNOMED, Eka codes |
+| exam.category | Observation.category | [Observation Category](https://terminology.hl7.org/5.1.0/CodeSystem-observation-category.html) | `exam` |
+| exam.status | Observation.status | [Observation Status](https://www.hl7.org/fhir/valueset-observation-status.html) | `preliminary` \| `final` \| `unknown` |
+| exam.since | Observation.effective | - | effectiveDateTime \| effectivePeriod |
+| exam.notes | Observation.note | [Annotation](https://www.hl7.org/fhir/datatypes.html#Annotation) | String |
+| exam.is-recorded-for | Observation.subject | - | Patient |
+| exam.location | Observation.bodySite | [Body Site](https://www.hl7.org/fhir/valueset-body-site.html#expansion) | - |
+
+---
+
+## Follow-Up
+
+**FHIR Resource:** `Appointment`
+
+Follow-up appointments suggested by doctors are stored using the FHIR Appointment resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| followup.status | Appointment.status | [Appointment Status](https://build.fhir.org/valueset-appointmentstatus.html) | `proposed` |
+| followup.type | Appointment.appointmentType | [Appointment Type](https://terminology.hl7.org/6.0.2/ValueSet-v2-0276.html) | `FOLLOWUP` |
+| followup.created | Appointment.created | - | - |
+| followup.start | Appointment.start | - | Instant |
+
+---
+
+## Family History
+
+**FHIR Resource:** `FamilyMemberHistory`
+
+Family medical history is stored using the FHIR FamilyMemberHistory resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| dataentry.status | FamilyMemberHistory.status | [History Status](https://build.fhir.org/valueset-history-status.html) | `completed` |
+| relation | FamilyMemberHistory.relationship | [Family Member](https://terminology.hl7.org/6.0.2/ValueSet-v3-FamilyMember.html) | - |
+| relative.name | FamilyMemberHistory.name | - | String |
+| remarks | FamilyMemberHistory.note | - | - |
+| clinical.status | FamilyMemberHistory.condition.outcome | - | CodeableConcept.coding.code |
+
+---
+
+## Vitals ( Trackers )
+
+**FHIR Resource:** `Observation`
+
+Patient vitals and health trackers are stored using the FHIR Observation resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| vitals.name, code | Observation.code | [Manifestation or Symptom](https://www.hl7.org/fhir/valueset-manifestation-or-symptom.html) | SNOMED, Eka codes |
+| vitals.category | Observation.category | [Observation Category](https://terminology.hl7.org/5.1.0/CodeSystem-observation-category.html) | SNOMED: s-8068301606, FHIR: `vital-signs` |
+| vitals.status | Observation.status | [Observation Status](https://www.hl7.org/fhir/valueset-observation-status.html) | Voice2RX: `preliminary`, Rx: `final` |
+| vitals.since | Observation.effective | - | effectiveDateTime \| effectivePeriod |
+| vitals.notes | Observation.note | [Annotation](https://www.hl7.org/fhir/datatypes.html#Annotation) | String text |
+| vitals.value | Observation.value | [CodeableConcept](https://www.hl7.org/fhir/datatypes.html#CodeableConcept) | ValueCodeableConcept |
+| vitals.components | Observation.component | - | For vitals like BP with multiple values |
+
+---
+
+## Medications
+
+**FHIR Resource:** `MedicationRequest`
+
+Medication prescriptions are stored using the FHIR MedicationRequest resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|--------------|---------------|-----------|-----------------|
+| medication.name, medication.id | MedicationRequest.medicationCodeableConcept | [Medication Codes](https://www.hl7.org/fhir/valueset-medication-codes.html) | Name : Ibuprofen 200mg; code: MDB/SNOMED |
+| medication.status | MedicationRequest.status | [MedicationRequest Status](https://www.hl7.org/fhir/valueset-medicationrequest-status.html) | `active` |
+| medication.intent | MedicationRequest.intent | [MedicationRequest Intent](https://www.hl7.org/fhir/valueset-medicationrequest-intent.html) | `order` |
+| patient.id, patient.profile.personal.name | MedicationRequest.subject | [Reference](https://www.hl7.org/fhir/references.html) | Patient reference |
+| doctor.id, doctor.profile.personal.name | MedicationRequest.requester | [Reference](https://www.hl7.org/fhir/references.html) | Practitioner reference |
+| date | MedicationRequest.authoredOn | [dateTime](https://www.hl7.org/fhir/datatypes.html#dateTime) | ISO 8601 format |
+| medication.instruction | MedicationRequest.dosageInstruction.text | [Dosage](https://www.hl7.org/fhir/dosage.html) | String |
+| medication.dose.value, dose.unit, dose.id, dose.custom | MedicationRequest.dosageInstruction.doseAndRate.doseQuantity | [Quantity](https://www.hl7.org/fhir/datatypes.html#Quantity) | value, unit, code |
+| medication.dose-rate-type | MedicationRequest.dosageInstruction.doseAndRate.type | [Dose Rate Type](https://www.hl7.org/fhir/valueset-dose-rate-type.html) | `ordered` |
+| medication.frequency.id, frequency.value, frequency.custom | MedicationRequest.dosageInstruction.additionalInstruction | [Additional Instruction](https://www.hl7.org/fhir/valueset-additional-instruction-codes.html) | CodeableConcept |
+| medication.frequency.frequency, frequency.period, frequency.period_unit, duration, duration-unit, when | MedicationRequest.dosageInstruction.timing.repeat | [Timing](https://www.hl7.org/fhir/datatypes.html#Timing) | frequency, period, periodUnit |
+| calculated | MedicationRequest.dispenseRequest.quantity | [Quantity](https://www.hl7.org/fhir/datatypes.html#Quantity) | frequency × duration × dose |
+---
+
+## Lab Tests / Imaging / Surgical Procedures
+**FHIR Resource:** `ServiceRequest`
+
+Lab tests, imaging requests ( radiology) and surgical procedure are stored using the FHIR ServiceRequest resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|-------------|---------------|-----------|-----------------|
+| status | ServiceRequest.status | [Request Status](https://www.hl7.org/fhir/valueset-request-status.html) | `active` |
+| intent | ServiceRequest.intent | [Request Intent](https://www.hl7.org/fhir/valueset-request-intent.html) | `order` |
+| category | ServiceRequest.category | [Service Request Category](https://www.hl7.org/fhir/valueset-servicerequest-category.html) | Supported categories are imaging, lab_test, surgical_procedure |
+| labTests.id, labTests.name | ServiceRequest.code | [Procedure Codes](https://www.hl7.org/fhir/valueset-procedure-code.html) | CodeableConcept from `http://eka.care/mdb`, `http://loinc.org`, `https://parchi.eka.care/local` |
+| patient_oid, patient_name | ServiceRequest.subject | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Patient resource |
+| visitid | ServiceRequest.encounter | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Encounter resource |
+| doctor_oid, doctor_name | ServiceRequest.requester | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Practitioner resource |
+| date | ServiceRequest.authoredOn | [dateTime](https://www.hl7.org/fhir/datatypes.html#dateTime) | ISO 8601 format |
+| remark/notes | ServiceRequest.note | [Annotation](https://www.hl7.org/fhir/datatypes.html#Annotation) | Text note |
+
+---
+
+## DrugAllergy / FoodAllergy Intolerance
+**FHIR Resource:** `AllergyIntolerance`
+
+Food and medication allergies are stored using the FHIR AllergyIntolerance resource.
+
+| Eka Property | FHIR Resource | FHIR Link | Decision to Use |
+|-------------|---------------|-----------|-----------------|
+| doctor_oid, doctor_name | AllergyIntolerance.asserter | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Practitioner resource |
+| category | AllergyIntolerance.category | [Allergy Category](https://www.hl7.org/fhir/valueset-allergy-intolerance-category.html) | `food` or `medication` |
+| clinicalStatus | AllergyIntolerance.clinicalStatus | [Clinical Status](https://www.hl7.org/fhir/valueset-allergyintolerance-clinical.html) | code: `active`, display: `Active` |
+| drugAllergy.id, foodOtherAllergy.id | AllergyIntolerance.code | [Allergy Codes](https://www.hl7.org/fhir/valueset-allergyintolerance-code.html) | CodeableConcept from `http://snomed.info/sct`, `http://eka.care/mdb`, `https://parchi.eka.care/local` |
+| criticality | AllergyIntolerance.criticality | [Allergy Criticality](https://www.hl7.org/fhir/valueset-allergy-intolerance-criticality.html) | `high` |
+| notes | AllergyIntolerance.note | [Annotation](https://www.hl7.org/fhir/datatypes.html#Annotation) | Text note |
+| patient_oid, patient_name | AllergyIntolerance.patient | [Reference](https://www.hl7.org/fhir/references.html) | Reference to Patient resource |
+| type | AllergyIntolerance.type | [Allergy Type](https://www.hl7.org/fhir/valueset-allergy-intolerance-type.html) | `allergy` |
+| recordedDate | AllergyIntolerance.recordedDate | [dateTime](https://www.hl7.org/fhir/datatypes.html#dateTime) | ISO 8601 format (current time) |
+| verificationStatus | AllergyIntolerance.verificationStatus | [Verification Status](https://www.hl7.org/fhir/valueset-allergyintolerance-verification.html) | code: `confirmed`, display: `Confirmed` |
+---
+
+# Summary Table
+
+| Data Type | FHIR Resource | Category/Type |
+|-----------|---------------|---------------|
+| Symptoms | Observation | signs-and-symptoms |
+| Conditions/Diagnoses | Condition | encounter-diagnosis |
+| Medical History | Condition | problem-list-item |
+| Advices | CarePlan | intent: plan |
+| Notes | CarePlan | intent: proposal |
+| Examinations | Observation | exam |
+| Follow-Up | Appointment | FOLLOWUP |
+| Family History | FamilyMemberHistory | - |
+| Vitals | Observation | vital-signs |
+| Medications | MedicationRequest | intent: order |
+| Lab Tests/Imaging/Surgical Procedures | ServiceRequest | imaging/lab_test/surgical_procedure |
+| Food and drug Allergies | AllergyIntolerance | food/medication |
+
+---
+
+## Complete FHIR Bundle Example
+
+<a href="/api-reference/health-ai/ekascribe/FHIR/fhir-bundle-example" target="_blank">
+  <Card
+    title="View Complete FHIR Bundle JSON"
+    icon="code"
+  >
+    Click here to view the full 3000+ line JSON example of a comprehensive FHIR Bundle including all mapped resources. (Opens in new tab)
+  </Card>
+</a>

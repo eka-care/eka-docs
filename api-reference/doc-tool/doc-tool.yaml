@@ -1038,6 +1038,577 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
+  /cdr/v1/get_business_info/:
+    get:
+      tags:
+        - Doctor and clinic API
+      summary: Get Workspace Information
+      description: >-
+        
+        ### Overview
+        
+        The Get Workspace Information API retrieves basic information about a business including the business ID and business name. This API is designed to provide essential business details for authenticated requests.
+        
+        ### Endpoint
+        
+        **URL:** `{{HOST}}/cdr/v1/get_business_info`
+        
+        
+        **Method:** GET
+        
+        ### Request Parameters
+        
+        This endpoint does not require any parameters. The auth header contains business-id information which will be used to fetch the details.
+        
+        ### Response Parameters
+        
+        | Parameter | Type | Description |
+        
+        | --- | --- | --- |
+        
+        | status | string | Status of the response (success) |
+        
+        | bid | string | Unique identifier of the business |
+        
+        | business_name | string | Name of the business |
+
+      operationId: GetBusinessInformation
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK
+          headers: { }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  bid:
+                    type: string
+                    example: "789235904342534"
+                  business_name:
+                    type: string
+                    example: "Example business"
+              example:
+                status: "success"
+                bid: "789235904342534"
+                business_name: "Example business"
+        '401':
+          description: Unauthorized
+          headers: { }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Unauthorized"
+              example:
+                message: "Unauthorized"
+      deprecated: false
+  /cdr/v1/doctor/:
+    post:
+      tags:
+        - Doctor and clinic API
+      summary: Create Doctor Profile
+      description: >-
+
+        ### Overview
+
+        Create a new doctor profile for your business. This endpoint lets you register a doctor with their personal details, specializations, qualifications, and profile image.
+
+        
+        **Endpoint:** `{{HOST}}/cdr/v1/doctor`
+
+
+        **Method:** `POST`
+
+        ### Request Parameters
+
+
+        | Parameter           | Type    | Description                              | Required |
+
+        |---------------------|---------|------------------------------------------|----------|
+        
+        | firstname           | string  | Doctor's first name                      | Yes      |
+        
+        | lastname            | string  | Doctor's last name                       | Yes      |
+        
+        | gender              | string  | Doctor's gender (M/F/O)                  | Yes       |
+        
+        | email               | string  | Doctor's email address                   | No       |
+
+        | mobile              | string  | Doctor's mobile number (10 digits)       | No      |
+        
+        | specialisations     | array   | List of doctor's specializations         | No       |
+        
+        | qualifications      | array   | List of doctor's qualifications/degrees  | No       |
+        
+        | about               | string  | Brief description about the doctor       | No       |
+        
+        | profile_image_url   | string  | URL of the doctor's profile image        | No       |
+        
+
+
+
+        ### Response Parameters
+
+
+        | Parameter | Type   | Description                                   |
+
+        | --------- | ------ | --------------------------------------------- |
+
+        | status    | string | Status of the response (e.g., "success")      |
+
+        | ekaid     | string | Unique identifier for the created doctor      |
+
+
+
+
+        > **Note:**
+        The `specialisations` and `qualifications` fields accept predefined values, if wanted these can be left empty as they are optional fields. For the complete and up-to-date list, see this Google Sheet:  
+        [View Specializations & Qualifications List](https://docs.google.com/spreadsheets/d/1qRf_R-WHF1F9g3XYcJWHp5IqIWzJxXCaKh22wCCm4j4/edit?usp=sharing)
+       
+
+      operationId: CreateDoctorProfile
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'Request body for creating a doctor profile'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstname
+                - lastname
+                - gender
+              properties:
+                firstname:
+                  type: string
+                  description: Doctor's first name
+                  example: "Rajesh"
+                lastname:
+                  type: string
+                  description: Doctor's last name
+                  example: "Sharma"
+                mobile:
+                  type: string
+                  description: Doctor's mobile number (10 digits)
+                  example: "0000011111"
+                email:
+                  type: string
+                  format: email
+                  description: Doctor's email address
+                  example: "dr.rajesh@example.com"
+                gender:
+                  type: string
+                  enum: ["M", "F", "O"]
+                  description: "Doctor's gender (M - Male, F - Female, O - Other)"
+                  example: "M"
+                specialisations:
+                  type: array
+                  items:
+                    type: string
+                  description: List of doctor's specializations. Refer to the Available Specializations section for valid values.
+                  example: ["Cardiology", "Internal Medicine"]
+                qualifications:
+                  type: array
+                  items:
+                    type: string
+                  description: List of doctor's qualifications/degrees. Refer to the Available Qualifications section for valid values.
+                  example: ["MBBS", "MD", "DM"]
+                about:
+                  type: string
+                  description: Brief description about the doctor
+                  example: "Dr. Rajesh Sharma is a renowned cardiologist with over 15 years of experience in interventional cardiology."
+                profile_image_url:
+                  type: string
+                  format: uri
+                  description: URL of the doctor's profile image
+                  example: "https://example.com/images/dr-rajesh.jpg"
+            example:
+              firstname: "Rajesh"
+              lastname: "Sharma"
+              mobile: "0000011111"
+              email: "dr.rajesh@example.com"
+              gender: "M"
+              specialisations: ["Cardiology", "Internal Medicine"]
+              qualifications: ["MBBS", "MD", "DM"]
+              about: "Dr. Rajesh Sharma is a renowned cardiologist with over 15 years of experience in interventional cardiology."
+              profile_image_url: "https://example.com/images/dr-rajesh.jpg"
+      responses:
+        '201':
+          description: Created - Doctor successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  ekaid:
+                    type: string
+                    description: Unique identifier for the created doctor
+                    example: "do1769174683513"
+        '400':
+          description: Bad Request - Invalid or missing required parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firstname:
+                    type: array
+                    items:
+                      type: string
+                      example: "This field is required."
+  /cdr/v1/clinic/:
+    post:
+      tags:
+        - Doctor and clinic API
+      summary: Create Clinic
+      description: >-
+        ### Overview
+
+        The Create Clinic API allows you to register a new clinic for your business, including its name, address, pincode, contact number, city, state, and assigned doctors.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/clinic`
+
+
+        **Method:** POST
+
+        ### Request Parameters
+
+
+        | Parameter   | Type    | Description                                   | Required |
+
+        | ----------- | ------- | --------------------------------------------- | -------- |
+
+        | name        | string  | Name of the clinic                            | Yes      |
+
+        | address     | string  | Address of the clinic                         | Yes      |
+
+        | pincode     | string  | Pincode of the clinic                         | No       |
+
+        | contact     | string  | Contact number                                | No       |
+
+        | doctor_ids  | array   | List of doctor Eka IDs to assign to this clinic| No      |
+
+        | city        | string  | City name                                     | No       |
+
+        | state       | string  | State name                                    | No       |
+
+
+        ### Response Parameters
+
+
+        | Parameter   | Type    | Description                                   |
+
+        | ----------- | ------- | --------------------------------------------- |
+
+        | status      | string  | Status of the response (e.g., "success")      |
+
+        | ekaid       | string  | Unique identifier for the created clinic      |
+
+
+      operationId: CreateClinic
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'Request body for creating a clinic'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - address
+              properties:
+                name:
+                  type: string
+                  description: Name of the clinic
+                  example: "Sunrise Clinic"
+                address:
+                  type: string
+                  description: Address of the clinic
+                  example: "123 Main Street, Block A"
+                pincode:
+                  type: string
+                  description: Pincode of the clinic
+                  example: "560001"
+                contact:
+                  type: string
+                  pattern: "^\\d{10,11}$"
+                  description: Contact number (10 or 11 digits)
+                  example: "9876543210"
+                doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of doctor Eka IDs to assign to this clinic
+                  example: ["171266028552522", "171266028552523"]
+                city:
+                  type: string
+                  description: City name
+                  example: "Bangalore"
+                state:
+                  type: string
+                  description: State name
+                  example: "Karnataka"
+            example:
+              name: "Sunrise Clinic"
+              address: "123 Main Street, Block A"
+              pincode: "560001"
+              contact: "9876543210"
+              doctor_ids: ["171266028552522", "171266028552523"]
+              city: "Bangalore"
+              state: "Karnataka"
+      responses:
+        '201':
+          description: Created - Doctor successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  ekaid:
+                    type: string
+                    description: Unique identifier for the created doctor
+                    example: "do1769174683513"
+        '400':
+          description: Bad Request - Invalid or missing required parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: array
+                    items:
+                      type: string
+                      example: "This field is required."
+  /cdr/v1/ekauser/:
+    post:
+      tags:
+        - HIP Users API
+      summary: Create Eka User
+      description: >-
+
+        ### Overview
+
+        Create a new Eka User (HIP User) for your business. This endpoint lets you register a user with their personal details and assign them to specific doctors and clinics.
+
+        
+        **Endpoint:** `{{HOST}}/cdr/v1/ekauser`
+
+
+        **Method:** `POST`
+
+        ### Request Parameters
+
+
+        | Parameter    | Type    | Description                                           | Required |
+
+        |--------------|---------|-------------------------------------------------------|----------|
+        
+        | firstname    | string  | User's first name                                     | Yes      |
+        
+        | lastname     | string  | User's last name                                      | Yes      |
+        
+        | mobile       | string  | User's mobile number (10 digits)                      | Yes*     |
+        
+        | email        | string  | User's email address                                  | Yes*     |
+        
+        | gender       | string  | User's gender (M/F/O)                                 | Yes      |
+        
+        | dob          | string  | User's date of birth (YYYY-MM-DD)                     | Yes      |
+        
+        | is_admin     | boolean | Whether the user is an admin                          | No       |
+        
+        | seat_type    | string  | Seat type (b - basic, p - premium). Default: b        | No       |
+        
+        | persona      | string  | User persona (S - Staff, D - Doctor). Default: D      | No       |
+        
+        | doctor_ids   | array   | List of doctor Eka IDs to assign to this user         | No       |
+        
+        | clinic_ids   | array   | List of clinic Eka IDs to assign to this user         | No       |
+
+
+        > **Note:** Either `mobile` or `email` is required. At least one must be provided.
+
+
+
+        ### Response Parameters
+
+
+        | Parameter | Type   | Description                                   |
+
+        | --------- | ------ | --------------------------------------------- |
+
+        | status    | string | Status of the response (e.g., "success")      |
+
+        | ekaid     | string | Unique identifier for the created Eka User    |
+
+
+      operationId: CreateEkaUser
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'Request body for creating an Eka User'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstname
+                - lastname
+                - gender
+                - dob
+              properties:
+                firstname:
+                  type: string
+                  description: User's first name
+                  example: "Amit"
+                lastname:
+                  type: string
+                  description: User's last name
+                  example: "Kumar"
+                mobile:
+                  type: string
+                  description: User's mobile number (10 digits). Either mobile or email is required.
+                  example: "0000011111"
+                email:
+                  type: string
+                  format: email
+                  description: User's email address. Either mobile or email is required.
+                  example: "amit.kumar@example.com"
+                gender:
+                  type: string
+                  enum: ["M", "F", "O"]
+                  description: "User's gender (M - Male, F - Female, O - Other)"
+                  example: "M"
+                dob:
+                  type: string
+                  format: date
+                  description: User's date of birth in YYYY-MM-DD format
+                  example: "1990-05-15"
+                is_admin:
+                  type: boolean
+                  description: Whether the user has admin privileges
+                  default: false
+                  example: false
+                seat_type:
+                  type: string
+                  enum: ["b", "p"]
+                  description: "Seat type (b - basic, p - premium). Default: b"
+                  example: "b"
+                persona:
+                  type: string
+                  enum: ["S", "D"]
+                  description: "User persona (S - Staff, D - Doctor). Default: D"
+                  example: "D"
+                doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of doctor Eka IDs to assign to this user
+                  example: ["171266028552522", "171266028552523"]
+                clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of clinic Eka IDs to assign to this user
+                  example: ["c-314086a34253rd", "c-415197b45364se"]
+            example:
+              firstname: "Amit"
+              lastname: "Kumar"
+              mobile: "9876543210"
+              email: "amit.kumar@example.com"
+              gender: "M"
+              dob: "1990-05-15"
+              is_admin: false
+              seat_type: "b"
+              persona: "D"
+              doctor_ids: ["171266028552522", "171266028552523"]
+              clinic_ids: ["c-314086a34253rd", "c-415197b45364se"]
+      responses:
+        '201':
+          description: Created - Eka User successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  ekaid:
+                    type: string
+                    description: Unique identifier for the created Eka User
+                    example: "176917697553584"
+        '400':
+          description: Bad Request - Invalid or missing required parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firstname:
+                    type: array
+                    items:
+                      type: string
+                      example: "This field is required."
+      deprecated: false
   /dr/v1/business/clinic/{clinic_id}:
     get:
       tags:
@@ -2077,6 +2648,9 @@ paths:
               properties:
                 partner_appointment_id:
                   type: string
+                token:
+                  type: integer
+                  description: 'A unique number given to each patient to indicate their position in the queue.'
                 appointment_details:
                   type: object
                   properties:
@@ -2238,6 +2812,7 @@ paths:
               partner_clinic_id: "642783"
               partner_doctor_id: "8423994"
               partner_patient_id: "6742984"
+              token: 2
               appointment_details:
                 start_time: 1730189586
                 end_time: 1730189586
@@ -2409,14 +2984,38 @@ paths:
               - **50** → when filtering by (`doctor_id`, `start_date`, `end_date`) OR (`clinic_id`, `start_date`, `end_date`) OR (`doctor_id`, `clinic_id`, `start_date`, `end_date`).  
               - **30** → when filtering only by (`start_date`, `end_date`).  
 
-        ### Appointment Status Codes
-          - BK    : Booked  
-          - OG    : Ongoing  
-          - CM    : Completed with Prescription  
-          - CMNP  : Completed without a Prescription  
-          - CN    : Cancelled  
-          - CND   : Cancelled by Doctor  
-          - CNS   : Cancelled by Staff
+        ### Appointment_statuses:
+
+              Booked / Queue States:
+                - BK (Booked) : Appointment created/confirmed.
+                - CK (Checked-in) : Booked appointment added to the Queue (Checked-in).
+                - RV (Reserved) : Appointment marked as Reserved, when patient said they will come for the appointment on the follow-up appointment message.
+                - IN (Initiated) : Appointment marked as Initiated, when patient received follow-up appointment message.
+                - PA  (Parked) : Appointment moved to Parked state.
+
+              Ongoing States:
+                - OG (Ongoing): Consultation is in progress.
+
+              Completion Statuses:
+                - CM (Completed): Appointment completed with a prescription created.
+                - CMNP (Completed No Prescription) : Appointment marked Exit from Queue / Completed without a prescription.
+                - AB (Aborted) : Appointment was started (Start Visit) but not completed. Automatically marked AB at 12:00 AM next day.
+                - NS (No Show) : Appointment was added to Queue but not started/completed. Automatically marked NS at 12:00 AM next day.
+                - NSD (No Show Doctor) : No-show tagged specifically from a doctor’s action (if implemented).
+                - NSS (No Show Staff) : No-show tagged specifically from a staff action (if implemented).
+
+              Cancellation Statuses:
+                - CN (Cancelled) : Appointment cancelled via API.
+                - CND (Cancelled Doctor) : Cancelled from the doctor’s account in the tool.
+                - CNS (Cancelled Staff) : Cancelled from the staff’s account in the tool.
+                - PC (Provisional Cancelled) : Appointment marked as provisional cancellation, when patient said they will not come for the appointment on the follow-up appointment message.
+                - PNR (Payment Not Received) : Appointment marked as PNR, when patient tried paying for a pre-paid appointment but the payment failed.
+
+              Reschedule Statuses:
+                - RE : Rescheduled via API.
+                - RES : Rescheduled from staff account.
+                - RED : Rescheduled from doctor account.
+
       operationId: GetBusinessAppointments
       parameters:
         - name: Authorization
@@ -3091,14 +3690,39 @@ paths:
         appointment status, and related services.
         
         
-        Appointment_statuses:
-          - BK    : Booked
-          - OG    : Ongoing
-          - CM	  : Completed with Prescription
-          - CMNP  : Completed without a Prescription
-          - CN    : Cancelled
-          - CND   : Cancelled by Doctor
-          - CNS   : Cancelled by Staff
+        
+        ### Appointment_statuses:
+
+              Booked / Queue States:
+                - BK (Booked) : Appointment created/confirmed.
+                - CK (Checked-in) : Booked appointment added to the Queue (Checked-in).
+                - RV (Reserved) : Appointment marked as Reserved, when patient said they will come for the appointment on the follow-up appointment message.
+                - IN (Initiated) : Appointment marked as Initiated, when patient received follow-up appointment message.
+                - PA  (Parked) : Appointment moved to Parked state.
+
+              Ongoing States:
+                - OG (Ongoing): Consultation is in progress.
+
+              Completion Statuses:
+                - CM (Completed): Appointment completed with a prescription created.
+                - CMNP (Completed No Prescription) : Appointment marked Exit from Queue / Completed without a prescription.
+                - AB (Aborted) : Appointment was started (Start Visit) but not completed. Automatically marked AB at 12:00 AM next day.
+                - NS (No Show) : Appointment was added to Queue but not started/completed. Automatically marked NS at 12:00 AM next day.
+                - NSD (No Show Doctor) : No-show tagged specifically from a doctor’s action (if implemented).
+                - NSS (No Show Staff) : No-show tagged specifically from a staff action (if implemented).
+
+              Cancellation Statuses:
+                - CN (Cancelled) : Appointment cancelled via API.
+                - CND (Cancelled Doctor) : Cancelled from the doctor’s account in the tool.
+                - CNS (Cancelled Staff) : Cancelled from the staff’s account in the tool.
+                - PC (Provisional Cancelled) : Appointment marked as provisional cancellation, when patient said they will not come for the appointment on the follow-up appointment message.
+                - PNR (Payment Not Received) : Appointment marked as PNR, when patient tried paying for a pre-paid appointment but the payment failed.
+
+              Reschedule Statuses:
+                - RE : Rescheduled via API.
+                - RES : Rescheduled from staff account.
+                - RED : Rescheduled from doctor account.
+
 
       operationId: GetappointmentDetails
       parameters:
@@ -3469,6 +4093,9 @@ paths:
                 end_time:
                   type: integer
                   description: 'End time of new appointment in epoch. To be used in order to reschedule appointment.'
+                token:
+                  type: integer
+                  description: 'A unique number given to each patient to indicate their position in the queue.'
                 video_connect:
                   type: object
                   properties:
@@ -3593,7 +4220,7 @@ paths:
                   city: "Bangalore"
                   pincode: 560049
                 partner_patient_id: "6742984"
-
+              token: 2
               video_connect:
                   vendor: 100ms
                   url: "https://xyz.live/meeting/nfo-necy-cwg"
@@ -3746,6 +4373,9 @@ paths:
             schema:
               type: object
               properties:
+                token:
+                  type: integer
+                  description: 'A unique number given to each patient to indicate their position in the queue.' 
                 appointment_details:
                   type: object
                   properties:
@@ -4827,6 +5457,122 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
+  
+  /dr/v1/appointment/{appointment_id}/change-status:
+    post:
+      tags:
+        - Appointment API
+      summary: No-Show Appointment
+      description: >-
+
+        ### Overview
+
+
+        This API endpoint is used to update an existing appointment to No-Show state.
+
+      operationId: ChangeStatusAppointment
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: appointment_id
+          in: path
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+        
+        - name: partner_id
+          in: query
+          description: 'If set to 1 then appointment_id in path parameter should be partner_appointment_id else eka apppointment_id'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '1'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string   
+                  example: 'NS'  
+      responses:
+        '200':
+          description: OK
+          headers:
+            Date:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Thu, 16 Apr 2020 08:47:12 GMT
+            Transfer-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: chunked
+            Connection:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: keep-alive
+            Server:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: nginx/1.10.3 (Ubuntu)
+            Vary:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: Accept-Encoding
+            Strict-Transport-Security:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: max-age=15768000
+            Content-Encoding:
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                  example: gzip
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  code: "INVALID_REQUEST"
+                  message: "The request is invalid or missing required parameters"
+        
+      deprecated: false
   /dr/v1/appointment/patient/{patient_id}:
     get:
       tags:
@@ -5756,7 +6502,265 @@ paths:
                         conf_id: "25e4acd4eb5fbc0b8523d8de315555a9ee7b5700b0b89a07879daff1be1510e6"
 
       deprecated: false
-  
+  /cdr/v1/hipusers/{hip_user_id}:
+    get:
+      tags:
+        - HIP Users API
+      summary: Get HIP User Details by ID
+      description: >
+        This API retrieves detailed information about a specific HIP user
+        registered under a business. The response includes the user's personal
+        details, assigned doctors, and associated clinics.
+
+        > _Use this API to get complete profile details of a single HIP user by their Eka user ID._
+      operationId: GetHIPUserById
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          description: >
+            The authentication token for the business. It is used to verify the business making the request. The token can be fetched from the Auth API.
+          schema:
+            type: string
+          example: >
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkb2Mtd2ViIiwiYi1pZCI6IjcxNzYzMzgwMzI2NzY4MjQiLCJjYyI6eyJlc2MiOjAsInBleCI6MTc5NDc4NzIwMCwicHN0IjoidHJ1ZSIsInN0eSI6InAifSwiZG9iIjoiMTk2My0wNS0wMyIsImV4cCI6MTc2Mzk4MDc5MSwiZm4iOiJNYW5vaGFyYW4iLCJnZW4iOiJNIiwiaWF0IjoxNzYzOTc4OTkxLCJpZHAiOiJtb2IiLCJpc3MiOiJlbXIuZWthLmNhcmUiLCJqdGkiOiI5NzlhMmM5Yy03ODkwLTQ5NDUtYWU2YS1kZjQzNGQxNjMyOTQiLCJsbiI6Ik1vaGFuIiwib2lkIjoiMTc2MzM4MDMyNjkyMDU3IiwicHJpIjp0cnVlLCJwcyI6IkFEIiwiciI6IklOIiwicyI6IkRyIiwidXVpZCI6IjgyNmEzZDU3LWVkMmUtNDNjYi1iODg0LTc0OGQyOTcwMzI1NyIsInctaWQiOiI3MTc2MzM4MDMyNjc2ODI0Iiwidy1uIjoiTWFudXNocmVlIEhvc3BpdGFsIn0.zFZtvgcNVV0iEEvmmjmCOh79HRHsAcvrc6jff71E7Xo
+        - name: hip_user_id
+          in: path
+          required: true
+          description: The unique Eka Care ID of the HIP user.
+          schema:
+            type: string
+          example: "176338032692057"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "176338032692057"
+                      firstname:
+                        type: string
+                        example: "Manoharan"
+                      lastname:
+                        type: string
+                        example: "Mohan"
+                      mobile:
+                        type: string
+                        example: "9840254450"
+                      email:
+                        type: string
+                        example: "criticcaredr@gmail.com"
+                      is_admin:
+                        type: boolean
+                        example: true
+                      seat_type:
+                        type: string
+                        description: >
+                          Indicates the type of seat or subscription plan assigned to the HIP user.
+                          - **p** → Premium user (full access to advanced features)
+                          - **b** → Basic user (access to standard features only)
+                        example: "p"
+                      doctors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "do1763380327031"
+                            firstname:
+                              type: string
+                              example: "Manoharan"
+                            lastname:
+                              type: string
+                              example: "Mohan"
+                      clinics:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "c-1506ace382e94bf5ba9751fb"
+                            name:
+                              type: string
+                              example: "Manushree Hospital"
+                      partner_id:
+                        type: string
+                        nullable: true
+                        example: null
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "You do not have permission to access this HIP user"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "NOT_FOUND"
+                      message:
+                        type: string
+                        example: "User not found. Please check the provided ID."
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "An unexpected error occurred on the server"
+  /cdr/v1/hipusers/:
+    get:
+      tags:
+        - HIP Users API
+      summary: Get All HIP Users of a Business
+      description: >
+        This API retrieves the list of all HIP users associated with a business.
+        The response includes each user's details along with their linked doctors
+        and clinics.
+
+        > _Use this API to fetch all HIP users for a business account in one call._
+      operationId: GetAllHIPUsers
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          description: >
+            The authentication token for the business. It is used to verify the business making the request. The token can be fetched from the Auth API.
+          schema:
+            type: string
+          example: >
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkb2Mtd2ViIiwiYi1pZCI6IjcxNzYzMzgwMzI2NzY4MjQiLCJjYyI6eyJlc2MiOjAsInBleCI6MTc5NDc4NzIwMCwicHN0IjoidHJ1ZSIsInN0eSI6InAifSwiZG9iIjoiMTk2My0wNS0wMyIsImV4cCI6MTc2Mzk4MDc5MSwiZm4iOiJNYW5vaGFyYW4iLCJnZW4iOiJNIiwiaWF0IjoxNzYzOTc4OTkxLCJpZHAiOiJtb2IiLCJpc3MiOiJlbXIuZWthLmNhcmUiLCJqdGkiOiI5NzlhMmM5Yy03ODkwLTQ5NDUtYWU2YS1kZjQzNGQxNjMyOTQiLCJsbiI6Ik1vaGFuIiwib2lkIjoiMTc2MzM4MDMyNjkyMDU3IiwicHJpIjp0cnVlLCJwcyI6IkFEIiwiciI6IklOIiwicyI6IkRyIiwidXVpZCI6IjgyNmEzZDU3LWVkMmUtNDNjYi1iODg0LTc0OGQyOTcwMzI1NyIsInctaWQiOiI3MTc2MzM4MDMyNjc2ODI0Iiwidy1uIjoiTWFudXNocmVlIEhvc3BpdGFsIn0.zFZtvgcNVV0iEEvmmjmCOh79HRHsAcvrc6jff71E7Xo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "176338032692057"
+                        firstname:
+                          type: string
+                          example: "Manoharan"
+                        lastname:
+                          type: string
+                          example: "Mohan"
+                        mobile:
+                          type: string
+                          example: "9840254450"
+                        email:
+                          type: string
+                          example: "criticcaredr@gmail.com"
+                        is_admin:
+                          type: boolean
+                          example: true
+                        seat_type:
+                          type: string
+                          description: >
+                            Indicates the type of seat or subscription plan assigned to the HIP user.
+                            - **p** → Premium user (full access to advanced features)
+                            - **b** → Basic user (access to standard features only)
+                          example: "p"
+                        doctors:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "do1763380327031"
+                              firstname:
+                                type: string
+                                example: "Manoharan"
+                              lastname:
+                                type: string
+                                example: "Mohan"
+                        clinics:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "c-1506ace382e94bf5ba9751fb"
+                              name:
+                                type: string
+                                example: "Manushree Hospital"
+                        partner_id:
+                          type: string
+                          nullable: true
+                          example: null
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "You do not have permission to access HIP users for this business"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "An unexpected error occurred on the server"
+
 components:
   schemas:
     AuthLoginRequest:
