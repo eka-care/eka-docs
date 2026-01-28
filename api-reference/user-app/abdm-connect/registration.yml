@@ -282,6 +282,52 @@ paths:
       security:
       - authApiKey: []
       summary: Verify OTP
+  /abdm/na/v1/registration/aadhaar/auto-login:
+    post:
+      description: API for Auto login
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Auto Login
   /abdm/na/v1/registration/aadhaar/create-phr:
     post:
       description: This API is used to create a new ABHA address
@@ -4601,7 +4647,7 @@ paths:
       - authApiKey: []
   /abdm/v1/session/status:
     get:
-      description: Session status
+      description: Status of the user by the session.
       parameters:
       - description: Eka User ID (OID)
         in: header
