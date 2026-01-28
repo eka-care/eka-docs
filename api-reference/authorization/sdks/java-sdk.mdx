@@ -1,0 +1,130 @@
+---
+title: 'Java SDK'
+description: 'A Java Spring Boot SDK for interacting with Eka Care APIs.'
+---
+
+# Overview
+
+A Java Spring Boot SDK for processing medical documents through the Eka Care API. This SDK supports document submission, result polling, and FHIR data extraction.
+
+## Prerequisites
+
+- **JDK 17+** (verify with `java -version`)
+- **Maven** (verify with `mvn -version`)
+- **IDE**: IntelliJ IDEA, Eclipse, or VS Code with Java extensions
+- **Eka Care API Credentials**: Valid client ID and secret
+
+---
+
+## Project Structure
+
+```
+ekacare-sdk/
+├── src/main/java/com/example/ekacare/
+│   ├── sdk/EkaCareSDK.java
+│   ├── service/EkaCareService.java
+│   └── controller/DocumentController.java
+├── src/main/resources/application.properties
+└── pom.xml
+```
+
+---
+
+## Setup Instructions
+
+### Step 1: Create Spring Boot Project
+
+**Via Spring Initializr:**
+- Visit [start.spring.io](https://start.spring.io)
+- Select Maven, Java 17, Spring Boot 3.2.0
+- Add "Spring Web" dependency
+- Generate and extract
+
+**Via IntelliJ IDEA:**
+File → New → Project → Spring Initializr → Configure with Java 17 and Spring Boot 3.2.0
+
+### Step 2: Add SDK Files
+
+Copy files from the repository to respective directories:
+- `EkaCareSDK.java` → `src/main/java/com/example/ekacare/sdk/`
+- `EkaCareService.java` → `src/main/java/com/example/ekacare/service/`
+- `application.properties` → `src/main/resources/`
+- `pom.xml` → project root
+
+### Step 3: Configure Credentials
+
+Update `application.properties`:
+
+```properties
+ekacare.client.id=YOUR_CLIENT_ID_HERE
+ekacare.client.secret=YOUR_CLIENT_SECRET_HERE
+```
+
+### Step 4: Build
+
+```bash
+mvn clean install
+```
+
+---
+
+## Quick Start
+
+### Direct SDK Usage
+
+```java
+try (EkaCareSDK sdk = new EkaCareSDK("CLIENT_ID", "CLIENT_SECRET")) {
+    Map<String, Object> result = sdk.processAndWait(
+        "/path/to/document.jpg",
+        "smart",
+        10,  // poll interval (seconds)
+        300  // timeout (seconds)
+    );
+    Map<String, Object> data = (Map<String, Object>) result.get("data");
+    System.out.println("FHIR: " + data.get("fhir"));
+}
+```
+
+### Spring Boot Service
+
+```java
+@Component
+public class MyDocumentProcessor {
+    @Autowired
+    private EkaCareService ekaCareService;
+
+    public void process() throws InterruptedException {
+        Map<String, Object> result = ekaCareService
+            .processDocumentAndWait("/path/to/document.jpg", "smart");
+        System.out.println("Result: " + result);
+    }
+}
+```
+
+---
+
+## Example cURL Requests
+
+```bash
+# Submit document asynchronously
+curl -X POST http://localhost:8080/api/documents/process?task=smart \
+  -F "file=@/path/to/document.jpg"
+
+# Get processing result
+curl http://localhost:8080/api/documents/abc123/result
+
+# Synchronous processing (waits for completion)
+curl -X POST http://localhost:8080/api/documents/process-sync?task=smart \
+  -F "file=@/path/to/document.jpg"
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| File Not Found | Use absolute paths or verify relative path correctness |
+| Authorization (401) | Validate credentials in properties file |
+| Maven Build Fails | Run `mvn clean install -U` |
+| Port 8080 In Use | Change in `application.properties`: `server.port=8081` |
