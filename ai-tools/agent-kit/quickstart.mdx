@@ -1,0 +1,102 @@
+---
+title: Quickstart
+description: Build your first AI agent with Echo in 5 minutes
+---
+
+Get started with [Echo](https://github.com/eka-care/echo) in 5 minutes.
+
+<Steps>
+  <Step title="Install">
+    ```bash
+    pip install echo-sdk
+    ```
+  </Step>
+
+  <Step title="Set API Key">
+    ```bash
+    export OPENAI_API_KEY=sk-...
+    # or ANTHROPIC_API_KEY or GOOGLE_API_KEY
+    ```
+  </Step>
+
+  <Step title="Create Agent">
+    ```python
+    import asyncio
+    from echo import (
+        GenericAgent, AgentConfig, LLMConfig,
+        PersonaConfig, TaskConfig, ConversationContext,
+        Message, MessageRole, TextMessage
+    )
+
+    # LLM configuration
+    llm_config = LLMConfig(
+        provider="openai",
+        model="gpt-4o-mini",
+        temperature=0.2,
+        max_tokens=2000,
+    )
+
+    # Agent configuration (persona + task = system prompt)
+    agent_config = AgentConfig(
+        persona=PersonaConfig(
+            role="Healthcare Assistant",
+            goal="Help users with health queries",
+            backstory="A knowledgeable medical AI assistant",
+        ),
+        task=TaskConfig(
+            description="Answer health-related questions accurately",
+            expected_output="Clear, helpful medical information",
+        ),
+    )
+
+    async def main():
+        agent = GenericAgent(
+            agent_config=agent_config,
+            llm_config=llm_config,
+            tools=[],
+        )
+
+        context = ConversationContext()
+        context.add_message(Message(
+            role=MessageRole.USER,
+            content=[TextMessage(text="What are symptoms of dehydration?")],
+        ))
+
+        result = await agent.run(context)
+        print(result.llm_response.text)
+
+    asyncio.run(main())
+    ```
+  </Step>
+
+  <Step title="Run">
+    ```bash
+    python my_agent.py
+    ```
+  </Step>
+</Steps>
+
+## With Streaming
+
+```python
+from echo import get_llm, StreamEventType
+
+llm = get_llm(LLMConfig(provider="openai", model="gpt-4o-mini"))
+
+async for event in llm.invoke_stream(context, system_prompt="You are helpful."):
+    if event.type == StreamEventType.TEXT:
+        print(event.text, end="", flush=True)
+    elif event.type == StreamEventType.DONE:
+        print("\n--- Done ---")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools" icon="wrench" href="/ai-tools/agent-kit/tools">
+    Add tools to your agent
+  </Card>
+  <Card title="MCP Integration" icon="plug" href="/ai-tools/agent-kit/mcp-integration">
+    Connect to Eka MCP Server
+  </Card>
+</CardGroup>

@@ -1,0 +1,105 @@
+---
+title: MCP Integration
+description: Connect to MCP servers for external tools
+---
+
+## MCPServerConfig
+
+```python
+from echo import MCPConnectionManager, MCPServerConfig, MCPTransport
+
+config = MCPServerConfig(
+    transport=MCPTransport.STREAMABLE_HTTP,
+    url="https://mcp.eka.care/mcp",
+    headers={"x-eka-jwt-payload": "..."},  # Auth header
+)
+```
+
+## Connect and Get Tools
+
+```python
+manager = MCPConnectionManager(config)
+tools = await manager.get_tools()
+
+print(f"Found {len(tools)} tools:")
+for tool in tools:
+    print(f"  - {tool.name}: {tool.description}")
+```
+
+## Use with GenericAgent
+
+```python
+from echo import GenericAgent, AgentConfig, LLMConfig
+
+# Get MCP tools
+manager = MCPConnectionManager(config)
+mcp_tools = await manager.get_tools()
+
+# Create agent with MCP tools
+agent = GenericAgent(
+    agent_config=AgentConfig(
+        persona=PersonaConfig(
+            role="Medical Assistant",
+            goal="Help with medical queries using tools",
+            backstory="A helpful medical AI",
+        ),
+        task=TaskConfig(
+            description="Use available tools to answer queries",
+            expected_output="Accurate information using tool results",
+        ),
+    ),
+    tools=mcp_tools,
+    llm_config=LLMConfig(provider="openai", model="gpt-4o-mini"),
+)
+
+# Run
+result = await agent.run(context)
+```
+
+## Multiple MCP Servers
+
+```python
+MCP_SERVERS = [
+    MCPServerConfig(
+        transport=MCPTransport.STREAMABLE_HTTP,
+        url="https://mcp.eka.care/mcp",
+        headers={"x-eka-jwt-payload": os.getenv("EKA_JWT_PAYLOAD")},
+    ),
+    MCPServerConfig(
+        transport=MCPTransport.STREAMABLE_HTTP,
+        url="https://other-mcp.example.com/mcp",
+    ),
+]
+
+# Collect tools from all servers
+all_tools = []
+for server_config in MCP_SERVERS:
+    manager = MCPConnectionManager(server_config)
+    tools = await manager.get_tools()
+    all_tools.extend(tools)
+
+# Use combined tools
+agent = GenericAgent(
+    agent_config=agent_config,
+    tools=all_tools,
+    llm_config=llm_config,
+)
+```
+
+## Cleanup
+
+```python
+# When done, cleanup all connections
+await MCPConnectionManager.cleanup_all()
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Eka MCP Server" icon="server" href="/ai-tools/mcp-server/introduction">
+    Available healthcare tools
+  </Card>
+  <Card title="Examples" icon="lightbulb" href="/ai-tools/agent-kit/examples">
+    Complete MCP examples
+  </Card>
+</CardGroup>

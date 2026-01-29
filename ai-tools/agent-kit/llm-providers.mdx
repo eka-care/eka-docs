@@ -1,0 +1,129 @@
+---
+title: LLM Providers
+description: Configure OpenAI, Anthropic, and Gemini
+---
+
+## Provider Comparison
+
+| Provider | Models | Best For |
+|----------|--------|----------|
+| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4-turbo | General purpose, cost-effective |
+| **Anthropic** | claude-sonnet-4, claude-3-opus | Advanced reasoning, long context |
+| **Gemini** | gemini-1.5-pro, gemini-pro | Multimodal, Google ecosystem |
+
+---
+
+## Configuration
+
+<Tabs>
+  <Tab title="OpenAI">
+    **Environment:**
+    ```bash
+    export OPENAI_API_KEY=sk-...
+    ```
+
+    **Config:**
+    ```python
+    from echo import LLMConfig, get_llm
+
+    llm_config = LLMConfig(
+        provider="openai",
+        model="gpt-4o-mini",
+        temperature=0.2,
+        max_tokens=2000,
+    )
+
+    llm = get_llm(llm_config)
+    ```
+
+    **Models:** `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-3.5-turbo`
+  </Tab>
+
+  <Tab title="Anthropic">
+    **Environment:**
+    ```bash
+    export ANTHROPIC_API_KEY=sk-ant-...
+    ```
+
+    **Config:**
+    ```python
+    from echo import LLMConfig, get_llm
+
+    llm_config = LLMConfig(
+        provider="anthropic",
+        model="claude-sonnet-4-20250514",
+        temperature=0.2,
+        max_tokens=2000,
+    )
+
+    llm = get_llm(llm_config)
+    ```
+
+    **Models:** `claude-sonnet-4-20250514`, `claude-3-opus-20240229`, `claude-3-haiku-20240307`
+  </Tab>
+
+  <Tab title="Gemini">
+    **Environment:**
+    ```bash
+    export GOOGLE_API_KEY=...
+    ```
+
+    **Config:**
+    ```python
+    from echo import LLMConfig, get_llm
+
+    llm_config = LLMConfig(
+        provider="gemini",
+        model="gemini-1.5-pro",
+        temperature=0.2,
+        max_tokens=2000,
+    )
+
+    llm = get_llm(llm_config)
+    ```
+
+    **Models:** `gemini-1.5-pro`, `gemini-pro`, `gemini-pro-vision`
+  </Tab>
+</Tabs>
+
+---
+
+## Switching Providers
+
+Change one line to switch providers:
+
+```python
+# OpenAI
+llm_config = LLMConfig(provider="openai", model="gpt-4o-mini")
+
+# Anthropic
+llm_config = LLMConfig(provider="anthropic", model="claude-sonnet-4-20250514")
+
+# Gemini
+llm_config = LLMConfig(provider="gemini", model="gemini-1.5-pro")
+```
+
+Agent code remains the same.
+
+---
+
+## LLMConfig Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `provider` | str | Required | `"openai"`, `"anthropic"`, `"gemini"` |
+| `model` | str | Required | Model identifier |
+| `temperature` | float | 0.7 | Randomness (0.0-1.0) |
+| `max_tokens` | int | 4096 | Max response length |
+| `max_iterations` | int | 5 | Max tool use iterations |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Streaming" icon="stream" href="/ai-tools/agent-kit/streaming">
+    Real-time responses
+  </Card>
+  <Card title="Examples" icon="lightbulb" href="/ai-tools/agent-kit/examples">
+    Complete examples
+  </Card>
+</CardGroup>
