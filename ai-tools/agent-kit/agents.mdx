@@ -1,0 +1,106 @@
+---
+title: Agents
+description: Build agents with GenericAgent
+---
+
+## GenericAgent
+
+The main agent class that orchestrates LLM, tools, and conversation:
+
+```python
+from echo import GenericAgent, AgentConfig, LLMConfig, ConversationContext
+
+agent = GenericAgent(
+    agent_config=agent_config,
+    llm_config=llm_config,
+    tools=[tool1, tool2],  # Optional tools
+)
+
+# Run with conversation context
+context = ConversationContext()
+context.add_message(Message(
+    role=MessageRole.USER,
+    content=[TextMessage(text="Your query here")],
+))
+
+result = await agent.run(context)
+print(result.llm_response.text)
+```
+
+## Agent Result
+
+The `run()` method returns an `AgentResult`:
+
+```python
+result = await agent.run(context)
+
+# Response text
+print(result.llm_response.text)
+
+# Updated context (for multi-turn)
+context = result.context
+
+# Tool calls made
+for item in result.llm_response.verbose:
+    if item.type == "tool":
+        print(f"Called: {item.tool_name}")
+
+# Elicitations (UI components)
+for elicit in result.llm_response.elicitations:
+    print(f"Component: {elicit.details.component}")
+
+# Errors
+if result.error:
+    print(f"Error: {result.error}")
+```
+
+## Multi-Turn Conversations
+
+Maintain context across turns:
+
+```python
+context = ConversationContext()
+
+# Turn 1
+context.add_message(Message(role=MessageRole.USER, content=[TextMessage(text="What is diabetes?")]))
+result = await agent.run(context)
+context = result.context
+
+# Turn 2 (agent remembers context)
+context.add_message(Message(role=MessageRole.USER, content=[TextMessage(text="What are the types?")]))
+result = await agent.run(context)
+```
+
+## Handling Elicitations
+
+When agent returns UI components for user input:
+
+```python
+result = await agent.run(context)
+
+if result.llm_response.elicitations:
+    elicit = result.llm_response.elicitations[0]
+
+    # Show options to user
+    options = elicit.details.input.get('options', [])
+    for i, opt in enumerate(options, 1):
+        print(f"{i}. {opt}")
+
+    # Get user selection and add as tool result
+    user_choice = get_user_input()
+    context.add_message(Message(
+        role=MessageRole.TOOL,
+        content=[ToolResult(tool_id=elicit.tool_id, result=user_choice)],
+    ))
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools" icon="wrench" href="/ai-tools/agent-kit/tools">
+    Add tools to agents
+  </Card>
+  <Card title="Streaming" icon="stream" href="/ai-tools/agent-kit/streaming">
+    Real-time responses
+  </Card>
+</CardGroup>

@@ -1,0 +1,82 @@
+---
+title: Configuration
+description: Configure LLMs, tools, and agent settings
+---
+
+## LLMConfig
+
+Configure which LLM provider and model to use:
+
+```python
+from echo import LLMConfig
+
+llm_config = LLMConfig(
+    provider="openai",      # "openai", "anthropic", or "gemini"
+    model="gpt-4o-mini",    # Model identifier
+    temperature=0.2,        # 0.0-1.0, lower = more focused
+    max_tokens=2000,        # Max response length
+    max_iterations=5,       # Max tool use iterations
+)
+```
+
+See [LLM Providers](/ai-tools/agent-kit/llm-providers) for provider-specific details.
+
+## AgentConfig
+
+Combines **PersonaConfig** + **TaskConfig** to form the system prompt:
+
+```python
+from echo import AgentConfig, PersonaConfig, TaskConfig
+
+agent_config = AgentConfig(
+    persona=PersonaConfig(
+        role="Medical Assistant",           # Agent's identity
+        goal="Help with medical queries",   # What agent tries to achieve
+        backstory="A helpful medical AI",   # Background context
+    ),
+    task=TaskConfig(
+        description="Answer health questions using available tools",
+        expected_output="Accurate, helpful medical information",
+    ),
+)
+```
+
+**Generated System Prompt:**
+```
+You are a Medical Assistant.
+Your goal is: Help with medical queries
+Background: A helpful medical AI
+Task: Answer health questions using available tools
+Expected output: Accurate, helpful medical information
+```
+
+## Environment Variables
+
+<Tabs>
+  <Tab title="OpenAI">
+    ```bash
+    export OPENAI_API_KEY=sk-...
+    ```
+  </Tab>
+  <Tab title="Anthropic">
+    ```bash
+    export ANTHROPIC_API_KEY=sk-ant-...
+    ```
+  </Tab>
+  <Tab title="Gemini">
+    ```bash
+    export GOOGLE_API_KEY=...
+    ```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools" icon="wrench" href="/ai-tools/agent-kit/tools">
+    Create and configure tools
+  </Card>
+  <Card title="LLM Providers" icon="brain" href="/ai-tools/agent-kit/llm-providers">
+    Provider-specific configuration
+  </Card>
+</CardGroup>
