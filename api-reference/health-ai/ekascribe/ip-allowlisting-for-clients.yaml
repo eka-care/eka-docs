@@ -1,0 +1,88 @@
+openapi: 3.0.0
+info:
+  title: EkaScribe IP Allowlisting Information
+  description: Allowlisting and endpoint information for Eka Scribe APIs & Audio transcription
+  version: 1.0.0
+  contact:
+    name: Eka Care Support
+    url: https://eka.care/
+    email: support@eka.care
+
+servers:
+  - url: https://api.eka.care
+    description: Production server - Allowed URL pattern *.eka.care
+  - url: https://api.dev.eka.care
+    description: Staging server - Allowed URL pattern *.dev.eka.care
+
+tags:
+  - name: Network Configuration
+    description: IP allowlisting and network configuration requirements
+
+paths:
+  /network-info:
+    get:
+      tags:
+        - Network Configuration
+      summary: Get Network Configuration Requirements
+      description: |
+        Ensure your network/firewall is configured to allow inbound connections from the below URLs for seamless integration with Eka Scribe & audio transcription APIs.
+        
+        ## Production Environment
+        - **Allowed URLs:** `*.eka.care`
+        
+        ## Staging Environment
+        - **Allowed URLs:** `*.dev.eka.care`
+        
+        ## S3 Bucket URLs
+        
+        ### Production
+        - `https://m-prod-voice-record.s3.ap-south-1.amazonaws.com`
+        - `https://m-prod-voice2rx-batch.s3.ap-south-1.amazonaws.com`
+        - `https://m-prod-ekascribe-batch.s3.amazonaws.com`
+        
+        ### Staging
+        - `https://m-dev-voice-record.s3.ap-south-1.amazonaws.com`
+        - `https://m-dev-voice2rx-batch.s3.ap-south-1.amazonaws.com`
+        
+        ## Important Notes
+        - eka.care is hosted on AWS CloudFront
+        - Make sure you have allowlisted [AWS CloudFront IP Addresses](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html)
+      responses:
+        200:
+          description: Network configuration information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  production:
+                    type: object
+                    properties:
+                      urls:
+                        type: array
+                        items:
+                          type: string
+                        example: ["*.eka.care"]
+                      s3_buckets:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "https://m-prod-voice-record.s3.ap-south-1.amazonaws.com"
+                          - "https://m-prod-voice2rx-batch.s3.ap-south-1.amazonaws.com"
+                          - "https://m-prod-ekascribe-batch.s3.amazonaws.com"
+                  staging:
+                    type: object
+                    properties:
+                      urls:
+                        type: array
+                        items:
+                          type: string
+                        example: ["*.dev.eka.care"]
+                      s3_buckets:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "https://m-dev-voice-record.s3.ap-south-1.amazonaws.com"
+                          - "https://m-dev-voice2rx-batch.s3.ap-south-1.amazonaws.com"
