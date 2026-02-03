@@ -713,6 +713,105 @@ const response = await ekascribe.postTransactionConvertToTemplate({
 
 **Note:** After getting success response from this method, call `pollSessionOutput` (Point 9) to get the output for the new template_id.
 
+### 16. Convert transcription to template
+
+Use this method to convert a transcription text to a specific template format.
+
+```ts
+const response = await ekascribe.convertTranscriptionToTemplate({
+  txn_id: 'transaction-id-123',
+  template_id: 'target-template-id',
+  transcript: 'custom transcript text',
+});
+```
+
+**Key Parameters:**
+
+- `txn_id`: The transaction ID of the session
+- `template_id`: The ID of the template format you want to convert to
+- `transcript`: Custom transcript text to use for conversion
+
+- #### Sample Response:
+
+```ts
+{
+  status: 'success' | 'failed';
+  message: string;
+  txn_id: string;
+  template_id: string;
+  b_id: string;
+  code: number;
+  msg: string;
+  error?: { code: string; message: string; display_message: string };
+}
+```
+
+### 17. Update result summary
+
+Use this method to update/edit the result summary (template output) for a transaction.
+
+```ts
+const response = await ekascribe.updateResultSummary({
+  txnId: 'transaction-id-123',
+  data: [
+    {
+      'template-id': 'template-123',
+      data: 'Updated template output content', // Base64 Encoded data
+    },
+  ],
+});
+```
+
+**Key Parameters:**
+
+- `txnId`: The transaction ID
+- `data`: Array of objects containing `template-id` and the updated `data` base64 encoded data
+
+- #### Sample Response:
+
+```ts
+{
+  status: string;
+  message: string;
+  txn_id: string;
+  b_id: string;
+  code: number;
+  error?: { code: string; message: string; display_message: string };
+}
+```
+
+### 18. Run system compatibility test
+
+Use this method to run a comprehensive system compatibility test to ensure the user's browser and device support all SDK features.
+
+```ts
+const summary = await ekascribe.runSystemCompatibilityTest(
+  (testResult) => {
+    // Callback receives individual test results
+    console.log('Test:', testResult.name, 'Result:', testResult.status);
+  },
+  sharedWorker // Optional: SharedWorker instance for testing worker compatibility
+);
+```
+
+- #### Sample Response:
+
+```ts
+{
+  // TCompatibilityTestSummary
+  microphone: { status: 'pass' | 'fail'; message?: string };
+  audioContext: { status: 'pass' | 'fail'; message?: string };
+  sharedWorker: { status: 'pass' | 'fail'; message?: string };
+  // ... other compatibility tests
+}
+```
+
+**When to use:**
+
+- Before starting a recording session to ensure user's system is compatible
+- To provide user feedback about missing permissions or unsupported features
+- During onboarding to identify potential issues
+
 ## Templates SDK Methods
 
 ### 1. Get All Templates
