@@ -1,0 +1,126 @@
+---
+title: 'Python'
+description: 'A Python SDK for parsing medical documents using Eka Care APIs'
+---
+
+# Overview
+
+[Report Parsing SDK on GitHub](https://github.com/eka-care/reports-parsing-sdk/tree/main/python)
+
+A comprehensive Python SDK for interacting with the Eka Care Medical Records API. This SDK enables you to upload and process medical documents with support for smart report parsing and PII detection.
+
+## Installation
+
+Install from source:
+
+```bash
+git clone https://github.com/eka-care/reports-parsing-sdk.git
+cd reports-parsing-sdk/python
+pip install -e .
+```
+
+---
+
+## Quick Start
+
+Basic initialization and document processing:
+
+```python
+from ekacare_sdk import EkaCareSDK
+
+# Initialize the SDK with your credentials
+sdk = EkaCareSDK(
+    client_id="your_client_id",
+    client_secret="your_client_secret"
+)
+
+# Process a document
+result = sdk.process_document(
+    "/path/to/lab_report.jpg",
+    task="smart"
+)
+
+# Get the document ID from the result
+print(f"Document ID: {result['document_id']}")
+
+# Retrieve the processing results
+response = sdk.get_document_result(result['document_id'])
+print(response['data'])
+
+# Clean up
+sdk.close()
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file with your credentials:
+
+```bash
+EKACARE_CLIENT_ID=your_client_id
+EKACARE_CLIENT_SECRET=your_client_secret
+EKACARE_BASE_URL=https://api.eka.care
+```
+
+### Using Configuration Class
+
+Load settings from environment variables or configure manually:
+
+```python
+from ekacare_sdk.config import EkaCareConfig
+
+# Load from environment
+config = EkaCareConfig.from_env()
+sdk = EkaCareSDK(config.client_id, config.client_secret)
+```
+
+---
+
+
+## Features
+
+The SDK provides the following capabilities:
+
+- **Automatic Authentication**: Handles token management automatically
+- **Document Processing**: Upload and process medical documents
+- **Polling Support**: Built-in polling for asynchronous results
+- **Environment Configuration**: Easy setup via environment variables
+
+---
+
+## Task Options
+
+When processing documents, you can specify different task types:
+
+| Task | Description |
+|------|-------------|
+| `smart` | Default option - Smart report parsing |
+| `pii` | PII (Personally Identifiable Information) detection |
+| `both` | Combined smart parsing and PII detection |
+
+Example:
+
+```python
+# Smart report parsing (default)
+result = sdk.process_document("/path/to/report.pdf", task="smart")
+
+# PII detection
+result = sdk.process_document("/path/to/report.pdf", task="pii")
+
+# Both smart parsing and PII detection
+result = sdk.process_document("/path/to/report.pdf", task="both")
+```
+
+---
+
+## API Reference
+
+### Primary Methods
+
+| Method | Description |
+|--------|-------------|
+| `process_document(file_path, doc_type="lr", task="smart")` | Upload and process a document |
+| `get_document_result(document_id)` | Retrieve processing results for a document |

@@ -1,0 +1,189 @@
+---
+title: Tools
+description: Create base tools, elicitation tools, and use MCP tools
+---
+
+Echo SDK supports three tool types:
+
+| Type | Purpose | Returns |
+|------|---------|---------|
+| **BaseTool** | Standard operations | `str` |
+| **BaseElicitationTool** | UI components for user input | `ElicitationDetails` |
+| **MCP Tool** | External tools from MCP servers | Auto-wrapped |
+
+---
+
+## BaseTool
+
+Standard tools that perform operations and return string results:
+
+```python
+from echo.tools.base_tool import BaseTool
+from typing import Any, Dict, Optional
+
+class ClinicalGuidelinesRetrieverTool(BaseTool):
+    """Retrieve clinical guidelines from knowledge base."""
+
+    name: str = "retrieve_clinical_guidelines"
+    description: str = (
+        "Retrieve relevant clinical guidelines for a medical query. "
+        "Use this before making triage recommendations."
+    )
+
+    @property
+    def input_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Medical query to search",
+                },
+                "num_results": {
+                    "type": "integer",
+                    "description": "Number of results",
+                    "default": 5,
+                },
+            },
+            "required": ["query"],
+        }
+
+    async def run(
+        self,
+        query: str = "",
+        num_results: Optional[int] = None,
+        **kwargs,
+    ) -> str:
+        if not query:
+            return "Error: No query provided."
+
+        results = self.kb.retrieve(query=query, num_results=num_results or 5)
+        return self._format_results(results)
+```
+
+---
+
+## BaseElicitationTool
+
+Tools that present UI components to collect user input:
+
+```python
+from echo.tools import BaseElicitationTool, ElicitationDetails
+from typing import Any, Dict, List
+
+class SelectionElicitationTool(BaseElicitationTool):
+    """Present single/multi-select options to user."""
+
+    name: str = "elicit_selection"
+    description: str = (
+        "Ask choice questions to the user. Presents options as buttons. "
+        "Use component='pills' for single select, 'multi' for multi-select."
+    )
+
+    @property
+    def elicitation_components(self):
+        return [
+            SelectionElicitationComponent.PILLS,
+            SelectionElicitationComponent.MULTI_SELECT,
+        ]
+
+    @property
+    def input_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "component": {
+                    "type": "string",
+                    "enum": ["pills", "multi"],
+                    "description": "pills=single select, multi=multi-select",
+                },
+                "options": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Options to display",
+                },
+                "text": {
+                    "type": "string",
+                    "description": "Question text above options",
+                },
+            },
+            "required": ["component", "options", "text"],
+        }
+
+    async def run(
+        self,
+        component: str,
+        text: str,
+        options: List[str],
+        **kwargs,
+    ) -> ElicitationDetails:
+        options_formatted = [{"label": opt, "value": opt} for opt in options]
+        return await super().run(component, text=text, options=options_formatted)
+```
+
+**Elicitation Components:**
+- `pills` - Single select buttons
+- `multi` - Multi-select checkboxes
+- `otp` - OTP verification input
+- `doctor_list` - Doctor selection cards
+
+---
+
+## MCP Tools
+
+Tools from MCP servers are auto-discovered and wrapped:
+
+```python
+from echo import MCPConnectionManager, MCPServerConfig, MCPTransport
+
+# Connect to MCP server
+manager = MCPConnectionManager(MCPServerConfig(
+    transport=MCPTransport.STREAMABLE_HTTP,
+    url="https://mcp.eka.care/mcp",
+    headers={"Authorization": "Bearer <token>"},
+))
+
+# Get tools
+mcp_tools = await manager.get_tools()
+
+# Use with agent
+agent = GenericAgent(
+    agent_config=agent_config,
+    tools=mcp_tools,
+    llm_config=llm_config,
+)
+```
+
+See [MCP Integration](/ai-tools/agent-kit/mcp-integration) for details.
+
+---
+
+## Using Tools with Agent
+
+```python
+from echo import GenericAgent
+
+# Combine tool types
+all_tools = [
+    ClinicalGuidelinesRetrieverTool(),
+    SelectionElicitationTool(),
+    *mcp_tools,  # Tools from MCP server
+]
+
+agent = GenericAgent(
+    agent_config=agent_config,
+    tools=all_tools,
+    llm_config=llm_config,
+)
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="MCP Integration" icon="plug" href="/ai-tools/agent-kit/mcp-integration">
+    Connect to MCP servers
+  </Card>
+  <Card title="Streaming" icon="stream" href="/ai-tools/agent-kit/streaming">
+    See tool calls in real-time
+  </Card>
+</CardGroup>

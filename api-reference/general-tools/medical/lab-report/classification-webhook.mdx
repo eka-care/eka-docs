@@ -1,0 +1,48 @@
+Webhook event is sent when classification of document processing completes.
+### Request
+**Headers:**
+
+- `Eka-Webhook-Signature`: `<Eka Webhook Signature>`  [Refer: Webhook Signature](/api-reference/connect/webhooks/webhook-signature)
+- `Content-Type`: `application/json`
+
+**Body:**
+
+```json
+{
+        "event": "rec.classification",
+        "service": "rec",
+        "event_time": 1759234802,
+        "transaction_id": "4d39628e-7916-47d7-bc35-a00cb986942b",
+        "data": {
+             "status": "parsing_complete",
+             "document_id": "ed66604d-9d62-4f71-a5fb-b78a490148a0",
+             "document_classification": "lab_report"
+        }
+}
+```
+### Field Descriptions
+
+- **`data`**: Contains additional details related to the event.
+    - **`status`**: Current parsing state (parsing_initiated, parsing_complete, parsing_error).
+    - **`document_id`**: ID of the document that was parsed.
+    - **`document_classification`**: Document classification category (enum)
+            - Possible values:
+                - `lab_report` - Laboratory test report
+                - `prescription` - Medical prescription
+                - `medical_insurance` - Medical insurance document
+                - `scan_interpretation` - Radiology/scan interpretation report
+                - `scan` - Medical scan/imaging
+                - `discharge_summary` - Hospital discharge summary
+                - `cowin_vaccine_certificate` - COVID-19 vaccination certificate
+                - `other_medical_document` - Other medical-related document
+                - `medical_invoice` - Medical bill/invoice
+                - `id_card` - Identification card
+                - `body_part` - Body part image
+                - `other_insurance` - Other insurance document
+                - `other_invoice` - Non-medical invoice
+                - `other_graphical` - Other graphical content
+                - `non_medical_document` - Non-medical document
+Note: The status field is an enum with following possible values:
+ - parsing_complete
+ - parsing_error
+ - parsing_initiated

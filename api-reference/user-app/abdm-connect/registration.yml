@@ -9,6 +9,139 @@ servers:
 - description: Stage/Sandbox
   url: https://api.dev.eka.care
 paths:
+  /abdm/na/v1/face-auth/capture:
+    post:
+      description: Capture PID endpoint is used to capture face-auth pid.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceAuthCapturePIDRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceAuthCapturePIDResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Capture Face
+  /abdm/na/v1/face-auth/init:
+    post:
+      description: Face Auth endpoint is used to init face-auth endpoint.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceAuthInitFaceAuthResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Face Auth Init
+  /abdm/na/v1/face-auth/verify:
+    post:
+      description: Verify PID endpoint is used to verify face-auth pid.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceAuthVerifyFaceAuthRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Verify Face
   /abdm/na/v1/profile/login/init:
     post:
       description: Generates an OTP for login. Supports login via Aadhaar number,
@@ -149,6 +282,52 @@ paths:
       security:
       - authApiKey: []
       summary: Verify OTP
+  /abdm/na/v1/registration/aadhaar/auto-login:
+    post:
+      description: API for Auto login
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Auto Login
   /abdm/na/v1/registration/aadhaar/create-phr:
     post:
       description: This API is used to create a new ABHA address
@@ -4285,12 +4464,12 @@ paths:
         name: X-Hip-Id
         schema:
           type: string
-      - description: Consent/Subscription/Authorization ID
+      - description: Consent/Subscription ID
         in: query
         name: id
         required: true
         schema:
-          description: Consent/Subscription/Authorization ID
+          description: Consent/Subscription ID
           type: string
       - description: Request type
         in: query
@@ -4300,7 +4479,6 @@ paths:
           enum:
           - consent
           - subscription
-          - authorization
           type: string
       - description: Status of the request
         in: query
@@ -4343,7 +4521,7 @@ paths:
       - authApiKey: []
   /abdm/v1/requests:
     get:
-      description: API to list all the Subscriptions / Authorization and Consent requests
+      description: API to list all the Subscriptions and Consent requests
       parameters:
       - description: Eka User ID (OID)
         in: header
@@ -4464,6 +4642,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InitResponseType5'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/session/status:
+    get:
+      description: Status of the user by the session.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoggedInStatusResponse'
           description: OK
       security:
       - authApiKey: []
@@ -4715,6 +4933,13 @@ components:
           type: string
         statelgd:
           type: string
+      type: object
+    AuthLoggedInStatusResponse:
+      properties:
+        kyc_verified:
+          type: boolean
+        logged_in:
+          type: boolean
       type: object
     ChangeRequest:
       properties:
@@ -5364,6 +5589,38 @@ components:
         exist:
           description: Indicates if the user has already set the consent PIN.
           type: boolean
+      type: object
+    FaceAuthCapturePIDRequest:
+      properties:
+        txn_id:
+          type: string
+      type: object
+    FaceAuthCapturePIDResponse:
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+        txn_id:
+          type: string
+      type: object
+    FaceAuthInitFaceAuthResponse:
+      properties:
+        hint:
+          type:
+          - "null"
+          - string
+        txn_id:
+          type: string
+        url:
+          type: string
+      type: object
+    FaceAuthVerifyFaceAuthRequest:
+      properties:
+        aadhaar:
+          type: string
+        txn_id:
+          type: string
       type: object
     FormDataSettingsRequest:
       properties:
