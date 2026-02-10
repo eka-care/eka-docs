@@ -1149,6 +1149,8 @@ paths:
         | lastname            | string  | Doctor's last name                       | Yes      |
         
         | gender              | string  | Doctor's gender (M/F/O)                  | Yes       |
+
+        | dob                 | string  | Doctor's date of birth (YYYY-MM-DD)      | No       |
         
         | email               | string  | Doctor's email address                   | No       |
 
@@ -1220,6 +1222,10 @@ paths:
                   type: string
                   description: Doctor's mobile number (10 digits)
                   example: "0000011111"
+                dob:
+                  type: string
+                  description: Doctor's date of birth (YYYY-MM-DD) default to 1990-01-01, if not provided.
+                  example: "1999-01-01"
                 email:
                   type: string
                   format: email
@@ -1255,6 +1261,7 @@ paths:
               firstname: "Rajesh"
               lastname: "Sharma"
               mobile: "0000011111"
+              dob: "1999-01-01"
               email: "dr.rajesh@example.com"
               gender: "M"
               specialisations: ["Cardiology", "Internal Medicine"]
@@ -1315,6 +1322,8 @@ paths:
 
         | address     | string  | Address of the clinic                         | Yes      |
 
+        | partner_id  | string  | Unique id of the clinic in partner's system.  | No      |
+
         | pincode     | string  | Pincode of the clinic                         | No       |
 
         | contact     | string  | Contact number                                | No       |
@@ -1369,6 +1378,10 @@ paths:
                   type: string
                   description: Address of the clinic
                   example: "123 Main Street, Block A"
+                partner_id:
+                  type: string
+                  description: Unique identifier of the clinic in the partner’s system
+                  example: "Clinic_321_Indore"
                 pincode:
                   type: string
                   description: Pincode of the clinic
@@ -1395,6 +1408,7 @@ paths:
             example:
               name: "Sunrise Clinic"
               address: "123 Main Street, Block A"
+              partner_id: "Clinic_321_Indore"
               pincode: "560001"
               contact: "9876543210"
               doctor_ids: ["171266028552522", "171266028552523"]
@@ -1458,6 +1472,8 @@ paths:
         | mobile       | string  | User's mobile number (10 digits)                      | Yes*     |
         
         | email        | string  | User's email address                                  | Yes*     |
+
+        | auth_userid  | string  | auth_userid is used for the SSO authentication        | Yes*     |
         
         | gender       | string  | User's gender (M/F/O)                                 | Yes      |
         
@@ -1474,7 +1490,7 @@ paths:
         | clinic_ids   | array   | List of clinic Eka IDs to assign to this user         | No       |
 
 
-        > **Note:** Either `mobile` or `email` is required. At least one must be provided.
+        > **Note:** Either `mobile` or `email` or `auth_userid` is required. At least one must be provided.
 
 
 
@@ -1525,13 +1541,17 @@ paths:
                   example: "Kumar"
                 mobile:
                   type: string
-                  description: User's mobile number (10 digits). Either mobile or email is required.
+                  description: User's mobile number (10 digits). Either mobile or email or auth_userid is required.
                   example: "0000011111"
                 email:
                   type: string
                   format: email
-                  description: User's email address. Either mobile or email is required.
+                  description: User's email address. Either mobile or email or auth_userid is required.
                   example: "amit.kumar@example.com"
+                auth_userid:
+                  type: string
+                  description: auth_userid used for SSO authentication. Either mobile or email or auth_userid is required
+                  example: "Prateek_@_123"
                 gender:
                   type: string
                   enum: ["M", "F", "O"]
@@ -1574,6 +1594,7 @@ paths:
               lastname: "Kumar"
               mobile: "9876543210"
               email: "amit.kumar@example.com"
+              auth_userid: "Prateek_@_123"
               gender: "M"
               dob: "1990-05-15"
               is_admin: false
