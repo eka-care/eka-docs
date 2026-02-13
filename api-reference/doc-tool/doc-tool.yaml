@@ -1140,31 +1140,35 @@ paths:
         ### Request Parameters
 
 
-        | Parameter           | Type    | Description                              | Required |
+        | Parameter | Type | Description | Required |
 
-        |---------------------|---------|------------------------------------------|----------|
-        
-        | firstname           | string  | Doctor's first name                      | Yes      |
-        
-        | lastname            | string  | Doctor's last name                       | Yes      |
-        
-        | gender              | string  | Doctor's gender (M/F/O)                  | Yes       |
+        | --- | --- | --- | --- |
 
-        | dob                 | string  | Doctor's date of birth (YYYY-MM-DD)      | No       |
-        
-        | email               | string  | Doctor's email address                   | No       |
+        | firstname | string | Doctor's first name | Yes |
 
-        | mobile              | string  | Doctor's mobile number (10 digits)       | No      |
-        
-        | specialisations     | array   | List of doctor's specializations         | No       |
-        
-        | qualifications      | array   | List of doctor's qualifications/degrees  | No       |
-        
-        | about               | string  | Brief description about the doctor       | No       |
-        
-        | profile_image_url   | string  | URL of the doctor's profile image        | No       |
-        
+        | lastname | string | Doctor's last name | Yes |
 
+        | gender | string | Doctor's gender (M/F/O) | Yes |
+
+        | dob | string | Doctor's date of birth (YYYY-MM-DD) | No |
+
+        | email | string | Doctor's email address | No |
+
+        | mobile | string | Doctor's mobile number (10 digits) | No |
+
+        | specialisations | array | List of doctor's specializations | No |
+
+        | qualifications | array | List of doctor's qualifications/degrees | No |
+
+        | about | string | Brief description about the doctor | No |
+
+        | profile_image_url | string | URL of the doctor's profile image | No |
+
+        | clinic_ids | array | List of Eka clinic IDs to assign to this doctor | No |
+
+        | partner_clinic_ids | array | List of partner clinic IDs to assign to this doctor | No |
+
+        | partner_id | string | Unique identifier provided by partner | No |
 
 
         ### Response Parameters
@@ -1257,6 +1261,22 @@ paths:
                   format: uri
                   description: URL of the doctor's profile image
                   example: "https://example.com/images/dr-rajesh.jpg"
+                clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: "List of Eka clinic IDs to assign to this doctor"
+                  example: ["c-ab2c-34f2d-2gwd-2g2g"]
+                partner_clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: "List of partner clinic IDs to assign to this doctor"
+                  example: ["Part_clinic_1"]
+                partner_id:
+                  type: string
+                  description: "Unique identifier provided by partner"
+                  example: "Part_doc"
             example:
               firstname: "Rajesh"
               lastname: "Sharma"
@@ -1268,6 +1288,9 @@ paths:
               qualifications: ["MBBS", "MD", "DM"]
               about: "Dr. Rajesh Sharma is a renowned cardiologist with over 15 years of experience in interventional cardiology."
               profile_image_url: "https://example.com/images/dr-rajesh.jpg"
+              clinic_ids: ["c-ab2c-34f2d-2gwd-2g2g"]
+              partner_clinic_ids: ["Part_clinic_1"]
+              partner_id : "Part_doc"
       responses:
         '201':
           description: Created - Doctor successfully created
@@ -1290,11 +1313,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  firstname:
+                  '<field>':
                     type: array
                     items:
                       type: string
                       example: "This field is required."
+                  message:
+                    type: array
+                    items:
+                      type: string
+                      example: "Only one of partner_clinic_ids or clinic_ids should be provided, not both."
   /cdr/v1/clinic/:
     post:
       tags:
@@ -1330,10 +1358,11 @@ paths:
 
         | doctor_ids  | array   | List of doctor Eka IDs to assign to this clinic| No      |
 
+        | partner_doctor_ids  | array   | List of partner doctor IDs to assign to this clinic| No      |
+
         | city        | string  | City name                                     | No       |
 
         | state       | string  | State name                                    | No       |
-
 
         ### Response Parameters
 
@@ -1397,6 +1426,12 @@ paths:
                     type: string
                   description: List of doctor Eka IDs to assign to this clinic
                   example: ["171266028552522", "171266028552523"]
+                partner_doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of partner doctor IDs to assign to this clinic
+                  example: ["Part_Doc_1","Part_Doc_2"]
                 city:
                   type: string
                   description: City name
@@ -1412,11 +1447,12 @@ paths:
               pincode: "560001"
               contact: "9876543210"
               doctor_ids: ["171266028552522", "171266028552523"]
+              partner_doctor_ids: ["Part_Doc_1","Part_Doc_2"]
               city: "Bangalore"
               state: "Karnataka"
       responses:
         '201':
-          description: Created - Doctor successfully created
+          description: Created - Clinic successfully created
           content:
             application/json:
               schema:
@@ -1436,11 +1472,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  name:
+                  '<field>':
                     type: array
                     items:
                       type: string
                       example: "This field is required."
+                  message:
+                    type: array
+                    items:
+                      type: string
+                      example: "Only one of doctor_ids or partner_doctor_ids should be provided, not both."
   /cdr/v1/ekauser/:
     post:
       tags:
@@ -1487,8 +1528,11 @@ paths:
         
         | doctor_ids   | array   | List of doctor Eka IDs to assign to this user         | No       |
         
+        | partner_doctor_ids   | array   | List of partner doctor IDs to assign to this user         | No       |
+
         | clinic_ids   | array   | List of clinic Eka IDs to assign to this user         | No       |
 
+        | partner_clinic_ids   | array   | List of partner clinic IDs to assign to this user         | No       |
 
         > **Note:** Either `mobile` or `email` or `auth_userid` is required. At least one must be provided.
 
@@ -1583,12 +1627,24 @@ paths:
                     type: string
                   description: List of doctor Eka IDs to assign to this user
                   example: ["171266028552522", "171266028552523"]
+                partner_doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of partner doctor IDs to assign to this user
+                  example: ["Part_doc_1", "Part_doc_2"]
                 clinic_ids:
                   type: array
                   items:
                     type: string
                   description: List of clinic Eka IDs to assign to this user
                   example: ["c-314086a34253rd", "c-415197b45364se"]
+                partner_clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of partner clinic IDs to assign to this user
+                  example: ["Part_clinic_1", "Part_clinic_2"]
             example:
               firstname: "Amit"
               lastname: "Kumar"
@@ -1602,6 +1658,8 @@ paths:
               persona: "D"
               doctor_ids: ["171266028552522", "171266028552523"]
               clinic_ids: ["c-314086a34253rd", "c-415197b45364se"]
+              partner_doctor_ids: ["Part_doc_1", "Part_doc_2"]
+              partner_clinic_ids: ["Part_clinic_1", "Part_clinic_2"]
       responses:
         '201':
           description: Created - Eka User successfully created
@@ -1624,11 +1682,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  firstname:
+                  '<field>':
                     type: array
                     items:
                       type: string
                       example: "This field is required."
+                  message:
+                    type: array
+                    items:
+                      type: string
+                      example: "Only one of doctor_ids or partner_doctor_ids should be provided, not both."
       deprecated: false
   /dr/v1/business/clinic/{clinic_id}:
     get:
