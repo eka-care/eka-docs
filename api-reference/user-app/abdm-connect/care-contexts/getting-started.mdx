@@ -4,6 +4,33 @@ title: Overview
 
 A Care Context represents a logical grouping of health records. Each HMIS, LMIS, or PHR system should determine how to organize data into one or more care contexts for a user. For example, a hospital system might create a care context for each hospital visit, a lab test is a care-context for LMIS, or user-uploaded records in a PHR app.
 
+# M2 Flow: Care Context Linking and Data Sharing
+
+ABDM M2 enables health data exchange between Health Information Providers (HIPs) and Health Information Users (HIUs). The flow starts with linking care contexts and ends with sharing encrypted health data upon consent.
+
+<Steps>
+  <Step title="Link Care Contexts (HIP)">
+    The HIP links a care context to the patient's ABHA address using the [Care Context Link API](/api-reference/user-app/abdm-connect/care-contexts/link/hip-linking). This registers the care context with ABDM so it can be discovered and requested by HIUs.
+
+    You can optionally include the FHIR data as a base64-encoded string in the `data` field of the Link API request. If provided, Eka stores the data on its servers and handles data sharing automatically when an HIU requests it — you will **not** need to handle the `abha.hip_data_fetch` webhook.
+  </Step>
+  <Step title="Receive Linking Confirmation">
+    Listen for the [`abha.link_care_context`](/api-reference/user-app/abdm-connect/webhooks/link-care-context) webhook to confirm whether the care context was successfully linked (`LINKED`) or failed (`ERRORED`).
+  </Step>
+  <Step title="Handle Data Fetch Requests">
+    When an HIU requests data for a linked care context (after the user grants consent), you receive the [`abha.hip_data_fetch`](/api-reference/user-app/abdm-connect/webhooks/hip-data-fetch) webhook. This webhook is sent only if you are **not** storing the data on Eka servers and need to provide it yourself.
+  </Step>
+  <Step title="Push Encrypted Data">
+    Prepare the ABDM-compliant FHIR bundle for the requested care contexts, encrypt it using the key information from the webhook, and push it via the [Care Context Data On-Fetch API](/api-reference/user-app/abdm-connect/care-contexts/data-on-fetch).
+  </Step>
+</Steps>
+
+<Note>
+If you store health data on Eka servers — either by passing base64-encoded FHIR data in the `data` field of the [Link API](/api-reference/user-app/abdm-connect/care-contexts/link/hip-linking), or via the [Upload API](/api-reference/user-app/records/obtain-authorization) — Eka handles data sharing automatically and you will **not** receive the `abha.hip_data_fetch` webhook.
+</Note>
+
+---
+
 # Listing Care Contexts
 <Note>
 This feature is useful for displaying a list of care contexts to a doctor (HMIS) or within a PHR app.
@@ -25,9 +52,9 @@ Listing linked Care Contexts involves two steps, as an ABHA address could have t
 
 Care contexts can be linked to an ABHA in various ways, depending on the document type.
 
-## HIP Inititated Linking
+## HIP Initiated Linking
 
-Use the [Link](/api-reference/user-app/abdm-connect/care-contexts/link/hip-linking) API to create the care context
+Use the [Link](/api-reference/user-app/abdm-connect/care-contexts/link/hip-linking) API to create the care context. Once linked, you will receive the [`abha.link_care_context`](/api-reference/user-app/abdm-connect/webhooks/link-care-context) webhook with the linking status.
 
 ## Upload a Medical Record
 
