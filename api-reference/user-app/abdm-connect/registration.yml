@@ -3455,6 +3455,31 @@ paths:
           description: Accepted
       security:
       - authApiKey: []
+  /abdm/v1/hiu/keyset:
+    patch:
+      description: API to update client public keyset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordsUpdateKeysetRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/profile:
     delete:
       description: This endpoint removes the specified ABHA profile along with all
@@ -7577,6 +7602,18 @@ components:
           type: string
         success:
           type: boolean
+      type: object
+    RecordsUpdateKeysetRequest:
+      properties:
+        nonce:
+          description: Base64-encoded nonce for encryption key derivation
+          type: string
+        public_key:
+          description: Base64-encoded ECDH public key for encryption
+          type: string
+      required:
+      - public_key
+      - nonce
       type: object
     RegistrationEkaIds:
       properties:
