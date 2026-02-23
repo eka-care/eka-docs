@@ -47,9 +47,10 @@ Add the following HTML and script tags to your webpage:
 
          // Pass the data here: 
           data: {
+             oid: "<patient_oid>", // Pass OID of the patient
              hipId: "<available_HFR_ID>", // Pass the HFR ID you have
              counter_id: "<available_HIP_code>" // Pass the facility HIP code
-             identifier:'<phr_address_of_the_patient_to_be_kyced>', // Pass the phr address as identifier of the patient
+             identifier:'<phr_address_of_the_patient>', // Pass the phr address as identifier of the patient
              identifier_type:"phr_address",  // Pass the identifier type i.e. "phr_address"
              flow:'scan-share', // Pass the flow as scan-share
           },
@@ -60,7 +61,7 @@ Add the following HTML and script tags to your webpage:
             
             // Example: Store ABHA data in your app
             if (window.EkaAbha) {
-              window.EkaAbha.onAbhaKYCSuccess(JSON.stringify(params));
+              window.EkaAbha.onAppointmentBookedSuccess(JSON.stringify(params));
             }
           },
 
@@ -97,7 +98,7 @@ Initializes and renders the ABHA SDK in your specified container.
 | ------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `containerId` | `string`                                | ✅           | The HTML element ID where the SDK will mount.                                                                                                  |
 | `clientId` | `string`                                | ✅           | Provide clientId as `ext`.                                                                                                  |
-| `data` | `{`<br/>`hipId?: string;`<br/>`counter_id?: string;`<br/>`identifier: string;`<br/>`identifier_type: string;`<br/>`flow: string;`<br/>` }` | ✅  | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>hipId:</strong> Pass the HFR ID you have.<br/>- <strong>counter_id:</strong> Pass the HIP code of the facility you have.<br/>- <strong>identifier:</strong> Pass the identifier value i.e. phr address of the patient.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "phr_address".  <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `scan-share` for Scan & Share Flow.<br/> |
+| `data` | `{`<br/>`oid?: string;`<br/>`hipId?: string;`<br/>`counter_id?: string;`<br/>`identifier: string;`<br/>`identifier_type: string;`<br/>`flow: string;`<br/>` }` | ✅  | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>oid:</strong> Pass the OID of the patient if available.<br/>- <strong>hipId:</strong> Pass the HFR ID you have.<br/>- <strong>counter_id:</strong> Pass the HIP code of the facility you have.<br/>- <strong>identifier:</strong> Pass the identifier value i.e. phr address of the patient.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "phr_address".  <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `scan-share` for Scan & Share Flow.<br/> |
 | `onAppointmentBookedSuccess`   | `(params: TOnAbhaSnSAppointmentSuccessParams) => void`   | ✅  | Triggered when the Appointment is booked and token gets generated successfully.
 | `onError`     | `(params: TOnAbhaFailureParams) => void`     | ✅           | Triggered when an error occurs during the ABHA flow.       
 | `onAbhaClose`     | `() => void`     | ✅           | Triggered when SDK closes.          
@@ -108,6 +109,7 @@ Initializes and renders the ABHA SDK in your specified container.
 window.initAbhaApp({
   containerId: "sdk_container",
   data: {
+    oid: "patient_oid_here",
     hipId: "available_HFR_ID",
     counter_id: "available_HIP_code" 
     identifier: "phr_address_of_the_patient"
@@ -163,7 +165,7 @@ const onAppointmentBookedSuccess = (params) => {
 
   // Optionally pass data to native bridge if available
   if (window.EkaAbha) {
-    window.EkaAbha.onAbhaKYCSuccess(params);
+    window.EkaAbha.onAppointmentBookedSuccess(params);
   }
 };
 ```
