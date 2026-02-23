@@ -2,33 +2,63 @@
 title: Overview
 ---
 
-A unique identifier assigned to each consent request.
+Milestone 3 covers two sides of the same flow: an HIU requesting access to a patient's health records, and the patient approving or denying that request. Once consent is approved, EKA handles all the intermediate ABDM gateway callbacks to fetch the data from the HIP.
 
-**Consent Artefacts**
+<Note>User authorization is required for all consent operations (approve, deny, revoke).</Note>
 
-Consent artefacts are generated upon the approval of consents.
-Multiple consent artefacts can exist for a single consent, each corresponding to different providers.
-These artefacts represent the linkage between a healthcare provider (HIP) and care contexts.
+---
 
-Upon receiving a consent request, users can approve or deny the request.
-Additionally, they can revoke consent given for older requests.
+## HIU: Requesting Health Data
 
-<Note> User Authorization will be required for all these operations.</Note>
+An HIU initiates the flow by creating a consent request. The patient receives it on their PHR app and acts on it.
 
-### Consent Management: Approve, Deny, or Revoke Requests
 <Steps>
-    <Step title="Approve Consent Request">
-        Use the [Consent Approval](/api-reference/user-app/abdm-connect/consents/consent-approve) endpoint to approve a
-        consent request. You will need to provide necessary consent, care contexts and hip details to process the approval.
-    </Step>
-    <Step title="Deny Consent Request">
-        Use the [Consent Deny](/api-reference/user-app/abdm-connect/consents/consent-deny) endpoint to deny a consent request.
-        Consent id and a proper reason with be required to deny the consent request.
-    </Step>
-    <Step title="Revoke Consent Request">
-        Use the [Consent Revoke](/api-reference/user-app/abdm-connect/consents/consent-revoke) endpoint to revoke an existing consent.
-        Consent Artefact Id will be need to revoke the consent for particular hip.
-    </Step>
+  <Step title="Create a consent request">
+    Use the [Create Consent](/api-reference/user-app/abdm-connect/consents/consent-create) API to raise a request for a patient's health records. The request specifies the patient's ABHA address, the purpose, the date range of records needed, and the HIPs to fetch from.
+  </Step>
+  <Step title="Patient approves the request">
+    The patient receives the request on their PHR app and approves it. Once approved, EKA handles all the ABDM gateway callbacks required to trigger data fetch from the HIP — no action needed on your side.
+  </Step>
+  <Step title="Receive the health data">
+    Once the HIP pushes the data, it is delivered to you in one of two ways depending on how your integration is set up:
+
+    **If you manage data on your side:**
+    You receive the `abha.hiu_data_push` webhook with the encrypted FHIR bundle and `key_information` needed to decrypt it. Set up your HIU public keyset using the [Update Keyset](/api-reference/user-app/abdm-connect/care-contexts/hiu-keys) API — EKA shares this with the HIP so they can encrypt the data for you.
+
+    [abha.hiu_data_push webhook →](/api-reference/user-app/abdm-connect/webhooks/hiu-data-push)
+
+    **If EKA stores the data:**
+    Call the [Retrieve Health Records](/api-reference/user-app/records/retrieve-health-records) API with the `care_context_id` as the identifier. Get the `care_context_id` from the [Consent Details](/api-reference/user-app/abdm-connect/consents/consent-details) API after approval.
+  </Step>
 </Steps>
 
+---
 
+## Patient / PHR App: Managing Consent
+
+From the patient's side, consent requests arrive and can be approved, denied, or revoked at any time.
+
+<Steps>
+  <Step title="List consent requests">
+    Use the [List Consents](/api-reference/user-app/abdm-connect/consents/consent-list) API to fetch all pending and past consent requests for the patient.
+  </Step>
+  <Step title="Approve a request">
+    Use the [Approve Consent](/api-reference/user-app/abdm-connect/consents/consent-approve) API. You need to provide the consent ID, the care contexts to share, and the HIP details.
+
+    On approval, ABDM generates consent artefacts — one per HIP involved. These artefacts authorize the HIU to fetch records from those HIPs.
+  </Step>
+  <Step title="Deny a request">
+    Use the [Deny Consent](/api-reference/user-app/abdm-connect/consents/consent-deny) API with the consent ID and a reason.
+  </Step>
+  <Step title="Revoke a granted consent">
+    Use the [Revoke Consent](/api-reference/user-app/abdm-connect/consents/consent-revoke) API with the consent artefact ID to revoke access for a specific HIP.
+  </Step>
+</Steps>
+
+---
+
+## Auto-Approval
+
+For recurring or trusted access patterns, you can configure auto-approval policies so patients don't need to manually approve every request.
+
+[Configure Auto-Approval →](/api-reference/user-app/abdm-connect/consents/auto-approval/update-auto-approval-policy)
