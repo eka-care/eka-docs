@@ -1,0 +1,161 @@
+---
+title: "Overview"
+description: "Understand what ABDM is, who the key players are, and what you can build with EKA's ABDM Connect APIs and SDKs."
+---
+
+# ABDM Connect
+
+**Ayushman Bharat Digital Mission (ABDM)** is India's national digital health infrastructure. It creates a shared ecosystem where patients, hospitals, labs, insurers, and health apps can exchange health data securely, with patient consent driving every transaction.
+
+EKA's **ABDM Connect** is a plug-and-play API and SDK suite that handles the ABDM gateway complexity so you don't have to.
+
+## The ABDM Ecosystem
+
+### Core Registries
+
+ABDM is built on four registries. Every entity gets a unique, verifiable identity through one of these.
+
+<CardGroup cols={2}>
+  <Card title="ABHA" icon="id-card">
+    **Ayushman Bharat Health Account**
+
+    The patient's health identity. Can be a 14-digit **ABHA Number** (KYC-verified via Aadhaar) or an **ABHA Address** like `nisha@abdm`. All health transactions in ABDM are anchored to this.
+  </Card>
+  <Card title="HPR" icon="user-doctor">
+    **Healthcare Professionals Registry**
+
+    A national registry of licensed healthcare professionals. Each doctor, nurse, or practitioner gets a unique **HPR ID** for verified digital identity.
+  </Card>
+  <Card title="HFR" icon="hospital">
+    **Health Facility Registry**
+
+    A national registry of health facilities, both government and private. Each facility gets a unique **HFR ID** used for record linking and patient discovery.
+  </Card>
+  <Card title="Consent Manager" icon="shield-halved">
+    **Consent Manager**
+
+    Manages the consent flow between HIPs (who hold data) and HIUs (who want access). The ABDM Gateway itself acts as the Consent Manager.
+  </Card>
+</CardGroup>
+
+### Roles in the Ecosystem
+
+There are two roles in ABDM. A product can play both.
+
+<CardGroup cols={2}>
+  <Card title="HIP" icon="database">
+    **Health Information Provider**
+
+    Hospitals, labs, clinics, and pharmacies that generate and hold patient health records. After a visit or test, a HIP links the records to the patient's ABHA address so they're discoverable and shareable.
+
+    *Examples: hospital HMS, diagnostic lab system, pharmacy software*
+  </Card>
+  <Card title="HIU" icon="magnifying-glass-chart">
+    **Health Information User**
+
+    Any entity that requests access to a patient's health records with the patient's consent. After consent is granted, the HIU pulls FHIR records from the relevant HIPs.
+
+    *Examples: insurance company, specialist referral system, wellness platform*
+  </Card>
+</CardGroup>
+
+## ABDM Milestones
+
+ABDM defines three certification milestones for HMIS/LMIS integrations. EKA's ABDM Connect covers all three.
+
+<Steps>
+  <Step title="M1 — ABHA Identity">
+    Required by all integrations: HIP, HIU, and PHR apps.
+
+    Every patient needs an ABHA identity before any health data can be linked or shared.
+
+    - Create an **ABHA Number** (14-digit, KYC-verified via Aadhaar or mobile OTP)
+    - Create an **ABHA Address** like `nisha@abdm`
+    - Login and session management
+    - Profile viewing, updates, and deletion
+    - KYC verification
+    - ABHA card and QR code generation
+    - Verify a patient's ABHA at facility check-in via QR scan (the HIP side of Scan & Share)
+
+    [ABHA Creation & Login APIs →](/api-reference/user-app/abdm-connect/registration/intro)
+  </Step>
+  <Step title="M2 — Care Context Linking & Data Sharing">
+    Required by HIPs: hospitals, labs, clinics, pharmacies.
+
+    Health records are grouped into care contexts (one per visit, test, or document). M2 is about linking these to a patient's ABHA address and serving them when an HIU requests them.
+
+    - HIP pushes records to a patient's ABHA address after each visit or test
+    - Patients can discover and pull unlinked records from any ABDM-connected facility
+    - List all linked providers and care contexts for an ABHA address
+    - Serve FHIR data when an HIU requests it, or store records on EKA and let us handle it automatically
+
+    [Care Context APIs →](/api-reference/user-app/abdm-connect/care-contexts/getting-started)
+  </Step>
+  <Step title="M3 — Consent Management & Data Fetching">
+    Required by HIUs: any entity accessing patient records.
+
+    Patients must explicitly consent before an HIU can access their records. M3 covers the full consent lifecycle and the data fetch that follows.
+
+    - Patients receive and act on consent requests from HIUs
+    - Approve, deny, or revoke consent at any time
+    - Auto-approval policies for recurring access
+    - HIU fetches encrypted FHIR data from HIPs after consent
+    - Encryption key management for secure transfer
+
+    [Consent APIs →](/api-reference/user-app/abdm-connect/consents/getting-started)
+  </Step>
+</Steps>
+
+## PHR App
+
+PHR (Personal Health Record) App is a separate ABDM integration track, distinct from the HMIS milestones above. A PHR app is the patient-facing side of the ABDM ecosystem: patients create their ABHA, view records from every provider they've visited, manage consent, and share their profile at health facilities.
+
+A PHR app typically acts as both a HIP (storing user-uploaded records) and a HIU (fetching records from other providers on the patient's behalf).
+
+PHR app integration covers:
+- ABHA address creation and patient login
+- Viewing all linked care contexts and health records
+- Managing incoming consent requests
+- **Scan & Share** — patient scans a QR at a health facility to share their ABHA profile for registration
+- **Health locker** — patient-controlled storage for self-uploaded documents
+- **Subscription notifications** — get notified when a provider links new records
+
+[Scan & Share APIs →](/api-reference/user-app/abdm-connect/scan-and-share/getting-started)
+
+## What Can You Build
+
+<CardGroup cols={2}>
+  <Card title="Hospital / Clinic Product (HMS)" icon="hospital-user">
+    If you run a hospital or clinic system, you need to be a HIP. After every visit or test, link the patient's records to their ABHA address. When a patient later grants consent to another entity (like an insurer), your system serves those records automatically.
+
+  </Card>
+  <Card title="Consumer Health App (PHR)" icon="heart-pulse">
+    If you're building a patient-facing app, you need the PHR track on top of the milestones. Patients can aggregate their entire health history from every facility they've ever visited, manage consent, and check in at facilities by scanning a QR code.
+
+  </Card>
+  <Card title="Insurance / Analytics Platform (HIU)" icon="file-waveform">
+    If you need to access a patient's health records from any ABDM-connected provider, you need to be an HIU. You request consent from the patient, and once granted, pull their FHIR records directly.
+
+  </Card>
+  <Card title="Integrated Health Platform" icon="layer-group">
+    Large hospital networks and health platforms often need to be HIP, HIU, and PHR at once. Your HMS links records (HIP), doctors can pull history from outside (HIU), and patients have a portal to manage everything (PHR).
+
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Onboarding & Credentials" icon="rocket" href="/api-reference/authorization/getting-started#overview">
+    Get your credentials and onboard into ABDM through EKA Connect.
+  </Card>
+  <Card title="M1: ABHA Creation & Login" icon="user-plus" href="/api-reference/user-app/abdm-connect/registration/intro">
+    Start here: ABHA creation, login, and profile management.
+  </Card>
+  <Card title="M2: Care Context APIs" icon="link" href="/api-reference/user-app/abdm-connect/care-contexts/getting-started">
+    Link health records to ABHA addresses and enable data sharing.
+  </Card>
+  <Card title="M3: Consent APIs" icon="shield-check" href="/api-reference/user-app/abdm-connect/consents/getting-started">
+    Implement consent management and controlled data access.
+  </Card>
+</CardGroup>
