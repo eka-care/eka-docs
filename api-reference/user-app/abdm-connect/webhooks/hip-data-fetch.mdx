@@ -1,4 +1,18 @@
-Webhook event is sent to fetch FHIR data for care contexts requested by HIU. HIP should prepare the ABDM compliant FHIR bundle for care contexts and push it to the HIU using the [Care context data on-fetch API](/api-reference/user-app/abdm-connect/care-contexts/data-on-fetch)
+---
+title: Health Data Requested by HIU
+---
+
+This webhook is sent when an HIU requests health data for care contexts that you have previously linked using the [Care Context Link API](/api-reference/user-app/abdm-connect/care-contexts/link/hip-linking).
+
+<Note>
+You will only receive this webhook if you are **not** storing the health data on Eka servers. If you use Eka's Upload API to store records, Eka handles data sharing automatically.
+</Note>
+
+**What to do when you receive this webhook:**
+
+1. Prepare an ABDM-compliant FHIR bundle for each care context listed in the `care_contexts` array.
+2. Encrypt the FHIR data using the `key_information` provided in the webhook payload (ECDH-based encryption).
+3. Push the encrypted data to the HIU using the [Care Context Data On-Fetch API](/api-reference/user-app/abdm-connect/care-contexts/data-on-fetch). Use the `transaction_id` from this webhook in the on-fetch request.
 
 ### Request
 **Headers:**
@@ -28,14 +42,14 @@ Webhook event is sent to fetch FHIR data for care contexts requested by HIU. HIP
             "care_context_2"
         ],
         "key_information": {
-            "crypto_alg": "",
-            "curve": "",
+            "crypto_alg": "ECDH",
+            "curve": "Curve25519",
             "dh_public_key": {
-                "expiry": "",
-                "parameters": "",
-                "key_value": ""
+                "expiry": "2026-03-01T12:00:00.000Z",
+                "parameters": "Curve25519/32byte random key",
+                "key_value": "base64-encoded public key"
             },
-            "nonce": ""
+            "nonce": "base64-encoded 32-byte nonce"
         },
         "hi_types": [
             "OPConsultation",
