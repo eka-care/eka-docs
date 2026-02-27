@@ -9,12 +9,14 @@ This guide provides everything you need to integrate the ABHA SDK into your appl
 
 ## Overview
 
-The ABHA SDK allows you to integrate Create ABHA, Login with ABHA, ABHA Consent Management, ABHA Profile KYC flows into your healthcare applications. It provides:
+The ABHA SDK allows you to integrate flows—such as Create ABHA, Login, Profile KYC, Consent Management, and Scan & Share—into your healthcare application, while offering customizable theme options. It provides:
 
 - **Create ABHA**: Create a new ABHA using Mobile or Aadhaar.
 - **Login with ABHA**: Login to your exisiting ABHA using PHR Address, ABHA number, Aadhaar number or Mobile number.
 - **ABHA Consent Management**: Manage Consent requests raised by healthcare providers to share medical records securely.
 - **ABHA Profile KYC**: Get your ABHA address KYC verified.
+- **ABHA Scan & Share**: Get your Appointments Booked through ABHA.
+- **Customizing the Theme**: Customize the ABHA SDK colors to match your application's branding.
 
 ## Installation
 
@@ -61,15 +63,23 @@ Add the following HTML and script tags to your webpage:
         window.initAbhaApp({
           containerId: "sdk_container",
           clientId: "ext",
-        
-         // data object 
+
+          // theme object
+          theme: {
+            // pass only the tokens you want to override
+          },
+
+          // data object
           data: {
             // pass the required data as per the flow
-           },
+          },
 
           // Success callback
           onSuccess: (params) => {
-            console.log("ABHA Registration flow completed successfully:", params);
+            console.log(
+              "ABHA Registration flow completed successfully:",
+              params,
+            );
           },
 
           //KYC Successs callback
@@ -82,19 +92,24 @@ Add the following HTML and script tags to your webpage:
             console.log("ABHA Consent flow completed successfully:", params);
           },
 
-          // Error callback
-          onError: (params) => {
-            console.error("ABHA SDK failed:", params);
-          },
-          
-          // Abha Close callback
-          onAbhaClose: () => {
-            console.log("ABHA SDK closed");
+          // Scan & Share Success callback
+          onAppointmentBookedSuccess: (params) => {
+            console.log("Appointment Booked successfully:", params);
           },
 
           // Skip ABHA callback
           onSkipAbha: (params) => {
             console.log("ABHA flow SKIPPED:", params);
+          },
+
+          // Abha Close callback
+          onAbhaClose: () => {
+            console.log("ABHA SDK closed");
+          },
+
+          // Error callback
+          onError: (params) => {
+            console.error("ABHA SDK failed:", params);
           },
         });
       }
@@ -102,6 +117,7 @@ Add the following HTML and script tags to your webpage:
   </body>
 </html>
 ```
+
 ## Core Functions
 
 ### 1. initAbhaApp
@@ -110,18 +126,19 @@ Initializes and renders the ABHA SDK in your specified container.
 
 **Parameters:**
 
-| Name          | Type                                    | Required    | Description                                                                                                                                    |
-| ------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `containerId` | `string`                                | ✅           | The HTML element ID where the SDK will mount.                                                                                                  |
-| `clientId` | `string`                                | ✅           | Provide clientId as `ext`.                                                                                                  |
-| `data` | `{`<br/>`accessToken: string;`<br/>`hipId: string;`<br/>`oid?: string;`<br/>`identifier?: string;`<br/>`identifier_type?: string;`<br/>`consent_id?: string;`<br/>`flow?: string;`<br/>`linkToOrgIcon?: string;`<br/>`skipABHAEnable?: boolean;`<br/>`}` | ⚙️ Optional | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>accessToken:</strong> Pass the access token you have generated from [Connect Login ](https://developer.eka.care/api-reference/authorization/client-login) API without the word `Bearer`. <br/>- <strong>hipId:</strong> Pass the HFR ID you have. <br/>- <strong>oid:</strong> Pass oid of patient if available / needed in the flow. <br/>- <strong>identifier:</strong> Pass the login identifier value i.e. mobile number / aadhaar number / phr address / abha number.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "mobile" / "aadhaar_number" / "phr_address" / "abha_number" /. If not known pass undefined.  <br/>- <strong>consent_id:</strong> Pass the consent_id of the consent request raised. <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `abha-kyc` for KYC flow  / `consent` for Consent flow. <br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp)<br/>- <strong>skipABHAEnable:</strong> Pass the boolean as true if you want Skip ABHA button to be enabled on login screen. <br/><br/> `keys with ? are optional and needs to be passed as per flow requirement.` |
-| `onSuccess`   | `(params: TOnAbhaSuccessParams) => void`   | ✅           | Triggered when the user successfully creates or logs in to ABHA.                                                                               |
-| `onKYCSuccess`   | `(params: TOnAbhaKycSuccessParams) => void`   | ⚙️ Optional | Triggered when the user KYC verified successfully.
-| `onConsentSuccess`   | `(params: TOnAbhaConsentSuccessParams) => void`   | ⚙️ Optional | Triggered when the consent flow completes successfully.
-| `onError`     | `(params: TOnAbhaFailureParams) => void`     | ✅           | Triggered when an error occurs during the ABHA flow.       
-| `onAbhaClose`     | `() => void`     | ✅           | Triggered when SDK closes.   
-| `onSkipAbha`   | `(params: TOnSkipABHA) => void`   | ⚙️ Optional | Triggered if the ABHA flow is skipped.                                                                                       |
- 
+| Name               | Type                                                                                                                                                                                                                                                     | Required    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `containerId`      | `string`                                                                                                                                                                                                                                                 | ✅          | The HTML element ID where the SDK will mount.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `clientId`         | `string`                                                                                                                                                                                                                                                 | ✅          | Provide clientId as `ext`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `data`             | `{`<br/>`accessToken: string;`<br/>`hipId: string;`<br/>`oid?: string;`<br/>`identifier?: string;`<br/>`identifier_type?: string;`<br/>`counter_id?: string;`<br/>`consent_id?: string;`<br/>`flow?: string;`<br/>`orgIconUrl?: string;`<br/>`linkToOrgIcon?: string;`<br/>`skipABHAEnable?: boolean;`<br/>`}` | ⚙️ Optional | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>accessToken:</strong> Pass the access token you have generated from [Connect Login ](https://developer.eka.care/api-reference/authorization/client-login) API without the word `Bearer`. <br/>- <strong>hipId:</strong> Pass the HFR ID you have. <br/>- <strong>oid:</strong> Pass oid of patient if available / needed in the flow. <br/>- <strong>identifier:</strong> Pass the login identifier value i.e. mobile number / aadhaar number / phr address / abha number.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "mobile" / "aadhaar_number" / "phr_address" / "abha_number" /. If not known pass undefined.<br/>- <strong>counter_id:</strong> Pass the HIP code of the facility you have.<br/>- <strong>consent_id:</strong> Pass the consent_id of the consent request raised. <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `abha-kyc` for KYC flow / `consent` for Consent flow. <br/>- <strong>orgIconUrl:</strong> Public CDN URL of the logo of your organisation url should start with https://. [Example](https://cdn.eka.care/vagus/cl5jgf0u500070shaetqw0r5l.png)<br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp)<br/>- <strong>skipABHAEnable:</strong> Pass the boolean as true if you want Skip ABHA button to be enabled on login screen. <br/><br/> `keys with ? are optional and needs to be passed as per flow requirement.` |
+| `theme`            | `object`                                                                                                                                                                                                                                                 | ⚙️ Optional | Color token overrides to match your organisation's design system. All keys are optional — only supply the tokens you want to change. [Refer here](https://developer.eka.care/SDKs/web-sdk/abha-sdk/abha-sdk-theme)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `onSuccess`        | `(params: TOnAbhaSuccessParams) => void`                                                                                                                                                                                                                 | ✅          | Triggered when the user successfully creates or logs in to ABHA.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `onKYCSuccess`     | `(params: TOnAbhaKycSuccessParams) => void`                                                                                                                                                                                                              | ⚙️ Optional | Triggered when the user KYC verified successfully.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `onConsentSuccess` | `(params: TOnAbhaConsentSuccessParams) => void`                                                                                                                                                                                                          | ⚙️ Optional | Triggered when the consent flow completes successfully.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `onAppointmentBookedSuccess`   | `(params: TOnAbhaSnSAppointmentSuccessParams) => void`   | ✅  | Triggered when the Appointment is booked and token gets generated successfully.
+| `onSkipAbha`       | `(params: TOnSkipABHA) => void`                                                                                                                                                                                                                          | ⚙️ Optional | Triggered if the ABHA flow is skipped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `onAbhaClose`      | `() => void`                                                                                                                                                                                                                                             | ✅          | Triggered when SDK closes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `onError`          | `(params: TOnAbhaFailureParams) => void`                                                                                                                                                                                                                 | ✅          | Triggered when an error occurs during the ABHA flow.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ## Callback Parameters
 
@@ -190,15 +207,12 @@ type TProfileRecord = {
   abha_number?: string;
   kyc_verified?: boolean;
 };
-
 ```
 
 **Parameters**
-| Key        | Type                    | Description                                                                                                |
+| Key | Type | Description |
 | ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `response` | `TAuthVerifyV2Response` | The complete ABHA verification response, containing session tokens, user profile, and transaction details. |
-
-
 
 **Example:**
 
@@ -220,7 +234,7 @@ const onSuccess = (params) => {
 
 ### onKYCSuccess Callback
 
-The onKYCSuccess callback is triggered when the ABHA KYC flow completes successfully. 
+The onKYCSuccess callback is triggered when the ABHA KYC flow completes successfully.
 It returns a confirmation message indicating that the KYC has been verified.
 
 **Callback Signature:**
@@ -236,11 +250,9 @@ type TOnAbhaKycSuccess = string;
 ```
 
 **Parameters**
-|         | Type                    | Description                                                                                                |
+| | Type | Description |
 | ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `TOnAbhaKycSuccess` | `string` | A confirmation message from SDK post KYC verification |
-
-
 
 **Example:**
 
@@ -259,7 +271,7 @@ const onKYCSuccess = (params) => {
 
 ### onConsentSuccess Callback
 
-The onConsentSuccess callback is triggered when the ABHA Consent flow completes successfully. 
+The onConsentSuccess callback is triggered when the ABHA Consent flow completes successfully.
 It returns a confirmation message indicating that the Consent flow ended successfully.
 
 **Callback Signature:**
@@ -275,11 +287,9 @@ type TOnAbhaConsentSuccessParams = string;
 ```
 
 **Parameters**
-|         | Type                    | Description                                                                                                |
+| | Type | Description |
 | ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `TOnAbhaConsentSuccessParams` | `string` | A confirmation message from SDK post Consent flow completion |
-
-
 
 **Example:**
 
@@ -296,7 +306,102 @@ const onConsentSuccess = (params) => {
 };
 ```
 
+### onAppointmentBookedSuccess Callback
+
+The onAppointmentBookedSuccess callback is triggered when the appointment is booked and token gets generated successfully.
+It returns a confirmation message indicating that the Appointment is booked.
+
+**Callback Signature:**
+
+```typescript
+onAppointmentBookedSuccess: (params: TOnAbhaSnSAppointmentSuccessParams) => void;
+```
+
+**Type Definitions**
+
+```typescript
+type TOnAbhaSnSAppointmentSuccess = string;
+```
+
+**Parameters**
+| | Type | Description |
+| ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `onAppointmentBookedSuccess` | `string` | A confirmation message from SDK post Appointment Token generation |
+
+**Example:**
+
+```javascript
+const onAppointmentBookedSuccess = (params) => {
+  console.log("Appointment Booked successfully!:", params);
+
+  alert("Appointment Booked successfully!");
+
+  // Optionally pass data to native bridge if available
+  if (window.EkaAbha) {
+    window.EkaAbha.onAppointmentBookedSuccess(params);
+  }
+};
+```
+
+### onSkipAbha Callback
+
+The onSkipAbha callback is triggered when the ABHA SDK flow is skipped. The callback is functional when skipABHAEnable is set to true in the data parameter while initializing the SDK.
+
+**Callback Signature:**
+
+```typescript
+onSkipAbha: (params: TOnSkipABHA) => void;
+```
+
+**Example:**
+
+```javascript
+const onSkipAbha = (params) => {
+  console.log("ABHA SDK Skipped:", params);
+};
+```
+
+**Type Definitions**
+
+```typescript
+type IdentifierType =
+  | "mobile"
+  | "aadhaar_number"
+  | "abha_number"
+  | "phr_address";
+
+type TOnSkipABHA = {
+  identifier?: string;
+  identifier_type?: IdentifierType[]; // No default value here
+};
+```
+
+**Parameters**
+| Key | Type | Description |
+| ---------- | ------------------------ | ---------------------------------------------------------------- |
+| `identifier` | `string?` | It will be login identifier value filled by user. |
+| `identifier_type` | `IdentifierType[]?` | It will be type of login identifier. |
+
+### onAbhaClose Callback
+
+The onAbhaClose callback is triggered when the ABHA SDK flow gets closed.
+
+**Callback Signature:**
+
+```typescript
+onAbhaClose: () => void;
+```
+
+**Example:**
+
+```javascript
+const onAbhaClose = () => {
+  console.log("ABHA SDK Closed");
+};
+```
+
 ### onError Callback
+
 The onError callback is triggered whenever an ABHA flow fails or is interrupted.
 It provides details about the failure through structured parameters, allowing you to handle or forward the error appropriately (for example, to native apps or monitoring tools).
 
@@ -361,15 +466,13 @@ type TProfileRecord = {
   abha_number?: string;
   kyc_verified?: boolean;
 };
-
 ```
 
 **Parameters**
-| Key        | Type                     | Description                                                      |
+| Key | Type | Description |
 | ---------- | ------------------------ | ---------------------------------------------------------------- |
-| `error`    | `string?`                | Short description of the failure or error message.               |
+| `error` | `string?` | Short description of the failure or error message. |
 | `response` | `TAuthVerifyV2Response?` | Partial or full API response object returned from ABHA services. |
-
 
 **Example:**
 
@@ -392,70 +495,21 @@ const onError = (params) => {
 };
 ```
 
-### onAbhaClose Callback
-
-The onAbhaClose callback is triggered when the ABHA SDK flow gets closed. 
-
-**Callback Signature:**
-
-```typescript
-onAbhaClose: () => void;
-```
-
-**Example:**
-
-```javascript
-const onAbhaClose = () => {
-  console.log("ABHA SDK Closed");
-};
-```
-
-### onSkipAbha Callback
-
-The onSkipAbha callback is triggered when the ABHA SDK flow is skipped. The callback is functional when skipABHAEnable is set to true in the data parameter while initializing the SDK.
-
-**Callback Signature:**
-
-```typescript
-onSkipAbha: (params: TOnSkipABHA) => void;
-```
-
-**Example:**
-
-```javascript
-const onSkipAbha = (params) => {
-  console.log("ABHA SDK Skipped:", params);
-};
-```
-**Type Definitions**
-
-```typescript
- type IdentifierType = "mobile" | "aadhaar_number" | "abha_number" | "phr_address";
-
- type TOnSkipABHA = {
-  identifier?: string;
-  identifier_type?: IdentifierType[]; // No default value here
-};
-```
-
-**Parameters**
-| Key        | Type                     | Description                                                      |
-| ---------- | ------------------------ | ---------------------------------------------------------------- |
-| `identifier`    | `string?`                | It will be login identifier value filled by user.               |
-| `identifier_type` | `IdentifierType[]?` | It will be type of login identifier. |
-
-
 **Suggest Handling**
--Always log the full error response (params) for debugging.
--Display friendly error messages for known error.code values.
--If params.response is present, inspect response.error.message for more detail.
--If integrating with native apps, forward the serialized error object:
+
+- Always log the full error response (params) for debugging.
+- Display friendly error messages for known error.code values.
+- If params.response is present, inspect response.error.message for more detail.
+- If integrating with native apps, forward the serialized error object:
+
 ```javascript
 window.EkaAbha.onAbhaFailure(JSON.stringify(params));
 ```
 
 ## Container Styling
+
 Ensure your container has sufficient space:
+
 ```html
 <div
   id="sdk_container"
@@ -472,6 +526,7 @@ Ensure your container has sufficient space:
 **Problem**: Nothing appears in the container.
 
 **Solution**:
+
 - Ensure containerId matches an existing HTML element.
 - Verify the SDK JS and CSS are correctly loaded.
 - Check browser console for errors.
@@ -481,6 +536,7 @@ Ensure your container has sufficient space:
 **Problem**: API requests are not triggered after the SDK is mounted.
 
 **Solution**:
+
 - Ensure that the accessToken is passed correctly (do not include the Bearer prefix) and that the token has not expired.
 - To prevent CORS-related issues, ensure that your domain is whitelisted.
 
@@ -489,6 +545,7 @@ Ensure your container has sufficient space:
 **Problem**: onSuccess, onError, onKYCSuccess, onConsentSuccess, onAbhaClose isn’t firing.
 
 **Solution**:
+
 - Make sure callbacks are passed as valid functions.
 - Avoid race conditions (e.g., calling before SDK fully loads).
 
@@ -497,6 +554,6 @@ Ensure your container has sufficient space:
 **Problem**: SDK content appears misaligned or clipped.
 
 **Solution**:
+
 - Give your container a fixed height (e.g., 600px).
 - Ensure no parent element uses overflow: hidden.
-

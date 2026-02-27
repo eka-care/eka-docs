@@ -6,6 +6,7 @@ description: "Complete implementation guide for the ABHA SDK to be used for ABHA
 # ABHA SDK - Scan & Share Implementation
 
 This guide provides everything you need to integrate the ABHA SDK into your application for ABHA Scan & Share Book Appointment Flow.
+
 - **ABHA Scan & Share**: Get your Appointments Booked through ABHA.
 
 ### Implementation Example
@@ -45,7 +46,7 @@ Add the following HTML and script tags to your webpage:
           containerId: "sdk_container",
           clientId: 'ext',
 
-         // Pass the data here: 
+         // Pass the data here:
           data: {
              oid: "<patient_oid>", // Pass OID of the patient
              hipId: "<available_HFR_ID>", // Pass the HFR ID you have
@@ -53,12 +54,14 @@ Add the following HTML and script tags to your webpage:
              identifier:'<phr_address_of_the_patient>', // Pass the phr address as identifier of the patient
              identifier_type:"phr_address",  // Pass the identifier type i.e. "phr_address"
              flow:'scan-share', // Pass the flow as scan-share
+             orgIconUrl: "<url_of_your_org_logo>", // Pass the url of the logo of your organisation for ex https://cdn.eka.care/vagus/cl5jgf0u500070shaetqw0r5l.png
+             linkToOrgIcon: "<url_of_image_to_link_abha_to_your_org>", // Pass the url of an image which depicts linking abha to your organisation for ex https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp
           },
 
           // Scan & Share Success callback
           onAppointmentBookedSuccess: (params) => {
             console.log("Appointment Booked successfully:", params);
-            
+
             // Example: Store ABHA data in your app
             if (window.EkaAbha) {
               window.EkaAbha.onAppointmentBookedSuccess(JSON.stringify(params));
@@ -78,7 +81,7 @@ Add the following HTML and script tags to your webpage:
           // Abha Close callback
           onAbhaClose: () => {
             console.log("ABHA SDK closed");
-          }, 
+          },
 
         });
       }
@@ -86,6 +89,7 @@ Add the following HTML and script tags to your webpage:
   </body>
 </html>
 ```
+
 ## Core Functions
 
 ### 1. initAbhaApp
@@ -94,14 +98,14 @@ Initializes and renders the ABHA SDK in your specified container.
 
 **Parameters:**
 
-| Name          | Type                                    | Required    | Description                                                                                                                                    |
-| ------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `containerId` | `string`                                | ✅           | The HTML element ID where the SDK will mount.                                                                                                  |
-| `clientId` | `string`                                | ✅           | Provide clientId as `ext`.                                                                                                  |
-| `data` | `{`<br/>`oid?: string;`<br/>`hipId?: string;`<br/>`counter_id?: string;`<br/>`identifier: string;`<br/>`identifier_type: string;`<br/>`flow: string;`<br/>` }` | ✅  | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>oid:</strong> Pass the OID of the patient if available.<br/>- <strong>hipId:</strong> Pass the HFR ID you have.<br/>- <strong>counter_id:</strong> Pass the HIP code of the facility you have.<br/>- <strong>identifier:</strong> Pass the identifier value i.e. phr address of the patient.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "phr_address".  <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `scan-share` for Scan & Share Flow.<br/> |
-| `onAppointmentBookedSuccess`   | `(params: TOnAbhaSnSAppointmentSuccessParams) => void`   | ✅  | Triggered when the Appointment is booked and token gets generated successfully.
-| `onError`     | `(params: TOnAbhaFailureParams) => void`     | ✅           | Triggered when an error occurs during the ABHA flow.       
-| `onAbhaClose`     | `() => void`     | ✅           | Triggered when SDK closes.          
+| Name                         | Type                                                                                                                                                           | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `containerId`                | `string`                                                                                                                                                       | ✅       | The HTML element ID where the SDK will mount.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `clientId`                   | `string`                                                                                                                                                       | ✅       | Provide clientId as `ext`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `data`                       | `{`<br/>`oid?: string;`<br/>`hipId?: string;`<br/>`counter_id?: string;`<br/>`orgIconUrl?: string;`<br/>`linkToOrgIcon?: string;`<br/>`identifier: string;`<br/>`identifier_type: string;`<br/>`flow: string;`<br/>`orgIconUrl?: string;`<br/>`linkToOrgIcon?: string; `<br/>`}` | ✅       | Configuration data for initializing the ABHA flow. <br/><br/>- <strong>oid:</strong> Pass the OID of the patient if available.<br/>- <strong>hipId:</strong> Pass the HFR ID you have.<br/>- <strong>counter_id:</strong> Pass the HIP code of the facility you have.<br/>- <strong>identifier:</strong> Pass the identifier value i.e. phr address of the patient.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "phr_address". <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `scan-share` for Scan & Share Flow.<br/>- <strong>orgIconUrl:</strong> Public CDN URL of the logo of your organisation url should start with https://. [Example](https://cdn.eka.care/vagus/cl5jgf0u500070shaetqw0r5l.png)<br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp)<br/> <br/> `keys with ? are optional.` |
+| `onAppointmentBookedSuccess` | `(params: TOnAbhaSnSAppointmentSuccessParams) => void`                                                                                                         | ✅       | Triggered when the Appointment is booked and token gets generated successfully.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `onError`                    | `(params: TOnAbhaFailureParams) => void`                                                                                                                       | ✅       | Triggered when an error occurs during the ABHA flow.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `onAbhaClose`                | `() => void`                                                                                                                                                   | ✅       | Triggered when SDK closes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 **Example:**
 
@@ -111,7 +115,7 @@ window.initAbhaApp({
   data: {
     oid: "patient_oid_here",
     hipId: "available_HFR_ID",
-    counter_id: "available_HIP_code" 
+    counter_id: "available_HIP_code"
     identifier: "phr_address_of_the_patient"
     identifier_type: "phr_address"
     flow:'scan-share', // Pass the flow as scan-share
@@ -130,10 +134,9 @@ window.initAbhaApp({
 
 ## Callback Parameters
 
-
 ### onAppointmentBookedSuccess Callback
 
-The onAppointmentBookedSuccess callback is triggered when the appointment is booked and token gets generated successfully. 
+The onAppointmentBookedSuccess callback is triggered when the appointment is booked and token gets generated successfully.
 It returns a confirmation message indicating that the Appointment is booked.
 
 **Callback Signature:**
@@ -149,11 +152,9 @@ type TOnAbhaSnSAppointmentSuccess = string;
 ```
 
 **Parameters**
-|         | Type                    | Description                                                                                                |
+| | Type | Description |
 | ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `onAppointmentBookedSuccess` | `string` | A confirmation message from SDK post Appointment Token generation |
-
-
 
 **Example:**
 
@@ -171,6 +172,7 @@ const onAppointmentBookedSuccess = (params) => {
 ```
 
 ### onError Callback
+
 The onError callback is triggered whenever an ABHA flow fails or is interrupted.
 It provides details about the failure through structured parameters, allowing you to handle or forward the error appropriately (for example, to native apps or monitoring tools).
 
@@ -235,15 +237,13 @@ type TProfileRecord = {
   abha_number?: string;
   kyc_verified?: boolean;
 };
-
 ```
 
 **Parameters**
-| Key        | Type                     | Description                                                      |
+| Key | Type | Description |
 | ---------- | ------------------------ | ---------------------------------------------------------------- |
-| `error`    | `string?`                | Short description of the failure or error message.               |
+| `error` | `string?` | Short description of the failure or error message. |
 | `response` | `TAuthVerifyV2Response?` | Partial or full API response object returned from ABHA services. |
-
 
 **Example:**
 
@@ -268,7 +268,7 @@ const onError = (params) => {
 
 ### onAbhaClose Callback
 
-The onAbhaClose callback is triggered when the ABHA SDK flow gets closed. 
+The onAbhaClose callback is triggered when the ABHA SDK flow gets closed.
 
 **Callback Signature:**
 
@@ -285,25 +285,20 @@ const onAbhaClose = () => {
 ```
 
 **Suggest Handling**
--Always log the full error response (params) for debugging.
--Display friendly error messages for known error.code values.
--If params.response is present, inspect response.error.message for more detail.
--If integrating with native apps, forward the serialized error object:
-```javascript
-window.EkaAbha.onAbhaFailure(JSON.stringify(params));
-```
 
-**Suggest Handling**
--Always log the full error response (params) for debugging.
--Display friendly error messages for known error.code values.
--If params.response is present, inspect response.error.message for more detail.
--If integrating with native apps, forward the serialized error object:
+- Always log the full error response (params) for debugging.
+- Display friendly error messages for known error.code values.
+- If params.response is present, inspect response.error.message for more detail.
+- If integrating with native apps, forward the serialized error object:
+
 ```javascript
 window.EkaAbha.onAbhaFailure(JSON.stringify(params));
 ```
 
 ## Container Styling
+
 Ensure your container has sufficient space:
+
 ```html
 <div
   id="sdk_container"
@@ -320,6 +315,7 @@ Ensure your container has sufficient space:
 **Problem**: Nothing appears in the container.
 
 **Solution**:
+
 - Ensure containerId matches an existing HTML element.
 - Verify the SDK JS and CSS are correctly loaded.
 - Check browser console for errors.
@@ -329,6 +325,7 @@ Ensure your container has sufficient space:
 **Problem**: API requests are not triggered after the SDK is mounted.
 
 **Solution**:
+
 - Ensure that the accessToken is passed correctly (do not include the Bearer prefix) and that the token has not expired.
 - To prevent CORS-related issues, ensure that your domain is whitelisted.
 
@@ -337,6 +334,7 @@ Ensure your container has sufficient space:
 **Problem**: onSuccess, onError, onAppointmentBookedSuccess, onAbhaClose isn’t firing.
 
 **Solution**:
+
 - Make sure callbacks are passed as valid functions.
 - Avoid race conditions (e.g., calling before SDK fully loads).
 
@@ -345,6 +343,6 @@ Ensure your container has sufficient space:
 **Problem**: SDK content appears misaligned or clipped.
 
 **Solution**:
+
 - Give your container a fixed height (e.g., 600px).
 - Ensure no parent element uses overflow: hidden.
-
