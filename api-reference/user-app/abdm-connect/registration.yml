@@ -3287,6 +3287,88 @@ paths:
           description: No Content
       security:
       - authApiKey: []
+  /abdm/v1/ecdh/decrypt:
+    post:
+      description: Decrypt data using ECDH key exchange.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsDecryptPayload'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsDecryptResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/ecdh/encrypt:
+    post:
+      description: Encrypt data using ECDH key exchange.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsEncryptPayload'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsEncryptResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/ecdh/keys:
+    get:
+      description: Generate ECDH key pair with nonce for encryption/decryption operations.
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsKeyPairWithNonce'
+          description: OK
+      security:
+      - authApiKey: []
   /abdm/v1/hip/care-context/data/on-fetch:
     post:
       description: API for HIP to push care context FHIR data to HIU
@@ -6348,6 +6430,30 @@ components:
         type:
           type: string
       type: object
+    ModelsDecryptPayload:
+      properties:
+        encrypted_data:
+          description: Base64-encoded encrypted data to decrypt
+          type: string
+        receiver_nonce:
+          description: Nonce associated with the receiver's key pair
+          type: string
+        receiver_private_key:
+          description: Base64-encoded private key of the receiver
+          type: string
+        sender_nonce:
+          description: Nonce associated with the sender's key pair
+          type: string
+        sender_public_key:
+          description: Base64-encoded public key of the sender
+          type: string
+      type: object
+    ModelsDecryptResponse:
+      properties:
+        decrypted_data:
+          description: Decrypted plaintext data
+          type: string
+      type: object
     ModelsDiscoverCareContextHmisConnect:
       properties:
         error:
@@ -6519,6 +6625,36 @@ components:
           description: Indicates whether the health ID exist.
           type: boolean
       type: object
+    ModelsEncryptPayload:
+      properties:
+        plain_text_data:
+          description: Plaintext data to encrypt
+          type: string
+        receiver_nonce:
+          description: Nonce associated with the receiver's key pair
+          type: string
+        receiver_public_key:
+          description: Base64-encoded public key of the receiver
+          type: string
+        sender_nonce:
+          description: Nonce associated with the sender's key pair
+          type: string
+        sender_private_key:
+          description: Base64-encoded private key of the sender
+          type: string
+        sender_public_key:
+          description: Base64-encoded public key of the sender
+          type: string
+      type: object
+    ModelsEncryptResponse:
+      properties:
+        encrypted_data:
+          description: Base64-encoded encrypted data
+          type: string
+        key_to_share:
+          description: Public key material to share with the receiver
+          type: string
+      type: object
     ModelsError:
       properties:
         code:
@@ -6648,6 +6784,18 @@ components:
         transaction_id:
           description: Unique transaction identifier for slot booking received in
             the previous api response
+          type: string
+      type: object
+    ModelsKeyPairWithNonce:
+      properties:
+        nonce:
+          description: Random nonce generated for the key pair
+          type: string
+        private_key:
+          description: Base64-encoded ECDH private key
+          type: string
+        public_key:
+          description: Base64-encoded ECDH public key
           type: string
       type: object
     ModelsLinkOnConfirmHmisConnect:
