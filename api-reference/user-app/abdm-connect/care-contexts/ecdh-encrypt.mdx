@@ -5,9 +5,23 @@ description: >
   Encrypt data using ECDH key exchange.
 
 
-  Use this API to encrypt health data before sharing it with external HIUs via ABDM. The encryption is performed using the ECDH key exchange mechanism.
+  This API encrypts plaintext health data using ECDH shared secret derivation. A shared secret is derived from the sender's private key and the receiver's public key. The IV and salt are computed from the XOR of sender and receiver nonces, and the data is encrypted using AES-256-GCM.
 
 
-  For details on key generation, encryption, and decryption, refer to the [ABDM Encryption and Decryption Guide](https://sandbox.abdm.gov.in/sandbox/v3/new-documentation?doc=EncryptionandDecryptions).
+  **Algorithm details:**
+
+  - **Key Agreement:** ECDH on Curve25519 (Weierstrass form)
+
+  - **Key Derivation:** HKDF-SHA256
+
+  - **Symmetric Encryption:** AES-256-GCM
+
+  - **Nonce Handling:** IV and salt are derived from XOR of sender and receiver nonces
+
+
+  The response includes the base64-encoded encrypted data and the public key material to share with the receiver.
+
+
+  For more details, refer to the [ABDM Encryption and Decryption Guide](https://sandbox.abdm.gov.in/sandbox/v3/new-documentation?doc=EncryptionandDecryptions).
 
 ---
