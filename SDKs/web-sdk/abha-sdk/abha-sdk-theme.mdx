@@ -114,3 +114,98 @@ window.initAbhaApp({
   // ... other methods
 });
 ```
+
+## Troubleshooting
+
+### Common Theming Issues
+
+#### 1. Button Not Visible or Hard to See
+
+**Problem**: A button appears invisible, blends into the background, or is difficult to read.
+
+**Cause**: This typically happens when `primary.brand` and `content.enabled` are too similar (e.g., both set to white or both dark), making the button label invisible against its background.
+
+**Solution**:
+- Ensure `primary.brand` (button background) and `content.enabled` (button text) have sufficient contrast.
+- A dark `primary.brand` should pair with a light `content.enabled` (e.g., `#ffffff`), and vice versa.
+
+```typescript
+theme: {
+  primary: {
+    brand: ‘#1A237E’,   // Dark button background
+  },
+  content: {
+    enabled: ‘#FFFFFF’, // Light text on button — must contrast with brand
+  },
+}
+```
+
+#### 2. Color Discrepancy — Overrides Not Taking Effect
+
+**Problem**: You passed a theme but some colors still appear as defaults.
+
+**Cause**: Token keys may be misspelled, nested incorrectly, or using the wrong casing.
+
+**Solution**:
+- Double-check that your token keys exactly match the structure in [Default Theme Colors](#default-theme-colors). The SDK performs a shallow merge — missing or misnamed keys fall back to defaults silently.
+- Verify nesting: tokens like `surface.base` must be passed as `surface: { base: ‘...’ }`, not as a flat key.
+
+```typescript
+// ❌ Wrong — flat key, will be ignored
+theme: {
+  ‘surface.base’: ‘#F9FAFB’,
+}
+
+// ✅ Correct — nested object
+theme: {
+  surface: {
+    base: ‘#F9FAFB’,
+  },
+}
+```
+
+#### 3. Success / Error States Look Off
+
+**Problem**: Success alerts, error messages, or validation states are visually inconsistent or unreadable.
+
+**Cause**: Overriding only `semantic.success` without also updating `surface.success` and `content.success` (or vice versa) breaks the foreground/background pairing for state banners.
+
+**Solution**: Always override semantic state colors as a group — the background surface token, the text content token, and the semantic indicator token together.
+
+| State   | Tokens to keep in sync                                          |
+| ------- | --------------------------------------------------------------- |
+| Success | `semantic.success`, `surface.success`, `content.success`        |
+| Error   | `semantic.error`, `surface.danger`                              |
+| Warning | `semantic.warning`                                              |
+
+#### 4. ABHA Card Color Not Changing
+
+**Problem**: The ABHA ID card background color is not updating despite passing a theme.
+
+**Solution**: The card background is controlled by `surface.abhaCard`, not `surface.base` or `primary.brand`. Pass it explicitly:
+
+```typescript
+theme: {
+  surface: {
+    abhaCard: ‘#1A237E’, // Override the ABHA card background
+  },
+}
+```
+
+#### 5. QR Code Invisible or Unreadable
+
+**Problem**: The QR code is not scannable or appears blank.
+
+**Cause**: `qrCodeColors.fgColor` and `qrCodeColors.bgColor` may have been set to the same or similar colors.
+
+**Solution**: Maintain high contrast between the QR dot color and background — black on white is the most reliable combination for scanner compatibility.
+
+```typescript
+theme: {
+  qrCodeColors: {
+    fgColor: ‘#000000’, // QR dots — keep dark
+    bgColor: ‘#FFFFFF’, // QR background — keep light
+  },
+}
+```
+

@@ -55,6 +55,7 @@ Add the following HTML and script tags to your webpage:
              identifier_type:"phr_address",  // Pass the identifier type i.e. "phr_address"
              consent_id: '<consent_id_of_the_consent_raised>' // Pass the consent id of the consent request raised by the healthcare provider
              flow:'consent', // Pass the flow as consent
+             orgIconUrl: "<url_of_your_org_logo>", // Pass the url of the logo of your organisation for ex https://cdn.eka.care/vagus/cl5jgf0u500070shaetqw0r5l.png
              linkToOrgIcon: "<url_of_image_to_link_abha_to_your_org>", // Pass the url of an image which depicts linking abha to your organisation for ex https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp
           },
 
@@ -101,7 +102,7 @@ Initializes and renders the ABHA SDK in your specified container.
 | ------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `containerId` | `string`                                | ✅           | The HTML element ID where the SDK will mount.                                                                                                  |
 | `clientId` | `string`                                | ✅           | Provide clientId as `ext`.                                                                                                  |
-| `data` | `{`<br/>`accessToken: string;`<br/>`oid?: string;`<br/> `hipId?: string;`<br/>`identifier: string;`<br/>`identifier_type: string;`<br/>`consent_id: string;`<br/>`flow: string;`<br/>`linkToOrgIcon?: string;`<br/>`}` | ⚙️ Optional | Configuration data for initializing the ABHA flow.<br/>- <strong>accessToken:</strong> Pass the access token you have generated from [Connect Login ](https://developer.eka.care/api-reference/authorization/client-login) API without the word `Bearer`.<br/>- <strong>oid:</strong> Pass the OID of the patient if available. <br/>- <strong>hipId:</strong> Pass the HFR ID you have.<br/>- <strong>identifier:</strong> Pass the identifier value i.e. phr address to get it kyced.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "phr_address". <br/>- <strong>consent_id:</strong> Pass the consent_id of the consent request raised. <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `consent` for Consent flow. <br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp) <br/> <br/> `keys with ? are optional.` |
+| `data` | `{`<br/>`accessToken: string;`<br/>`oid?: string;`<br/> `hipId?: string;`<br/>`identifier: string;`<br/>`identifier_type: string;`<br/>`consent_id: string;`<br/>`flow: string;`<br/>`orgIconUrl?: string;`<br/>`linkToOrgIcon?: string;`<br/>`}` | ⚙️ Optional | Configuration data for initializing the ABHA flow.<br/>- <strong>accessToken:</strong> Pass the access token you have generated from [Connect Login ](https://developer.eka.care/api-reference/authorization/client-login) API without the word `Bearer`.<br/>- <strong>oid:</strong> Pass the OID of the patient if available. <br/>- <strong>hipId:</strong> Pass the HFR ID you have.<br/>- <strong>identifier:</strong> Pass the identifier value i.e. phr address to get it kyced.<br/>- <strong>identifier_type:</strong> Pass the type of identifier which you passed in `identifier` key i.e. "phr_address". <br/>- <strong>consent_id:</strong> Pass the consent_id of the consent request raised. <br/>- <strong>flow:</strong> Pass the type of flow for which you want to use SDK for i.e. `consent` for Consent flow. <br/>- <strong>orgIconUrl:</strong> Public CDN URL of the logo of your organisation url should start with https://. [Example](https://cdn.eka.care/vagus/cl5jgf0u500070shaetqw0r5l.png)<br/>- <strong>linkToOrgIcon:</strong> Public CDN URL of the icon representing “Link ABHA to your organisation” url should start with https://. [Example](https://cdn.eka.care/vagus/cm6agrs5000090tfwfz984x5b.webp)<br/> <br/> `keys with ? are optional.` |
 | `onConsentSuccess`   | `(params: TOnAbhaConsentSuccessParams) => void`   | ✅           | Triggered when the consent flow completes successfully.
 | `onError`     | `(params: TOnAbhaFailureParams) => void`     | ✅           | Triggered when an error occurs during the ABHA flow.       
 | `onAbhaClose`     | `() => void`     | ✅           | Triggered when SDK closes.                                                                                           |
@@ -296,19 +297,10 @@ const onAbhaClose = () => {
 | `identifier_type` | `IdentifierType[]?` | It will be type of login identifier. |
 
 **Suggest Handling**
--Always log the full error response (params) for debugging.
--Display friendly error messages for known error.code values.
--If params.response is present, inspect response.error.message for more detail.
--If integrating with native apps, forward the serialized error object:
-```javascript
-window.EkaAbha.onAbhaFailure(JSON.stringify(params));
-```
-
-**Suggest Handling**
--Always log the full error response (params) for debugging.
--Display friendly error messages for known error.code values.
--If params.response is present, inspect response.error.message for more detail.
--If integrating with native apps, forward the serialized error object:
+- Always log the full error response (params) for debugging.
+- Display friendly error messages for known error.code values.
+- If params.response is present, inspect response.error.message for more detail.
+- If integrating with native apps, forward the serialized error object:
 ```javascript
 window.EkaAbha.onAbhaFailure(JSON.stringify(params));
 ```
