@@ -1,0 +1,71 @@
+---
+title: M4 Flow
+description: Healthcare Professional Registry (HPR), Health Facility Registry (HFR), and Onboarding flows for ABDM integration.
+---
+
+## M4 Flow — Registries & Onboarding
+
+---
+
+## 1. Healthcare Professional Registry (HPR)
+
+### Via Aadhaar Authentication
+
+```mermaid
+flowchart LR
+  A["Get Aadhaar OTP"] --> B["Verify Aadhaar OTP"]
+  B --> C["Verify Mobile"]
+```
+
+### HPR ID Creation
+
+```mermaid
+flowchart LR
+  A["Get HPR Info"] --> B{"HPR ID exists?"}
+  B -->|Yes| E["✅ Done — Skip creation"]
+  B -->|No| C["Suggest IDs"]
+  C --> D["Create HPR"]
+```
+
+### Mobile Login _(alternative entry)_
+
+```mermaid
+flowchart LR
+  A["Get Mobile OTP"] --> B["Verify Mobile OTP"]
+  B --> C["Check If HPR is Available"]
+```
+
+<Note>
+    Use **Get Aadhaar OTP → Verify → Verify Mobile** for first-time registration. Use **Get Mobile OTP → Verify Mobile OTP** for returning professionals logging in via mobile.
+</Note>
+
+---
+
+## 2. Health Facility Registry (HFR)
+
+```mermaid
+flowchart LR
+  A["Search HFR"] --> B{"Facility exists?"}
+  B -->|Yes| D["Link HFR"]
+  B -->|No| C["Onboard HFR"]
+  C --> D
+```
+
+<Note>
+    Always **Search HFR** first. If the facility already exists in the ABDM registry, skip onboarding and go directly to **Link HFR**.
+</Note>
+
+---
+
+## 3. Onboarding to Eka
+
+```mermaid
+flowchart LR
+  A["Create HPR ID on ABDM portal"] --> B["Register Facility HFR ID"]
+  B --> C["Software Linkage via Eka Bridge ID"]
+  C --> D["Onboard to Eka ✅"]
+```
+
+<Note>
+    This is a **one-time setup** flow. Once the HPR ID and HFR ID are created and registered on the ABDM portal, use the **Software Linkage** step from the facility dashboard to connect via the Eka Bridge ID, then call the Onboard API to complete integration.
+</Note>

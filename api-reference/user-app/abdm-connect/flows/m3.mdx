@@ -1,0 +1,45 @@
+---
+title: M3 Flow
+description: Consent management and health data retrieval flow for ABDM integration.
+---
+
+## M3 Flow — Consent & Health Data Retrieval
+
+### HIU — Consent Management
+
+```mermaid
+flowchart LR
+  A["Create Consent"] --> B["Consent List"]
+  B --> C["Consent Details"]
+```
+
+### PHR — Consent Actions
+
+```mermaid
+flowchart LR
+  A["Consent Approve"] --> B["Consent Deny"]
+  B --> C["Consent Revoke"]
+```
+
+<Note>
+    **Consent Approve** is triggered after the HIU creates a consent request. The PHR user can approve, deny, or later revoke the consent.
+</Note>
+
+### Data Retrieval
+
+```mermaid
+flowchart TD
+  A["Consent Approve"]
+  A --> B{"Data stored by Eka Care?"}
+
+  B -->|Yes| C["Retrieve Health Records"]
+  B -->|No| D["Health Data Received from HIP ― Webhook"]
+```
+
+<Note>
+    If data is **not** stored by Eka Care, the system waits for the HIP to push data. Your server will receive this via the ** Health Data Received from HIP** webhook.
+</Note>
+
+| Step | Type | Description |
+|---|---|---|
+| Health Data Received from HIP | Webhook | Triggered when HIP pushes health records after consent approval |

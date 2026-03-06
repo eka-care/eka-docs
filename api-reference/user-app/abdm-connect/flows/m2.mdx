@@ -1,0 +1,34 @@
+---
+title: M2 Flow
+description: Care Context Linking and Data Fetch flow for ABDM integration.
+---
+
+## M2 Flow — Care Context Linking
+
+```mermaid
+flowchart TD
+  A{"Data stored by Eka Care?"}
+
+  A -->|Yes| B(["Include data in Linking API"])
+  A -->|No| C(["Don't include data in Linking API"])
+
+  B --> D["Care Context Linking"]
+  C --> D
+
+  D --> E["Care Context Linking Status  ― Webhook"]
+
+  E --> F{"Data stored by Eka Care?"}
+
+  F -->|No| H["Handle Data Fetch Requests ― Webhook"]
+
+  H --> I["Push care context data to HIU"]
+```
+
+<Note>
+    Steps marked ** Webhook** are asynchronous — your server will receive a callback at the registered webhook URL. You do not need to poll for status.
+</Note>
+
+| Step | Type | Description |
+|---|---|---|
+| Care Context Linking Status | Webhook | Notifies when linking succeeds or fails |
+| Handle Data Fetch Requests | Webhook | Triggered when HIU requests data not stored by Eka Care |
