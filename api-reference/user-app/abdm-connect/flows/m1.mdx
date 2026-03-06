@@ -31,7 +31,11 @@ flowchart LR
   A["Face Auth Init"] --> B["Capture Face"]
   B -.->|async| P["Polling API"]
   B --> C["Verify"]
-  C --> D["✅ Create ABHA"]
+  C --> D{"Mobile linked with Aadhaar?"}
+  D -->|Yes| E["✅ Create ABHA"]
+  D -->|No| F["Mobile Verify OTP"]
+  F --> FR["Mobile Resend OTP"]
+  F --> G["✅ Create ABHA"]
 ```
 
 ### Via Mobile OTP
