@@ -1,0 +1,89 @@
+---
+title: Milestone 1
+description: ABHA Creation and Login flows for ABDM integration.
+---
+
+> **Note:** All flows require Authorization from the [Session API](/api-reference/authorization/client-login). The `oid` obtained can be reused across other flows.
+
+---
+
+## Create ABHA
+
+Three methods to create an ABHA account. Each flow runs independently.
+
+### Via Aadhaar OTP
+
+```mermaid
+flowchart LR
+  A["Generate OTP"] --> AR["Resend OTP"]
+  A --> B["Verify OTP"]
+  B --> C{"Mobile linked with Aadhaar?"}
+  C -->|Yes| D["✅ Create ABHA"]
+  C -->|No| E["Mobile Verify OTP"]
+  E --> ER["Mobile Resend OTP"]
+  E --> F["✅ Create ABHA"]
+```
+
+### Via Face Auth
+
+```mermaid
+flowchart LR
+  A["Face Auth Init"] --> B["Capture Face"]
+  B -.->|async| P["Polling API"]
+  B --> C["Verify"]
+  C --> D{"Mobile linked with Aadhaar?"}
+  D -->|Yes| E["✅ Create ABHA"]
+  D -->|No| F["Mobile Verify OTP"]
+  F --> FR["Mobile Resend OTP"]
+  F --> G["✅ Create ABHA"]
+```
+
+### Via Mobile OTP
+
+```mermaid
+flowchart LR
+  A["Generate OTP"] --> AR["Resend OTP"]
+  A --> B["Verify OTP"]
+  B --> C["✅ Create ABHA"]
+```
+
+---
+
+## Login ABHA
+
+Three methods to login. All methods resolve to `skip_state = abha_end` on success.
+
+<Note>
+    The `oid` from login can be reused in other downstream flows.
+</Note>
+
+### Via PHR Address
+
+```mermaid
+flowchart LR
+  A["Generate OTP"] --> B["Verify OTP"]
+  B --> C["skip_state = abha_end ✅"]
+```
+
+### Via Aadhaar
+
+```mermaid
+flowchart LR
+  A["Generate OTP"] --> B["Verify OTP"]
+  B --> C["skip_state = abha_create"]
+  C --> D["Auto-Login API"]
+  D --> E["skip_state = abha_end ✅"]
+```
+
+### Via Mobile
+
+```mermaid
+flowchart LR
+  A["Generate OTP"] --> B["Verify OTP"]
+  B --> C["PHR Login API"]
+  C --> D["skip_state = abha_end ✅"]
+```
+
+<Note>
+    If `skip_state = abha_create` and `len(abha_profiles) > 0`, the client can use the **Auto-Login API** to log into an existing ABHA from `abha_profiles` directly.
+</Note>
