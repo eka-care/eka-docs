@@ -2018,3 +2018,129 @@ paths:
           description: ""
           headers: {}
       deprecated: false
+
+  /registered_url_for_vaccination_reminder_webhook_events:
+    post:
+      tags:
+        - Appointment Webhooks
+      summary: Vaccination Reminder
+      description: >-
+
+        This webhook is triggered when a vaccination reminder is sent for a patient. It notifies the registered endpoint with vaccination details so the receiving system can send appropriate reminders to the patient or doctor.
+
+
+        **Field Definitions**
+
+
+        • **event**: string - The type of event. For vaccination reminders, this will be `vaccination.reminder`.
+
+
+        • **service**: string - The type of service. This will be `appointment`.
+
+
+        • **event_time**: integer - Event occurrence timestamp in milliseconds.
+
+
+        • **partition_id**: string - Partition identifier for the event in the format `{business_id}:{patient_id}:vaccination.reminder`.
+
+
+        • **transaction_id**: string - Unique transaction identifier for the event in the format `{patient_id}-{doctor_id}-{timestamp}`.
+
+
+        • **data**: object - Contains detailed information about the vaccination reminder.
+
+
+        • **doctor_id**: string - Unique identifier for the doctor.
+
+
+        • **patient_id**: string - Unique identifier for the patient.
+
+
+        • **patient_name**: string - Name of the patient.
+
+
+        • **doctor_name**: string - Name of the doctor.
+
+
+        • **booking_link**: string - Link to book an appointment.
+
+
+        • **due_date**: string - Due date for the vaccination.
+
+
+        • **vaccines**: string - Vaccines due for the patient.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: VaccinationReminderWebhook
+      parameters: []
+      requestBody:
+        description: ""
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  example: "vaccination.reminder"
+                  description: "Type of event"
+                service:
+                  type: string
+                  example: "appointment"
+                  description: "Service related to the event"
+                event_time:
+                  type: integer
+                  example: 1741677083454
+                  description: "Event occurrence timestamp in milliseconds"
+                partition_id:
+                  type: string
+                  example: "b-23535342:62342343:vaccination.reminder"
+                  description: "Partition identifier for the event"
+                transaction_id:
+                  type: string
+                  example: "62342343-23532432142-1741677083454"
+                  description: "Unique transaction identifier for the event"
+                data:
+                  type: object
+                  properties:
+                    doctor_id:
+                      type: string
+                      example: "23532432142"
+                      description: "Identifier for the doctor in Eka"
+                    patient_id:
+                      type: string
+                      example: "62342343"
+                      description: "Identifier for the patient in Eka"
+                    patient_name:
+                      type: string
+                      example: "John Doe"
+                      description: "Name of the patient"
+                    doctor_name:
+                      type: string
+                      example: "Dr. Jane Smith"
+                      description: "Name of the doctor"
+                    booking_link:
+                      type: string
+                      example: "https://eka.care/book/23532432142"
+                      description: "Link to book an appointment"
+                    due_date:
+                      type: string
+                      example: "2026-04-15"
+                      description: "Due date for the vaccination"
+                    vaccines:
+                      type: string
+                      example: "Hepatitis B, MMR"
+                      description: "Vaccines due for the patient"
+      responses:
+        "200":
+          description: ""
+          headers: {}
+      deprecated: false
