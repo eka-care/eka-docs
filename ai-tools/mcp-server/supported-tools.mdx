@@ -5,7 +5,7 @@ description: Complete list of available MCP tools and their capabilities
 
 # Supported Tools
 
-Eka MCP provides 20+ tools across patient management, appointments, prescriptions, and clinic operations. All tools support natural language queries through your AI assistant.
+Eka MCP provides 20+ tools across patient management, appointments, ABHA/ABDM, and clinic operations. All tools support natural language queries through your AI assistant.
 
 ## Patient Management
 
@@ -27,14 +27,29 @@ Eka MCP provides 20+ tools across patient management, appointments, prescription
 | `cancel_appointment` | Cancel scheduled appointment | `appointment_id`, `reason` (optional) | Cancellation confirmation |
 | `get_appointment_details` | Retrieve specific appointment info | `appointment_id` | Complete appointment information |
 
-## Prescription Management
+## ABHA / ABDM
+
+ABHA (Ayushman Bharat Health Account) tools let your AI assistant help patients log in with their ABHA mobile number, select their health profile, and fetch their ABHA card — all through a guided multi-step flow.
 
 | Tool Name | Description | Input Parameters | Returns |
 |-----------|-------------|------------------|---------|
-| `create_prescription` | Generate digital prescription | `patient_id`, `medications` (array), `doctor_id`, `advice` (optional) | Prescription ID and details |
-| `get_prescriptions` | View prescription history | `patient_id`, `from_date` (optional), `to_date` (optional) | List of prescriptions |
-| `get_prescription_details` | Retrieve specific prescription | `prescription_id` | Complete prescription with medications and advice |
-| `update_prescription` | Modify existing prescription | `prescription_id`, fields to update | Updated prescription |
+| `abha_send_otp` | Step 1 — Send OTP to the patient's ABHA-registered mobile number | `mobile_number` (10-digit) | `txn_id` to pass to the next step |
+| `abha_verify_otp` | Step 2 — Verify the OTP entered by the patient | `otp`, `txn_id` (from Step 1) | Either the completed ABHA profile + card, or a list of profiles to choose from |
+| `abha_select_profile` | Step 3 (if needed) — Select an ABHA profile when the patient has multiple | `phr_address` (e.g. `user@abdm`), `txn_id` (from Step 2) | Completed ABHA profile + ABHA card (base64 PNG) |
+
+**Typical flow:**
+
+```text
+"Help me log in with my ABHA"
+→ abha_send_otp          (OTP sent to mobile)
+→ abha_verify_otp        (OTP verified — returns profile or profile list)
+→ abha_select_profile    (only if multiple profiles exist)
+→ ABHA card shown to user
+```
+
+<Note>
+  ABHA card is returned as a base64-encoded PNG in the response. The AI will render and display it directly — no additional tool call is needed.
+</Note>
 
 ## Doctor & Clinic Operations
 
