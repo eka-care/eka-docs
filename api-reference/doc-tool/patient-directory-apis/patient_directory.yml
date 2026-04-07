@@ -511,6 +511,208 @@ paths:
               schema:
                 $ref: '#/components/schemas/FetchByMobilePatientProfile'
 
+  /profiles/v1/patient/{username}/username/?flatten=true:
+    get:
+      summary: Retrieve patient profile by username
+      description: |
+        Retrieves patient profile using username in a workspace.
+
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: eka-doc
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+            example: exampleusername
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Patient profile details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PatientProfile'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/404Error'
+
+
+  /profiles/v1/emr-user/{oid}:
+    patch:
+      summary: Update EMR user profile
+      description: |
+        Updates an EMR user profile with validated and normalized data.
+
+        **Authorization Rules**:
+          - Users can update their own profile.
+          - Admins can update any profile within their workspace.
+
+        **Name Handling**:
+          - If `fln` is provided, it will be split into `fn`, `mn`, `ln`.
+          - If updating name, ensure either `fn` or `fln` is provided.
+
+      tags:
+        - Patient
+
+      parameters:
+        - in: header
+          name: client-id
+          required: true
+          schema:
+            type: string
+            example: EC_1431
+
+        - in: path
+          name: oid
+          required: true
+          schema:
+            type: string
+            example: 18661861868168
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobile:
+                  type: string
+                  description: Mobile number in E.164 format
+                  example: "+919876543210"
+
+                email:
+                  type: string
+                  format: email
+                  example: testuser@eka.care
+
+                gen:
+                  type: string
+                  enum: [M, F, O]
+                  description: Gender
+                  example: M
+
+                dob:
+                  type: string
+                  format: date
+                  example: "2000-01-02"
+
+                fn:
+                  type: string
+                  description: First name
+                  example: eka
+
+                mn:
+                  type: string
+                  description: Middle name
+                  example: kumar
+
+                ln:
+                  type: string
+                  description: Last name
+                  example: user
+
+                fln:
+                  type: string
+                  description: Full name
+                  example: eka user
+
+                bg:
+                  type: string
+                  enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]
+                  description: Blood group
+                  example: B+
+
+                s:
+                  type: string
+                  description: Salutation
+                  example: Mr
+
+                extras:
+                  type: object
+                  additionalProperties: true
+                  description: Additional arbitrary data as JSON
+                  example:
+                    preferred_language: "en"
+                    city: "Bangalore"
+
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile updated successfully"
+
+        '400':
+          description: Validation or request error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400Error'
+
+        '401':
+          description: Unauthorized
+
+        '500':
+          description: Server error
+    
+    # get:
+    #   summary: Retrieve EMR user profile
+    #   description: |
+    #     Retrieves an EMR user profile by OID.
+
+    #   parameters:
+    #     - in: header
+    #       name: client-id
+    #       required: true
+    #       schema:
+    #         type: string
+    #         example: EC_1431
+
+    #     - in: path
+    #       name: oid
+    #       required: true
+    #       schema:
+    #         type: string
+    #         example: 18661861868168
+
+    #   security:
+    #     - bearerAuth: []
+
+    #   responses:
+    #     '200':
+    #       description: EMR user profile details
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: '#/components/schemas/EmrUserProfile'
+
+    #     '404':
+    #       description: Not found
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: '#/components/schemas/404Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -762,6 +964,56 @@ components:
         ps:
           type: string
           example: "P"
+    EmrUserProfile:
+      type: object
+      properties:
+        oid:
+          type: string
+          example: "175074536120088"
+        bid:
+          type: string
+          example: "77088166996724"
+        ps:
+          type: string
+          example: "S"
+        c_ate:
+          type: integer
+          example: 1750745358
+        u_ate:
+          type: integer
+          example: 1750745358
+        gen:
+          type: string
+          example: "M"
+        dob:
+          type: string
+          format: date
+          example: "2000-01-02"
+        is_age:
+          type: boolean
+          example: true
+        fn:
+          type: string
+          example: "Eka"
+        ln:
+          type: string
+          example: "User"
+        fln:
+          type: string
+          example: "Eka User"
+        bg:
+          type: string
+          example: "B+"
+        mobile:
+          type: string
+          example: "+911201201201"
+        email:
+          type: string
+          format: email
+          example: "eka.user@example.com"
+        s:
+          type: string
+          example: "Mr."
 
     400Error:
       type: object
