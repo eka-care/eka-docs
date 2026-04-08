@@ -1,0 +1,93 @@
+---
+title: "Quick Start"
+tag: "New"
+description: "A step by step guide to integrate EkaScribe into your application in just few minutes"
+---
+
+We recommend the SDK approach as it simplifies implementation by handling voice activity detection (VAD), audio chunking, uploads, and other complexities, making it easy to plug into your existing workflow.
+
+## Step 1: Get Your API Credentials
+
+You need a `client_id` and `client_secret` to authenticate with EkaScribe.
+
+<Steps>
+  <Step title="Create an Eka Account">
+    <a href="https://login.eka.care/workspace/sign-in/?next=https://console.eka.care&product_type=emr&signup=user_only&tab=sign-up" target="_blank">Sign up on Eka</a> if you haven't already.
+  </Step>
+  <Step title="Generate API Credentials">
+    Go to the <a href="https://console.eka.care" target="_blank">Eka Developer Console</a>, navigate to **Manage API Credentials**, and create a new client.
+  </Step>
+  <Step title="Save Your Credentials">
+    Copy your `client_id` and `client_secret`. Store them securely, the secret won't be shown again.
+    <Tip>You can create a long live token against your client ID, which you can directly pass as an access token.</Tip>
+  </Step>
+  <Step title="Get Access Token">
+    Use the [Client Login API](/api-reference/authorization/client-login) to obtain an access token, or use your long live token.
+  </Step>
+</Steps>
+
+**[View detailed authentication guide →](/api-reference/authorization/getting-started)**
+
+---
+
+## Step 2: Install the SDK
+
+We recommend the **TypeScript SDK** for the fastest plug-and-play integration.
+
+```bash
+npm install @eka-care/ekascribe-ts-sdk
+# or
+yarn add @eka-care/ekascribe-ts-sdk
+```
+
+---
+
+## Step 3: Start Transcribing
+
+Here's a complete working example to record a consultation and get structured medical notes:
+
+```ts
+// 1. Create a config variable to manage tokens
+const sdkConfig = {
+  access_token: '<your_access_token>',
+};
+
+// Get instance and use it throughout your application
+const ekascribe = getEkaScribeInstance(sdkConfig);
+
+// 2. Fetch available configurations (languages, templates, etc.)
+const config = await ekascribe.getEkascribeConfig();
+
+// 3. Initialize a transcription session
+await ekascribe.initTransaction({
+  mode: 'consultation',
+  input_language: ['en-IN'],
+  output_format_template: [{ template_id: 'your_template_id' }],
+  txn_id: 'unique-transaction-id',
+  transfer: 'vaded',
+  model_type: 'pro',
+});
+
+// 4. Start recording - microphone permission will be requested
+await ekascribe.startRecording();
+
+// ... consultation happens ...
+
+// 5. Stop recording - SDK handles chunking, upload & commit automatically
+await ekascribe.endRecording();
+
+// 6. Get the structured output
+const result = await ekascribe.pollSessionOutput({
+  txn_id: 'unique-transaction-id',
+});
+
+console.log(result);
+```
+
+That's it. The SDK handles VAD, audio chunking, file uploads, retries, and polling - you just call the methods.
+
+---
+
+## Explore Other Integration Options
+
+You can also integrate EkaScribe using [other SDKs](/api-reference/health-ai/ekascribe/overview#1--sdks-recommended), [REST APIs](/api-reference/health-ai/ekascribe/ekascribe-v2/overview), or the [Chrome Extension](https://chromewebstore.google.com/detail/ekascribe-ai-powered-clin/nncfcjgelepkhpjfkejgkncdfbcfmhom).
