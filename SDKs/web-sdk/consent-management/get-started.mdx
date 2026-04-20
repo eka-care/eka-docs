@@ -1,0 +1,248 @@
+---
+title: "Get Started"
+description: "Embed ABDM medical records consent management into your application"
+---
+
+## Overview
+
+The **ABDM Records** module is a plug-and-play UI widget that enables your application to request, track, and act on ABDM (Ayushman Bharat Digital Mission) health data consents on behalf of your patients. When a patient approves a consent request, their medical records are delivered to your backend automatically — your application is then responsible for displaying those records when the **View** button is clicked.
+
+---
+
+## How It Works
+
+<Steps>
+  <Step title="Embed the widget">
+    Load the ABDM Records widget inside your application by rendering it in an `<iframe>` or a dedicated route, passing required URL parameters.
+  </Step>
+  <Step title="Request consent">
+    On click of **Request Consent** inside the widget, selects the date range, expiry, purpose, and record types, then submits the form.
+  </Step>
+  <Step title="Patient approves">
+    The patient receives a notification on their ABHA-linked app and either grants or denies the request.
+  </Step>
+  <Step title="Records arrive in your backend">
+    When the patient grants consent, Eka's ABDM gateway delivers the medical records to your registered callback/backend endpoint.
+  </Step>
+  <Step title="Your app shows the records">
+    The consent row in the table shows **Success**. When the **View** button is clicked, the widget opens your `consent-view` URL so your application can display the received records.
+  </Step>
+</Steps>
+
+---
+
+## Integration
+
+### Embedding the widget
+
+Render the widget inside an `<iframe>` (or directly in a React shell) and pass the required query parameters in the `src` URL.
+
+```html
+<iframe
+  src="https://your-deployed-abdm-records-url/?abha=USER_ABHA_ID&oid=PATIENT_OID&cid=CLINIC_ID&consent-view=https://yourapp.com/records&token=BEARER_TOKEN"
+  width="100%"
+  height="100%"
+  frameborder="0"
+/>
+```
+
+### URL parameters
+
+| Parameter      | Required | Description                                                                                                                                  |
+| -------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `abha`         | Yes      | Patient's ABHA address (e.g. `user@abdm`)                                                                                                    |
+| `oid`          | Yes      | Patient's internal OID in your system                                                                                                        |
+| `cid`          | Yes      | Your clinic / HIU identifier registered with ABDM                                                                                            |
+| `consent-view` | Yes      | Base URL of your application's medical records page — the widget appends consent details as query params when the **View** button is clicked |
+| `token`        | Yes      | Short-lived Bearer token used to authenticate API calls to Eka's backend                                                                     |
+
+<Note>
+  Tokens are short-lived. Generate a fresh token on each widget load from your
+  backend and never expose long-lived credentials in the browser. Instead of
+  route usage of iframe is preferred as it doesn't expose the token in the URL
+  bar and allows better control over token refresh and security.
+</Note>
+
+---
+
+## Requesting Consent
+
+{/* TODO: Add screenshot of the "Request Consent" button in the header */}
+
+Click the **Request Consent** button in the top-right corner of the widget header. A modal will open with the following fields:
+
+### Request modal fields
+
+| Field                                | Description                                                                                     | Default                |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------- |
+| **Request To**                       | Patient's ABHA address (pre-filled, read-only)                                                  | From `abha` param      |
+| **Records From**                     | Date range of records to fetch — choose a preset (Last 3 / 6 / 12 months) or set a custom range | Last 6 months to today |
+| **Shared Records Will Expire In**    | How long the granted consent stays valid                                                        | 6 months               |
+| **Purpose** _(Advanced)_             | Reason for requesting records                                                                   | Care management        |
+| **Medical Record Type** _(Advanced)_ | Types of records to include                                                                     | All types              |
+
+{/* TODO: Add screenshot of the Request Consent modal — step 1 (form) */}
+
+#### Available record types
+
+- OPConsultation
+- Prescription
+- DischargeSummary
+- DiagnosticReport
+- ImmunizationRecord
+- HealthDocumentRecord
+- WellnessRecord
+
+#### Available purposes
+
+- Care management
+- Public Health
+- Disease Specific Health Research
+
+After filling in the details, click **Request Medical Records**. A confirmation screen appears:
+
+> _"Your request for medical records has been sent. You can see the medical records once the patient approves your request."_
+
+{/* TODO: Add screenshot of the Request Consent modal — step 2 (success confirmation) */}
+
+Click **Check Request Status** to return to the consent history table.
+
+---
+
+## Consent History Table
+
+The widget's main screen shows a table of all consent requests for the patient. Each row represents one consent and includes:
+
+| Column           | Description                                               |
+| ---------------- | --------------------------------------------------------- |
+| **Consent ID**   | Unique identifier for the consent                         |
+| **Requested On** | Date the consent was requested                            |
+| **Last Updated** | Date the consent status last changed                      |
+| **Shared For**   | Date range of records covered by the consent              |
+| **Expires In**   | Days remaining before the consent expires                 |
+| **Status**       | Current state of the consent (see below)                  |
+| **Action**       | **View** button — only visible when status is **Success** |
+
+{/* TODO: Add screenshot of the consent history table showing different status rows */}
+
+---
+
+## Consent Statuses
+
+Each consent request transitions through a lifecycle. The table shows a color-coded status badge for each row.
+
+### Status reference
+
+| Status badge   | Internal value | Meaning                                                                                                              |
+| -------------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 🟢 **Success** | `GRANTED`      | The patient approved the consent. Records have been delivered to your backend. The **View** action is now available. |
+| 🟡 **Pending** | `REQUESTED`    | The consent request has been sent to the patient and is awaiting their decision.                                     |
+| 🔴 **Denied**  | `DENIED`       | The patient explicitly rejected the consent request.                                                                 |
+| 🔴 **Revoked** | `REVOKED`      | The patient previously granted consent but has since revoked it.                                                     |
+| 🔴 **Expired** | `EXPIRED`      | The consent was granted but the expiry period has passed.                                                            |
+
+{/* TODO: Add screenshot highlighting each status badge in the table */}
+
+<Info>
+  Only **Success** consents have records associated with them. For all other
+  statuses, no records will be available in your backend.
+</Info>
+
+---
+
+## Viewing Records (Your Responsibility)
+
+When a consent is in **Success** state, a **View** button appears in the Action column. Clicking it opens your `consent-view` URL in a new browser tab.
+
+### URL format your page will receive
+
+The widget constructs the URL as:
+
+```
+{consent-view}?consent_id={consentId}&abha={abhaAddress}
+```
+
+**Example:**
+
+```
+https://yourapp.com/records?consent_id=abc-123-xyz&abha=user@abdm
+```
+
+<Note>
+  The widget opens this URL in a new tab. If the browser blocks the popup, it
+  falls back to navigating the current tab.
+</Note>
+
+### What your records page must do
+
+<Steps>
+  <Step title="Read URL params">
+    Extract `consent_id` and `abha` from the query string.
+  </Step>
+  <Step title="Look up records in your backend">
+    Use the `consent_id` to fetch the medical records your backend received from
+    the ABDM gateway when the patient approved the consent.
+  </Step>
+  <Step title="Display the records">
+    Render the records in your own UI. Eka delivers the raw FHIR bundles to your
+    registered webhook — how you store and display them is entirely up to you.
+  </Step>
+</Steps>
+
+{/* TODO: Add screenshot of an example records page with FHIR data displayed */}
+
+<Warning>
+  The ABDM Records widget does **not** display the medical record content
+  itself. It only manages the consent lifecycle. You are responsible for storing
+  records from the ABDM gateway callback and building the records viewer page at
+  `consent-view`.
+</Warning>
+
+---
+
+## API Reference
+
+The widget communicates with Eka's backend using the following endpoints. All requests include your `token` as a Bearer token in the `Authorization` header.
+
+| Method | Endpoint                    | Purpose                                 |
+| ------ | --------------------------- | --------------------------------------- |
+| `POST` | `/abdm/v1/consents/list`    | Fetch the consent history for a patient |
+| `POST` | `/abdm/v1/consents/create`  | Submit a new consent request            |
+| `POST` | `/abdm/v1/consents/details` | Fetch details of a specific consent     |
+
+**Base URLs:**
+
+| Environment | Base URL                   |
+| ----------- | -------------------------- |
+| Production  | `https://api.eka.care`     |
+| Development | `https://api.dev.eka.care` |
+
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="What happens after the patient approves consent?">
+    Eka's ABDM gateway fetches the records from the patient's health locker and delivers them to your registered backend webhook as FHIR bundles. The consent row in the widget will update to **Success** on the next poll/refresh.
+  </Accordion>
+
+<Accordion title="Can the patient revoke consent after approval?">
+  Yes. If the patient revokes consent via their ABHA app, the consent status in
+  the table will change to **Revoked**. Records already delivered to your
+  backend are yours to retain per your data policy.
+</Accordion>
+
+<Accordion title="Why is the View button not appearing?">
+  The **View** action only appears for consents with **Success** (GRANTED)
+  status. Ensure the patient has approved the request and the table has
+  refreshed.
+</Accordion>
+
+  <Accordion title="How do I refresh the consent table?">
+    The widget fetches the latest consent list each time it loads. Reload the widget or the page containing the `<iframe>` to see updated statuses.
+  </Accordion>
+
+  <Accordion title="What record types are supported?">
+    OPConsultation, Prescription, DischargeSummary, DiagnosticReport, ImmunizationRecord, HealthDocumentRecord, and WellnessRecord. You can select one or more when requesting consent.
+  </Accordion>
+</AccordionGroup>
