@@ -1,0 +1,2322 @@
+openapi: 3.0.0
+info:
+  description: ABHA Registration and login APIs
+  title: Registration
+  version: 1.0.0
+servers:
+- description: Production
+  url: https://api.eka.care
+- description: Stage/Sandbox
+  url: https://api.dev.eka.care
+paths:
+  /abdm/v1/care-contexts/discover:
+    post:
+      description: "ABDM allows a user to find their health records from any health
+        facility they have visited via the discovery process. \n\nDiscover API returns
+        any unlinked care-context for the ABHA User."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoverRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/care-contexts/discover/link/confirm:
+    post:
+      description: Confirm linking for discovered care context
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/care-contexts/discover/link/init:
+    post:
+      description: Initialise the linking for discovered care context.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerrorErrorResp'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType4'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/care-contexts/linked:
+    get:
+      parameters:
+      - in: query
+        name: hip_id
+        required: true
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordsResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/care-contexts/providers:
+    get:
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/approve:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/deny:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DenyRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/change:
+    post:
+      description: Change the consent pin by providing a old and new pin combination
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/exists:
+    get:
+      description: Returns if the user has already set the consent pin.
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forgot/init:
+    post:
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType3'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/forgot/verify:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType5'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/reset:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/set:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/pin/verify:
+    post:
+      description: Verify the consent pin to approve/revoke consents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType4'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/consents/revoke:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/profile:
+    delete:
+      description: This endpoint removes the specified ABHA profile along with all
+        associated documents, vital records, and any other related data from the system.<Warning>Please
+        note that the ABHA metadata will remain in the ABDM system, as ABDM does not
+        provide a delete option</Warning>
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+    get:
+      description: Fetches the ABHA profile of the User. <Note>Please cache these
+        results locally. We do not recommend calling this API on every page load.
+        Evict the cache when there is profile update.</Note>
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+          description: OK
+      security:
+      - authApiKey: []
+    patch:
+      description: |-
+        Update Profile Details
+
+        <Note>The API expects all the fields returned by the [Get Profiles API](/api-reference/user-app/abdm-connect/profile/details/profile-details) to be included in the PATCH request body.</Note>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetailsRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "204":
+          description: No Content
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/asset/card:
+    get:
+      description: Fetch the ABHA card.<Note>Please cache these results locally. We
+        do not recommend calling this API on every page load. Evict the cache when
+        there is profile update.</Note>
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            image/png:
+              schema:
+                format: binary
+                type: string
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/asset/qr:
+    get:
+      description: Fetch the data for ABHA qr code display. <Note>Please cache these
+        results locally. We do not recommend calling this API on every page load.
+        Evict the cache when there is profile update.</Note><Warning>There is no fixed
+        structure for this JSON; it can vary depending on the creation of ABHA. Generate
+        the QR code based on the content of the response body.</Warning>
+      parameters:
+      - in: query
+        name: format
+        schema:
+          enum:
+          - json
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/profile/share:
+    post:
+      description: Fetch the token from a hospital. <Note> Get the hip_id and counter_id
+        by reading the QR code of the Hospital/Clinic.</Note> <Note>Use the device
+        location for the location data</Note>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanandshareRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HipQRScanShareProfileResponseV2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/provider/{hip_id}:
+    get:
+      parameters:
+      - in: path
+        name: hip_id
+        required: true
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/providers:
+    get:
+      parameters:
+      - in: query
+        name: name
+        schema:
+          minLength: 3
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ProviderResponseType2'
+                type:
+                - "null"
+                - array
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/aadhaar/create:
+    post:
+      description: This API is used to create a new ABHA address
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/aadhaar/init:
+    post:
+      description: This endpoint is used to initiate the Aadhaar registration process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/aadhaar/mobile/resend:
+    post:
+      description: This endpoint is used to resend the mobile otp for aadhaar registration
+        process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/aadhaar/mobile/verify:
+    post:
+      description: This API operates on a skip logic basis. If the mobile number provided
+        in the second step differs from the one linked to the Aadhaar, this API will
+        be used to verify the new mobile number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/aadhaar/resend:
+    post:
+      description: This endpoint is used to resend a otp for aadhaar registration
+        process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/aadhaar/verify:
+    post:
+      description: This endpoint is used to verify Aadhaar otp generated for registration
+        using Aadhaar.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/abha/check:
+    post:
+      description: This API endpoint allows to check whether provided health id is
+        already present in system.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExistRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/mobile/create:
+    post:
+      description: This API is used to create a new ABHA address for the user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/mobile/init:
+    post:
+      description: This endpoint is used to initiate the registration process for
+        a mobile number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequestType2'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType2'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/mobile/login:
+    post:
+      description: If the user already has an existing ABHA address, use this API
+        to select that ABHA address and proceed to log the user in using the chosen
+        address.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/mobile/resend:
+    post:
+      description: This endpoint is used to resend a mobile registration request.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendResponseType3'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/mobile/verify:
+    post:
+      description: This endpoint allows  to verify a mobile otp.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType3'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponseType3'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/pincode/{pincode}:
+    get:
+      description: This API endpoint is used to fetch pincode details.
+      parameters:
+      - in: path
+        name: pincode
+        required: true
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PincodeResolvedPincodeData'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/registration/suggest:
+    post:
+      description: This API endpoint is used to fetch some suggested abha id that
+        are available on the basis of user details.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/request:
+    get:
+      description: ""
+      parameters:
+      - description: Consent/Subscription/Authorization ID
+        in: query
+        name: id
+        schema:
+          description: Consent/Subscription/Authorization ID
+          type: string
+      - description: Request type
+        in: query
+        name: type
+        schema:
+          description: Request type
+          enum:
+          - consent
+          - subscription
+          - authorization
+          type: string
+      - description: Status of the request
+        in: query
+        name: status
+        schema:
+          description: Status of the request
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailsResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/requests:
+    get:
+      description: API to list all the Subscriptions / Authorization and Consent requests
+      parameters:
+      - in: query
+        name: status
+        schema:
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          examples:
+          - granted
+          type: string
+      - in: query
+        name: type
+        schema:
+          enum:
+          - consent
+          - subscription
+          - authorization
+          - all
+          examples:
+          - consent
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListsResponse'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/session/init:
+    post:
+      description: Generate mobile OTP for user session token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequestType4'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitResponseType5'
+          description: OK
+      security:
+      - authApiKey: []
+  /abdm/v1/session/verify:
+    post:
+      description: Verify mobile OTP and get user session token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequestType6'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponseType4'
+          description: OK
+      security:
+      - authApiKey: []
+components:
+  schemas:
+    ApproveConsent:
+      properties:
+        access_mode:
+          enum:
+          - view
+          type: string
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/CommonsCareContext'
+          type:
+          - array
+          - "null"
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        erase_at:
+          format: date-time
+          type: string
+        hi_types:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        hip_id:
+          type: string
+      type: object
+    ApproveRequest:
+      properties:
+        consent_artefacts:
+          items:
+            $ref: '#/components/schemas/ApproveConsent'
+          type:
+          - array
+          - "null"
+        id:
+          type: string
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
+    ChangeRequest:
+      properties:
+        new:
+          type: string
+        old:
+          type: string
+      type: object
+    CommonsCareContext:
+      properties:
+        display:
+          description: Care Context Display Name
+          examples:
+          - Heart Rate 2020
+          type: string
+        id:
+          description: Care Context ID
+          examples:
+          - heart-rate-2020
+          type: string
+      type: object
+    CommonsDuration:
+      properties:
+        from:
+          description: Start time of the consent
+          format: date-time
+          type: string
+        to:
+          description: End time of the consent
+          format: date-time
+          type: string
+      type: object
+    CommonsHiType:
+      properties:
+        display:
+          description: Display name of the Health Information Type
+          type: string
+        enabled:
+          description: Is the Health Information Type enabled
+          type: boolean
+        id:
+          description: Health Information Type ID
+          enum:
+          - OPConsultation
+          - Prescription
+          - DischargeSummary
+          - DiagnosticReport
+          - ImmunizationRecord
+          - HealthDocumentRecord
+          - WellnessRecord
+          type: string
+      type: object
+    CommonsHip:
+      properties:
+        id:
+          description: Health Information Provider ID
+          examples:
+          - INXXXXX
+          type: string
+        name:
+          description: Name of the Health Information Provider
+          examples:
+          - Apollo Hospital
+          type: string
+      type: object
+    CommonsHiu:
+      properties:
+        id:
+          description: Health Information User ID
+          examples:
+          - INXXXXX
+          type: string
+        name:
+          description: Name of the Health Information User
+          examples:
+          - Apollo Hospital
+          type: string
+      type: object
+    CommonsPinDetail:
+      properties:
+        pin:
+          description: PIN for the consent request
+          examples:
+          - "1234"
+          type: string
+      type: object
+    CommonsPurpose:
+      properties:
+        code:
+          type: string
+        text:
+          type: string
+      type: object
+    CommonsRequester:
+      properties:
+        name:
+          description: Name of the requester.
+          examples:
+          - Dr John
+          type: string
+      type: object
+    ConfirmRequest:
+      properties:
+        otp:
+          type: string
+        txn_id:
+          type: string
+      required:
+      - txn_id
+      type: object
+    ConfirmResponse:
+      properties:
+        cc_ref_id:
+          type: string
+        txn_id:
+          type: string
+      type: object
+    CreateRequest:
+      properties:
+        abha_address:
+          description: ABHA Address to be linked with the ABHA Number, example sudo@golang
+          examples:
+          - shyam.eka@golang
+          type: string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    CreateRequestType2:
+      properties:
+        abha_address:
+          type: string
+        profile:
+          $ref: '#/components/schemas/DetailsRequestType2'
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    CreateResponse:
+      properties:
+        eka:
+          $ref: '#/components/schemas/RegistrationEkaIds'
+          description: Eka IDs
+        hint:
+          description: Hint for the mobile number
+          type: string
+        profile:
+          $ref: '#/components/schemas/ProfileResponse'
+          description: ABHA Profile
+        refresh_token:
+          description: Refresh token for the user
+          type:
+          - "null"
+          - string
+        skip_state:
+          enum:
+          - abha_end
+          - confirm_mobile_otp
+          - abha_select
+          - abha_create
+          type: string
+        token:
+          description: Access token for the user
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    CreateResponseType2:
+      properties:
+        eka:
+          $ref: '#/components/schemas/RegistrationEkaIds'
+          description: Eka IDs, will be present if SkipState is abha_end
+        profile:
+          $ref: '#/components/schemas/ProfileResponse'
+        refresh_token:
+          description: Refresh token for the user
+          type:
+          - "null"
+          - string
+        skip_state:
+          enum:
+          - abha_end
+          - confirm_mobile_otp
+          - abha_select
+          - abha_create
+          type: string
+        success:
+          type: boolean
+        token:
+          description: Access token for the user, will be present if SkipState is
+            abha_end
+          type:
+          - "null"
+          - string
+      type: object
+    DenyRequest:
+      properties:
+        id:
+          description: Consent ID
+          type: string
+        reason:
+          description: Users reason for denial in plain text
+          type: string
+      type: object
+    DetailsCareContext:
+      properties:
+        display:
+          type: string
+        id:
+          type: string
+      type: object
+    DetailsProviders:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/DetailsCareContext'
+          type:
+          - array
+          - "null"
+        consent_artefact_id:
+          description: Consent Artefact ID, it's a sub-part of consent. In a consent
+            every Provide will have unique consent artefact id'
+          type:
+          - "null"
+          - string
+        hip:
+          $ref: '#/components/schemas/CommonsHip'
+          description: HIP details
+      type: object
+    DetailsRequestType2:
+      properties:
+        address:
+          examples:
+          - 123, ABC Street
+          type:
+          - "null"
+          - string
+        day_of_birth:
+          examples:
+          - 1
+          type:
+          - "null"
+          - integer
+        first_name:
+          examples:
+          - Shyam
+          type:
+          - "null"
+          - string
+        gender:
+          enum:
+          - M
+          - F
+          - O
+          examples:
+          - M
+          type:
+          - "null"
+          - string
+        last_name:
+          examples:
+          - Singh
+          type:
+          - "null"
+          - string
+        middle_name:
+          examples:
+          - Kumar
+          type:
+          - "null"
+          - string
+        month_of_birth:
+          examples:
+          - 1
+          type:
+          - "null"
+          - integer
+        pincode:
+          examples:
+          - "110001"
+          type:
+          - "null"
+          - string
+        year_of_birth:
+          examples:
+          - 1990
+          type:
+          - "null"
+          - integer
+      type: object
+    DetailsResponse:
+      properties:
+        access_mode:
+          enum:
+          - view
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        erase_at:
+          format: date-time
+          type: string
+        hi_types:
+          description: List of HI Types
+          items:
+            $ref: '#/components/schemas/CommonsHiType'
+          type:
+          - array
+          - "null"
+        hiu:
+          $ref: '#/components/schemas/CommonsHiu'
+          description: HIU details
+        id:
+          type: string
+        providers:
+          description: List of Providers/Failities details
+          items:
+            $ref: '#/components/schemas/DetailsProviders'
+          type:
+          - array
+          - "null"
+        purpose:
+          $ref: '#/components/schemas/CommonsPurpose'
+          description: Purpose of the request
+        requester:
+          $ref: '#/components/schemas/CommonsRequester'
+          description: Requester details
+        status:
+          enum:
+          - requested
+          - granted
+          - expired
+          - denied
+          - revoked
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      type: object
+    DiscoverCareContext:
+      properties:
+        display:
+          type: string
+        id:
+          type: string
+      type: object
+    DiscoverPatient:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/DiscoverCareContext'
+          type:
+          - array
+          - "null"
+        display:
+          type: string
+        id:
+          type: string
+      type: object
+    DiscoverRequest:
+      properties:
+        hip_id:
+          type: string
+        ref_id:
+          description: The unique identifier for the patient within the Healthcare
+            Information Provider (HIP), such as the patient's registration ID, email
+            address, or phone number used at the hospital or lab.
+          type: string
+      required:
+      - hip_id
+      type: object
+    DiscoverResponse:
+      properties:
+        patient:
+          items:
+            $ref: '#/components/schemas/DiscoverPatient'
+          type:
+          - array
+          - "null"
+        txn_id:
+          type: string
+      type: object
+    ExistRequest:
+      properties:
+        abha_address:
+          type: string
+      type: object
+    ExistResponse:
+      properties:
+        exist:
+          description: True if the ABHA Address already exists
+          type: boolean
+      type: object
+    ExistResponseType2:
+      properties:
+        exist:
+          type: boolean
+      type: object
+    GenericError:
+      properties:
+        code:
+          type: integer
+        error:
+          type: string
+      type: object
+    GerrorAction:
+      properties:
+        cta:
+          $ref: '#/components/schemas/GerrorActionCta'
+        description:
+          type: string
+        img:
+          type: string
+        suggest_method:
+          type: string
+        title:
+          type: string
+      type: object
+    GerrorActionCta:
+      properties:
+        params:
+          additionalProperties:
+            type: string
+          type:
+          - object
+          - "null"
+        pid:
+          type: string
+        title:
+          type: string
+      type: object
+    GerrorErrorResp:
+      properties:
+        action:
+          $ref: '#/components/schemas/GerrorAction'
+        code:
+          type: integer
+        error:
+          type: string
+      type: object
+    HipLocation:
+      properties:
+        latitude:
+          type: string
+        longitude:
+          type: string
+      type: object
+    HipQRScanShareProfileResponseV2:
+      properties:
+        address:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        footer:
+          type: string
+        hip_id:
+          type: string
+        hip_name:
+          type: string
+        request_id:
+          type: string
+        show_token_screen:
+          type: boolean
+        token_expiry:
+          format: date-time
+          type: string
+        token_number:
+          type: string
+      type: object
+    InitRequest:
+      properties:
+        aadhaar_number:
+          examples:
+          - "123456789012"
+          type: string
+      type: object
+    InitRequestType2:
+      properties:
+        mobile_number:
+          type: string
+      type: object
+    InitRequestType3:
+      properties:
+        cc_ref_id:
+          type: string
+        patient_ref_id:
+          type: string
+        txn_id:
+          type: string
+      required:
+      - txn_id
+      - patient_ref_id
+      - cc_ref_id
+      type: object
+    InitRequestType4:
+      properties:
+        abha_address:
+          examples:
+          - sudo@golang
+          type: string
+      required:
+      - abha_address
+      type: object
+    InitResponse:
+      properties:
+        hint:
+          description: Hint message for the mobile number
+          examples:
+          - OTP sent successfully to your mobile number ******90973
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: ' Transaction id for the abha registration'
+          examples:
+          - 5d060cad-a93b-4edf-p3ef-bd412f69s400
+          type: string
+      type: object
+    InitResponseType2:
+      properties:
+        hint:
+          description: Hint message for the mobile number
+          examples:
+          - OTP sent successfully to your mobile number ******90973
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction id received in the /init API
+          examples:
+          - 5d060cad-a93b-4edf-p3ef-bd412f69s400
+          type: string
+      type: object
+    InitResponseType3:
+      properties:
+        expiry_in_minutes:
+          type: integer
+        medium:
+          description: Medium which is used to generate otp
+          examples:
+          - mobile
+          type: string
+        otp_medium_value:
+          description: Value of medium
+          examples:
+          - "9225828688"
+          type: string
+        txn_id:
+          type: string
+      type: object
+    InitResponseType4:
+      properties:
+        txn_id:
+          type: string
+      type: object
+    InitResponseType5:
+      properties:
+        txn_id:
+          description: Transaction ID for the session
+          type: string
+      type: object
+    ListsRequestDetail:
+      properties:
+        created_at:
+          description: Time when the consent was created
+          format: date-time
+          type: string
+        duration:
+          $ref: '#/components/schemas/CommonsDuration'
+        hiu:
+          $ref: '#/components/schemas/CommonsHiu'
+          description: Health Information User,the requesting entity Clinic hospital
+        id:
+          description: Unique identifier for the consent/authorization/subsripition
+          type: string
+        purpose:
+          $ref: '#/components/schemas/CommonsPurpose'
+        requester:
+          $ref: '#/components/schemas/CommonsRequester'
+      type: object
+    ListsResponse:
+      properties:
+        authorizations:
+          description: List of authorizations
+          items:
+            $ref: '#/components/schemas/ListsRequestDetail'
+          type:
+          - array
+          - "null"
+        consents:
+          description: List of consents
+          items:
+            $ref: '#/components/schemas/ListsRequestDetail'
+          type:
+          - array
+          - "null"
+        subscriptions:
+          description: List of subscriptions
+          items:
+            $ref: '#/components/schemas/ListsRequestDetail'
+          type:
+          - array
+          - "null"
+      type: object
+    LoginRequest:
+      properties:
+        abha_address:
+          type: string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    LoginResponse:
+      properties:
+        eka:
+          $ref: '#/components/schemas/RegistrationEkaIds'
+          description: Eka IDs, will be present if SkipState is abha_end
+        profile:
+          $ref: '#/components/schemas/ProfileResponse'
+          description: Profile of the user, will be present if SkipState is abha_end
+        refresh_token:
+          description: Refresh token for the user, will be present if SkipState is
+            abha_end
+          type:
+          - "null"
+          - string
+        skip_state:
+          enum:
+          - abha_end
+          - confirm_mobile_otp
+          - abha_select
+          - abha_create
+          type: string
+        token:
+          description: Access token for the user, will be present if SkipState is
+            abha_end
+          type:
+          - "null"
+          - string
+        txn_id:
+          type: string
+      type: object
+    PincodeResolvedPincodeData:
+      properties:
+        dist_code:
+          examples:
+          - "339"
+          type: string
+        dist_name:
+          examples:
+          - Ranchi
+          type: string
+        pincode:
+          examples:
+          - "834001"
+          type: string
+        state_code:
+          examples:
+          - "20"
+          type: string
+        state_name:
+          examples:
+          - Jharkhand
+          type: string
+      type: object
+    ProfileResponse:
+      properties:
+        abha_address:
+          examples:
+          - shyam@golang
+          type: string
+        abha_number:
+          examples:
+          - 12-3456-7856-8912
+          type:
+          - "null"
+          - string
+        address:
+          type:
+          - "null"
+          - string
+        day_of_birth:
+          type:
+          - "null"
+          - integer
+        first_name:
+          type:
+          - "null"
+          - string
+        gender:
+          enum:
+          - M
+          - F
+          - O
+          examples:
+          - M
+          type: string
+        kyc_verified:
+          type:
+          - "null"
+          - boolean
+        last_name:
+          type:
+          - "null"
+          - string
+        middle_name:
+          type:
+          - "null"
+          - string
+        mobile:
+          type:
+          - "null"
+          - string
+        month_of_birth:
+          type:
+          - "null"
+          - integer
+        pincode:
+          type:
+          - "null"
+          - string
+        year_of_birth:
+          type:
+          - "null"
+          - integer
+      type: object
+    ProviderHipDetail:
+      properties:
+        hip_id:
+          type: string
+        hip_name:
+          type:
+          - "null"
+          - string
+      type: object
+    ProviderResponse:
+      properties:
+        providers:
+          items:
+            $ref: '#/components/schemas/ProviderHipDetail'
+          type:
+          - array
+          - "null"
+      type: object
+    ProviderResponseType2:
+      properties:
+        city:
+          type:
+          - "null"
+          - string
+        hip_id:
+          type: string
+        hip_name:
+          type:
+          - "null"
+          - string
+        state:
+          type:
+          - "null"
+          - string
+      type: object
+    RecordsCareContext:
+      properties:
+        care_context_id:
+          type: string
+        created_at:
+          type: string
+        display:
+          type: string
+        status:
+          enum:
+          - Consent raised to HIP
+          - Consent granted from HIP
+          - Consent error by HIP
+          - Data request from HIP
+          - Data received from HIP
+          - Data is being processed
+          - Data processed
+          - Invalid data received from HIP
+          - No Data Available from HIP
+          type: string
+      type: object
+    RecordsResponse:
+      properties:
+        care_contexts:
+          items:
+            $ref: '#/components/schemas/RecordsCareContext'
+          type:
+          - array
+          - "null"
+      required:
+      - care_contexts
+      type: object
+    RegistrationEkaIds:
+      properties:
+        oid:
+          type:
+          - "null"
+          - string
+        uuid:
+          type:
+          - "null"
+          - string
+      type: object
+    ResendRequest:
+      properties:
+        txn_id:
+          examples:
+          - 5d060cad-a93b-4edf-p3ef-bd412f69s400
+          type: string
+      type: object
+    ResendRequestType2:
+      properties:
+        txn_id:
+          description: Transaction ID received in the init API
+          type: string
+      required:
+      - txn_id
+      type: object
+    ResendRequestType3:
+      properties:
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    ResendResponse:
+      properties:
+        hint:
+          description: Hint message for the mobile number
+          examples:
+          - OTP sent successfully to your mobile number ******90973
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction ID received in the init API
+          examples:
+          - 5d060cad-a93b-4edf-p3ef-bd412f69s400
+          type: string
+      type: object
+    ResendResponseType2:
+      properties:
+        hint:
+          type:
+          - "null"
+          - string
+        txn_id:
+          type: string
+      type: object
+    ResendResponseType3:
+      properties:
+        hint:
+          type: string
+        txn_id:
+          type: string
+      type: object
+    RevokeRequest:
+      properties:
+        consent_artefacts:
+          description: List of consent artefacts to be revoked.
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        pin_detail:
+          $ref: '#/components/schemas/CommonsPinDetail'
+      type: object
+    ScanandshareRequest:
+      properties:
+        counter_id:
+          description: Counter ID
+          type: string
+        hip_id:
+          description: HIP ID from QR Code
+          type: string
+        location:
+          $ref: '#/components/schemas/HipLocation'
+          description: Location of the user
+      type: object
+    SetRequest:
+      properties:
+        pin:
+          type: string
+      type: object
+    SuggestRequest:
+      properties:
+        flow:
+          enum:
+          - aadhaar
+          - mobile
+          type: string
+        txn_id:
+          description: Transaction ID received in /init api
+          type: string
+        user_detail:
+          $ref: '#/components/schemas/SuggestUserDetail'
+      type: object
+    SuggestResponse:
+      properties:
+        suggestions:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+      type: object
+    SuggestUserDetail:
+      properties:
+        day_of_birth:
+          type: string
+        first_name:
+          examples:
+          - John
+          type: string
+        last_name:
+          type: string
+        month_of_birth:
+          type: string
+        year_of_birth:
+          type: string
+      type: object
+    VerifyAbhaProfile:
+      properties:
+        abha_address:
+          type: string
+        name:
+          type: string
+      type: object
+    VerifyRequest:
+      properties:
+        mobile:
+          description: Mobile number to be linked with ABHA, this mobile number can
+            be different from the mobile number linked with the Aadhaar. ABHA Created
+            will be linked with this mobile number.
+          type:
+          - "null"
+          - string
+        otp:
+          type:
+          - "null"
+          - string
+        txn_id:
+          type: string
+      type: object
+    VerifyRequestType2:
+      properties:
+        otp:
+          description: OTP received on the mobile number
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    VerifyRequestType3:
+      properties:
+        otp:
+          type: string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    VerifyRequestType4:
+      properties:
+        pin:
+          type: string
+        scope:
+          type: string
+      type: object
+    VerifyRequestType5:
+      properties:
+        otp:
+          type: string
+        txn_id:
+          type: string
+      type: object
+    VerifyRequestType6:
+      properties:
+        otp:
+          type: string
+        txn_id:
+          description: Transaction ID for the session
+          type: string
+      required:
+      - txn_id
+      - otp
+      type: object
+    VerifyResponse:
+      properties:
+        eka:
+          $ref: '#/components/schemas/RegistrationEkaIds'
+          description: Eka IDs, will be present if SkipState is abha_end
+        hint:
+          description: Hint for the mobile number
+          type:
+          - "null"
+          - string
+        profile:
+          $ref: '#/components/schemas/ProfileResponse'
+        skip_state:
+          enum:
+          - abha_end
+          - confirm_mobile_otp
+          - abha_select
+          - abha_create
+          type: string
+        token:
+          description: Access token for the user, will be present if SkipState is
+            abha_end
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    VerifyResponseType2:
+      properties:
+        eka:
+          $ref: '#/components/schemas/RegistrationEkaIds'
+        hint:
+          type:
+          - "null"
+          - string
+        profile:
+          $ref: '#/components/schemas/ProfileResponse'
+        skip_state:
+          enum:
+          - abha_end
+          - confirm_mobile_otp
+          - abha_select
+          - abha_create
+          type: string
+        token:
+          type:
+          - "null"
+          - string
+        txn_id:
+          description: Transaction ID received in the /init API
+          type: string
+      type: object
+    VerifyResponseType3:
+      properties:
+        abha_profiles:
+          description: ABHA profiles, will be present if user has created ABHA.
+          items:
+            $ref: '#/components/schemas/VerifyAbhaProfile'
+          type:
+          - array
+          - "null"
+        skip_state:
+          enum:
+          - abha_end
+          - confirm_mobile_otp
+          - abha_select
+          - abha_create
+          type: string
+        txn_id:
+          type: string
+      type: object
+    VerifyResponseType4:
+      properties:
+        token:
+          description: Access token for the user
+          type:
+          - "null"
+          - string
+      type: object
+  securitySchemes:
+    authApiKey:
+      in: header
+      name: token-provider
+      type: apiKey
