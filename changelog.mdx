@@ -8,6 +8,148 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="April 24, 2026"
+  description="April 24, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "Eka Developer Platform — April 24, 2026",
+    description: "• MCP SDK now requires mobile number for profile creation\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Changed
+
+- **[EkaAgents] Mobile number mandatory for profile creation in MCP SDK** — The MCP SDK now requires a mobile number when creating a patient profile, ensuring downstream integrations always have a contactable identifier. Existing profile creation flows must include this field. [View docs](/ai-tools/mcp-server/supported-tools)
+
+</Update>
+
+<Update
+  label="April 23, 2026"
+  description="April 23, 2026"
+  tags={["Update", "Feature"]}
+  rss={{
+    title: "Eka Developer Platform — April 23, 2026",
+    description: "• MCP SDK doctor discovery cards revamped for EMR client\n\n• ABDM usage metrics events updated in eka-usage-sdk\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] [Client-Specific] Doctor card revamp** — Doctor discovery cards in the MCP SDK have been redesigned for the EMR client, with refreshed layout and additional doctor metadata surfaced inline. [View docs](/ai-tools/mcp-server/supported-tools)
+
+## Changed
+
+- **[Platform] ABDM usage metrics events** — The eka-usage-sdk now emits the latest ABDM-related usage events to Kafka, keeping the metrics pipeline aligned with current ABDM consent and linking flows.
+
+</Update>
+
+<Update
+  label="April 22, 2026"
+  description="April 22, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — April 22, 2026",
+    description: "• Echo Agent Kit — MCP session caching redesign with split tool/session caches, idle+absolute TTL, and LRU eviction\n\n• MCP tool call timeout set to 10s\n\n• Doctor discovery cards now support mid-conversation elicitation\n\n• Prescription PDFs render unit_display_name with name fallback and fix IPD admission preview\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] MCP session caching in Echo Agent Kit** — The Echo Agent Kit MCP integration now caches MCP sessions per user, splitting tool discovery and session caches with independent idle and absolute TTLs, LRU eviction on pool exhaustion, and `user_session_id` plumbed through `MCPTool.run` via `tool_context`. Tool cache keys are partitioned by configurable headers (`tool_cache_key_headers`), and concurrent cache misses are serialized to avoid duplicate discovery work. [View docs](/ai-tools/agent-kit/mcp-integration)
+
+- **[EkaAgents] Doctor discovery elicitation** — The MCP SDK now supports interactive elicitation for `doctor_discovery` cards, allowing agents to confirm doctor availability mid-conversation before booking. [View docs](/ai-tools/mcp-server/supported-tools)
+
+- **[EMR] Diet charts in prescription templates** — The Templar prescription engine now supports diet chart sections, enabling structured diet plans to be authored and rendered alongside prescriptions.
+
+## Improved
+
+- **[EkaAgents] MCP tool call timeout** — Tool calls in the Echo Agent Kit MCP integration are now bounded by a 10-second timeout, preventing slow downstream tools from blocking agent responses indefinitely.
+
+- **[EMR] Unit display name fallback in prescriptions** — Prescription `rx` and `labVitals` sections now render `unit_display_name` when available and fall back to `name`, producing cleaner unit labels on printed prescriptions.
+
+## Fixed
+
+- **[EMR] IPD admission TinyMCE preview** — Fixed a rendering bug where the IPD admission rich-text preview was showing stale or malformed HTML in the Templar template engine.
+
+## Removed
+
+- **[EkaAgents] Legacy MCP caching layer** — The previous monolithic MCP cache has been removed from the Echo Agent Kit in favor of the new split tool/session caching design.
+
+</Update>
+
+<Update
+  label="April 21, 2026"
+  description="April 21, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — April 21, 2026",
+    description: "• Android document UI now waits for layout constraints before initializing PDF rendering\n\n• Prescription QR code moved into footer details\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Fixed
+
+- **[Platform] Android document UI PDF initialization** — Fixed a crash where PDF rendering could initialize before view layout constraints were available, producing zero-sized canvases on some devices.
+
+## Changed
+
+- **[EMR] Prescription QR placement** — The QR code on prescription PDFs has been moved into the footer details block for a cleaner header and consistent placement across templates.
+
+</Update>
+
+<Update
+  label="April 20, 2026"
+  description="April 20, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — April 20, 2026",
+    description: "• EkaScribe iOS DocAssist now surfaces voice-to-text error states gracefully\n\n• MedAssist web microphone temporarily disabled then restored\n\n• Templar adds IPD admission upgrades\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] IPD admission template upgrades** — The Templar prescription engine adds new fields and layout improvements to the IPD admission template, supporting richer admission notes.
+
+## Improved
+
+- **[EkaScribe] Voice-to-text error handling on iOS DocAssist** — DocAssist for iOS now detects and surfaces voice-to-text failure scenarios with a clear error state instead of silently dropping the recording, making transient transcription errors recoverable for the user.
+
+## Fixed
+
+- **[EkaAgents] MedAssist web microphone restored** — A temporary disablement of the microphone capture path in the MedAssist web widget was reverted on the same day after a regression was identified, restoring voice input.
+
+</Update>
+
+<Update
+  label="April 18, 2026"
+  description="April 18, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — April 18, 2026",
+    description: "• MedAssist web widget adds contextual popup\n\n• Agent ID resolution bug fixed in MedAssist web\n\n• Onboarding nudge can now be disabled\n\n• eka-usage-sdk 0.1.1 released\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Contextual popup in MedAssist web widget** — The MedAssist web chat widget now supports a contextual popup, surfacing relevant suggestions and actions tied to the current conversation state.
+
+## Improved
+
+- **[EkaAgents] MedAssist nudge configurability** — The onboarding nudge in the MedAssist web widget can now be disabled by integration partners that don't want unsolicited prompts on first load.
+
+## Fixed
+
+- **[EkaAgents] Agent ID resolution in MedAssist web** — Fixed a bug where the MedAssist web widget could resolve to the wrong agent ID under certain configurations, ensuring conversations always route to the configured agent.
+
+## Upgraded
+
+- **[Platform] eka-usage-sdk 0.1.1** — The eka-usage-sdk has been published at version 0.1.1, fixing the test runner and shipping the latest Kafka usage metric event definitions.
+
+</Update>
+
+<Update
   label="April 17, 2026"
   description="April 17, 2026"
   tags={["Update"]}
