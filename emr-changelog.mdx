@@ -8,18 +8,60 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="April 22, 2026"
+  description="April 22, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "EMR — April 22, 2026",
+    description: "• Lab vitals display-name fallback in prescription PDFs\n\n• IPD admission notes now render as rich text\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Lab vitals display-name fallback** — Investigative readings tables in prescription PDFs now use `unit_dislay_name` when present and fall back to `name`, ensuring lab vitals print with their preferred display label. [View docs](/integrations/core-emr/prescription)
+
+## Fixed
+
+- **[EMR] IPD admission notes rich-text rendering** — IPD admission notes that contain HTML (entered via the rich-text editor) now render inside a `tiny-mce` styled block in printed prescriptions, preserving formatting that previously rendered as a plain `<span>`. [View docs](/integrations/core-emr/prescription)
+
+</Update>
+
+<Update
+  label="April 21, 2026"
+  description="April 21, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "EMR — April 21, 2026",
+    description: "• Prescription QR code moved into footer details block\n\n• Android document UI guards PDF reader against zero-width layout\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Prescription footer QR placement** — The QR code in prescription PDF custom footers has been relocated into the footer details block so it consistently aligns with signature, page number, and approval text instead of floating outside the bordered region. [View docs](/integrations/core-emr/prescription)
+
+## Fixed
+
+- **[EMR] Android document UI PDF reader stability** — The `VerticalPDFReader` in the Android document UI is now wrapped in a `BoxWithConstraints` and only initializes once `constraints.maxWidth > 0`, preventing initialization crashes when the reader is mounted before its parent has been laid out. Applied to both `RecordPreviewComponents` and `AddRecordPreviewScreen`.
+
+</Update>
+
+<Update
   label="April 20, 2026"
   description="April 20, 2026"
   tags={["Feature"]}
   rss={{
     title: "EMR — April 20, 2026",
-    description: "• ABDM Consent Management Web SDK — Embeddable widget for requesting, tracking, and acting on ABDM health data consents\n\nRead more: https://developer.eka.care/emr-changelog"
+    description: "• Diet chart rendering added to prescription PDFs\n\n• Configurable IPD admission printing block introduced\n\nRead more: https://developer.eka.care/emr-changelog"
   }}
 >
 
 ## Added
 
-- **[EMR] ABDM Consent Management Web SDK** — A new embeddable web widget for ABDM health data consent management is now documented. The widget handles the full consent lifecycle — requesting consent with configurable date ranges, record types, and purposes; tracking consent status (granted, pending, denied, revoked, expired); and redirecting to your records viewer when records arrive. Integrators embed the widget via iframe with token-based authentication. [View docs](/SDKs/web-sdk/consent-management/get-started)
+- **[EMR] Diet chart rendering in prescription PDFs** — Prescription PDFs now render diet charts as a top-level pad element when `tool.apps.dietChart` is present, injecting the stored HTML content directly into the document. [View docs](/integrations/core-emr/prescription)
+
+- **[EMR] Configurable IPD admission printing** — Prescription templates accept a new `admissionToIPDPrintConfig` block with `entity` and `printOnlyWhenAdvised` flags, and the `IpdAdmission` payload now supports a `notes_html` field for rich-text admission notes. [View docs](/integrations/core-emr/prescription)
 
 </Update>
 
