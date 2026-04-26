@@ -1,0 +1,217 @@
+---
+title: Tool Reference
+description: Complete reference for all 6 MedAI Tools — parameters, return values, and usage examples.
+---
+
+MedAI Tools exposes 6 tools through the MCP interface. The first three are standalone lookups; the last three form a sequential workflow for running clinical calculators.
+
+---
+
+## `indian_branded_drug_search`
+
+Search a database of 500,000+ Indian branded drugs by brand name, generic composition, or dosage form.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `drug_name` | string | No | Brand name to search (e.g. `"Dolo 650"`) |
+| `form` | string | No | Dosage form (e.g. `"Tablet"`, `"Syrup"`, `"Injection"`) |
+| `generic_names` | string | No | Comma-separated generic names (e.g. `"Paracetamol"` or `"Amoxicillin, Clavulanic Acid"`) |
+| `volumes` | string | No | Strength or volume (e.g. `"650"`, `"500mg"`) |
+
+At least one parameter should be provided. Returns a JSON list of matching drugs with brand name, generic composition, manufacturer, and available forms.
+
+**Example:**
+```text
+Search for Indian brands containing Metformin 500mg in tablet form
+→ Calls: indian_branded_drug_search(generic_names="Metformin", volumes="500", form="Tablet")
+```
+
+---
+
+## `indian_treatment_protocol_search`
+
+Access published treatment protocols and clinical guidelines from Indian and international medical bodies.
+
+**Available publishers include:** ICMR, RSSDI, ADA, WHO, ESH, KDIGO, AHA, IPS, and more.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `intent` | string | Yes | `"publishers"` to list all available guideline sources, or `"search"` to retrieve protocols |
+| `queries` | list | No | Required when `intent="search"`. List of objects: `{"query": "...", "publisher": "..."}` |
+
+Returns:
+- For `intent="publishers"`: Text listing all available publishers
+- For `intent="search"`: Protocol document pages as base64-encoded JPEG images
+
+**Example:**
+```text
+Step 1 — List available publishers:
+→ Calls: indian_treatment_protocol_search(intent="publishers")
+
+Step 2 — Search for a specific guideline:
+→ Calls: indian_treatment_protocol_search(
+    intent="search",
+    queries=[{"query": "Type 2 diabetes management", "publisher": "RSSDI"}]
+  )
+```
+
+---
+
+## `indian_pharmacology_details`
+
+Look up drug information from the National Formulary of India (2011). Covers indications, dosage, contraindications, adverse effects, and pregnancy safety.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | No | Generic drug name(s). Supports compound generics with `+` separator (e.g. `"Rifampicin + Isoniazid"`) |
+
+Returns a JSON list of pharmacology entries matching the query.
+
+**Example:**
+```text
+Get pharmacology details for a combination antibiotic
+→ Calls: indian_pharmacology_details(query="Amoxicillin + Clavulanic Acid")
+```
+
+---
+
+## Medical Calculator Workflow
+
+The three calculator tools form a sequential 3-step workflow:
+
+```
+Step 1: medical_calculator_list    → Find the right calculator by browsing categories
+Step 2: medical_calculator_input   → Get the exact input schema for that calculator
+Step 3: medical_calculator_output  → Execute the calculator with validated inputs
+```
+
+### Available Categories
+
+<Accordion title="View all 26 categories (403 calculators total)">
+
+| Category | Calculators |
+|----------|-------------|
+| Cardiovascular System | 38 |
+| Gynecology & Pregnancy | 35 |
+| Dietary | 31 |
+| Dosage | 27 |
+| Hematology | 26 |
+| Body Measurements | 22 |
+| Electrolytes & Fluids | 22 |
+| Urology & Nephrology | 19 |
+| Pulmonary | 19 |
+| Addiction Medicine | 17 |
+| Intensive & Emergency Care | 16 |
+| COVID-19 Vaccine | 16 |
+| Pediatric | 15 |
+| Other | 15 |
+| Epidemiology | 13 |
+| Diabetes | 10 |
+| Digestive System | 9 |
+| Geriatric Medicine | 9 |
+| BMI | 7 |
+| Metabolic Disorders | 7 |
+| Sleep | 6 |
+| Percentile | 6 |
+| Pediatric Dosage | 6 |
+| Psychiatry & Psychology | 5 |
+| Radiology | 4 |
+| Army | 3 |
+
+</Accordion>
+
+---
+
+### `medical_calculator_list`
+
+Browse available calculators by category.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `intent` | string | Yes | `"categories"` to list all 26 categories, or `"calculators"` to list calculators in a specific category |
+| `category` | string | No | Required when `intent="calculators"`. Category name (e.g. `"cardiovascular_system_calculators"`) |
+
+---
+
+### `medical_calculator_input`
+
+Get the input schema for a specific calculator before executing it.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `calculator_name` | string | Yes | The calculator's `name` or `normalized_name` from the list step |
+
+Returns a JSON schema describing all required and optional input fields with types and constraints.
+
+---
+
+### `medical_calculator_output`
+
+Execute a calculator with validated input data.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `calculator_name` | string | Yes | The calculator's `name` or `normalized_name` |
+| `input_data` | object | Yes | Input values conforming to the schema from the input step |
+
+Returns the calculation result: numerical values, risk scores, derived metrics, and clinical interpretations.
+
+---
+
+### Worked Example: BMI Calculator
+
+<Steps>
+  <Step title="Find the calculator">
+    ```text
+    → Calls: medical_calculator_list(intent="categories")
+    # Returns list of 26 categories
+
+    → Calls: medical_calculator_list(intent="calculators", category="bmi_calculators")
+    # Returns BMI calculators including "BMI Calculator – Body Mass Index"
+    # normalized_name: "bmi_calculator_body_mass_index"
+    ```
+  </Step>
+  <Step title="Get the input schema">
+    ```text
+    → Calls: medical_calculator_input(calculator_name="bmi_calculator_body_mass_index")
+    ```
+
+    Returns:
+    ```json
+    {
+      "weight": { "type": "number", "description": "Body weight", "required": true },
+      "height": { "type": "number", "description": "Height", "required": true },
+      "weight_unit": { "type": "string", "enum": ["kg", "lbs"], "required": true },
+      "height_unit": { "type": "string", "enum": ["cm", "in"], "required": true }
+    }
+    ```
+  </Step>
+  <Step title="Execute and get results">
+    ```text
+    → Calls: medical_calculator_output(
+        calculator_name="bmi_calculator_body_mass_index",
+        input_data={
+          "weight": 70,
+          "height": 175,
+          "weight_unit": "kg",
+          "height_unit": "cm"
+        }
+      )
+    ```
+
+    Returns:
+    ```json
+    {
+      "bmi": 22.9,
+      "category": "Normal weight",
+      "healthy_range": "18.5 – 24.9"
+    }
+    ```
+  </Step>
+</Steps>
+
+---
+
+<Note>
+For questions about specific tools or data coverage, contact **ekaconnect@eka.care**.
+</Note>
