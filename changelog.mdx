@@ -8,34 +8,102 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
-  label="April 28, 2026"
-  description="April 28, 2026"
+  label="May 1, 2026"
+  description="May 1, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 1, 2026",
+    description: "• Echo Agent Kit ships Skills — lazy-loaded prompt + tools bundles with LLM-driven or manual activation\n\n• Echo Agent Kit adds first-class Postgres support and PgQueryTool for parametric SQL-backed tools\n\n• Templar prescription engine extends diet chart authoring and adds pageBreakTableTr support\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Skills in Echo Agent Kit** — `GenericAgent` now supports `Skill` — a lazy-loaded bundle of `(instructions + tools + description)` that can be attached and detached mid-conversation. Two activation modes are supported: `llm` (default, agent auto-injects `load_skill` / `unload_skill` meta-tools and an `<available_skills>` registry into the system prompt so the model self-routes) and `manual` (host calls `await agent.activate_skill(name)` from an upstream router). Skills also expose `on_activate` / `on_deactivate` lifecycle hooks for tenant-scoped setup or telemetry, and tool-name collisions across base tools and skills are caught at agent construction. Existing agents that don't pass `skills=` are byte-for-byte unaffected. [View docs](/ai-tools/agent-kit/agents)
+
+- **[EkaAgents] Postgres engine and PgQueryTool in Echo Agent Kit** — Echo Agent Kit now ships an opt-in Postgres client (`echo[postgres]` extra) backed by an `asyncpg` connection pool with lazy initialization, plus `PgQueryTool` — a `BaseTool` subclass that runs a parametric SQL query and returns rows. SQL files can use psycopg-style `%(name)s` placeholders, which the client rewrites to asyncpg `$N` positional binds. A process-wide default client can be registered with `set_default_client(...)` so dynamic loaders that call `tool_class()` resolve correctly. Configuration is read from `ECHO_PG_*` environment variables. [View docs](/ai-tools/agent-kit/tools)
+
+- **[EMR] pageBreakTableTr in Templar getHead** — The `getHead` helper in the Templar prescription engine now supports `pageBreakTableTr`, allowing template authors to declare table-row level page breaks for cleaner multi-page prescription rendering.
+
+## Improved
+
+- **[EkaAgents] Echo Agent Kit v0.1.33** — Echo Agent Kit released as v0.1.33 with the new Skills primitive, Postgres engine, and `PgQueryTool` bundled in. `pip install -U echo` is safe — defaults preserve existing agent behavior.
+
+- **[EMR] Diet chart authoring in Templar** — Diet chart support in the Templar prescription engine has been extended with additional structure and rendering refinements, building on the diet chart sections introduced on April 22.
+
+</Update>
+
+<Update
+  label="April 30, 2026"
+  description="April 30, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "Eka Developer Platform — April 30, 2026",
+    description: "• ABDM ECDH primitives now available as a Python package for partner integrations\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[Platform] ABDM ECDH Python package** — The ABDM ECDH key-exchange primitives used for secure consent and data-fetch flows are now distributable as a Python package, making it easier for partners to integrate ABDM-aligned encryption helpers without re-implementing the protocol.
+
+</Update>
+
+<Update
+  label="April 29, 2026"
+  description="April 29, 2026"
   tags={["Update"]}
   rss={{
-    title: "Eka Developer Platform — April 28, 2026",
-    description: "• ABDM Care Context Discovery now has an end-to-end HIP integration guide covering discovery, OTP-based linking, and ABHA address handling\n\nRead more: https://developer.eka.care/changelog"
+    title: "Eka Developer Platform — April 29, 2026",
+    description: "• IPD billing output now uses doctor profile first and last name fields for cleaner receipts\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
 ## Improved
 
-- **[Platform] ABDM Care Context Discovery HIP guide** — The Care Context Discovery reference now includes a full end-to-end HIP integration walkthrough covering Eka's middleware role, the discovery webhook payload, OTP generation and verification via `on-link-init` and `on-link-confirm`, and guidance on handling verified ABHA addresses for HIP-initiated linking. [View docs](/api-reference/user-app/abdm-connect/care-contexts/discover/introduction)
+- **[EMR] Doctor name on IPD receipts and bills** — IPD receipt and bill print output now uses the doctor profile's first-name and last-name fields directly instead of a single concatenated string, giving cleaner, more consistent doctor-name rendering across IPD billing artifacts.
+
+</Update>
+
+<Update
+  label="April 28, 2026"
+  description="April 28, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — April 28, 2026",
+    description: "• Patient directory TS SDK adds forceApiSearch and resolves stale-cache lookup edge cases\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] forceApiSearch flag in Patient Directory TS SDK** — The Patient Directory TypeScript SDK now exposes a `forceApiSearch` option, letting integrators bypass the local cache and force a live API lookup for patient search — useful for high-confidence lookups where freshness must beat latency.
+
+## Fixed
+
+- **[EMR] Patient Directory TS SDK lookup correctness** — Resolved an edge case in the Patient Directory TypeScript SDK where stale or partial cached state could surface incorrect patient search results; lookups now consistently reflect the live directory.
 
 </Update>
 
 <Update
   label="April 27, 2026"
   description="April 27, 2026"
-  tags={["Feature"]}
+  tags={["Update", "Fix"]}
   rss={{
     title: "Eka Developer Platform — April 27, 2026",
-    description: "• Onboarding APIs expanded with full CRUD support for doctors, clinics, and Eka users — list, get, update, and delete operations now available\n\nRead more: https://developer.eka.care/changelog"
+    description: "• OPD slip prints now include the clinic name\n\n• MedAssist web file uploads now validate against an updated allow-list of file types\n\n• Client-specific MedAssist widget configuration fix\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
-## Added
+## Improved
 
-- **[Platform] Doctor, Clinic, and Eka User CRUD onboarding APIs** — The onboarding API surface now exposes full CRUD operations for doctors (`ListDoctors`, `GetDoctorById`, `UpdateDoctor`, `DeleteDoctor`), clinics (`ListClinics`, `GetClinicById`, `UpdateClinic`, `DeleteClinic`), and Eka users (`ListEkaUsers`, `GetEkaUserById`, `UpdateEkaUser`, `DeleteEkaUser`), giving integrators programmatic control over the full lifecycle of onboarded entities instead of only create. [View docs](/api-reference/doc-tool/onboarding-apis/list-doctors)
+- **[EMR] Clinic name on OPD slip** — The Templar OPD slip print template now renders the clinic name in the slip header, improving identifiability of the issuing clinic on physical copies.
+
+- **[EkaAgents] MedAssist web file upload validation** — The MedAssist web widget now validates uploaded files against an updated allow-list of supported file types, surfacing a clear rejection for unsupported formats before the upload is attempted.
+
+## Fixed
+
+- **[EkaAgents] [Client-Specific] MedAssist web widget configuration** — Resolved a configuration regression that caused the MedAssist web widget to behave incorrectly on a partner deployment; the widget now initializes with the expected configuration on that surface.
 
 </Update>
 
