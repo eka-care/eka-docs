@@ -2369,49 +2369,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/v1/care-contexts/link:
-    post:
-      description: This API is used by HIP to link care contexts.
-      parameters:
-      - description: Eka User ID (OID)
-        in: header
-        name: X-Pt-Id
-        schema:
-          type: string
-      - description: Partner User ID
-        in: header
-        name: X-Partner-Pt-Id
-        schema:
-          type: string
-      - description: Partner HIP ID
-        in: header
-        name: X-Hip-Id
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LinkCareContextLinkingRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "202":
-          description: Accepted
-      security:
-      - authApiKey: []
-      summary: Care context linking
-  /abdm/v1/care-contexts/link/on-confirm:
+  /abdm/v1/care-contexts/discover/link/on-confirm:
     post:
       description: This API is used by HIP to confirm the linking of care contexts
         after OTP verification.
@@ -2454,7 +2412,7 @@ paths:
       security:
       - authApiKey: []
       summary: Discover Link On Confirm
-  /abdm/v1/care-contexts/link/on-init:
+  /abdm/v1/care-contexts/discover/link/on-init:
     post:
       description: This API is used by HIP to initiate the linking of unlinked health
         records (care contexts). HIP must send an OTP and provide details such as
@@ -2498,6 +2456,48 @@ paths:
       security:
       - authApiKey: []
       summary: Discover Link On Init
+  /abdm/v1/care-contexts/link:
+    post:
+      description: This API is used by HIP to link care contexts.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkCareContextLinkingRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
+      summary: Care context linking
   /abdm/v1/care-contexts/linked:
     get:
       parameters:
@@ -6317,7 +6317,6 @@ components:
         name:
           type: string
       required:
-      - clinic_id
       - hip_id
       - name
       type: object
@@ -6823,7 +6822,8 @@ components:
           $ref: '#/components/schemas/ModelsError'
           description: Error details, if any occurred during the process.
         otp_expiry:
-          description: Expiry time of the OTP sent for linking care contexts.
+          description: Expiry time of the OTP sent for linking care contexts. Format&#58; `2006-01-02T15:04:05.000Z` (ISO 8601 with milliseconds, UTC).
+          example: "2025-06-15T10:30:00.000Z"
           type: string
         ref_num:
           description: patient reference number.
@@ -7688,6 +7688,10 @@ components:
           - "null"
         key_information:
           $ref: '#/components/schemas/RecordsKeyMaterial'
+        page_count:
+          type: integer
+        page_number:
+          type: integer
         transaction_id:
           type: string
       type: object
