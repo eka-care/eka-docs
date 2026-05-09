@@ -8,6 +8,62 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="May 8, 2026"
+  description="May 8, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EkaScribe — May 8, 2026",
+    description: "• MedScribe Alliance TS SDK adds pause and resume controls for in-progress recordings\n\nRead more: https://developer.eka.care/ekascribe-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaScribe] Pause and resume in MedScribe Alliance TS SDK** — The MedScribe Alliance TypeScript SDK now exposes `pause` and `resume` methods, letting integrators temporarily halt and continue an in-progress scribe recording without ending or restarting the session. Useful for handling interruptions mid-consultation.
+
+</Update>
+
+<Update
+  label="May 7, 2026"
+  description="May 7, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaScribe — May 7, 2026",
+    description: "• EkaScribe TS SDK v2.1.50 adds getDocument, getSessionDetails, startRecordingForExistingSession, and document publish controls\n\n• VAD lifecycle hardened against runtime errors\n\nRead more: https://developer.eka.care/ekascribe-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaScribe] EkaScribe TS SDK getDocument, getSessionDetails, and existing-session resume** — `@eka-care/ekascribe-ts-sdk` v2.1.50 adds three new instance methods: `getDocument(document_id)` (fetch a document by id), `getSessionDetails({ session_id, presigned })` (fetch full session metadata, documents, and `user_status` lifecycle), and `startRecordingForExistingSession({ txn_id, business_id, created_at, microphoneID?, sharedWorkerUrl?, flavour? })` (resume recording for a previously initialised session by reconstructing the audio pipeline and session bucket path). New `TGetV1SessionDetailsResponse`, `TSessionDocument`, and related types are exported. [View docs](/api-reference/health-ai/ekascribe/SDKs/TS-sdk)
+
+- **[EkaScribe] Document publish payload in EkaScribe TS SDK** — `postV1Document` and the `getV1Document` response now carry an optional `publish: Record<string, unknown>` payload, allowing integrators to send and read structured publish metadata alongside a session document.
+
+- **[EkaScribe] user_status on patchTransactionStatus** — `patchTransactionStatus` now accepts an optional `user_status` field, mirroring the lifecycle states (`init`, `recording_started`, `commit`) returned by `getSessionDetails`, so clients can advance the user-side status on a session in one call.
+
+## Improved
+
+- **[EkaScribe] Hardened VAD lifecycle in EkaScribe TS SDK** — `VadWebClient` now wraps `startVad`, `pauseVad`, `destroyVad`, `resetVadWebInstance`, `reinitializeVad`, and the silent-audio monitor in defensive try/catch blocks, and `monitorAudioCapture` now guards `micVad.pause()` with an existence check. Errors are logged via `[EkaScribe]` console output instead of bubbling up and breaking the host page. The `EkaScribe` facade applies the same protection around `reinitializeVad`, `destroyVad`, and `pauseVad`.
+
+</Update>
+
+<Update
+  label="May 6, 2026"
+  description="May 6, 2026"
+  tags={["Fix"]}
+  rss={{
+    title: "EkaScribe — May 6, 2026",
+    description: "• EkaScribe Android session polling now transitions to ERROR on timeout or failure instead of silently completing\n\nRead more: https://developer.eka.care/ekascribe-changelog"
+  }}
+>
+
+## Fixed
+
+- **[EkaScribe] Session polling now surfaces failures as ERROR** — `SessionManager` in the EkaScribe Android SDK now transitions to `ERROR` (instead of `COMPLETED`) when transcript or full-output polling fails or times out. Failed transcript polls also short-circuit subsequent full-output polling, and `handleTransactionError` is consistently invoked on failures so users can recover and start a new session. Test scenarios were updated to reflect the new contract. [View docs](/api-reference/health-ai/ekascribe/SDKs/android-sdk)
+
+</Update>
+
+<Update
   label="April 20, 2026"
   description="April 20, 2026"
   tags={["Update"]}

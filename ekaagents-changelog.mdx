@@ -8,6 +8,62 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="May 6, 2026"
+  description="May 6, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — May 6, 2026",
+    description: "• Eka MCP SDK adds service_availability_elicitation and book_service tools for health package booking\n\n• doctor_availability_elicitation now returns selected_doctor_id and selected_hospital_id in tool_result\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] service_availability_elicitation and book_service in Eka MCP SDK** — The Eka MCP SDK gains two new tools for service and health-package booking flows: `service_availability_elicitation` (interactive UI tool that lets users discover services, view available dates, and pick a slot — accepts either `suggested_service_ids` or a single `service_id`, plus optional `hospital_id`, `preferred_date`, and `preferred_slot_time`) and `book_service` (creates a health-package booking from a `ServiceBookingRequest` with deduplication of concurrent calls and slot-unavailable handling). The shared elicitation builder was also generalised with an `entity_type` parameter so the same UI contract powers both doctor and service flows. [View docs](/ai-tools/medai-tools-mcp/tools)
+
+## Improved
+
+- **[EkaAgents] doctor_availability_elicitation now returns selected_doctor_id and selected_hospital_id** — When the elicitation completes successfully, the tool result now includes `selected_doctor_id` and `selected_hospital_id` in `_meta.tool_result`, so downstream booking tools can chain off the elicitation output without re-prompting the user.
+
+</Update>
+
+<Update
+  label="May 5, 2026"
+  description="May 5, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — May 5, 2026",
+    description: "• Eka MCP SDK adapts doctor_availability_elicitation to the new search_doctor_tool, supporting multiple doctor cards in a single elicitation\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] doctor_availability_elicitation aligned with search_doctor_tool** — The Eka MCP SDK removes the legacy `doctor_discovery` tool references and updates `doctor_availability_elicitation` to consume results from `search_doctor_tool`. The tool description and UI contract were updated to render multiple doctor cards in a single elicitation, and `suggested_doctor_ids` is now an accepted input parameter so an agent can hand a shortlist directly to the elicitation. [View docs](/ai-tools/medai-tools-mcp/tools)
+
+</Update>
+
+<Update
+  label="May 2, 2026"
+  description="May 2, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — May 2, 2026",
+    description: "• Echo Agent Kit ships an audio transcription module with Gemini and Eka Care ASR providers, released as v0.1.34\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Audio transcription module in Echo Agent Kit** — Echo Agent Kit adds a new `echo.audio` module with a `BaseTranscriber` interface, a `TranscriberConfig` model, and two pluggable providers: `GeminiTranscriber` (Gemini 2.0 / 2.5 audio models) and `EkaCareTranscriber` (Eka Care ASR over HTTPS, supporting `en-IN`, `en-US`, and `hi`). Audio can be supplied as raw bytes (with explicit `mime_type`), a public URL, or a Gemini Files API URI. A new `echo[ekacare]` extra pulls in `httpx` for the Eka Care provider. `get_transcriber(config)` and `generate_transcriber_config(...)` factory helpers make it straightforward to swap providers without rewriting agent code. [View docs](/ai-tools/agent-kit/introduction)
+
+## Improved
+
+- **[EkaAgents] Echo Agent Kit v0.1.34** — Echo Agent Kit released as v0.1.34 with the new audio transcription module bundled in. The Gemini install hint was also corrected from `google-generativeai` to `google-genai`. `pip install -U echo` is safe — defaults preserve existing agent behavior.
+
+</Update>
+
+<Update
   label="May 1, 2026"
   description="May 1, 2026"
   tags={["Feature", "Update"]}
