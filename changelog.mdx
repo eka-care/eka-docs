@@ -8,22 +8,112 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
-  label="May 2, 2026"
-  description="May 2, 2026"
-  tags={["Feature", "Update"]}
+  label="May 8, 2026"
+  description="May 8, 2026"
+  tags={["Feature"]}
   rss={{
-    title: "Eka Developer Platform — May 2, 2026",
-    description: "• Echo Agent Kit ships an audio transcription module with Gemini and Eka Care ASR providers behind a unified async interface\n\n• Released as v0.1.34\n\nRead more: https://developer.eka.care/changelog"
+    title: "Eka Developer Platform — May 8, 2026",
+    description: "• MedScribe Alliance TS SDK adds pause and resume controls for in-progress recordings\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
 ## Added
 
-- **[EkaAgents] Audio transcription module in Echo Agent Kit** — Echo Agent Kit now ships an `echo.audio.transcription` module with a `BaseTranscriber` interface and two pluggable providers: `GeminiTranscriber` (backed by `google-genai`, supports verbatim or prompted transcription against the Gemini 2.0/2.5 model family) and `EkaCareTranscriber` (HTTP ASR provider over the Eka Care voice ASR endpoint, supports `en-IN`, `en-US`, and `hi`). A unified `TranscriberConfig` covers provider selection, model, language, temperature, max output tokens, and request timeout, with `ECHO_DEFAULT_TRANSCRIBER_PROVIDER` and `ECHO_DEFAULT_TRANSCRIBER_MODEL` environment variable defaults. `get_transcriber(...)` and `generate_transcriber_config(...)` factories return an async-callable transcriber that accepts raw bytes, a Files API URI, or a public URL, and returns a structured `TranscriptionResponse` with text, detected language, duration, token usage, and provider-specific details. Eka Care provider is opt-in via the new `echo[ekacare]` extra.
+- **[EkaScribe] Pause and resume in MedScribe Alliance TS SDK** — The MedScribe Alliance TypeScript SDK now exposes `pause` and `resume` methods, letting integrators temporarily halt and continue an in-progress scribe recording without ending or restarting the session. Useful for handling interruptions mid-consultation.
+
+</Update>
+
+<Update
+  label="May 7, 2026"
+  description="May 7, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 7, 2026",
+    description: "• EkaScribe TS SDK v2.1.50 adds getDocument, getSessionDetails, startRecordingForExistingSession, and document publish controls\n\n• Templar receipt printing now uses a full patient age string (years and months) instead of years-only\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## ⚠️ Breaking
+
+- **[EMR] Templar receipt patient age field** — The `TPdfObject` type used by `getPatientIntroForReceipt` replaces the numeric `ageInM?: number` field with a string `age?: string`. Callers must now pass a pre-formatted age (for example, `"5 Years 3 Months"`) instead of months as an integer; the previous "compute years from months" behaviour has been removed in favour of richer year-and-month rendering. Update any caller that was passing `ageInM` to pass `age` instead.
+
+## Added
+
+- **[EkaScribe] EkaScribe TS SDK getDocument, getSessionDetails, and existing-session resume** — `@eka-care/ekascribe-ts-sdk` v2.1.50 adds three new instance methods: `getDocument(document_id)` (fetch a document by id), `getSessionDetails({ session_id, presigned })` (fetch full session metadata, documents, and `user_status` lifecycle), and `startRecordingForExistingSession({ txn_id, business_id, created_at, microphoneID?, sharedWorkerUrl?, flavour? })` (resume recording for a previously initialised session by reconstructing the audio pipeline and session bucket path). New `TGetV1SessionDetailsResponse`, `TSessionDocument`, and related types are exported. [View docs](/api-reference/health-ai/ekascribe/SDKs/TS-sdk)
+
+- **[EkaScribe] Document publish payload in EkaScribe TS SDK** — `postV1Document` and the `getV1Document` response now carry an optional `publish: Record<string, unknown>` payload, allowing integrators to send and read structured publish metadata alongside a session document.
+
+- **[EkaScribe] user_status on patchTransactionStatus** — `patchTransactionStatus` now accepts an optional `user_status` field, mirroring the lifecycle states (`init`, `recording_started`, `commit`) returned by `getSessionDetails`, so clients can advance the user-side status on a session in one call.
 
 ## Improved
 
-- **[EkaAgents] Echo Agent Kit v0.1.34** — Echo Agent Kit released as v0.1.34 with the new audio transcription module bundled in. The Gemini integration error message also now correctly points to `google-genai` (replacing the legacy `google-generativeai` reference). Existing agents that don't import the audio module are unaffected.
+- **[EkaScribe] Hardened VAD lifecycle in EkaScribe TS SDK** — `VadWebClient` now wraps `startVad`, `pauseVad`, `destroyVad`, `resetVadWebInstance`, `reinitializeVad`, and the silent-audio monitor in defensive try/catch blocks, and `monitorAudioCapture` now guards `micVad.pause()` with an existence check. Errors are logged via `[EkaScribe]` console output instead of bubbling up and breaking the host page. The `EkaScribe` facade applies the same protection around `reinitializeVad`, `destroyVad`, and `pauseVad`.
+
+- **[EMR] Patient age rendering on receipts** — `getPatientIntroForReceipt` now prints the patient's full age string (years and months) on receipts instead of computing only whole years from months, giving a more clinically meaningful age label.
+
+</Update>
+
+<Update
+  label="May 6, 2026"
+  description="May 6, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — May 6, 2026",
+    description: "• Eka MCP SDK adds service_availability_elicitation and book_service tools for health package booking\n\n• Health Records Android and Document UI introduce an analysing-state UI for parsed records\n\n• EkaScribe Android session polling now transitions to ERROR on timeout or failure instead of silently completing\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] service_availability_elicitation and book_service in Eka MCP SDK** — The Eka MCP SDK gains two new tools for service and health-package booking flows: `service_availability_elicitation` (interactive UI tool that lets users discover services, view available dates, and pick a slot — accepts either `suggested_service_ids` or a single `service_id`, plus optional `hospital_id`, `preferred_date`, and `preferred_slot_time`) and `book_service` (creates a health-package booking from a `ServiceBookingRequest` with deduplication of concurrent calls and slot-unavailable handling). The shared elicitation builder was also generalised with an `entity_type` parameter so the same UI contract powers both doctor and service flows. [View docs](/ai-tools/medai-tools-mcp/tools)
+
+- **[EMR] Analysing UI in Health Records Android and Document UI** — The Eka Health Records Android SDK and `android-document-ui` module introduce an "analysing" state UI for documents under processing, surfacing parse-in-progress to end users instead of leaving the document in an ambiguous state. Internal core SDK contracts were adapted to drive the new UI cleanly. [View docs](/SDKs/android/medical-records)
+
+## Improved
+
+- **[EkaAgents] doctor_availability_elicitation now returns selected_doctor_id and selected_hospital_id** — When the elicitation completes successfully, the tool result now includes `selected_doctor_id` and `selected_hospital_id` in `_meta.tool_result`, so downstream booking tools can chain off the elicitation output without re-prompting the user.
+
+## Fixed
+
+- **[EkaScribe] Session polling now surfaces failures as ERROR** — `SessionManager` in the EkaScribe Android SDK now transitions to `ERROR` (instead of `COMPLETED`) when transcript or full-output polling fails or times out. Failed transcript polls also short-circuit subsequent full-output polling, and `handleTransactionError` is consistently invoked on failures so users can recover and start a new session. Test scenarios were updated to reflect the new contract.
+
+</Update>
+
+<Update
+  label="May 5, 2026"
+  description="May 5, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 5, 2026",
+    description: "• Eka MCP SDK adapts doctor_availability_elicitation to the new search_doctor_tool, supporting multiple doctor cards in a single elicitation\n\n• IPD billing print now shows Total Amount, Total Discount, and Grand Total with quantity-aware MRP\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] doctor_availability_elicitation aligned with search_doctor_tool** — The Eka MCP SDK removes the legacy `doctor_discovery` tool references and updates `doctor_availability_elicitation` to consume results from `search_doctor_tool`. The tool description and UI contract were updated to render multiple doctor cards in a single elicitation, and `suggested_doctor_ids` is now an accepted input parameter so an agent can hand a shortlist directly to the elicitation. [View docs](/ai-tools/medai-tools-mcp/tools)
+
+- **[EMR] IPD billing print totals** — The IPD billing print template (`getBodyForIpdBilling`) now computes Total Amount as `Σ(MRP × Qty)`, derives Total Discount from the difference with the line-item-discounted total, and renders an explicit Grand Total alongside Total Paid and amount due. The output replaces the previous Total MRP / Line Item Discount / Total Amount layout with a clearer Total Amount / Total Discount / Grand Total breakdown.
+
+</Update>
+
+<Update
+  label="May 2, 2026"
+  description="May 2, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "Eka Developer Platform — May 2, 2026",
+    description: "• Echo Agent Kit ships an audio transcription module with Gemini and Eka Care ASR providers, released as v0.1.34\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Audio transcription module in Echo Agent Kit** — Echo Agent Kit adds a new `echo.audio` module with a `BaseTranscriber` interface, a `TranscriberConfig` model, and two pluggable providers: `GeminiTranscriber` (Gemini 2.0 / 2.5 audio models) and `EkaCareTranscriber` (Eka Care ASR over HTTPS, supporting `en-IN`, `en-US`, and `hi`). Audio can be supplied as raw bytes (with explicit `mime_type`), a public URL, or a Gemini Files API URI. A new `echo[ekacare]` extra pulls in `httpx` for the Eka Care provider. `get_transcriber(config)` and `generate_transcriber_config(...)` factory helpers make it straightforward to swap providers without rewriting agent code. [View docs](/ai-tools/agent-kit/introduction)
+
+## Upgraded
+
+- **[EkaAgents] Echo Agent Kit v0.1.34** — Echo Agent Kit released as v0.1.34 with the new audio transcription module bundled in. The Gemini install hint also corrected from `google-generativeai` to `google-genai`. `pip install -U echo` is safe — defaults preserve existing agent behavior.
 
 </Update>
 
