@@ -8,6 +8,143 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="April 2026"
+  description="Monthly Transparency Post"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "Eka Under the Hood — April 2026",
+    description: "• Echo Agent Kit MCP integration redesigned with split tool/session caches, LRU eviction, and bounded tool-call timeouts\n\n• EkaScribe SDKs leveled up — Android moved to MP3 encoding with smarter polling, iOS gained parallel chunk processing, and the JS SDK added full document lifecycle methods\n\n• Patient Directory APIs expanded with retrieve-by-username, EMR user updates, and a force-fresh search flag in the TS SDK\n\n• BODHI clinical knowledge graphs released publicly under CC BY-NC 4.0\n\n• ABDM ECDH primitives now available as a Python package for partner integrations\n\nRead more: https://developer.eka.care/under-the-hood"
+  }}
+>
+
+## Under the Hood — April 2026
+
+April was about turning the AI agent infrastructure we've been investing in
+into something production-grade — faster, more bounded, and easier to
+authenticate against — while continuing to harden the EMR, EkaScribe, and
+ABDM surfaces around it. We also opened up two pieces of internal IP to the
+wider community.
+
+### AI agent infrastructure
+
+The Echo Agent Kit's MCP integration got the most substantial rework of the
+month. The old monolithic MCP cache was retired in favor of a split design:
+tool discovery and MCP sessions now live in separate caches, each with its
+own idle and absolute TTLs, LRU eviction on pool exhaustion, and concurrent
+cache-miss serialization to prevent duplicate discovery work. Tool cache keys
+are partitioned by configurable headers, and `user_session_id` is now plumbed
+through `MCPTool.run` via `tool_context` — so per-user sessions stay
+correctly isolated even under load.
+
+We also put bounds on tool execution: MCP tool calls in the Echo Agent Kit
+are now capped at a 10-second timeout, so a slow downstream tool can no
+longer block an agent response indefinitely. Empty prompt variables are
+handled gracefully too — optional placeholders no longer throw.
+
+On the MCP Server itself, we shipped OTP-based authentication for EMR
+workspaces (with country code selection and UHID profile picking, all
+mid-conversation), added a doctor discovery tool for EMR clinics, introduced
+an interactive elicitation flow that lets agents confirm doctor availability
+before booking, and made the MCP SDK fall back to the default EMR tool set
+when a workspace has no explicit configuration — a meaningful resilience
+improvement for new workspace onboarding. Profile creation in the MCP SDK
+now requires a mobile number, ensuring downstream integrations always have
+a contactable identifier.
+
+The MedAssist surface saw steady iteration too — a contextual popup tied to
+conversation state, configurable onboarding nudges so partners can suppress
+unsolicited prompts, a proper agent-ID resolution fix, file-upload
+validation against an allow-list of supported types, and a responsive layout
+pass that fixes overflow on screens under 360px and 767px wide. A
+microphone regression was caught and reverted same-day.
+
+### Reliability and SDK hardening
+
+EkaScribe's SDKs leveled up across all three runtimes. The Android SDK
+switched from AAC/MP4 to LAME-based MP3 encoding for more reliable chunk
+uploads, and its result polling now inspects `integration`, `transcript`,
+and `custom` statuses inside `templateResults` instead of the legacy
+`output` list — with empty statuses correctly treated as failures rather
+than timing out. The iOS SDK now processes audio chunks in parallel,
+cutting end-to-end transcription latency for longer recordings. The
+JavaScript SDK gained `createDocument`, `deleteDocument`, and
+`getChunkTranscript` for full programmatic document lifecycle control,
+plus expanded polling parameters and a longer 20-second status API
+timeout. EkaScribe iOS DocAssist also now surfaces voice-to-text failures
+with a clear error state instead of silently dropping recordings.
+
+On the Android side, the document UI no longer crashes when PDF rendering
+initializes before view layout constraints are available — view setup is
+now properly gated. Medical Records Android validates oversized images
+before upload, moves PDF URI resolution off the main thread, and the
+Health Records SDK handles missing files during record processing
+gracefully with improved MD5 checksum error handling.
+
+The Patient Directory TypeScript SDK got a `forceApiSearch` flag for
+high-confidence lookups that need to bypass the local cache, and we
+fixed a stale-cache edge case where partial cached state could surface
+incorrect results.
+
+### Platform and integrations
+
+We extended the Patient Directory APIs with two new endpoints — retrieve
+a patient profile by username and update an EMR user profile — plus a
+GET endpoint to retrieve an EMR user by OID. The `extras` field also got
+documented restrictions (no nested lists, dictionaries with one level of
+nesting, 16-character key limit, leading-underscore keys ignored) so
+integrators can rely on consistent shape contracts. The eka-usage-sdk
+shipped at v0.1.1 with a fixed test runner and the latest Kafka usage
+metric event definitions, and the ABDM-related usage events were updated
+to match current consent and linking flows.
+
+The Templar prescription engine saw a steady drumbeat of EMR-facing
+improvements: clinic name on OPD slips; cleaner doctor name rendering on
+IPD receipts and bills (using profile first/last name fields directly);
+a `show_signature` flag plus cache-busting query parameters for S3-hosted
+PDF assets; corrected ophthalmology table ordering; richer IPD admission
+templates; an IPD admission TinyMCE preview fix; QR code repositioned
+into the footer details for cleaner headers; a `unit_display_name`
+fallback to `name` for cleaner unit labels; the addition of pachymetry,
+Amsler grid, and contact lens examination tables; structured diet chart
+sections in prescriptions; and a Total Paid / Amount Due summary on IPD
+billing PDFs. OPD slips also got tags and a larger token font for
+readability at the front desk.
+
+### Open-sourcing internal IP
+
+Two pieces of work landed in the open-source column. **BODHI** — two
+SNOMED-linked clinical knowledge graphs (`bodhi-s` for condition–symptom
+mapping and `bodhi-m` for concept–drug–lab investigation mapping, with
+9,300+ nodes and 16,700+ relationships across six interchange formats)
+— is now publicly available under CC BY-NC 4.0 for symptom checking,
+differential diagnosis, and patient health profiling use cases. And the
+**ABDM ECDH** key-exchange primitives we use internally for secure
+consent and data-fetch flows are now distributable as a Python package,
+so partners can integrate ABDM-aligned encryption helpers without
+re-implementing the protocol.
+
+### Developer experience
+
+The EkaScribe documentation got a substantial revamp: a new Quick Start
+guide walks integrators through installing the TypeScript SDK and
+transcribing a first consultation in minutes; SDKs are now promoted as
+the recommended integration path with REST APIs second and Chrome
+Extension third; v1 APIs are clearly marked deprecated with migration
+pointers to v2; and SDK sidebar titles use proper casing. The result is
+a faster, less ambiguous path from "first time visiting the docs" to a
+working transcription.
+
+### What's next
+
+In May, we're focused on continuing to extend the Echo Agent Kit
+(audio transcription, lazy-loaded skills, and Postgres-backed tools have
+already started landing in early May), expanding doctor and patient
+directory APIs further, and tightening the production posture of the
+MCP Server's caching and authentication paths.
+
+</Update>
+
+<Update
   label="March 2026"
   description="Monthly Transparency Post"
   tags={["Feature", "Update"]}
