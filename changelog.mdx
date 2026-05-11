@@ -8,6 +8,24 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="May 11, 2026"
+  description="May 11, 2026"
+  tags={["Fix"]}
+  rss={{
+    title: "Eka Developer Platform — May 11, 2026",
+    description: "• MCP server OAuth discovery now derives the correct https:// origin behind proxies and matches subpaths on /.well-known/oauth-protected-resource\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Fixed
+
+- **[Platform] MCP server OAuth discovery origin** — The OAuth discovery endpoints now derive the public origin from the RFC 7239 `forwarded` header (set by the Envoy ingress) before falling back to `x-forwarded-proto`, so `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` advertise `https://` URLs when fronted by AWS API Gateway. Without this, clients (including Claude.ai) received `http://` token endpoints and failed authorization.
+
+- **[Platform] MCP OAuth protected-resource discovery subpaths** — `/.well-known/oauth-protected-resource` now also matches subpaths such as `/.well-known/oauth-protected-resource/mcp`, which some MCP clients probe by appending the resource path. Previously these requests returned 404 and broke auth-scheme discovery.
+
+</Update>
+
+<Update
   label="May 8, 2026"
   description="May 8, 2026"
   tags={["Feature"]}
