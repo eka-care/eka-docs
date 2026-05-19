@@ -1,0 +1,72 @@
+---
+title: "Link Entity"
+openapi: "POST /med-link/nel/link"
+---
+
+## About this endpoint
+
+`POST /med-link/nel/link` links a single free-text medical entity to candidate
+codes from the requested ontology. Pick the `ontology` and `version` from
+[List Registry](/api-reference/medical-entity-codification/registry).
+
+Use the example selector above to see a request and response for each ontology.
+
+## The `metadata` field by ontology
+
+`metadata` carries ontology-specific hints. It changes results for LOINC and
+medication, and is ignored by SNOMED CT and ICD-10-CM Comprehend.
+
+### SNOMED CT — `snomed`
+
+No `metadata` required. Send the symptom, finding or disorder as the `query`.
+Each result's `metadata` includes a `semantic_tag` (e.g. `finding`, `disorder`).
+
+### LOINC — `loinc`
+
+`metadata` is **strongly recommended** — the lab test name alone is often
+ambiguous, and a unit or specimen decides which LOINC code is correct.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `unit` | string | Test unit, e.g. `g/dl`, `mg/dl`, `%`. **Most important hint.** |
+| `value` | string | Numeric result value. Improves value-type matching. |
+| `range` | string | Reference range for the result. |
+| `specimen` | string | Specimen type, e.g. `blood`, `urine`. |
+| `specimen_text` | string | Free-text specimen description (auto-detected if omitted). |
+| `panel_name` | string | Panel name for multi-test panels. |
+| `extended_test_name` | string | Extended/alternate test name. |
+
+<Warning>
+Without `metadata`, a LOINC query such as `hemoglobin` can link to the wrong
+specimen (e.g. urine instead of blood). Supplying `unit` and `specimen` lets the
+pipeline return `is_linked: true` against the correct code.
+</Warning>
+
+### Medication — `medication`
+
+`metadata` is **optional** — it helps resolve ambiguous brand names. The `score`
+field is `null`; read `metadata.matching_breakdown` and `metadata.linking_requirements`
+on each result instead.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `form` | string | Medication form, e.g. `tablet`, `capsule`, `injection`. |
+| `generic_name` | string | Generic / salt name of the drug. |
+| `dose_unit` | string | Dosage unit, e.g. `mg`, `mcg`, `ml`. |
+| `dose_custom` | string | Custom dosage string. |
+
+### ICD-10-CM Comprehend — `icd-10-cm` (`comprehend`)
+
+No `metadata` required. This version uses AWS Comprehend Medical, so it works
+well on natural-language clinical text. The response includes a `query_breakdown`
+with the detected `entity`, `traits` and `attributes`.
+
+## Reading the response
+
+| Field | Description |
+|-------|-------------|
+| `results[]` | Candidate codes, ranked by relevance. |
+| `results[].term_id` | The ontology code. |
+| `results[].is_linked` | `true` when the pipeline is confident of a single correct match. |
+| `results[].score` | Relevance/confidence (`null` for medication). |
+| `query_breakdown` | How the query was parsed (LOINC, medication, ICD-10-CM Comprehend; `null` for SNOMED CT). |

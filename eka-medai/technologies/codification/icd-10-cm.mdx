@@ -1,0 +1,60 @@
+---
+title: ICD-10-CM
+---
+
+## Overview
+
+**ICD-10-CM** (International Classification of Diseases, 10th Revision, Clinical
+Modification) is the standard code set for diagnoses. Eka Care's codification
+pipeline links free-text diagnoses to ICD-10-CM codes.
+
+| Property | Value |
+|----------|-------|
+| `ontology` | `icd-10-cm` |
+| `version` | `comprehend` |
+| `metadata` | Not used |
+
+## The Comprehend version
+
+The `comprehend` version is built on **AWS Comprehend Medical**, a clinical NLP
+service. Unlike a plain term lookup, it understands diagnoses expressed in
+natural clinical language — handling modifiers, qualifiers and surrounding
+context — which makes it well suited to coding from real clinical notes.
+
+## When to use it
+
+Use it to code diagnoses from free-text clinical content:
+
+- Diagnoses recorded in consultation or discharge notes
+- Problem lists and assessments
+- Claims and medical-coding workflows
+
+Send the diagnosis as the `query` — no `metadata` is needed.
+
+## Reading the results
+
+Each result is an ICD-10-CM code:
+
+- `term_id` — the ICD-10-CM code (e.g. `E11`)
+- `term_name` — the diagnosis description
+- `score` — confidence of the candidate
+- `is_linked` — `true` when the pipeline is confident of the match
+
+The response also includes a `query_breakdown` derived from AWS Comprehend
+Medical:
+
+- `entity` — the clinical entity detected in the query
+- `entity_score` — confidence of that detection
+- `traits` — detected traits, e.g. `DIAGNOSIS`
+- `attributes` — detected attributes, e.g. a `QUALITY` of `type 2`
+
+## Example
+
+A query of `type 2 diabetes mellitus` links to ICD-10-CM `E11`
+("Type 2 diabetes mellitus"), with `query_breakdown` reporting the detected
+entity `diabetes mellitus` and the attribute `type 2`.
+
+## Try it out
+
+See the [Link Entity API](/api-reference/medical-entity-codification/link-entity)
+and select the **ICD-10-CM Comprehend** example to try it.

@@ -1,0 +1,57 @@
+---
+title: SNOMED CT
+---
+
+## Overview
+
+**SNOMED CT** (Systematized Nomenclature of Medicine — Clinical Terms) is the
+most comprehensive clinical terminology in the world. Eka Care's codification
+pipeline links free-text clinical entities — symptoms, findings, disorders and
+procedures — to SNOMED CT concept identifiers.
+
+| Property | Value |
+|----------|-------|
+| `ontology` | `snomed` |
+| `version` | `20250401_extended` |
+| `metadata` | Not used |
+
+## When to use it
+
+Use SNOMED CT to code clinical entities recorded during consultations:
+
+- Patient-reported symptoms (`chest pain`, `shortness of breath`)
+- Clinical findings and disorders
+- Procedures and interventions
+
+SNOMED CT is the right choice when you need a precise, granular clinical concept
+rather than a billing-oriented code.
+
+## How it works
+
+The query is normalised, candidate concepts are retrieved through semantic
+vector search over the SNOMED CT index, and a language model selects the single
+best match. No `metadata` is required — send the clinical entity as the `query`.
+
+## Reading the results
+
+Each result is a SNOMED CT concept:
+
+- `term_id` — the SNOMED CT concept identifier (e.g. `29857009`)
+- `term_name` — a human-readable term for the concept
+- `score` — semantic relevance of the candidate
+- `is_linked` — `true` when the pipeline is confident this is the correct match
+- `metadata.semantic_tag` — the concept's category (`finding`, `disorder`,
+  `procedure`, …)
+
+The pipeline also matches localised and transliterated terms, so a single
+concept can be returned under multiple `term_name` variants across languages.
+
+## Example
+
+A query of `chest pain` links to SNOMED CT concept `29857009` ("Chest pain"),
+tagged as a `finding`.
+
+## Try it out
+
+See the [Link Entity API](/api-reference/medical-entity-codification/link-entity)
+and select the **SNOMED CT** example to try it.

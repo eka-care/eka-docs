@@ -1,0 +1,63 @@
+---
+title: LOINC
+---
+
+## Overview
+
+**LOINC** (Logical Observation Identifiers Names and Codes) is the global
+standard for identifying lab tests and clinical observations. Eka Care's
+codification pipeline links free-text lab test names to LOINC codes.
+
+| Property | Value |
+|----------|-------|
+| `ontology` | `loinc` |
+| `version` | `v1.0` |
+| `metadata` | **Strongly recommended** |
+
+## Why context matters
+
+A lab test name on its own is often ambiguous. `Hemoglobin` measured in blood is
+a different LOINC code from hemoglobin measured in urine; the same test reported
+as a mass concentration differs from one reported as a molar concentration.
+
+LOINC codification therefore relies on the `metadata` field to disambiguate.
+Supplying the unit and specimen is the difference between a confident, correct
+link and an uncertain one.
+
+## The `metadata` field
+
+| Key | Description |
+|-----|-------------|
+| `unit` | Test unit, e.g. `g/dl`, `mg/dl`, `%`. The single most important hint. |
+| `value` | Numeric result value — improves value-type matching. |
+| `range` | Reference range for the result. |
+| `specimen` | Specimen type, e.g. `blood`, `urine`. |
+| `specimen_text` | Free-text specimen description (auto-detected if omitted). |
+| `panel_name` | Panel name for multi-test panels. |
+| `extended_test_name` | Extended or alternate test name. |
+
+## Context changes the result
+
+Consider the query `hemoglobin`:
+
+- **Without `metadata`** — the top candidate is `haemoglobin_urine` and
+  `is_linked` is `false`. The pipeline cannot tell which hemoglobin you mean.
+- **With** `metadata: { "unit": "g/dl", "value": "14.5", "specimen": "blood" }`
+  — the pipeline links to LOINC `718-7` ("HEMOGLOBIN (HB) [Mass/Vol]") with
+  `is_linked: true`.
+
+## Reading the results
+
+- `term_id` — the LOINC code (e.g. `718-7`)
+- `is_linked` — `true` only when test name, unit and specimen all match
+- `metadata.matching_breakdown` — which dimensions matched (`component_match`,
+  `unit_match`, `specimen_match`, …)
+- `metadata.eka_id` — Eka's internal lab identifier for the test
+
+The response also includes a `query_breakdown` showing how the test name, unit
+and specimen were parsed from your request.
+
+## Try it out
+
+See the [Link Entity API](/api-reference/medical-entity-codification/link-entity)
+and select the **LOINC** example to try it.
