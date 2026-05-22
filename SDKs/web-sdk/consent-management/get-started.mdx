@@ -5,7 +5,7 @@ description: "Embed ABDM medical records consent management into your applicatio
 
 ## Overview
 
-The **ABDM Records** module is a plug-and-play UI widget that enables your application to request, track, and act on ABDM (Ayushman Bharat Digital Mission) health data consents on behalf of your patients. When a patient approves a consent request, their medical records are delivered to your backend automatically — your application is then responsible for displaying those records when the **View** button is clicked.
+The **ABDM Records** module is a plug-and-play UI widget that enables your application to request, track, and act on ABDM (Ayushman Bharat Digital Mission) health data consents on behalf of your patients. When a patient approves a consent request, the **View** button becomes available — your application is then responsible for fetching and rendering the records by calling Eka's APIs.
 
 ---
 
@@ -25,7 +25,7 @@ The **ABDM Records** module is a plug-and-play UI widget that enables your appli
     When the patient grants consent, Eka's ABDM gateway delivers the medical records to your registered callback/backend endpoint.
   </Step>
   <Step title="Your app shows the records">
-    The consent row in the table shows **Success**. When the **View** button is clicked, the widget opens your `consent-view` URL so your application can display the received records.
+    The consent row updates to **Success**. When **View** is clicked, the widget opens your `consent-view` URL — a records page you build and host — passing `consent_id` as a query param. That page calls the [Consent Details API](/api-reference/user-app/abdm-connect/consents/consent-details) to get the approved care contexts, then calls the [Retrieve Health Records API](/api-reference/user-app/records/retrieve-health-records) for each care context to fetch the FHIR bundles, and renders them.
   </Step>
 </Steps>
 
@@ -53,7 +53,7 @@ Render the widget inside an `<iframe>` (or directly in a React shell) and pass t
 | `abha`         | Yes      | Patient's ABHA address (e.g. `user@abdm`)                                                                                                    |
 | `oid`          | Yes      | Patient's internal OID in your system                                                                                                        |
 | `cid`          | Yes      | Your clinic / HIU identifier registered with ABDM                                                                                            |
-| `consent-view` | Yes      | Base URL of your application's medical records page — the widget appends consent details as query params when the **View** button is clicked |
+| `consent-view` | Yes      | Base URL of your application's records page. When **View** is clicked, the widget appends `consent_id` and `abha` as query params and opens this URL — your page then calls the [Consent Details API](/api-reference/user-app/abdm-connect/consents/consent-details) and [Retrieve Health Records API](/api-reference/user-app/records/retrieve-health-records) to fetch and display the records |
 | `token`        | Yes      | Short-lived Bearer token used to authenticate API calls to Eka's backend                                                                     |
 
 <Note>
@@ -135,7 +135,7 @@ Each consent request transitions through a lifecycle. The table shows a color-co
 
 | Status badge   | Internal value | Meaning                                                                                                              |
 | -------------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 🟢 **Success** | `GRANTED`      | The patient approved the consent. Records have been delivered to your backend. The **View** action is now available. |
+| 🟢 **Success** | `GRANTED`      | The patient approved the consent. The **View** action is now available — use it to fetch and display the records via the [Consent Details API](/api-reference/user-app/abdm-connect/consents/consent-details) and [Retrieve Health Records API](/api-reference/user-app/records/retrieve-health-records). |
 | 🟡 **Pending** | `REQUESTED`    | The consent request has been sent to the patient and is awaiting their decision.                                     |
 | 🔴 **Denied**  | `DENIED`       | The patient explicitly rejected the consent request.                                                                 |
 | 🔴 **Revoked** | `REVOKED`      | The patient previously granted consent but has since revoked it.                                                     |
@@ -152,11 +152,11 @@ Each consent request transitions through a lifecycle. The table shows a color-co
 
 ## Viewing Records (Your Responsibility)
 
-When a consent is in **Success** state, a **View** button appears in the Action column. Clicking it opens your `consent-view` URL in a new browser tab.
+The widget manages the consent lifecycle only — it does **not** fetch or render medical record content. When a consent reaches **Success** state, a **View** button appears. Clicking it hands control over to a records page that **you build, host, and deploy**.
 
-### URL format your page will receive
+### What is the `consent-view` URL?
 
-The widget constructs the URL as:
+The `consent-view` parameter you pass when embedding the widget is the URL of your own hosted records page. When **View** is clicked, the widget opens that URL in a new tab and appends `consent_id` and `abha` as query parameters:
 
 ```
 {consent-view}?consent_id={consentId}&abha={abhaAddress}
@@ -175,27 +175,47 @@ https://yourapp.com/records?consent_id=abc-123-xyz&abha=user@abdm
 
 ### What your records page must do
 
+Once your page receives the `consent_id`, follow this flow:
+
 <Steps>
-  <Step title="Read URL params">
-    Extract `consent_id` and `abha` from the query string.
+  <Step title="Call the Consent Details API">
+    Use the `consent_id` to call the [Consent Details API](/api-reference/user-app/abdm-connect/consents/consent-details).
+    The response returns the list of approved facilities and their associated `care_context` entries.
   </Step>
-  <Step title="Look up records in your backend">
-    Use the `consent_id` to fetch the medical records your backend received from
-    the ABDM gateway when the patient approved the consent.
+  <Step title="Fetch records for each care context">
+    For each `care_context` returned, call the [Retrieve Health Records API](/api-reference/user-app/records/retrieve-health-records).
+    This returns a raw FHIR bundle containing the patient's health records for that care context.
   </Step>
-  <Step title="Display the records">
-    Render the records in your own UI. Eka delivers the raw FHIR bundles to your
-    registered webhook — how you store and display them is entirely up to you.
+  <Step title="Render the FHIR bundles">
+    Display the FHIR data in your application's UI. See the rendering options below.
   </Step>
 </Steps>
+
+### Building your FHIR renderer
+
+You have two options for rendering the FHIR bundles:
+
+**Option 1 — Build your own renderer**
+
+Parse and display the FHIR resources directly in your existing application UI. This gives you full control over the layout and presentation.
+
+**Option 2 — Use FHIR Prism (recommended)**
+
+[FHIR Prism](https://github.com/eka-care/fhir-prism) is an open-source FHIR rendering codebase maintained by Eka Care. It is **not a hosted service** — it is a codebase you clone, customise if needed, and deploy as your own web application. Once deployed, that URL becomes your `consent-view` value.
+
+To get started with FHIR Prism:
+1. Clone [github.com/eka-care/fhir-prism](https://github.com/eka-care/fhir-prism)
+2. Customise the rendering as needed for your application
+3. Deploy it to your own infrastructure
+4. Pass the deployed URL as the `consent-view` parameter when embedding the widget
 
 {/* TODO: Add screenshot of an example records page with FHIR data displayed */}
 
 <Warning>
-  The ABDM Records widget does **not** display the medical record content
-  itself. It only manages the consent lifecycle. You are responsible for storing
-  records from the ABDM gateway callback and building the records viewer page at
-  `consent-view`.
+  The `consent-view` URL must be a page you own and host — the widget simply redirects to it.
+  Fetching records via the [Consent Details API](/api-reference/user-app/abdm-connect/consents/consent-details)
+  and [Retrieve Health Records API](/api-reference/user-app/records/retrieve-health-records), and rendering the
+  FHIR data, is entirely your responsibility.
 </Warning>
 
 ---
@@ -223,7 +243,7 @@ The widget communicates with Eka's backend using the following endpoints. All re
 
 <AccordionGroup>
   <Accordion title="What happens after the patient approves consent?">
-    Eka's ABDM gateway fetches the records from the patient's health locker and delivers them to your registered backend webhook as FHIR bundles. The consent row in the widget will update to **Success** on the next poll/refresh.
+    The consent status updates to **Success** and the **View** button becomes active. Clicking **View** opens your hosted records page (`consent-view` URL) with the `consent_id`. Your page then calls the [Consent Details API](/api-reference/user-app/abdm-connect/consents/consent-details) to get the approved care contexts, and the [Retrieve Health Records API](/api-reference/user-app/records/retrieve-health-records) for each care context to fetch the FHIR bundles. You render those bundles using your own UI or the open-source [FHIR Prism](https://github.com/eka-care/fhir-prism) codebase deployed at your `consent-view` URL.
   </Accordion>
 
 <Accordion title="Can the patient revoke consent after approval?">
