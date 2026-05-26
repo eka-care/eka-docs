@@ -2637,6 +2637,49 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/care-contexts/sms/notify:
+    post:
+      description: This API is used by HIP to notify the gateway when a new health
+        record is ready to be shared with a user.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkUnlinkedRecordsNotificationRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
+      summary: Notify unlinked care contexts
   /abdm/v1/consents/approve:
     post:
       description: This endpoint is used to approve the consent
@@ -5027,6 +5070,8 @@ components:
       type: object
     AuthLoggedInStatusResponse:
       properties:
+        hpr_id:
+          type: string
         kyc_verified:
           type: boolean
         logged_in:
@@ -5236,6 +5281,12 @@ components:
           type: string
         consent_init_id:
           type: string
+        hi_types:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
         period:
           $ref: '#/components/schemas/CommonsPeriodWithExpiry'
         status:
@@ -5270,14 +5321,6 @@ components:
           type:
           - array
           - "null"
-        hi_types:
-          items:
-            type: string
-          type:
-          - array
-          - "null"
-        period:
-          $ref: '#/components/schemas/CommonsPeriodWithExpiry'
       type: object
     ConsentCreateConsentRequest:
       properties:
@@ -6042,6 +6085,11 @@ components:
           type:
           - array
           - "null"
+      type: object
+    LinkUnlinkedRecordsNotificationRequest:
+      properties:
+        mobile_number:
+          type: string
       type: object
     ListsRequestDetail:
       properties:
@@ -7541,11 +7589,17 @@ components:
           type:
           - "null"
           - integer
+        district_code:
+          type: string
+        district_name:
+          type: string
         first_name:
           description: User's first name.
           type:
           - "null"
           - string
+        full_name:
+          type: string
         gender:
           description: Gender of the user (M - Male, F - Female, O - Other).
           enum:
@@ -7585,6 +7639,29 @@ components:
           type:
           - "null"
           - string
+        profile_photo:
+          description: Base64-encoded profile photo.
+          type: string
+        state_code:
+          type: string
+        state_name:
+          type: string
+        sub_district_code:
+          type: string
+        sub_district_name:
+          type: string
+        town_code:
+          type: string
+        town_name:
+          type: string
+        village_code:
+          type: string
+        village_name:
+          type: string
+        ward_code:
+          type: string
+        ward_name:
+          type: string
         year_of_birth:
           description: Year of birth of the user.
           type:
