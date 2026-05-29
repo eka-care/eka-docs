@@ -15,7 +15,7 @@ One can also create a New Assessment using [🔗 INIT API](/api-reference/health
 This request finds all assessment groups for a specific practitioner AND a specific patient. The unique_identifier can be different for each group.
 
 ### Request:
-```json
+```bash
 curl ".../v2/?practitioner_uuid=123-doc&patient_uuid=456-patient"
 ```
 
@@ -31,7 +31,7 @@ Notice how both groups in the response match the requested practitioner_uuid and
       "unique_identifier": "UID-A",
       "transaction_id": "TXN-1",
       "conversations": [
-        { "conversationid": "sa_111", "created_at": "..." }
+        { "conversationid": "sa_111", "created_at": "...", "wflow_wfid": 101 }
       ]
     },
     {
@@ -40,8 +40,8 @@ Notice how both groups in the response match the requested practitioner_uuid and
       "unique_identifier": "UID-B",
       "transaction_id": "TXN-2",
       "conversations": [
-        { "conversationid": "sa_222", "created_at": "..." },
-        { "conversationid": "sn_333", "created_at": "..." }
+        { "conversationid": "sa_222", "created_at": "...", "wflow_wfid": 101 },
+        { "conversationid": "sn_333", "created_at": "...", "wflow_wfid": 205 }
       ]
     }
   ]
@@ -52,7 +52,7 @@ Notice how both groups in the response match the requested practitioner_uuid and
 This request finds all assessment groups that share the same unique_identifier, regardless of the practitioner or patient.
 
 ### Request: 
-```json 
+```bash
 curl ".../v2/?unique_identifier=UID-XYZ"
 ```
 
@@ -68,7 +68,7 @@ Notice how both groups have the same unique_identifier, but different practition
       "unique_identifier": "UID-XYZ",
       "transaction_id": "TXN-100",
       "conversations": [
-        { "conversationid": "sa_777", "created_at": "..." }
+        { "conversationid": "sa_777", "created_at": "...", "wflow_wfid": 101 }
       ]
     },
     {
@@ -77,7 +77,35 @@ Notice how both groups have the same unique_identifier, but different practition
       "unique_identifier": "UID-XYZ",
       "transaction_id": "TXN-200",
       "conversations": [
-        { "conversationid": "sn_888", "created_at": "..." }
+        { "conversationid": "sn_888", "created_at": "...", "wflow_wfid": 101 }
+      ]
+    }
+  ]
+}
+```
+
+### Example 3: Filtering by Workflow IDs
+Use `wfids` to fetch only assessments belonging to specific workflows. This is useful when you want results scoped to a particular assessment type (e.g., only diabetes screenings or only general health checks).
+
+### Request:
+```bash
+curl ".../v2/?patient_uuid=456-patient&wfids=101,205"
+```
+
+### Response:
+Only assessments whose workflow matches one of the provided `wfids` are returned.
+
+```json
+{
+  "conversations": [
+    {
+      "practitioner_uuid": "123-doc",
+      "patient_uuid": "456-patient",
+      "unique_identifier": "UID-A",
+      "transaction_id": "TXN-1",
+      "conversations": [
+        { "conversationid": "sa_111", "created_at": "2024-03-01T10:00:00Z", "wflow_wfid": 101 },
+        { "conversationid": "sn_999", "created_at": "2024-03-05T14:30:00Z", "wflow_wfid": 205 }
       ]
     }
   ]

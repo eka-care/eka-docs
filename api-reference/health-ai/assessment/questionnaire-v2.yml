@@ -1,0 +1,237 @@
+openapi: 3.0.3
+info:
+  title: Questionnaire V2 API
+  version: 2.0.0
+servers:
+  - description: Production
+    url: https://api.eka.care
+  - description: Staging
+    url: https://api.dev.eka.care
+
+paths:
+  /assessment/api/v2/questionnaire/:
+    post:
+      summary: Get Questionnaire Data (V2)
+      description: >
+        Fetch the full questionnaire (questions, answers, practitioner, patient, and scoring) for one
+        or more assessment sessions. Unlike the v1 `questionnaire_data` endpoint, this API accepts
+        multiple assessment IDs in a single request and requires authentication — only the owning
+        business can retrieve its assessments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - assessment_ids
+              properties:
+                assessment_ids:
+                  type: array
+                  description: >
+                    List of assessment IDs to fetch. Each ID is prefixed with `sa_` (Self-Assessment)
+                    or `sn_` (Smartcheck).
+                  items:
+                    type: string
+                  example:
+                    - "sa_123456789"
+                    - "sn_987654321"
+      responses:
+        '200':
+          description: Questionnaire data for the requested assessments.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: >
+                      A map of assessment_id → questionnaire object. Only successfully
+                      fetched assessments appear as keys.
+                    additionalProperties:
+                      type: object
+                      properties:
+                        assess_data:
+                          type: array
+                          description: Ordered list of question/answer components in the assessment.
+                          items:
+                            type: object
+                            properties:
+                              question:
+                                type: string
+                                example: "What symptoms are you facing?"
+                              answer:
+                                type: string
+                                nullable: true
+                                example: "Fever, Cough"
+                              options:
+                                type: array
+                                nullable: true
+                                description: Available options for choice-type questions.
+                                items:
+                                  type: string
+                                example: ["Fever", "Cough", "Fatigue"]
+                              component_code:
+                                type: string
+                                description: >
+                                  Rendering hint for the component. `P-QNA` for question/answer
+                                  pairs, `P-HEAD` for section headings.
+                                enum: [P-QNA, P-HEAD]
+                                example: "P-QNA"
+                        workflow_name:
+                          type: string
+                          description: Human-readable name of the workflow used for this assessment.
+                          example: "General Health Check"
+                        workflow_id:
+                          type: integer
+                          nullable: true
+                          description: Numeric workflow ID (wfid).
+                          example: 101
+                        created_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: Timestamp when the assessment was created.
+                          example: "2024-03-01T10:00:00Z"
+                        practitioner:
+                          type: object
+                          description: Details of the practitioner who conducted the assessment.
+                          properties:
+                            oid:
+                              type: string
+                              example: "161467756044223"
+                            fn:
+                              type: string
+                              description: First name.
+                              example: "Ananya"
+                            mn:
+                              type: string
+                              nullable: true
+                              description: Middle name.
+                            ln:
+                              type: string
+                              description: Last name.
+                              example: "Sharma"
+                            fln:
+                              type: string
+                              description: Full name.
+                              example: "Dr. Ananya Sharma"
+                            gender:
+                              type: string
+                              nullable: true
+                              example: "f"
+                            dob:
+                              type: string
+                              format: date
+                              nullable: true
+                              example: "1985-06-15"
+                        patient:
+                          type: object
+                          properties:
+                            age:
+                              type: integer
+                              nullable: true
+                              example: 32
+                            gender:
+                              type: string
+                              nullable: true
+                              example: "m"
+                        custom_vital:
+                          nullable: true
+                          description: >
+                            Numeric value of a custom vital captured during the assessment
+                            (e.g., blood glucose reading). Present only when applicable.
+                          example: 98
+                        custom_vital_name:
+                          type: string
+                          nullable: true
+                          description: Display name of the custom vital.
+                          example: "Blood Glucose"
+                        custom_vital_id:
+                          type: string
+                          nullable: true
+                          description: Identifier for the custom vital type.
+                          example: "vital_blood_glucose"
+                        score_interpretation:
+                          type: object
+                          nullable: true
+                          description: >
+                            Scoring interpretation rules from the workflow metadata.
+                            Shape depends on the workflow configuration.
+              example:
+                data:
+                  sa_123456789:
+                    assess_data:
+                      - question: "What symptoms are you facing?"
+                        answer: "Fever, Cough"
+                        options: null
+                        component_code: "P-QNA"
+                      - question: "How long have you had these symptoms?"
+                        answer: "3 days"
+                        options: ["1 day", "3 days", "1 week", "More than a week"]
+                        component_code: "P-QNA"
+                    workflow_name: "General Health Check"
+                    workflow_id: 101
+                    created_at: "2024-03-01T10:00:00Z"
+                    practitioner:
+                      oid: "161467756044223"
+                      fn: "Ananya"
+                      mn: null
+                      ln: "Sharma"
+                      fln: "Dr. Ananya Sharma"
+                      gender: "f"
+                      dob: "1985-06-15"
+                    patient:
+                      age: 32
+                      gender: "m"
+                    custom_vital: null
+                    custom_vital_name: null
+                    custom_vital_id: null
+                    score_interpretation: null
+        '400':
+          description: Validation error — missing or invalid fields, or assessment not owned by the caller.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      error_code:
+                        type: string
+                      display_message:
+                        type: string
+                      message:
+                        type: string
+              example:
+                error:
+                  error_code: "bad_request"
+                  display_message: "assessment_ids is required"
+                  message: "assessment_ids is required"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      error_code:
+                        type: string
+                      display_message:
+                        type: string
+                      message:
+                        type: string
+      security:
+        - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
