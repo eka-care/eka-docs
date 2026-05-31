@@ -8,20 +8,18 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
-  label="May 11, 2026"
-  description="May 11, 2026"
+  label="May 12, 2026"
+  description="May 12, 2026"
   tags={["Fix"]}
   rss={{
-    title: "Eka Developer Platform — May 11, 2026",
-    description: "• MCP server OAuth discovery now derives the correct https:// origin behind proxies and matches subpaths on /.well-known/oauth-protected-resource\n\nRead more: https://developer.eka.care/changelog"
+    title: "Eka Developer Platform — May 12, 2026",
+    description: "• Aakaar EditableTable AutoSuggest dropdown now anchors to the nearest scrollable ancestor instead of document.body, fixing stale dropdown position after adding rows and a stuck-scroll state after clearing all rows\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
 ## Fixed
 
-- **[Platform] MCP server OAuth discovery origin** — The OAuth discovery endpoints now derive the public origin from the RFC 7239 `forwarded` header (set by the Envoy ingress) before falling back to `x-forwarded-proto`, so `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` advertise `https://` URLs when fronted by AWS API Gateway. Without this, clients (including Claude.ai) received `http://` token endpoints and failed authorization.
-
-- **[Platform] MCP OAuth protected-resource discovery subpaths** — `/.well-known/oauth-protected-resource` now also matches subpaths such as `/.well-known/oauth-protected-resource/mcp`, which some MCP clients probe by appending the resource path. Previously these requests returned 404 and broke auth-scheme discovery.
+- **[Platform] Aakaar EditableTable bottom AutoSuggest dropdown anchoring** — The bottom-row `AutoSuggest` dropdown in `EditableTable` was portalled to `document.body` and only realigned on window scroll or resize, so it could drift to a stale position after a row was added without triggering a page scroll, and it could hold a stale portal position that blocked user scroll after mass-clearing rows. The dropdown now uses a `getPopupContainer` that resolves to the nearest scrollable ancestor, so `rc-trigger` places it inside the same scroll context as the trigger and realigns natively on layout changes — no manual resize dispatch or blur-on-clear workaround required. `EditableTableProps` also exposes an optional `getPopupContainer` for callers with non-standard scroll hierarchies (virtualised lists, nested portals).
 
 </Update>
 
