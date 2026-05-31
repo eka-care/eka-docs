@@ -1,0 +1,72 @@
+---
+title: Medication
+---
+
+## Overview
+
+The **Medication** ontology links free-text drug mentions to Eka Care's
+medication database — a curated catalogue of branded and generic drugs available
+in India, with their compositions, forms and manufacturers.
+
+| Property | Value |
+|----------|-------|
+| `ontology` | `medication` |
+| `version` | `v5.0` |
+| `metadata` | Optional |
+
+## When to use it
+
+Use the medication ontology to code drug mentions from prescriptions, discharge
+summaries or clinical notes — for example `Dolo 650` or `Paracetamol 500mg
+Tablet`.
+
+## How it works
+
+The query is segmented into brand name, salt, form and volume; candidates are
+retrieved from the medication database; and a hybrid matcher compares the
+parsed query against each candidate's form, volume and salt.
+
+A drug links (`is_linked: true`) only when the brand matches and every required
+attribute — volume, form and qualifiers — matches exactly.
+
+## The optional `metadata` field
+
+`metadata` is not required, but it helps resolve ambiguous mentions:
+
+| Key | Description |
+|-----|-------------|
+| `form` | Medication form, e.g. `tablet`, `capsule`, `injection`. |
+| `generic_name` | Generic / salt name of the drug. |
+| `dose_unit` | Dosage unit, e.g. `mg`, `mcg`, `ml`. |
+| `dose_custom` | Custom dosage string. |
+
+If the form and dose are already present in the query (e.g. `Dolo 650 Tablet`),
+`metadata` adds little. It is most useful when the query is terse or the form is
+implied.
+
+## Reading the results
+
+Medication results do not use a numeric `score` — read the `metadata` instead:
+
+- `term_id` — the medication identifier (e.g. `b-4117370658`)
+- `is_linked` — `true` when the drug is matched with all required attributes
+- `metadata.generic_name`, `generic_composition`, `manufacturer_name`,
+  `product_type`, `is_otc` — catalogue detail for the drug
+- `metadata.matching_breakdown` — per-attribute match detail; when a drug does
+  not link, `uncoded_reason` explains why (e.g. `volume_mismatch`)
+- `metadata.linking_requirements` — attributes still needed to link confidently
+  (e.g. `form_needed`)
+
+The response also includes a `query_breakdown` showing the brand, form and
+volume parsed from your request.
+
+## Example
+
+A query of `Dolo 650` with `metadata: { "form": "tablet", "generic_name":
+"paracetamol", "dose_unit": "mg" }` links to `Dolo 650 Tablet`
+(`b-4117370658`), composition Paracetamol (650mg), with `is_linked: true`.
+
+## Try it out
+
+See the [Link Entity API](/api-reference/health-ai/medical-entity-codification/link-entity)
+and select the **Medication** example to try it.

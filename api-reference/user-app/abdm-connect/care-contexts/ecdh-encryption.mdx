@@ -15,11 +15,26 @@ ABDM's HIE-CM specification requires a specific ECDH-based encryption scheme for
 <CodeGroup>
 
 ```bash Go
-go get github.com/eka-care/abdm-ecdh/go
+go get github.com/eka-care/abdm-ecdh/go@v1.0.0
 ```
 
 ```bash Python
 pip install abdm-ecdh
+```
+
+```xml Java (Maven)
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.github.eka-care</groupId>
+  <artifactId>abdm-ecdh</artifactId>
+  <version>java/v1.0.0</version>
+</dependency>
 ```
 
 </CodeGroup>
@@ -103,6 +118,37 @@ dec = decrypt(
 )
 
 print(dec.decrypted_data)  # "sensitive health data"
+```
+
+```java Java
+import care.eka.abdmecdh.AbdmEcdh;
+import care.eka.abdmecdh.KeyMaterial;
+import care.eka.abdmecdh.EncryptionResponse;
+import care.eka.abdmecdh.DecryptionResponse;
+
+// Each party generates their own key material
+KeyMaterial sender = AbdmEcdh.generateKeyMaterial();
+KeyMaterial requester = AbdmEcdh.generateKeyMaterial();
+
+// Sender encrypts
+EncryptionResponse enc = AbdmEcdh.encrypt(
+    "sensitive health data",
+    sender.nonce(),
+    requester.nonce(),
+    sender.privateKey(),
+    requester.x509PublicKey()
+);
+
+// Requester decrypts
+DecryptionResponse dec = AbdmEcdh.decrypt(
+    enc.encryptedData(),
+    sender.nonce(),
+    requester.nonce(),
+    requester.privateKey(),
+    sender.x509PublicKey()
+);
+
+System.out.println(dec.decryptedData()); // "sensitive health data"
 ```
 
 </CodeGroup>

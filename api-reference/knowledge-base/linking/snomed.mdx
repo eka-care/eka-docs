@@ -1,15 +1,57 @@
 ---
-title: "SNOMED Linking"
+title: "SNOMED Linking (Deprecated)"
 openapi: get /eka-mcp/linking/v1/snomed
 ---
 
+<Warning>
+**This endpoint is deprecated.** It remains operational for existing
+integrations but is no longer recommended for new work.
+
+Use the [**Link Entity**](/api-reference/health-ai/medical-entity-codification/link-entity)
+endpoint instead — part of the [**Medical Entity Codification**](/api-reference/health-ai/medical-entity-codification/overview)
+API. It covers SNOMED CT (plus LOINC, medication and ICD-10-CM) with a richer
+result model — confidence scores, `is_linked`, semantic tags, multilingual term
+matches, and batched lookups via [Link Entity (Batch)](/api-reference/health-ai/medical-entity-codification/link-entity-batch).
+</Warning>
+
+## Migrating to Medical Entity Codification
+
+| | This endpoint (deprecated) | [Link Entity](/api-reference/health-ai/medical-entity-codification/link-entity) |
+|---|---|---|
+| Method + path | `GET /eka-mcp/linking/v1/snomed` | `POST /med-link/nel/link` |
+| Input | `?text_to_link=["dm2","htn"]` (array in query string) | JSON body: `{ "query": "...", "ontology": "snomed", "version": "20250401_extended" }` |
+| Batch | Array of strings in one query param | Dedicated [batch endpoint](/api-reference/health-ai/medical-entity-codification/link-entity-batch) (up to 5 queries) |
+| Result fields | `snomed_id`, `text`, `confidence` | `term_id`, `term_name`, `score`, `is_linked`, semantic tag + multilingual terms |
+| Other ontologies | SNOMED only | SNOMED, LOINC, Medication, ICD-10-CM (Comprehend) |
+
+Equivalent migration:
+
+```bash
+# Old (deprecated)
+curl --location --globoff \
+  'https://api.eka.care/eka-mcp/linking/v1/snomed?text_to_link=["dm2","htn"]' \
+  --header 'Authorization: Bearer <token>'
+
+# New
+curl --location 'https://api.eka.care/med-link/nel/link' \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "query": "dm2",
+    "ontology": "snomed",
+    "version": "20250401_extended",
+    "top_k": 3
+  }'
+```
+
+---
+
+## Legacy endpoint reference
+
+The remainder of this page documents the deprecated endpoint as it stands today
+for integrators who have not yet migrated.
+
 Link multiple medical terms to their corresponding SNOMED CT (Systematized Nomenclature of Medicine Clinical Terms) codes.
-
-## Overview
-
-This endpoint accepts an array of medical terms and returns their corresponding SNOMED CT identifiers along with confidence scores. SNOMED CT is a comprehensive clinical terminology that provides standardized codes for medical concepts.
-
-## Usage
 
 ### Input Format
 The `text_to_link` parameter accepts an array of medical terms or abbreviations:
@@ -25,16 +67,9 @@ curl --location --globoff 'https://api.eka.care/eka-mcp/linking/v1/snomed?text_t
 - **mi** - Myocardial Infarction
 - **chf** - Congestive Heart Failure
 
-## Response Structure
+### Response Structure
 
 Each linked term returns:
 - **snomed_id**: The official SNOMED CT identifier
 - **text**: The original text that was processed
 - **confidence**: Confidence score of the mapping (0-1 scale)
-
-## Benefits
-
-- **Standardization**: Convert medical abbreviations and terms to standardized SNOMED codes
-- **Interoperability**: Enable data exchange between healthcare systems
-- **Clinical Decision Support**: Support automated clinical reasoning and decision-making
-- **Batch Processing**: Process multiple terms simultaneously for efficiency
