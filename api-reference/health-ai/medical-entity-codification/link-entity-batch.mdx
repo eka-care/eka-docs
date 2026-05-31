@@ -1,0 +1,33 @@
+---
+title: "Link Entities (Batch)"
+openapi: "POST /med-link/nel/link/batch"
+---
+
+## About this endpoint
+
+`POST /med-link/nel/link/batch` links up to **5** free-text entities in a single
+call. Every query in the batch shares the same `ontology`, `version`, `top_k`
+and `metadata`.
+
+The response `results[]` array contains one block per query, in request order —
+each block has the same shape as a single
+[Link Entity](/api-reference/health-ai/medical-entity-codification/link-entity) response.
+
+## When to use it
+
+- Coding several entities from the same document (e.g. all symptoms in a note).
+- Reducing round-trips when the ontology and `metadata` are identical.
+
+<Note>
+Because `metadata` is shared across the whole batch, group queries that need
+different hints — especially LOINC tests with different units or specimens —
+into separate batches, or use the single
+[Link Entity](/api-reference/health-ai/medical-entity-codification/link-entity) endpoint.
+</Note>
+
+## Limits
+
+| Constraint | Value |
+|------------|-------|
+| Queries per request | 1–5 |
+| `top_k` | 1–10 (default 5) |
