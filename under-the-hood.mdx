@@ -8,6 +8,38 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="May 2026"
+  description="Monthly update — May 2026"
+  tags={["Update"]}
+  rss={{
+    title: "Eka Under the Hood — May 2026",
+    description: "• EkaScribe SDKs expanded — pause/resume, V2 recording, a JS UI widget, document and session lifecycle APIs, and hardened VAD\n\n• EkaAgents booking gained service/health-package elicitation, appointment lookups, and richer doctor-availability context\n\n• EMR records on Android got server-synchronized time, automatic stale-state recovery, and a smoother add-record flow\n\n• Platform hardening — MCP OAuth discovery fixes, Aakaar/antd decoupling, EditableTable dropdown anchoring, and a Java implementation of the ABDM ECDH primitives\n\nRead more: https://developer.eka.care/under-the-hood"
+  }}
+>
+
+## What shipped in May 2026
+
+May was a wide-front month: the EkaScribe SDK surface kept maturing across web and mobile, EkaAgents broadened from doctor-booking into service and appointment workflows, EMR's records experience on Android gained the time and state-recovery primitives it had been missing, and Platform shipped a quiet but meaningful run of design-system, network, and ABDM improvements.
+
+**Reliability & Uptime** — The biggest reliability work landed in the EMR records pipeline on Android. Health Records Android now keeps its own `TimeProvider` that tracks a server-time offset persisted in `SharedPreferences`, updated whenever a sync response comes back with a `Date` header. Anywhere the SDK previously called `System.currentTimeMillis()` for record and file timestamps, it now uses the synchronized clock — so `createdAt`, `updatedAt`, and `lastUsed` stay in sync across devices with skewed clocks. Alongside that, a stale-analysing-record reset clears the `is_analysing` flag for documents stuck in analysis past a cutoff, triggered automatically when records are read — so a crashed or interrupted parse no longer leaves a document permanently in the analysing state. On EkaScribe Android, session polling that previously slid into `COMPLETED` on failure now correctly transitions to `ERROR` and short-circuits the rest of the poll chain.
+
+**Performance** — Android record-preview hot paths moved off the UI thread: image URI resolution, large-image validation, and orientation handling now run on `Dispatchers.IO` via `LaunchedEffect`, and the preview list passes `File` objects directly to `AsyncImage` instead of manually decoding bitmaps. File downloads switched to `MediaStore` on Android Q+ for scoped-storage compliance, with stream-based copy to public Downloads and a dedicated `records_temp` cache sub-directory with stricter cleanup on failure. On the JS side, the new scribe UI widget cut the integration surface significantly — what used to require wiring capture, status, and transcript primitives is now one drop-in component.
+
+**Security & Compliance** — The MCP server's OAuth discovery flow was hardened to derive its origin from RFC 7239 `forwarded` headers before falling back to `x-forwarded-proto`, so `https://` URLs are advertised correctly when fronted by AWS API Gateway. `/.well-known/oauth-protected-resource` also now matches subpaths (e.g. `/mcp`), fixing 404s for clients that probe with the resource path appended. On the ABDM front, `abdm-ecdh` picked up a Java implementation of the ECDH primitives alongside the existing Python and Go bindings, with a CI pipeline added and the Python release path corrected — making it materially easier for JVM-based HIP/HIU integrations to handle ABDM consent and data exchange.
+
+**Scalability** — EkaNetwork Android's `init` now accepts a list of custom OkHttp interceptors, stored per `appId` and threaded into both the `AuthApi` and dynamically-created services. Eka Scribe Android, Health Records Android, and `android-document-ui` all picked up the new network version, so hosts can plug in logging, tracing, or header interceptors without forking the network layer. The Aakaar design system's `tokens.ts` was decoupled from antd, so consumers of `@eka/aakaar/tokens` and the Aakaar MCP server no longer transitively pull antd into their bundles.
+
+**Developer Infrastructure & Tooling** — The Aakaar MCP server got a component-metadata path-resolution fix, and the `EditableTable` bottom AutoSuggest dropdown now anchors to the nearest scrollable ancestor via a configurable `getPopupContainer` — eliminating stale dropdown positions after row inserts and the stuck-scroll state after mass-clearing rows. The `EkaScribe` TS SDK wrapped `VadWebClient`'s lifecycle methods in defensive try/catch with namespaced `[EkaScribe]` logging, so errors in the VAD path no longer escape to the host page.
+
+**EkaScribe** — The product surface continued to mature on every runtime. The Eka JS SDK shipped a packaged scribe recording widget and a `startRecordingV2` entry point that exposes the next-generation recording flow alongside the existing `startRecording`. The MedScribe Alliance TypeScript SDK added pause and resume controls for in-progress recordings, plus a feature update tracking the LIFE-1696 work item that refreshed session and recording surfaces across thirteen files. The EkaScribe TS SDK at v2.1.50 picked up `getDocument`, `getSessionDetails`, and `startRecordingForExistingSession`, alongside an optional `publish` payload on the document API and `user_status` on `patchTransactionStatus` — closing out the full document and session lifecycle.
+
+**EMR** — Templar receipts now print GST and use a `pt` attribute that carries a date. The OPD slip template was rewritten from string templates to JSX, aligning it with the rest of the engine. A new `examinationFindings` property group landed with backward-compatible support for legacy notes, and a long-running text-wrapping rendering bug was fixed. The patient age field on Templar receipts moved from a numeric `ageInM` to a richer `age` string — a breaking change for `TPdfObject` callers, but one that produces a more clinically meaningful age label. On Android, the records grid item's analysing state was consolidated into the `SmartTag` component, and the AddRecord preview activity got the stability, performance, and scoped-storage work described above.
+
+**EkaAgents** — The Eka MCP SDK widened its tool surface meaningfully. New tools — `service_availability_elicitation`, `book_service`, `show_appointments_basic`, `get_patient_appointments_basic`, and a CRM lead-creation tool — extend agents from doctor-booking into service/health-package booking, appointment lookups, and lead capture. The `doctor_availability_elicitation` flow now returns `selected_doctor_id` and `selected_hospital_id` in `_meta.tool_result`, the doctor-availability success response was enriched, and the user's selected hospital is now ranked first in availability listings. The Echo Agent Kit added AG-UI streaming, Anthropic Claude prompt support, and a skills concept for building modular, reusable agent capabilities.
+
+</Update>
+
+<Update
   label="April 2026"
   description="Monthly Transparency Post"
   tags={["Feature", "Update"]}

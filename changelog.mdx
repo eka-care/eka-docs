@@ -8,6 +8,246 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="May 29, 2026"
+  description="May 29, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 29, 2026",
+    description: "• MedScribe Alliance TS SDK ships a feature refresh under the LIFE-1696 track\n\n• Health Records Android SDK introduces server-synchronized time and auto-resets stale analysing records\n\n• Android records grid consolidates the analysing state into the SmartTag component\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaScribe] MedScribe Alliance TS SDK feature update** — The `@eka-care/medscribe-alliance-ts-sdk` ships a feature refresh (LIFE-1696) covering 13 files with new/updated session and recording surfaces. Pull the latest tag and review the diff for the full surface.
+
+## Improved
+
+- **[EMR] Server-synchronized time in Health Records Android SDK** — `TimeProvider` now tracks a server-time offset persisted via `SharedPreferences`, with `RecordsSync` parsing the `Date` header from server responses to keep the offset current. `FileEntity`, `FileStorageManagerImpl`, and `RecordsRepositoryImpl` use `TimeProvider.nowMillis()` / `nowSeconds()` instead of `System.currentTimeMillis()`, so `createdAt`, `updatedAt`, and `lastUsed` stay consistent across devices with skewed clocks.
+- **[EMR] Stale-analysing record reset in Health Records Android SDK** — `RecordsDao.resetStaleAnalysingRecords` now clears the `is_analysing` flag for documents that have been stuck in analysis past a cutoff, and the reset is triggered automatically when records are read — so a crashed or interrupted parse no longer leaves a document permanently in the analysing state.
+- **[EMR] Analysing state consolidated into SmartTag** — The `android-document-ui` records grid removes its centered analysis progress indicator and separate blur/background treatment; `SmartTag` now drives both the "Smart" and "Analysing" states via an `isAnalysing` parameter (circular progress + "Analysing" text). Simpler conditional modifiers in `RecordsGridItem`, single source of truth for the tag visuals.
+
+</Update>
+
+<Update
+  label="May 27, 2026"
+  description="May 27, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "Eka Developer Platform — May 27, 2026",
+    description: "• Eka JS SDK adds startRecordingV2 for the next-gen scribe recording flow\n\n• Templar pt-attribute property group now carries a date field\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaScribe] startRecordingV2 in Eka JS SDK** — `@eka-care/eka-js-sdk` adds a `startRecordingV2` method that exposes the next-generation EkaScribe recording flow to JS consumers, alongside the existing `startRecording`. Use the V2 entry point for new integrations.
+- **[EMR] Date on Templar pt attribute** — The `pt` attribute in Templar templates now carries a `date` field, enabling richer rendering of patient-attached events with explicit dates on receipts and prescriptions.
+
+</Update>
+
+<Update
+  label="May 25, 2026"
+  description="May 25, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "Eka Developer Platform — May 25, 2026",
+    description: "• Eka JS SDK ships a scribe UI widget for drop-in recording experiences\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaScribe] Scribe UI widget in Eka JS SDK** — `@eka-care/eka-js-sdk` adds a packaged UI widget for the scribe recording flow, giving integrators a drop-in surface for capture, status, and transcript display instead of wiring those primitives by hand.
+
+</Update>
+
+<Update
+  label="May 22, 2026"
+  description="May 22, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 22, 2026",
+    description: "• AddRecordPreviewActivity in android-document-ui now uses Gson for intent parameter parsing\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Changed
+
+- **[EMR] Gson-based parameter parsing in AddRecordPreviewActivity** — `android-document-ui` swaps manual `JSONObject` parsing for `Gson().fromJson` when reading the intent's params payload, and removes explicit `finish()` calls during initial validation — simpler initialization, fewer transient activity teardowns on malformed input.
+
+</Update>
+
+<Update
+  label="May 21, 2026"
+  description="May 21, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 21, 2026",
+    description: "• Eka MCP SDK v0.1.40 / v0.1.41 enables show_appointments_basic and get_patient_appointments_basic tools, with a single-filter constraint on patient_id\n\n• Templar receipts now print GST\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] show_appointments_basic and get_patient_appointments_basic in Eka MCP SDK** — `eka-mcp-sdk` v0.1.40 enables `show_appointments_basic` (list appointments with filters) and v0.1.41 adds `get_patient_appointments_basic` (fetch appointments for a specific patient), giving agents direct read access to the appointments surface without bespoke tool wiring. [View docs](/ai-tools/medai-tools-mcp/tools)
+- **[EMR] GST on Templar receipts** — Templar receipt templates now print GST on receipts, surfacing tax breakdown alongside the line items.
+
+## Changed
+
+- **[EkaAgents] show_appointments_basic patient_id filter constraint** — `show_appointments_basic` in `eka-mcp-sdk` now treats `patient_id` as a single-value filter — when a patient id is supplied, other filters are ignored — making the contract explicit and reducing ambiguous query combinations.
+
+</Update>
+
+<Update
+  label="May 20, 2026"
+  description="May 20, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 20, 2026",
+    description: "• EkaNetwork Android adds support for custom OkHttp interceptors at init time\n\n• Eka Scribe Android, Health Records Android, and android-document-ui bumped to ekaNetworkAndroid 2.0.6 / records 3.3.1\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[Platform] Custom Interceptor list in EkaNetwork Android** — `EkaNetwork.init` now accepts an optional list of OkHttp `Interceptor`s (stored per `appId`) and propagates them through `RetrofitServiceCreator` to both the `AuthApi` and dynamically-created services. `@JvmOverloads` is added for Java interop. Hosts can now plug in their own logging, tracing, or header interceptors without forking the network layer.
+
+## Upgraded
+
+- **[EkaScribe] Eka Scribe Android → ekaNetworkAndroid 2.0.6** — `Eka-Scribe-Android` bumps the `ekaNetworkAndroid` version catalog entry from 2.0.5 to 2.0.6 to pick up the custom-interceptor support.
+- **[EMR] Health Records Android → network 2.0.6** — `eka-health-records-android` bumps the `network` library in `gradle/libs.versions.toml` from 2.0.5 to 2.0.6.
+- **[EMR] android-document-ui → records 3.3.1** — `android-document-ui` bumps the records dependency from 3.3.0 to 3.3.1.
+
+</Update>
+
+<Update
+  label="May 19, 2026"
+  description="May 19, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 19, 2026",
+    description: "• Eka MCP SDK adds a CRM lead-creation tool\n\n• Echo Agent Kit gains AG-UI streaming and Claude prompt support\n\n• Templar OPD slip template moves from string templates to JSX\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] CRM lead-creation tool in Eka MCP SDK** — `eka-mcp-sdk` ships a new MCP tool for creating CRM leads, letting agents capture and route a lead in the same conversation flow as discovery and booking.
+- **[EkaAgents] AG-UI streaming in Echo Agent Kit** — `echo-sdk` adds AG-UI streaming support so agents can emit incremental UI updates to compatible clients during a turn instead of buffering the full response.
+- **[EkaAgents] Claude prompts in Echo Agent Kit** — `echo-sdk` adds prompt support for Anthropic Claude models, broadening the LLM provider mix available to agents built on the kit.
+
+## Changed
+
+- **[EMR] Templar OPD slip moved from string templates to JSX** — Templar's OPD slip is rewritten from string-concatenated templates to a JSX-rendered template, aligning it with the rest of the template engine and unlocking more structured composition for downstream changes.
+
+</Update>
+
+<Update
+  label="May 18, 2026"
+  description="May 18, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — May 18, 2026",
+    description: "• AddRecordPreviewActivity hardened — background image URI resolution, scoped-storage downloads, safer activity init, and tighter temp file management\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] AddRecordPreview stability and performance in android-document-ui** — Image URI resolution and large-image validation in `AddRecordPreviewScreen` move to a background thread (`LaunchedEffect` + `Dispatchers.IO`); the preview list now hands `File` objects directly to `AsyncImage` instead of decoding bitmaps and computing orientation on the UI thread. The "Add Details" bottom sheet is gated on PDF resolution. `FileSharing` switches to `MediaStore` for downloads on Android Q+, with stream-based copy to public Downloads and URI-segment-based PDF detection. Temporary files now live in a dedicated `records_temp` cache sub-directory with better cleanup on failure.
+
+## Fixed
+
+- **[EMR] AddRecordPreviewActivity initialization on malformed params** — Manual `JSONObject` parsing of intent params now runs inside proper try/catch with `finish()` calls when params are missing or malformed, so the activity can no longer persist in an invalid state on bad input.
+
+</Update>
+
+<Update
+  label="May 17, 2026"
+  description="May 17, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — May 17, 2026",
+    description: "• Health Records Android now skips and logs missing source files during record creation instead of erroring out\n\n• Echo Agent Kit gains agent skills support\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Agent skills in Echo Agent Kit** — `echo-sdk` introduces a skills concept for building modular, reusable agent capabilities that can be composed into larger workflows.
+
+## Fixed
+
+- **[EMR] Missing source files during record creation in Health Records Android** — `RecordsRepositoryImpl` now checks each source file's existence before processing or compression, logs a sync event with the document, business, and owner IDs when a file is missing, and returns `null` early so the broader record-creation path no longer surfaces a hard error when a single file has gone missing locally.
+
+</Update>
+
+<Update
+  label="May 15, 2026"
+  description="May 15, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — May 15, 2026",
+    description: "• Templar adds a new examinationFindings property group with backward-compatible notes support\n\n• Eka MCP SDK doctor_availability now returns a richer success response\n\n• Templar text rendering bug where content stayed on the same line is fixed\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] examinationFindings property group in Templar** — Templar adds a new `examinationFindings` property group with backward-compatible support for legacy notes, so prescriptions and clinical templates can render structured examination findings without breaking existing notes-only content.
+
+## Improved
+
+- **[EkaAgents] doctor_availability success response in Eka MCP SDK** — `eka-mcp-sdk` enriches the success response from the doctor availability flow so downstream booking tools have the context they need without re-querying.
+
+## Fixed
+
+- **[EMR] Text wrapping on Templar receipts** — Fixed a Templar rendering bug where text was not breaking to the next line as expected; content now wraps correctly inside its container.
+
+</Update>
+
+<Update
+  label="May 14, 2026"
+  description="May 14, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 14, 2026",
+    description: "• Eka MCP SDK ranks the user's selected hospital first in availability listings\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] Selected hospital pushed to the top in Eka MCP SDK** — `eka-mcp-sdk` now surfaces the user's selected hospital at the top of availability listings, so chosen-hospital options aren't buried under nearby alternatives during a booking flow.
+
+</Update>
+
+<Update
+  label="May 13, 2026"
+  description="May 13, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — May 13, 2026",
+    description: "• ABDM ECDH primitives gain a Java implementation alongside the existing Python and Go bindings\n\n• ABDM ECDH project adds CI and fixes the Python release pipeline\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[Platform] Java bindings for ABDM ECDH primitives** — The `abdm-ecdh` project adds a Java implementation of the ECDH primitives required for ABDM data-fetch flows, alongside the existing Python and Go bindings — making it easier for JVM-based HIP/HIU integrations to handle ABDM consent and data exchange.
+
+## Hardened
+
+- **[Platform] CI for ABDM ECDH** — The `abdm-ecdh` repository gains a continuous integration pipeline so changes across the Python, Go, and Java surfaces are built and validated on every PR.
+
+## Fixed
+
+- **[Platform] ABDM ECDH Python release pipeline** — Corrected the Python release configuration in `abdm-ecdh` so the package now publishes cleanly from the release workflow.
+
+</Update>
+
+<Update
   label="May 12, 2026"
   description="May 12, 2026"
   tags={["Fix"]}

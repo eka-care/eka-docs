@@ -8,6 +8,161 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="May 29, 2026"
+  description="May 29, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 29, 2026",
+    description: "• Health Records Android SDK introduces server-synchronized time and auto-resets stale analysing records\n\n• Android records grid consolidates the analysing state into the SmartTag component\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Server-synchronized time in Health Records Android SDK** — `TimeProvider` now tracks a server-time offset persisted via `SharedPreferences`, with `RecordsSync` parsing the `Date` header from server responses to keep the offset current. `FileEntity`, `FileStorageManagerImpl`, and `RecordsRepositoryImpl` use `TimeProvider.nowMillis()` / `nowSeconds()` instead of `System.currentTimeMillis()`, so `createdAt`, `updatedAt`, and `lastUsed` stay consistent across devices with skewed clocks.
+- **[EMR] Stale-analysing record reset in Health Records Android SDK** — `RecordsDao.resetStaleAnalysingRecords` now clears the `is_analysing` flag for documents that have been stuck in analysis past a cutoff, and the reset is triggered automatically when records are read — so a crashed or interrupted parse no longer leaves a document permanently in the analysing state.
+- **[EMR] Analysing state consolidated into SmartTag** — The `android-document-ui` records grid removes its centered analysis progress indicator and separate blur/background treatment; `SmartTag` now drives both the "Smart" and "Analysing" states via an `isAnalysing` parameter (circular progress + "Analysing" text).
+
+</Update>
+
+<Update
+  label="May 27, 2026"
+  description="May 27, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EMR — May 27, 2026",
+    description: "• Templar pt-attribute property group now carries a date field\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] Date on Templar pt attribute** — The `pt` attribute in Templar templates now carries a `date` field, enabling richer rendering of patient-attached events with explicit dates on receipts and prescriptions.
+
+</Update>
+
+<Update
+  label="May 22, 2026"
+  description="May 22, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 22, 2026",
+    description: "• AddRecordPreviewActivity in android-document-ui now uses Gson for intent parameter parsing\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Changed
+
+- **[EMR] Gson-based parameter parsing in AddRecordPreviewActivity** — `android-document-ui` swaps manual `JSONObject` parsing for `Gson().fromJson` when reading the intent's params payload, and removes explicit `finish()` calls during initial validation — simpler initialization, fewer transient activity teardowns on malformed input.
+
+</Update>
+
+<Update
+  label="May 21, 2026"
+  description="May 21, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EMR — May 21, 2026",
+    description: "• Templar receipts now print GST\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] GST on Templar receipts** — Templar receipt templates now print GST on receipts, surfacing tax breakdown alongside the line items.
+
+</Update>
+
+<Update
+  label="May 20, 2026"
+  description="May 20, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 20, 2026",
+    description: "• Health Records Android and android-document-ui bumped to network 2.0.6 / records 3.3.1\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Health Records Android → network 2.0.6** — `eka-health-records-android` bumps the `network` library in `gradle/libs.versions.toml` from 2.0.5 to 2.0.6, picking up upstream support for custom OkHttp interceptors at network init.
+- **[EMR] android-document-ui → records 3.3.1** — `android-document-ui` bumps the records dependency from 3.3.0 to 3.3.1.
+
+</Update>
+
+<Update
+  label="May 19, 2026"
+  description="May 19, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 19, 2026",
+    description: "• Templar OPD slip template moves from string templates to JSX\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Changed
+
+- **[EMR] Templar OPD slip moved from string templates to JSX** — Templar's OPD slip is rewritten from string-concatenated templates to a JSX-rendered template, aligning it with the rest of the template engine and unlocking more structured composition for downstream changes.
+
+</Update>
+
+<Update
+  label="May 18, 2026"
+  description="May 18, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "EMR — May 18, 2026",
+    description: "• AddRecordPreviewActivity hardened — background image URI resolution, scoped-storage downloads, safer activity init, and tighter temp file management\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] AddRecordPreview stability and performance in android-document-ui** — Image URI resolution and large-image validation in `AddRecordPreviewScreen` move to a background thread (`LaunchedEffect` + `Dispatchers.IO`); the preview list now hands `File` objects directly to `AsyncImage` instead of decoding bitmaps and computing orientation on the UI thread. The "Add Details" bottom sheet is gated on PDF resolution. `FileSharing` switches to `MediaStore` for downloads on Android Q+, with stream-based copy to public Downloads and URI-segment-based PDF detection. Temporary files now live in a dedicated `records_temp` cache sub-directory with better cleanup on failure.
+
+## Fixed
+
+- **[EMR] AddRecordPreviewActivity initialization on malformed params** — Manual `JSONObject` parsing of intent params now runs inside proper try/catch with `finish()` calls when params are missing or malformed, so the activity can no longer persist in an invalid state on bad input.
+
+</Update>
+
+<Update
+  label="May 17, 2026"
+  description="May 17, 2026"
+  tags={["Fix"]}
+  rss={{
+    title: "EMR — May 17, 2026",
+    description: "• Health Records Android now skips and logs missing source files during record creation instead of erroring out\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Fixed
+
+- **[EMR] Missing source files during record creation in Health Records Android** — `RecordsRepositoryImpl` now checks each source file's existence before processing or compression, logs a sync event with the document, business, and owner IDs when a file is missing, and returns `null` early so the broader record-creation path no longer surfaces a hard error when a single file has gone missing locally.
+
+</Update>
+
+<Update
+  label="May 15, 2026"
+  description="May 15, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "EMR — May 15, 2026",
+    description: "• Templar adds a new examinationFindings property group with backward-compatible notes support\n\n• Templar text rendering bug where content stayed on the same line is fixed\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] examinationFindings property group in Templar** — Templar adds a new `examinationFindings` property group with backward-compatible support for legacy notes, so prescriptions and clinical templates can render structured examination findings without breaking existing notes-only content.
+
+## Fixed
+
+- **[EMR] Text wrapping on Templar receipts** — Fixed a Templar rendering bug where text was not breaking to the next line as expected; content now wraps correctly inside its container.
+
+</Update>
+
+<Update
   label="May 7, 2026"
   description="May 7, 2026"
   tags={["Update"]}
