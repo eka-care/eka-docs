@@ -13,13 +13,15 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Fix"]}
   rss={{
     title: "Eka Developer Platform — May 11, 2026",
-    description: "• Aakaar design system tokens module no longer pulls in antd, unblocking the MCP server build for consumers that don't ship antd\n\nRead more: https://developer.eka.care/changelog"
+    description: "• MCP server OAuth discovery now derives the correct https:// origin behind proxies and matches subpaths on /.well-known/oauth-protected-resource\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
 ## Fixed
 
-- **[Platform] Aakaar `tokens` no longer imports antd** — The `@eka/aakaar/tokens` entry point previously re-exported antd symbols, forcing every consumer (including the Aakaar MCP server) to install `antd` even when they only needed design tokens. `tokens.ts` now owns the `ColorScheme` type and exposes only antd-free values; antd-specific helpers (`antdTheme`, `getAntdTheme`) have been moved to a dedicated `tokens-antd` entry point that re-exports `ColorScheme` for backwards compatibility. Internal call sites were updated to import antd helpers directly from `tokens-antd`, so the MCP build no longer requires antd as a transitive dependency.
+- **[Platform] MCP server OAuth discovery origin** — The OAuth discovery endpoints now derive the public origin from the RFC 7239 `forwarded` header (set by the Envoy ingress) before falling back to `x-forwarded-proto`, so `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` advertise `https://` URLs when fronted by AWS API Gateway. Without this, clients (including Claude.ai) received `http://` token endpoints and failed authorization.
+
+- **[Platform] MCP OAuth protected-resource discovery subpaths** — `/.well-known/oauth-protected-resource` now also matches subpaths such as `/.well-known/oauth-protected-resource/mcp`, which some MCP clients probe by appending the resource path. Previously these requests returned 404 and broke auth-scheme discovery.
 
 </Update>
 
