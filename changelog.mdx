@@ -13,13 +13,13 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Fix"]}
   rss={{
     title: "Eka Developer Platform — May 11, 2026",
-    description: "• Aakaar design-system MCP server runtime fix — generated component metadata is now resolved relative to the bundled module location so the server starts cleanly under stdio and streamable-HTTP transports\n\nRead more: https://developer.eka.care/changelog"
+    description: "• Aakaar design system tokens module no longer pulls in antd, unblocking the MCP server build for consumers that don't ship antd\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
 ## Fixed
 
-- **[Platform] Aakaar design-system MCP server startup** — The Aakaar design-system MCP server (`@eka/aakaar` MCP) now resolves its generated component metadata bundle relative to the compiled module path instead of the process working directory, so the server starts reliably under both stdio and streamable-HTTP transports. Tool registration for component, icon, token, utility-class, and integration helpers is unaffected.
+- **[Platform] Aakaar `tokens` no longer imports antd** — The `@eka/aakaar/tokens` entry point previously re-exported antd symbols, forcing every consumer (including the Aakaar MCP server) to install `antd` even when they only needed design tokens. `tokens.ts` now owns the `ColorScheme` type and exposes only antd-free values; antd-specific helpers (`antdTheme`, `getAntdTheme`) have been moved to a dedicated `tokens-antd` entry point that re-exports `ColorScheme` for backwards compatibility. Internal call sites were updated to import antd helpers directly from `tokens-antd`, so the MCP build no longer requires antd as a transitive dependency.
 
 </Update>
 
