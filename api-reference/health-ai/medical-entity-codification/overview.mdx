@@ -1,0 +1,90 @@
+---
+title: "Medical Entity Codification"
+description: "Map free-text medical entities to standardised ontology codes — SNOMED CT, LOINC, ICD-10-CM and Eka's medication database."
+---
+
+## Overview
+
+The **Medical Entity Codification API** (MedLink Named Entity Linking) takes a
+free-text medical entity — a symptom, diagnosis, lab test or drug — and links it
+to the matching code in a standardised clinical ontology.
+
+It powers structured, interoperable medical data: turning `"chest pain"` into
+SNOMED CT `29857009`, `"hemoglobin"` into LOINC `718-7`, or `"type 2 diabetes
+mellitus"` into ICD-10-CM `E11`.
+
+<Note>
+This API supersedes the legacy [`GET /eka-mcp/linking/v1/snomed`](/api-reference/knowledge-base/linking/snomed)
+endpoint. See that page for a migration guide; the legacy endpoint remains
+operational for existing integrations.
+</Note>
+
+## Base URL
+
+All endpoints are served under:
+
+```
+https://api.eka.care/med-link/
+```
+
+## Authentication
+
+Every request requires a Bearer access token:
+
+```
+Authorization: Bearer <access_token>
+```
+
+Generate the token using the Eka authorization flow — see
+[Authorization](/api-reference/authorization/getting-started).
+
+## Supported ontologies
+
+| Ontology | `ontology` | `version` | Use it for | `metadata` |
+|----------|------------|-----------|------------|------------|
+| SNOMED CT | `snomed` | `20250401_extended` | Symptoms, findings, disorders, procedures | Not used |
+| LOINC | `loinc` | `v1.0` | Lab tests and observations | **Recommended** |
+| Medication | `medication` | `v5.0` | Branded and generic drugs | Optional |
+| ICD-10-CM (Comprehend) | `icd-10-cm` | `comprehend` | Diagnoses from natural-language clinical text | Not used |
+
+<Note>
+Always call [List Registry](/api-reference/health-ai/medical-entity-codification/registry)
+to confirm the live `ontology` and `version` values before linking.
+</Note>
+
+## Endpoints
+
+<CardGroup cols={3}>
+  <Card title="List Registry" icon="list" href="/api-reference/health-ai/medical-entity-codification/registry">
+    Discover available ontologies, versions and indexes.
+  </Card>
+  <Card title="Link Entity" icon="link" href="/api-reference/health-ai/medical-entity-codification/link-entity">
+    Link a single medical entity to ontology codes.
+  </Card>
+  <Card title="Link Entities (Batch)" icon="layer-group" href="/api-reference/health-ai/medical-entity-codification/link-entity-batch">
+    Link up to 5 entities in a single call.
+  </Card>
+</CardGroup>
+
+## The `metadata` field
+
+`metadata` carries ontology-specific hints that improve linking accuracy:
+
+- **LOINC** — strongly recommended. A `unit` or `specimen` can change which code
+  is linked (e.g. blood vs. urine hemoglobin).
+- **Medication** — optional. `form`, `generic_name` and `dose_unit` help resolve
+  ambiguous brand names.
+- **SNOMED CT** and **ICD-10-CM Comprehend** — `metadata` is ignored.
+
+See each endpoint page and the ontology guides in
+**Eka MedAI → AI Technologies → Medical Entity Codification** for details.
+
+## Reading a result
+
+Each candidate in `results` carries:
+
+- `term_id` — the ontology code
+- `term_name` — the human-readable term
+- `score` — relevance/confidence (`null` for medication)
+- `is_linked` — `true` when the pipeline is confident this is the single correct match
+- `metadata` — ontology-specific detail about the candidate
