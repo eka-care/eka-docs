@@ -1,0 +1,64 @@
+---
+title: Medical Entity Codification
+---
+
+## Overview
+
+**Medical Entity Codification** is Eka Care's named entity linking (NEL)
+technology. It maps a free-text medical entity — a symptom, diagnosis, lab test
+or drug — to the matching code in a standardised clinical ontology.
+
+Free text is how clinicians naturally record information, but it is hard for
+machines to aggregate, compare or exchange. Codification bridges that gap:
+`"chest pain"` becomes SNOMED CT `29857009`, `"hemoglobin"` becomes LOINC
+`718-7`, and `"type 2 diabetes mellitus"` becomes ICD-10-CM `E11`. The result is
+structured, interoperable health data.
+
+## Supported ontologies
+
+| Ontology | Domain | Guide |
+|----------|--------|-------|
+| SNOMED CT | Symptoms, findings, disorders, procedures | [SNOMED CT](/eka-medai/technologies/codification/snomed) |
+| LOINC | Lab tests and observations | [LOINC](/eka-medai/technologies/codification/loinc) |
+| Medication | Branded and generic drugs | [Medication](/eka-medai/technologies/codification/medication) |
+| ICD-10-CM | Diagnoses from clinical text | [ICD-10-CM](/eka-medai/technologies/codification/icd-10-cm) |
+
+## How the pipeline works
+
+Each codification request runs through three stages:
+
+1. **Query understanding** — the input text is parsed for the target ontology.
+   For LOINC this extracts the test name, unit and specimen; for medication, the
+   brand, salt, form and volume; for ICD-10-CM Comprehend, the clinical entity
+   and its attributes.
+2. **Retrieval** — candidate terms are fetched from the ontology index, using
+   semantic vector search, a curated knowledge base, or AWS Comprehend Medical
+   depending on the ontology.
+3. **Linking** — candidates are scored and the best single match is flagged
+   with `is_linked: true` when the pipeline is confident.
+
+## The role of context
+
+Some ontologies need more than a name to resolve correctly. A lab test like
+`hemoglobin` is ambiguous until you know the unit and specimen — blood and urine
+hemoglobin are different LOINC codes. The API accepts an optional `metadata`
+field to carry this context, which materially improves accuracy for LOINC and
+medication. The per-ontology guides explain exactly what to send.
+
+## Use Cases
+
+- **Structured EMRs** — code symptoms, diagnoses and prescriptions consistently.
+- **Lab standardisation** — link extracted test names to LOINC for longitudinal tracking.
+- **Interoperability** — produce the coded entities required for FHIR resources.
+- **Analytics** — normalise clinical entities for reliable population-level insights.
+- **Medical coding** — map free-text diagnoses to ICD-10-CM for claims workflows.
+
+## Try it out
+
+1. Explore the [API Reference](/api-reference/health-ai/medical-entity-codification/overview)
+   to get started.
+2. Call [List Registry](/api-reference/health-ai/medical-entity-codification/registry) to
+   see the live ontologies and versions.
+3. Link your first entity with [Link Entity](/api-reference/health-ai/medical-entity-codification/link-entity).
+
+Ready to structure your clinical data? [Get in Touch](mailto:ekaconnect@eka.care) today.

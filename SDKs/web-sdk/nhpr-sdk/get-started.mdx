@@ -1,0 +1,464 @@
+---
+title: "Get Started"
+description: "Complete implementation guide for the NHPR (Health Professional Registry) SDK"
+---
+
+# NHPR SDK - Implementation
+
+This guide provides everything you need to integrate the NHPR SDK (M4) into your application.
+
+## Overview
+
+The **NHPR SDK** (M4) is a plug-and-play UI widget that enables your application to onboard doctors onto ABDM's **Health Professional Registry (HPR)** and register their clinic as a **Healthcare Facility Registry (HFR)** entry — all from within your existing web application. It provides:
+
+- **Aadhaar-based identity verification**: Doctor's identity is verified using ABDM's Aadhaar OTP flow.
+- **HPR ID creation**: Doctor selects a unique HPR ID, practice type, email, and password.
+- **HFR facility registration**: Clinic is registered or linked as an ABDM healthcare facility.
+- **Onboarding callbacks**: Your application receives the resulting HPR ID and HFR Facility ID on success.
+
+## Installation
+
+### Prerequisites
+
+- A modern web browser.
+- Your domain must be whitelisted with Eka Care to avoid CORS errors. (Contact Eka Care to request API access and domain whitelisting.)
+- A valid HTML container element where the SDK will mount.
+- A short-lived Bearer access token generated from your backend using the [Connect Login](https://developer.eka.care/api-reference/authorization/client-login) API.
+
+### Setup
+
+Add the following to your webpage:
+
+<Note>
+  For staging/dev environments, replace the SDK URLs with:
+  - **JS:** `https://unpkg.com/@eka-care/abdm-dashboard-stg/dist/sdk/abdm/js/abdm.js`
+  - **CSS:** `https://unpkg.com/@eka-care/abdm-dashboard-stg/dist/sdk/abdm/css/abdm.css`
+</Note>
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NHPR SDK Integration</title>
+
+    <!-- Include NHPR SDK CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@eka-care/abdm-dashboard/dist/sdk/abdm/css/abdm.css"
+    />
+  </head>
+  <body>
+    <h1>NHPR SDK Demo</h1>
+
+    <!-- Mount Button -->
+    <button onclick="mountNHPRSDK()">Start HPR Onboarding</button>
+
+    <!-- Container for NHPR SDK -->
+    <div id="abdm-dashboard-root" style="width: 100%; height: 600px;"></div>
+
+    <!-- Include NHPR SDK JS -->
+    <script src="https://unpkg.com/@eka-care/abdm-dashboard/dist/sdk/abdm/js/abdm.js"></script>
+
+    <script>
+      function mountNHPRSDK() {
+        window.abdmDashboardMount("abdm-dashboard-root", {
+          // Authentication
+          accessToken: "YOUR_ACCESS_TOKEN",
+          clientId: "ext",
+
+          // Behavior
+          hideEkaSidePanel: false,
+          showDashboardOnSuccess: false,
+
+          // Callbacks
+          onAbdmMountSuccess: (params) => {
+            console.log("NHPR SDK mounted successfully:", params);
+          },
+          onAbdmOnboardSuccess: (params) => {
+            console.log("HPR & HFR onboarding complete:", params);
+            // Save params.createdHprId and params.facilityId to your backend
+          },
+          onAbdmDashboardClose: (params) => {
+            console.log("NHPR SDK closed:", params);
+          },
+          onAbdmDashboardError: (params) => {
+            console.error("NHPR SDK error:", params);
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
+```
+
+## Core Functions
+
+### 1. mountABDMDashboard
+
+Initializes and renders the NHPR SDK in your specified container.
+
+**Parameters:**
+
+| Name                     | Type                                                                                                                                                    | Required    | Description                                                                                                                                                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `elementId`              | `string`                                                                                                                                                | ✅          | The HTML element ID where the SDK will mount. If the element does not exist, a `<div>` with this ID is created and appended to `document.body`.                                                                                                                               |
+| `accessToken`            | `string`                                                                                                                                                | ✅          | Short-lived Bearer token for authenticating API calls to Eka's backend. Generate a fresh token from your backend on each widget load. Do not include the `Bearer` prefix.                                                                                                     |
+| `clientId`               | `string`                                                                                                                                                | ⚙️ Optional | Client identifier for your application. Pass `"ext"` for web integrations. Defaults to `"ext"`.                                                                                                                                                                      |
+| `hideEkaSidePanel`       | `boolean`                                                                                                                                               | ⚙️ Optional | Hide the decorative illustration panel shown on larger screens. Defaults to `false`. Set to `true` when embedding in a narrow modal or a mobile WebView.                                                                                                                      |
+| `showDashboardOnSuccess` | `boolean`                                                                                                                                               | ⚙️ Optional | If `true`, navigates to the ABDM dashboard after HFR registration is complete. If `false`, the widget unmounts itself after firing `onAbdmOnboardSuccess`. Defaults to `true`.                                                                                                |
+| `onAbdmMountSuccess`     | `(params: TOnAbdmMountSuccess) => void`                                                                                                                 | ⚙️ Optional | Fired immediately after the widget mounts successfully.                                                                                                                                                                                                                       |
+| `onAbdmOnboardSuccess`   | `(params: TOnAbdmOnboardSuccess) => void`                                                                                                               | ✅          | Fired when HPR and HFR registration both complete. Contains the new HPR ID and HFR Facility ID.                                                                                                                                                                               |
+| `onAbdmDashboardClose`   | `(params: TOnAbdmDashboardClose) => void`                                                                                                               | ✅          | Fired when the user closes the widget via the back button or when `unmountABDMDashboard` is called.                                                                                                                                                                           |
+| `onAbdmDashboardError`   | `(params: TOnAbdmDashboardError) => void`                                                                                                               | ✅          | Fired if the widget fails to mount or encounters a fatal error.                                                                                                                                                                                                               |
+
+### 2. unmountABDMDashboard
+
+Programmatically unmounts the widget and cleans up the React root.
+
+```js
+window.abdmDashboardUnmount("abdm-dashboard-root");
+```
+
+Returns `true` if the widget was found and unmounted, `false` if no mounted widget was found at the given element ID.
+
+---
+
+## Callback Parameters
+
+### onAbdmMountSuccess Callback
+
+Fired immediately after the widget mounts and renders successfully into the container.
+
+**Callback Signature:**
+
+```typescript
+onAbdmMountSuccess: (params: TOnAbdmMountSuccess) => void;
+```
+
+**Type Definition:**
+
+```typescript
+type TOnAbdmMountSuccess = {
+  clientId?: string;
+};
+```
+
+**Parameters:**
+
+| Key        | Type      | Description                                    |
+| ---------- | --------- | ---------------------------------------------- |
+| `clientId` | `string?` | The `clientId` passed to `mountABDMDashboard`. |
+
+**Example:**
+
+```javascript
+const onAbdmMountSuccess = (params) => {
+  console.log("NHPR SDK mounted:", params);
+  // params.clientId → "ext"
+
+  // Show the container now that the widget is ready
+  document.getElementById("abdm-dashboard-root").style.display = "block";
+};
+```
+
+---
+
+### onAbdmOnboardSuccess Callback
+
+Fired when the full HPR + HFR onboarding flow completes successfully. This is the primary callback — use it to persist the HPR ID and HFR Facility ID to your backend.
+
+**Callback Signature:**
+
+```typescript
+onAbdmOnboardSuccess: (params: TOnAbdmOnboardSuccess) => void;
+```
+
+**Type Definition:**
+
+```typescript
+type TOnAbdmOnboardSuccess = {
+  clientId?: string;
+  facilityId?: string;
+  createdHprId?: string;
+};
+```
+
+**Parameters:**
+
+| Key            | Type      | Description                                                                                              |
+| -------------- | --------- | -------------------------------------------------------------------------------------------------------- |
+| `clientId`     | `string?` | The `clientId` passed to `mountABDMDashboard`.                                                           |
+| `facilityId`   | `string?` | The HFR Facility ID assigned by ABDM to the registered clinic. Store this against the clinic in your backend. |
+| `createdHprId` | `string?` | The doctor's new HPR ID in the format `username@hpr.abdm`. Store this against the doctor in your backend. |
+
+**Example:**
+
+```javascript
+const onAbdmOnboardSuccess = (params) => {
+  console.log("Onboarding complete:", params);
+
+  const { facilityId, createdHprId } = params;
+
+  // Persist to your backend
+  fetch("/api/abdm/save-registration", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ facilityId, createdHprId }),
+  });
+
+  // Unmount and hide the widget
+  window.abdmDashboardUnmount("abdm-dashboard-root");
+
+  // Optionally pass to native bridge if running in a WebView
+  if (window.EkaAbdm) {
+    window.EkaAbdm.onAbdmOnboardSuccess(JSON.stringify(params));
+  }
+};
+```
+
+---
+
+### onAbdmDashboardClose Callback
+
+Fired when the user explicitly closes the widget (by clicking the back/close button) or when `unmountABDMDashboard` is called programmatically.
+
+**Callback Signature:**
+
+```typescript
+onAbdmDashboardClose: (params: TOnAbdmDashboardClose) => void;
+```
+
+**Type Definition:**
+
+```typescript
+type TOnAbdmDashboardClose = {
+  clientId: string;
+};
+```
+
+**Parameters:**
+
+| Key        | Type     | Description                                                                                             |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `clientId` | `string` | The `clientId` passed to `mountABDMDashboard`. Falls back to `"default-client"` if not provided. |
+
+**Example:**
+
+```javascript
+const onAbdmDashboardClose = (params) => {
+  console.log("NHPR SDK closed:", params);
+
+  // Hide or remove the container from the UI
+  const container = document.getElementById("abdm-dashboard-root");
+  if (container) container.style.display = "none";
+
+  // Optionally pass to native bridge if running in a WebView
+  if (window.EkaAbdm) {
+    window.EkaAbdm.onAbdmClose(JSON.stringify(params));
+  }
+};
+```
+
+---
+
+### onAbdmDashboardError Callback
+
+Fired if the widget fails to mount or encounters a fatal error during initialisation.
+
+**Callback Signature:**
+
+```typescript
+onAbdmDashboardError: (params: TOnAbdmDashboardError) => void;
+```
+
+**Type Definition:**
+
+```typescript
+type TOnAbdmDashboardError = {
+  clientId?: string;
+};
+```
+
+**Parameters:**
+
+| Key        | Type      | Description                                                  |
+| ---------- | --------- | ------------------------------------------------------------ |
+| `clientId` | `string?` | The `clientId` passed to `mountABDMDashboard`|
+
+**Example:**
+
+```javascript
+const onAbdmDashboardError = (params) => {
+  console.error("NHPR SDK error:", params);
+
+  alert("Something went wrong while loading the onboarding widget. Please try again.");
+
+  // Forward to native bridge if running in a WebView
+  if (window.EkaAbdm) {
+    window.EkaAbdm.onAbdmError(JSON.stringify(params));
+  }
+};
+```
+
+**Suggested handling:**
+- Always log the full `params` for debugging.
+- Display a user-friendly retry prompt — the most common causes are an expired `accessToken` or a network failure.
+- Generate a fresh `accessToken` from your backend before retrying `mountABDMDashboard`.
+
+---
+
+## Onboarding Flow (M4)
+
+The widget is a linear multi-step flow. Each step is a full-screen state — the user cannot jump ahead.
+
+### Screen reference
+
+| Step | Screen             | What happens                                                                                                     |
+| ---- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| 1    | **Create**         | Doctor enters their 12-digit Aadhaar number. An OTP is dispatched to the Aadhaar-linked mobile on submit.                                                            |
+| 2    | **Verify OTP**     | Doctor enters the OTP received on their Aadhaar-linked mobile number to complete identity verification.           |
+| 3    | **Setup HPR**      | Doctor sets a unique HPR ID (ABDM-suggested IDs are shown as chips), practice type, email, password, and pincode. Real-time availability check runs on HPR ID input. |
+| 4    | **HPR Successful** | Confirmation that the HPR ID has been created. The flow auto-advances to clinic verification.                    |
+| 5    | **Verify Clinic**  | Doctor selects a suggested ABDM facility or registers a new clinic with type, sub-type, medicine type, and facility details. |
+| 6    | **HFR Successful** | HFR registration is confirmed. `onAbdmOnboardSuccess` fires with `createdHprId` and `facilityId`.               |
+
+{/* TODO: Add screenshots of each screen */}
+
+### Practice types
+
+| Code | Name            |
+| ---- | --------------- |
+| 1    | Modern Medicine |
+| 2    | Dentist         |
+| 3    | Ayurveda        |
+| 4    | Unani           |
+| 5    | Siddha          |
+| 6    | Homeopathy      |
+| 89   | Sowa-Rigpa      |
+
+### HPR password requirements
+
+The widget validates the password live as the doctor types. All rules must pass before the form can be submitted:
+
+- At least 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character
+
+---
+
+## OTP Auto-Read (Mobile WebView)
+
+If your application embeds the widget in a mobile WebView that supports OTP interception, forward the OTP to the widget:
+
+```js
+// Call this from your Android/iOS bridge when an OTP SMS is intercepted
+window.onOtpAutoRead({ success: true, otp: "123456" });
+```
+
+The widget pre-fills the OTP input automatically and does not require the doctor to type it.
+
+---
+
+## Container Styling
+
+Ensure your container has sufficient height for the widget to render correctly:
+
+```html
+<div
+  id="abdm-dashboard-root"
+  style="width: 100%; height: 600px; border: 1px solid #ddd;"
+></div>
+```
+
+For full-screen modal use cases, set the container to `100vw` / `100vh` and pass `hideEkaSidePanel: true` to disable the side illustration panel on smaller viewports.
+
+---
+
+## API Reference
+
+The widget communicates with Eka's backend. All requests include your `accessToken` as a Bearer token in the `Authorization` header.
+
+| Method | Endpoint                       | Purpose                                             |
+| ------ | ------------------------------ | --------------------------------------------------- |
+| `POST` | `/abdm/v1/hpr/aadhaar/otp`    | Initiate Aadhaar OTP for HPR identity verification  |
+| `POST` | `/abdm/v1/hpr/aadhaar/verify` | Verify the Aadhaar OTP                              |
+| `POST` | `/abdm/v1/hpr/mobile/verify`  | Verify the mobile OTP                               |
+| `POST` | `/abdm/v1/hpr/id/available`   | Check if a chosen HPR ID is available               |
+| `POST` | `/abdm/v1/hpr/create`         | Create the HPR entry with ID and credentials        |
+| `POST` | `/abdm/v1/hfr/create`         | Register the clinic as a new HFR facility           |
+| `POST` | `/abdm/v1/hfr/link`           | Link the clinic to an existing HFR facility         |
+
+**Base URLs:**
+
+| Environment | Base URL                   |
+| ----------- | -------------------------- |
+| Production  | `https://api.eka.care`     |
+| Development | `https://api.dev.eka.care` |
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. SDK Not Rendering
+
+**Problem**: Nothing appears in the container.
+
+**Solution**:
+- Ensure `elementId` matches an existing HTML element ID.
+- Verify the SDK JS and CSS files are loaded before calling `mountABDMDashboard`.
+- Check the browser console for errors.
+
+#### 2. APIs Not Being Called
+
+**Problem**: API requests are not triggered after the SDK is mounted.
+
+**Solution**:
+- Ensure `accessToken` is passed correctly and has not expired — generate a fresh token from your backend on each mount.
+- Ensure your domain is whitelisted with Eka Care to prevent CORS errors.
+
+#### 3. Callbacks Not Firing
+
+**Problem**: `onAbdmOnboardSuccess`, `onAbdmDashboardClose`, or `onAbdmDashboardError` are not being called.
+
+**Solution**:
+- Confirm callbacks are passed as valid functions, not strings or undefined.
+- Avoid calling `unmountABDMDashboard` before the SDK has finished its flow — this will silently stop all further callbacks.
+
+#### 4. Styling Issues
+
+**Problem**: SDK content appears misaligned or clipped.
+
+**Solution**:
+- Give your container a fixed height (e.g., `600px`) or `100vh` for full-screen.
+- Ensure no parent element applies `overflow: hidden` that would clip the widget.
+- Pass `hideEkaSidePanel: true` on narrow viewports (under 768 px).
+
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="What is an HPR ID and why does the doctor need one?">
+    An HPR (Health Professional Registry) ID is a unique digital identity for healthcare professionals in India's ABDM ecosystem. It is required for a doctor to participate in ABDM-enabled workflows such as linking patient health records and issuing digital prescriptions.
+  </Accordion>
+
+  <Accordion title="What is HFR and do I need it?">
+    HFR (Healthcare Facility Registry) registers a clinic or hospital within ABDM. It is required for the clinic to act as a Health Information Provider (HIP) and exchange records through the ABDM network. The NHPR SDK handles both HPR and HFR registration in a single flow.
+  </Accordion>
+
+  <Accordion title="What should I do with the HPR ID and Facility ID returned in onAbdmOnboardSuccess?">
+    Store both in your backend against the respective doctor and clinic records. The `facilityId` is the HFR ID assigned by ABDM to the clinic. The `createdHprId` is the doctor's new HPR ID in the format `username@hpr.abdm`. You will need these IDs for subsequent ABDM API calls.
+  </Accordion>
+
+  <Accordion title="How do I handle the widget in a mobile app WebView?">
+    Pass `hideEkaSidePanel: true` to collapse the side illustration panel for narrow screens. Wire up your native OTP-intercept handler to call `window.onOtpAutoRead({ success: true, otp: '...' })` so the OTP field is filled automatically.
+  </Accordion>
+
+  <Accordion title="What happens if the doctor already has an HPR ID?">
+    The current M4 flow creates a new HPR ID via Aadhaar-based identity verification. If the doctor already has an HPR ID registered with ABDM, contact Eka support to enable the existing-HPR linking flow for your integration.
+  </Accordion>
+</AccordionGroup>
