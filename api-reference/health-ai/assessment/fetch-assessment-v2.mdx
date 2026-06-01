@@ -84,7 +84,44 @@ Notice how both groups have the same unique_identifier, but different practition
 }
 ```
 
-### Example 3: Filtering by Workflow IDs
+### Example 3: Filtering by UHID via username_alias
+During INIT, patient identifiers are stored as **OIDs** (eka's internal identifier). However, some clients pass their own primary key (e.g., UHID, MRN) during INIT instead of the OID. Use `username_alias` to handle this — set it to the name of the filter field that contains the UHID, and the API will resolve it to the corresponding OID before filtering.
+
+**Supported values:** `practitioner_uuid`, `patient_uuid`, `unique_identifier`, `transaction_id`
+
+> The field named in `username_alias` must also be provided as a query parameter with the UHID value.
+
+### Request:
+```bash
+curl --location 'https://api.eka.care/assessment/api/fetch_interviews/v2/?status=COMPLETED&unique_identifier=abc&username_alias=unique_identifier' \
+--header 'Authorization: Bearer <token>'
+```
+
+Here `unique_identifier=abc` is the UHID, and `username_alias=unique_identifier` tells the API to resolve it to an OID before filtering.
+
+### Response:
+Assessments matching the resolved OID are returned, grouped as usual.
+
+```json
+{
+  "conversations": [
+    {
+      "practitioner_uuid": "123-doc",
+      "patient_uuid": "456-patient",
+      "unique_identifier": "<resolved-oid>",
+      "transaction_id": "TXN-1",
+      "conversations": [
+        { "conversationid": "sa_111", "created_at": "...", "wflow_wfid": 101 }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### Example 4: Filtering by Workflow IDs
+
 Use `wfids` to fetch only assessments belonging to specific workflows. This is useful when you want results scoped to a particular assessment type (e.g., only diabetes screenings or only general health checks).
 
 ### Request:
