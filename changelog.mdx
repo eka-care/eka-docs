@@ -13,7 +13,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Feature", "Update"]}
   rss={{
     title: "Eka Developer Platform — June 1, 2026",
-    description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\nRead more: https://developer.eka.care/changelog"
+    description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\n• Patient messaging pipeline now propagates JWT `c-id` and `idp` claims into khata `lookup_params` for tenant- and IDP-scoped attribution\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
@@ -27,6 +27,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 
 - **[EMR] Templar prescription rendering for examination findings and procedures** — Templar templates now render the new structured `properties` map on examination findings and procedures alongside legacy `notes`, with PDF print-body config and local PDF generation pipelines updated to consume the merged shape. Existing templates that only use `notes` continue to render unchanged.
 - **[EMR] Property-aware caching for sym/dia lookups** — Property-group fetches are now cached per `context:id` (e.g. `examination_findings:<id>`, `procedures:<id>`) so switching between symptoms, diagnoses, findings, and procedures no longer collides on a single cache key.
+
+## Hardened
+
+- **[Platform] JWT-scoped attribution on patient messaging** — The patient messaging pipeline (welcome, prescription, self-assessment, and post-action communications) now propagates the authenticated caller's `c-id` and `idp` claims from the request JWT into messenger `lookup_params` alongside `khata_key`. This routes downstream billing and rate-limiting against the correct identity provider and client tenant for every SMS, WhatsApp, and push notification triggered via khata.
 
 ## Changed
 
