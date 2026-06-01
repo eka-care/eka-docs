@@ -1,0 +1,117 @@
+---
+title: Console
+description: Manage your agents, datasets, and integrations from the EkaCare Developer Console
+---
+
+## Console
+
+The EkaCare Developer Console is your control plane for building, configuring, and managing AI-powered healthcare agents. From the console you can:
+
+- **Manage agents** — create and configure agents that handle conversations, answer queries, and perform clinical workflows
+- **Attach your datasets** — bring your own doctors, facilities, and services so agents can search and operate on your data
+- **Configure tools and skills** — extend agents with custom tools, knowledge bases, and integrations
+- **Monitor usage** — track conversations, API usage, and performance across your workspace
+
+---
+
+## Dataset
+
+The Dataset feature lets you connect your own healthcare data to the EkaCare platform. Once attached, agents can search and perform operations on your data — finding the right doctor, facility, or service in response to a user query.
+
+You own and manage this data. EkaCare's agents use it as their working catalogue when serving your users.
+
+There are three types of datasets:
+
+---
+
+## Doctor Dataset
+
+Your list of doctors. Agents search this to find and recommend doctors to users based on their query.
+
+Returns up to **30 results** per search, ordered by match quality then business priority.
+
+### What can be searched
+
+- **Specialty** — find doctors by their area of practice (e.g. cardiology, dermatology)
+- **Name** — search by a doctor's name or known aliases
+- **City** — restrict results to doctors practising in a specific city
+- **Facility** — find doctors associated with a specific hospital or clinic in your dataset
+- **Area** — boost results for doctors whose facilities are in a particular locality
+
+### How name search works
+
+Name behaves differently depending on what else is passed:
+
+- **Name only (no city, no facility)** — name acts as a hard filter. Only doctors whose name or alias matches are returned.
+- **Name + city or facility** — name becomes a ranking boost. All matching doctors are returned; those whose name matches rank higher.
+
+### How results are ordered
+
+1. **Relevance** — how well the doctor matches the query (specialty, name, area)
+2. **Priority** — business ranking based on facility ranking, city ranking, or base priority (depending on what was passed)
+3. **Seniority** — senior consultants rank above others at equal relevance and priority
+4. **Experience** — years of experience as a final tiebreaker
+
+### Campaigns
+
+Campaigns let you boost specific doctors in search results — useful for highlighting preferred providers. A campaign can only reorder doctors that already match the query; it cannot surface a non-matching doctor.
+
+---
+
+## Facility Dataset
+
+Your list of hospitals, clinics, and care centres. Agents search this when a user is looking for a place to visit or when filtering doctors by location.
+
+### What can be searched
+
+- **Query text** — search by facility name, specialty, keywords, or description
+- **City** — restrict results to a specific city (required unless a query text is provided)
+- **Area** — boost results for facilities in a particular locality or address
+- **Facility type** — hard filter to restrict results to a specific category (e.g. hospital, clinic)
+
+### Search modes
+
+- **City provided** — city is a hard filter. The query loosely ranks matching facilities.
+- **No city** — the query must fully match (all terms must appear). Use this when looking up a specific facility by name, such as "Apollo Jubilee Hills".
+
+At least one of **city** or **query text** is required.
+
+### How results are ordered
+
+1. **Relevance** — match quality across facility name, specializations, and about text
+2. **Priority** — base priority boosted by any active campaigns
+3. **Name** — alphabetical as a final tiebreaker
+
+### Campaigns
+
+Campaigns can reorder facilities that already match the query. They cannot inject non-matching facilities into results.
+
+---
+
+## Service Dataset
+
+Your list of medical services, tests, and procedures. Agents search this to answer questions like "do you offer this test?" or "which clinic provides this treatment?".
+
+### What can be searched
+
+- **Query text** — the only search input. Terms are matched across service names, aliases, keywords, descriptions, and specializations.
+
+### How matching works
+
+Matching runs across multiple tiers of data for each service:
+
+- **Name, aliases, keywords** — highest weight
+- **Description** — medium weight
+- **Specializations** — lower weight
+
+Partial matches are included — results are ranked by how many of your search terms hit, and how central those fields are to the service record.
+
+### How results are ordered
+
+1. **Relevance** — match quality across the full-text index
+2. **Priority** — base priority boosted by any active campaigns
+3. **Name** — alphabetical as a final tiebreaker
+
+### Campaigns
+
+Campaigns can reorder services that already match the query by boosting their priority. They cannot surface non-matching services.
