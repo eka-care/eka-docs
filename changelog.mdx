@@ -8,6 +8,34 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="May 30, 2026"
+  description="May 30, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "Eka Developer Platform — May 30, 2026",
+    description: "• eka-usage-sdk 0.2.0 introduces IDP-aware billable tagging so only authenticated API-key traffic is counted as billable\n\n• Agent and tool metric types cleaned up — error outcomes now flow through status=\"error\" instead of dedicated *_error metrics\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## ⚠️ Breaking
+
+- **[Platform] eka-usage-sdk metric-type cleanup** — Dedicated error metrics are removed across all three SDKs (Go, Python, TypeScript). The `agent` metric drops `credit_consumed` and `tool_call_error`; `emr_tools` and `clinical_tools` drop `tool_call_error`. Record tool and agent error outcomes by emitting the corresponding metric with `status="error"` instead. The `agent` metric also adds a new `message` type for conversational events.
+
+## Added
+
+- **[Platform] IDP-aware billable tagging in eka-usage-sdk** — `record()` now accepts optional `idp` and `c_id` parameters (Python kwargs, TS trailing args, Go `WithIDP` / `WithCID` options) sourced from the request JWT by the caller — the SDK does no token parsing or I/O. `is_billable` is set to `1` only when `status == "ok"` **and** `idp == "api-key"`; every other caller (SaaS/subscription, internal jobs, error outcomes, no-context callers) emits `0`. The new `c_id` (API key id) is copied verbatim into the payload for per-API-key analytics and defaults to `""`. `idp` itself is never written to the payload.
+
+## Fixed
+
+- **[Platform] Stale ABDM metric names in eka-usage-sdk docs** — Documentation now reflects the current ABDM metric set (`abha`, `linking`, `data_transfer`), replacing the outdated names.
+
+## Upgraded
+
+- **[Platform] eka-usage-sdk → 0.2.0** — Go, Python, and TypeScript SDKs all bumped to `0.2.0` (TS tag `ts-v0.2.0`) covering the IDP-aware billing tags and metric-type cleanup above.
+
+</Update>
+
+<Update
   label="May 29, 2026"
   description="May 29, 2026"
   tags={["Feature", "Update"]}
