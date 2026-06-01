@@ -13,20 +13,27 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Feature", "Update"]}
   rss={{
     title: "Eka Developer Platform — June 1, 2026",
-    description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\nRead more: https://developer.eka.care/changelog"
+    description: "• IPD dashboard and admit-patient drawer are now remote-loaded web components (`<ipd-dashboard>`, `<ipd-admit-patient-drawer>`) served from the IPD SDK\n\n• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
 ## Added
 
+- **[EMR] IPD dashboard and admit-patient drawer as remote web components** — The IPD list and admit-patient flows now render through `<ipd-dashboard>` and `<ipd-admit-patient-drawer>` custom elements loaded from a remotely-hosted IPD SDK (`elixir-dr.eka.care/ipd/main/assets/index.js`, with a matching dev URL). The host app injects Firestore, `fetchWithRefresh`, and a Firestore SDK adapter into the elements, and receives callbacks for profile mount, switch-workspace mount, admit/discharge, EMAR, IPD notes, medical history, medical document, billing payments, IPD slip print, and discharge summary. This decouples IPD shipping from the main app release cycle.
+- **[EMR] `OPEN_GLOBAL_SEARCH` bridge event** — The IPD web component (and other embedded surfaces) can now request the host app to open global search by dispatching an `OPEN_GLOBAL_SEARCH` event over the `EKA_EVENT` bus. The host respects route eligibility via `canOpenGlobalSearch(pathname)` and emits a `GLOBAL_SEARCH` track with `where: 'ipd'`.
 - **[EMR] Property groups on examination findings and procedures** — The prescription pad's examination findings and procedures rows now support the same structured property-group editor previously available only on symptoms and diagnoses. Examination findings expose a `Since` prefix-suggest group (Hour/Day/Week/Month/Year) and a `Note` open-text group; procedures expose a `Date` group and a `Note` group. Each row renders a more-options modal driven by `SymDiaPropertyInput`, with backward-compatible migration from the legacy top-level `notes` string into the structured note property group on read.
 - **[EMR] `source` discriminator on examination findings** — `ExaminationEntity` now carries an optional `source: 'symptom' | 'diagnosis'` field so the pad can track whether a finding was added from the symptoms or diagnoses path, enabling correct routing of property updates back into the originating entity.
 - **[EMR] Context-scoped sym/dia properties endpoint** — `GET /v1/sym-and-diag/properties` accepts three new optional query parameters: `procedures` (comma-separated procedure ids), `resource` (`Observation` | `Condition` | `ServiceRequest`), and `category` (e.g. `symptom`, `encounter-diagnosis`, `exam`). Callers pass a `SymDiaPropertiesContext` of `symptoms`, `diagnosis`, `examination_findings`, or `procedures` and the SDK maps it to the right `resource`/`category` pair.
 
 ## Improved
 
+- **[EMR] On-demand IPD SDK loading** — `ensureIpdSdkScriptLoaded()` lazily injects the IPD SDK `<script type="module">` only when an IPD surface is opened, dedupes parallel callers via a shared promise, and surfaces a clean error toast if the SDK fails to load. Subsequent navigations reuse the already-loaded `window.IpdSDK` and avoid re-fetching the bundle.
 - **[EMR] Templar prescription rendering for examination findings and procedures** — Templar templates now render the new structured `properties` map on examination findings and procedures alongside legacy `notes`, with PDF print-body config and local PDF generation pipelines updated to consume the merged shape. Existing templates that only use `notes` continue to render unchanged.
 - **[EMR] Property-aware caching for sym/dia lookups** — Property-group fetches are now cached per `context:id` (e.g. `examination_findings:<id>`, `procedures:<id>`) so switching between symptoms, diagnoses, findings, and procedures no longer collides on a single cache key.
+
+## Migrated
+
+- **[EMR] IPD UI extracted to a standalone SDK** — IPD admit, dashboard, billing, slip-print, and discharge surfaces previously bundled inside the doctor web app are now served from a separately-versioned IPD SDK and consumed through custom elements. The host app retains orchestration (Redux state, navigation, AI prompts for discharge summaries, PDF generation) and forwards data and callbacks into the elements.
 
 ## Changed
 
