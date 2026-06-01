@@ -31,18 +31,38 @@ paths:
             example: "02b66c91-ce53-45b7-8794-14f4a640f9c2"
         - name: unique_identifier
           in: query
-          description: A unique identifier(patient_oid) associated with the assessment.
+          description: >
+            A unique identifier associated with the assessment. This is typically the patient OID
+            (eka's internal identifier) used during INIT. If you are passing a UHID or any other
+            external identifier instead, set `username_alias=unique_identifier` so the API resolves
+            it to the OID before filtering.
           required: false
           schema:
             type: string
             example: "173765761279832"
         - name: transaction_id
           in: query
-          description: The transaction ID for a specific assessment session.
+          description: >
+            The transaction ID for a specific assessment session. If this value is a UHID or
+            external identifier rather than an OID, set `username_alias=transaction_id`.
           required: false
           schema:
             type: string
             example: "txn_aBcDeFgHiJkLmNoP"
+        - name: username_alias
+          in: query
+          description: >
+            Use this when the value of one of the filter fields (`practitioner_uuid`, `patient_uuid`,
+            `unique_identifier`, or `transaction_id`) is a UHID or external client identifier instead
+            of an OID. Set `username_alias` to the name of that field — the API will resolve the
+            UHID to the corresponding OID via the patient directory before filtering.
+
+            **Example:** `?unique_identifier=MRN12345&username_alias=unique_identifier`
+          required: false
+          schema:
+            type: string
+            enum: [practitioner_uuid, patient_uuid, unique_identifier, transaction_id]
+            example: "unique_identifier"
         - name: wfids
           in: query
           description: Comma-separated list of workflow IDs to filter by.
@@ -58,6 +78,19 @@ paths:
             type: string
             enum: [NEW, IN_REVIEW, COMPLETED, PARTIAL]
             default: COMPLETED
+      x-codeSamples:
+        - lang: cURL
+          label: Filter by OID (default)
+          source: |
+            curl --request GET \
+              --url 'https://api.eka.care/assessment/api/fetch_interviews/v2/?status=COMPLETED&unique_identifier=173765761279834' \
+              --header 'Authorization: Bearer <token>'
+        - lang: cURL
+          label: Filter by UHID (username_alias)
+          source: |
+            curl --request GET \
+              --url 'https://api.eka.care/assessment/api/fetch_interviews/v2/?status=COMPLETED&unique_identifier=MRN12345&username_alias=unique_identifier' \
+              --header 'Authorization: Bearer <token>'
       responses:
         '200':
           description: A successful response containing the grouped assessments.
@@ -80,7 +113,9 @@ paths:
                           description: The patient UUID for this group.
                         unique_identifier:
                           type: string
-                          description: The unique identifier for this group.
+                          description: >
+                            The OID stored against this assessment group. When `username_alias` is
+                            used, this will be the resolved OID — not the UHID that was passed in.
                         transaction_id:
                           type: string
                           description: The transaction ID for this group.
@@ -104,19 +139,34 @@ paths:
                                 nullable: true
                                 description: The workflow ID (wfid) associated with this assessment.
                                 example: 101
-              example:
-                conversations:
-                  - practitioner_uuid: "161467756044223"
-                    patient_uuid: "02b66c91-ce53-45b7-8794-14f4a640f9g4"
-                    unique_identifier: "173765761279834"
-                    transaction_id: "txn_aBcDeFgHiJkLmNoP"
+              examples:
+                default:
+                  summary: Filter by OID
+                  value:
                     conversations:
-                      - conversationid: "sa_123456789"
-                        created_at: "2023-07-15T10:30:00Z"
-                        wflow_wfid: 101
-                      - conversationid: "sn_987654321"
-                        created_at: "2023-07-15T10:35:00Z"
-                        wflow_wfid: 101
+                      - practitioner_uuid: "161467756044223"
+                        patient_uuid: "02b66c91-ce53-45b7-8794-14f4a640f9g4"
+                        unique_identifier: "173765761279834"
+                        transaction_id: "txn_aBcDeFgHiJkLmNoP"
+                        conversations:
+                          - conversationid: "sa_123456789"
+                            created_at: "2023-07-15T10:30:00Z"
+                            wflow_wfid: 101
+                          - conversationid: "sn_987654321"
+                            created_at: "2023-07-15T10:35:00Z"
+                            wflow_wfid: 101
+                username_alias:
+                  summary: Filter by UHID (username_alias=unique_identifier)
+                  value:
+                    conversations:
+                      - practitioner_uuid: "161467756044223"
+                        patient_uuid: "02b66c91-ce53-45b7-8794-14f4a640f9g4"
+                        unique_identifier: "173765761279834"
+                        transaction_id: "txn_aBcDeFgHiJkLmNoP"
+                        conversations:
+                          - conversationid: "sa_123456789"
+                            created_at: "2023-07-15T10:30:00Z"
+                            wflow_wfid: 101
         '400':
           description: Validation error, such as a missing required ID in the token or an invalid status.
           content:
