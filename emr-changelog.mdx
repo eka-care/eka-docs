@@ -8,6 +8,26 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="June 2, 2026"
+  description="June 2, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "EMR — June 2, 2026",
+    description: "• Appointment reschedule now links the old and new appointments via `next_aid` / `prev_aids` and carries forward existing receipts onto the new appointment\n\n• Patient profile picture chooser no longer races on bottom-sheet dismissal — camera and gallery now launch reliably on the first tap\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] Appointment reschedule history on the doctor app** — Rescheduling an appointment now persists a forward/back link between the source and the newly created appointment. The old appointment record stores `next_aid` (the new appointment id) at reschedule time, and the new appointment stores `prev_aids` (the chain of prior appointment ids) and inherits the existing `receipts` so payments and services already attached to the original visit are preserved. Both fields are exposed on the `AppointmentsModel` returned by the Firestore manager.
+
+## Fixed
+
+- **[EMR] Patient profile picture chooser race on the doctor app** — The camera and gallery options in the profile picture upload sheet previously launched their intents from `invokeOnCompletion` on the sheet-hide coroutine, which could fire out of order or be skipped if the coroutine was cancelled, occasionally leaving the chooser stuck open or failing to launch on the first tap. Both options now run the launch inline after `sheetState.hide()` in the same coroutine, so the camera capture and gallery picker fire deterministically on every tap.
+
+</Update>
+
+<Update
   label="June 1, 2026"
   description="June 1, 2026"
   tags={["Feature", "Update", "Fix"]}
