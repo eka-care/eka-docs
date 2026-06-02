@@ -24,6 +24,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 - **[EMR] Property groups on examination findings and procedures** — The prescription pad's examination findings and procedures rows now support the same structured property-group editor previously available only on symptoms and diagnoses. Examination findings expose a `Since` prefix-suggest group (Hour/Day/Week/Month/Year) and a `Note` open-text group; procedures expose a `Date` group and a `Note` group. Each row renders a more-options modal driven by `SymDiaPropertyInput`, with backward-compatible migration from the legacy top-level `notes` string into the structured note property group on read.
 - **[EMR] `source` discriminator on examination findings** — `ExaminationEntity` now carries an optional `source: 'symptom' | 'diagnosis'` field so the pad can track whether a finding was added from the symptoms or diagnoses path, enabling correct routing of property updates back into the originating entity.
 - **[EMR] Context-scoped sym/dia properties endpoint** — `GET /v1/sym-and-diag/properties` accepts three new optional query parameters: `procedures` (comma-separated procedure ids), `resource` (`Observation` | `Condition` | `ServiceRequest`), and `category` (e.g. `symptom`, `encounter-diagnosis`, `exam`). Callers pass a `SymDiaPropertiesContext` of `symptoms`, `diagnosis`, `examination_findings`, or `procedures` and the SDK maps it to the right `resource`/`category` pair.
+- **[EMR] Capillary Blood Glucose (CBG) and Hip Circumference vitals** — Prescription pad vitals catalogue adds two new server-backed vitals: Capillary Blood Glucose (CBG) and Hip Circumference. Both accept numeric values with decimal precision and render through the standard vitals input flow alongside existing vitals.
 
 ## Improved
 
@@ -34,6 +35,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 ## Fixed
 
 - **[EMR] Lab tests table search returns stale or empty results** — The Lab Tests table built its Fuse fuzzy-search index once in the constructor and never refreshed it when the underlying lab data loaded or changed, so searches would miss entries or return nothing until the page was reopened. The index now rebuilds in `componentDidUpdate` whenever `data` changes, and any active search result is cleared to avoid showing matches against the stale index.
+- **[EMR] Lab tests browse-panel search returning empty/stale results** — The Fuse search index on the lab tests table was being built once in the constructor against the initial (often empty) `data` prop, so the first search after data finished loading returned no matches and later prop updates were ignored. The index now rebuilds whenever the underlying `data` prop changes, and any active search result is cleared on rebuild so users see fresh matches without having to reload the panel.
 
 ## Changed
 
