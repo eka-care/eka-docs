@@ -8,6 +8,28 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="June 2, 2026"
+  description="June 2, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "EMR — June 2, 2026",
+    description: "• Reverted the experimental new queue dashboard (queue-ui-v2), add-patient flow, global-search overlay, drawer action strip, and inline receipt back to the previous queue implementation\n\n• Reverted Mixpanel tracking and default-open behaviour on the receipt panel\n\n• Reverted the full years-and-months patient age label on Templar receipts back to the prior numeric-months handling — callers must pass `ageInM?: number` again\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## ⚠️ Breaking
+
+- **[EMR] Patient age on Templar receipts reverted to numeric months** — The May 7 switch to a pre-formatted `age?: string` on `TPdfObject` / `getPatientIntroForReceipt` has been rolled back. Callers must again pass the numeric `ageInM?: number` (months); the years-and-months string field is no longer accepted. Integrations updated for the May 7 change need to revert to the prior calling convention.
+
+## Removed
+
+- **[EMR] Experimental queue dashboard (queue-ui-v2)** — The new queue dashboard shell, add-patient flow, global-search overlay, drawer action strip, generic patient strip, inline receipt, and supporting Firestore/store wiring have been removed. The queue dashboard reverts to the previous single-panel implementation with the legacy left/right queue cards, queue header, and add-new-patient organism.
+- **[EMR] Mixpanel tracking and default-open state on receipts** — The recently added Mixpanel instrumentation around the receipt flow and the "receipt panel open by default" behaviour have been removed; receipts now open on explicit user action only, without the additional telemetry hooks.
+- **[EMR] Full patient age label on receipts** — Receipts no longer print the years-and-months age string introduced on May 7; the receipt PDF and PDF-on-client paths revert to the prior numeric-months age handling.
+
+</Update>
+
+<Update
   label="June 1, 2026"
   description="June 1, 2026"
   tags={["Feature", "Update", "Fix"]}

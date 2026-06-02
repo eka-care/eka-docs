@@ -13,7 +13,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Update"]}
   rss={{
     title: "Eka Developer Platform — June 2, 2026",
-    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\nRead more: https://developer.eka.care/changelog"
+    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\n• Reverted the experimental new queue dashboard, global-search patch, receipt Mixpanel/open-by-default behaviour, and full-age patient label on receipts in the EMR app\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
@@ -34,6 +34,16 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 ## Upgraded
 
 - **[Platform] echo-sdk 0.3.3** — Python package version bumped from 0.3.2 to 0.3.3 alongside the prompt-schema rename and skills package split.
+
+## ⚠️ Breaking
+
+- **[EMR] Patient age on Templar receipts reverted to numeric months** — The May 7 switch to a pre-formatted `age?: string` on `TPdfObject` / `getPatientIntroForReceipt` has been rolled back. Callers must again pass the numeric `ageInM?: number` (months); the years-and-months string field is no longer accepted. Integrations updated for the May 7 change need to revert to the prior calling convention.
+
+## Removed
+
+- **[EMR] Experimental queue dashboard (queue-ui-v2)** — The new queue dashboard shell, add-patient flow, global-search overlay, drawer action strip, generic patient strip, inline receipt, and supporting Firestore/store wiring have been removed. The queue dashboard reverts to the previous single-panel implementation with the legacy left/right queue cards, queue header, and add-new-patient organism.
+- **[EMR] Mixpanel tracking and default-open state on receipts** — The recently added Mixpanel instrumentation around the receipt flow and the "receipt panel open by default" behaviour have been removed; receipts now open on explicit user action only, without the additional telemetry hooks.
+- **[EMR] Full patient age label on receipts** — Receipts no longer print the years-and-months age string introduced on May 7; the receipt PDF and PDF-on-client paths revert to the prior numeric-months age handling.
 
 </Update>
 
