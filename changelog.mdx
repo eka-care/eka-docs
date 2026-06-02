@@ -13,7 +13,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Feature", "Update", "Fix"]}
   rss={{
     title: "Eka Developer Platform — June 1, 2026",
-    description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\n• Patient messaging pipeline now propagates JWT `c-id` and `idp` claims into khata `lookup_params` for tenant- and IDP-scoped attribution\n\nRead more: https://developer.eka.care/changelog"
+    description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\n• Appointment communication service now propagates JWT identity (cid, idp) across async boundaries via AsyncLocalStorage middleware, tightening auditability of outbound messenger payloads\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
@@ -31,6 +31,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 
 ## Hardened
 
+- **[Platform] JWT context propagation across appointment communication service** — Introduced an `AsyncLocalStorage`-backed request-context middleware that captures the caller's JWT identity (`cid`, `idp`) at the edge and threads it through all downstream messenger and appointment-event lookups without manual plumbing. Outbound bulk-review, reminder, reschedule, refund, receipt, payment, and cancellation payloads now carry the originating identity automatically, removing a class of bugs where context could be lost across async boundaries and tightening auditability of partner-triggered communications.
 - **[Platform] JWT-scoped attribution on patient messaging** — The patient messaging pipeline (welcome, prescription, self-assessment, and post-action communications) now propagates the authenticated caller's `c-id` and `idp` claims from the request JWT into messenger `lookup_params` alongside `khata_key`. This routes downstream billing and rate-limiting against the correct identity provider and client tenant for every SMS, WhatsApp, and push notification triggered via khata.
 ## Fixed
 
