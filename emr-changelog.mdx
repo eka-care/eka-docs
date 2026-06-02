@@ -10,10 +10,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <Update
   label="June 1, 2026"
   description="June 1, 2026"
-  tags={["Feature", "Update"]}
+  tags={["Feature", "Update", "Fix"]}
   rss={{
     title: "EMR — June 1, 2026",
-    description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\nRead more: https://developer.eka.care/emr-changelog"
+    description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\n• Lab tests browse-panel search now rebuilds its in-memory index when the underlying dataset loads or changes, fixing empty/stale results on first search\n\nRead more: https://developer.eka.care/emr-changelog"
   }}
 >
 
@@ -28,6 +28,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 
 - **[EMR] Templar prescription rendering for examination findings and procedures** — Templar templates now render the new structured `properties` map on examination findings and procedures alongside legacy `notes`, with PDF print-body config and local PDF generation pipelines updated to consume the merged shape. Existing templates that only use `notes` continue to render unchanged.
 - **[EMR] Property-aware caching for sym/dia lookups** — Property-group fetches are now cached per `context:id` (e.g. `examination_findings:<id>`, `procedures:<id>`) so switching between symptoms, diagnoses, findings, and procedures no longer collides on a single cache key.
+
+## Fixed
+
+- **[EMR] Lab tests browse-panel search returning empty/stale results** — The Fuse search index on the lab tests table was being built once in the constructor against the initial (often empty) `data` prop, so the first search after data finished loading returned no matches and later prop updates were ignored. The index now rebuilds whenever the underlying `data` prop changes, and any active search result is cleared on rebuild so users see fresh matches without having to reload the panel.
 
 ## Changed
 
