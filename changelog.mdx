@@ -8,6 +8,36 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="June 2, 2026"
+  description="June 2, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "Eka Developer Platform — June 2, 2026",
+    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## ⚠️ Breaking
+
+- **[EkaAgents] echo-sdk prompt-schema rename** — `AgentConfig`, `PersonaConfig`, and `TaskConfig` are renamed to `AgentPrompt`, `PromptPersona`, and `PromptTask` and have moved from `echo.agents.config` to `echo.prompts.schemas`. `GenericAgent` and `AgUiAgent` now require `agent_prompt=` instead of `agent_config=`, `FetchedPrompt.agent_config` is now `FetchedPrompt.agent_prompt`, and `load_agent_config()` is replaced by `load_agent_prompt()`. The old module path and kwargs are removed — callers must update imports and constructor arguments before upgrading to 0.3.3.
+- **[EkaAgents] echo-sdk skill package move** — `echo.agents.skill.Skill` is now `echo.skills.Skill`; `Skill` is no longer re-exported from `echo.agents`. Update imports to `from echo.skills import Skill`.
+
+## Added
+
+- **[EkaAgents] Runtime skill configuration in echo-sdk** — New `echo.skills.SkillRuntimeConfig` (name, description, `prompt_config: PromptConfig`, `tool_names`) plus a `build_skills_from_runtime()` helper that fetches every skill's prompt in parallel via the configured prompt provider and materialises them into `Skill` instances. Individual prompt-fetch failures are logged and the offending skill is dropped, so one bad skill config no longer breaks the whole turn.
+- **[EkaAgents] `PromptConfig` descriptor** — New Pydantic model for fetching prompts from a provider (currently `langfuse`), with `name`, `version`, and `prompt_variables` and automatic whitespace-stripping on `name`. Used by `SkillRuntimeConfig` and intended for host apps that wire skill prompts dynamically.
+
+## Changed
+
+- **[EkaAgents] Langfuse prompt provider returns `AgentPrompt`** — `LangfusePromptProvider.get_prompt()` and `FetchedPrompt` now expose `agent_prompt` (was `agent_config`); the underlying Langfuse-side schema (`role`, `goal`, `backstory`, `expected_output` on the prompt config; description in the prompt text) is unchanged.
+
+## Upgraded
+
+- **[Platform] echo-sdk 0.3.3** — Python package version bumped from 0.3.2 to 0.3.3 alongside the prompt-schema rename and skills package split.
+
+</Update>
+
+<Update
   label="June 1, 2026"
   description="June 1, 2026"
   tags={["Feature", "Update"]}
