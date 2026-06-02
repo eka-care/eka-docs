@@ -10,7 +10,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <Update
   label="June 1, 2026"
   description="June 1, 2026"
-  tags={["Feature", "Update"]}
+  tags={["Feature", "Update", "Fix"]}
   rss={{
     title: "Eka Developer Platform — June 1, 2026",
     description: "• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\n• Appointment communication service now propagates JWT identity (cid, idp) across async boundaries via AsyncLocalStorage middleware, tightening auditability of outbound messenger payloads\n\nRead more: https://developer.eka.care/changelog"
@@ -22,6 +22,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 - **[EMR] Property groups on examination findings and procedures** — The prescription pad's examination findings and procedures rows now support the same structured property-group editor previously available only on symptoms and diagnoses. Examination findings expose a `Since` prefix-suggest group (Hour/Day/Week/Month/Year) and a `Note` open-text group; procedures expose a `Date` group and a `Note` group. Each row renders a more-options modal driven by `SymDiaPropertyInput`, with backward-compatible migration from the legacy top-level `notes` string into the structured note property group on read.
 - **[EMR] `source` discriminator on examination findings** — `ExaminationEntity` now carries an optional `source: 'symptom' | 'diagnosis'` field so the pad can track whether a finding was added from the symptoms or diagnoses path, enabling correct routing of property updates back into the originating entity.
 - **[EMR] Context-scoped sym/dia properties endpoint** — `GET /v1/sym-and-diag/properties` accepts three new optional query parameters: `procedures` (comma-separated procedure ids), `resource` (`Observation` | `Condition` | `ServiceRequest`), and `category` (e.g. `symptom`, `encounter-diagnosis`, `exam`). Callers pass a `SymDiaPropertiesContext` of `symptoms`, `diagnosis`, `examination_findings`, or `procedures` and the SDK maps it to the right `resource`/`category` pair.
+- **[EMR] Capillary Blood Glucose (CBG) and Hip Circumference vitals** — Prescription pad vitals catalogue adds two new server-backed vitals: Capillary Blood Glucose (CBG) and Hip Circumference. Both accept numeric values with decimal precision and render through the standard vitals input flow alongside existing vitals.
 
 ## Improved
 
@@ -31,6 +32,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 ## Hardened
 
 - **[Platform] JWT context propagation across appointment communication service** — Introduced an `AsyncLocalStorage`-backed request-context middleware that captures the caller's JWT identity (`cid`, `idp`) at the edge and threads it through all downstream messenger and appointment-event lookups without manual plumbing. Outbound bulk-review, reminder, reschedule, refund, receipt, payment, and cancellation payloads now carry the originating identity automatically, removing a class of bugs where context could be lost across async boundaries and tightening auditability of partner-triggered communications.
+- **[Platform] JWT-scoped attribution on patient messaging** — The patient messaging pipeline (welcome, prescription, self-assessment, and post-action communications) now propagates the authenticated caller's `c-id` and `idp` claims from the request JWT into messenger `lookup_params` alongside `khata_key`. This routes downstream billing and rate-limiting against the correct identity provider and client tenant for every SMS, WhatsApp, and push notification triggered via khata.
+## Fixed
+
+- **[EMR] Lab tests browse-panel search returning empty/stale results** — The Fuse search index on the lab tests table was being built once in the constructor against the initial (often empty) `data` prop, so the first search after data finished loading returned no matches and later prop updates were ignored. The index now rebuilds whenever the underlying `data` prop changes, and any active search result is cleared on rebuild so users see fresh matches without having to reload the panel.
 
 ## Changed
 
