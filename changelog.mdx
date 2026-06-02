@@ -13,7 +13,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Update"]}
   rss={{
     title: "Eka Developer Platform — June 2, 2026",
-    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\nRead more: https://developer.eka.care/changelog"
+    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\n• Prescription pad now persists the `properties` map on examination findings and procedures through the local save flow and the genie sync middleware, completing the property-groups feature so structured Since/Note and Date/Note entries survive reloads and cross-device sync\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
@@ -26,6 +26,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 
 - **[EkaAgents] Runtime skill configuration in echo-sdk** — New `echo.skills.SkillRuntimeConfig` (name, description, `prompt_config: PromptConfig`, `tool_names`) plus a `build_skills_from_runtime()` helper that fetches every skill's prompt in parallel via the configured prompt provider and materialises them into `Skill` instances. Individual prompt-fetch failures are logged and the offending skill is dropped, so one bad skill config no longer breaks the whole turn.
 - **[EkaAgents] `PromptConfig` descriptor** — New Pydantic model for fetching prompts from a provider (currently `langfuse`), with `name`, `version`, and `prompt_variables` and automatic whitespace-stripping on `name`. Used by `SkillRuntimeConfig` and intended for host apps that wire skill prompts dynamically.
+
+## Fixed
+
+- **[EMR] Property persistence for examination findings and procedures** — The prescription pad now carries the `properties` map through the local upsert path and the genie sync middleware for both examination findings and procedures. Previously the save pipeline only forwarded `id` and `name` (plus `source` for findings), so structured property-group values such as Since/Note on findings and Date/Note on procedures were silently dropped on save and never made it to the synced prescription. Both reducer paths now use the shared `normalizeExaminationEntities` / `normalizeProcedureEntities` helpers and spread the full normalised entity, and the middleware emits `properties` when present.
 
 ## Changed
 
