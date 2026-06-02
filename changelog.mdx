@@ -10,10 +10,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <Update
   label="June 2, 2026"
   description="June 2, 2026"
-  tags={["Update"]}
+  tags={["Update", "Fix"]}
   rss={{
     title: "Eka Developer Platform — June 2, 2026",
-    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\nRead more: https://developer.eka.care/changelog"
+    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\n• LMP-EDD and Ultrasound-EDD calculators now accept today's date — the date validation switched from `<` to `<=`, fixing a false-positive \"cannot be in the future\" error\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
@@ -30,6 +30,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 ## Changed
 
 - **[EkaAgents] Langfuse prompt provider returns `AgentPrompt`** — `LangfusePromptProvider.get_prompt()` and `FetchedPrompt` now expose `agent_prompt` (was `agent_config`); the underlying Langfuse-side schema (`role`, `goal`, `backstory`, `expected_output` on the prompt config; description in the prompt text) is unchanged.
+
+## Fixed
+
+- **[EMR] Today's date rejected on LMP-EDD and US-EDD calculators** — The validation rules on the prescription pad's Last Menstrual Period EDD and Ultrasound EDD calculators compared `LMP < now` and `USdate < now`, which rejected today's date with a "cannot be in the future" error. Both conditions now use `<=`, so clinicians can record an LMP or ultrasound dated today without hitting a false-positive validation block.
 
 ## Upgraded
 
