@@ -8,6 +8,29 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="June 2, 2026"
+  description="June 2, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EMR — June 2, 2026",
+    description: "• New Orders API for IPD admissions — `POST /orders`, `GET /orders?admissionId=`, `PATCH /orders/{id}/status` with `CREATED` / `DISPATCHED` lifecycle\n\n• Admissions backend hardened with TypeScript `strictNullChecks`, ESLint complexity/length rules, Husky pre-commit hooks, Jest + ts-jest test infra, and PR/main coverage CI workflows\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] Orders API for IPD admissions** — New CRUD surface on the admissions backend: `POST /orders` to create an order against an admission, `GET /orders?admissionId=` to list orders for an admission, and `PATCH /orders/{id}/status` to transition order status. Orders carry `owner`, `admissionId` (accepts both ObjectId and UUID), `status` (`CREATED` | `DISPATCHED`), `createdBy`, and an optional `rxId` linking to a prescription. Routes and `swagger.json` regenerated; endpoints sit behind the existing doctool auth middleware.
+
+## Hardened
+
+- **[EMR] Admissions backend type-safety** — Enabled TypeScript `strictNullChecks` so `tsc` matches the editor language server and surfaces latent null-safety bugs; removed `diagnostics: false` from Jest so `ts-jest` also enforces type correctness. Null-handling cleaned up across orders, admissions, rate plans, rooms, beds, the act-as-doctool middleware, and the payment-creation Kafka consumer; `tsc --noEmit` is now green.
+- **[EMR] Lint, formatting, and pre-commit hardening** — ESLint rules tightened with `max-lines` (300), `max-lines-per-function` (60), and `complexity` (10) at warn level, plus a Husky `pre-commit` hook that runs `lint-staged` (Prettier + ESLint `--fix`) on staged TS/JS. New npm scripts: `typecheck`, `lint`, `lint:check`, `format`, `format:check`, `test`, `test:coverage`, `coverage:badges`.
+- **[EMR] Jest test infrastructure and Orders unit tests** — Jest + `ts-jest` setup with isolated modules, coverage scoped to `src/**` (excluding generated routes), env stub at `jest.setup.ts`, and the first unit suite covering `OrderService.create`, `getByAdmissionId`, and `updateStatus`. Placeholder READMEs added for integration and e2e suites.
+- **[EMR] CI test-coverage workflows** — New GitHub Actions: a PR workflow that runs typecheck (non-blocking), Jest with coverage, and posts a delta table against the `main` baseline as a PR comment; and a `main`-push workflow that regenerates coverage, updates README badges via `istanbul-badges-readme`, and commits the refreshed baseline with `[skip ci]`.
+
+</Update>
+
+<Update
   label="June 1, 2026"
   description="June 1, 2026"
   tags={["Feature", "Update", "Fix"]}
