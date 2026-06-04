@@ -13,7 +13,7 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
   tags={["Update"]}
   rss={{
     title: "Eka Developer Platform — June 2, 2026",
-    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\nRead more: https://developer.eka.care/changelog"
+    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\n• New EMR Orders API for IPD admissions — `POST /orders`, `GET /orders?admissionId=`, `PATCH /orders/{id}/status` with `CREATED` / `DISPATCHED` lifecycle\n\n• Admissions backend hardened with TypeScript `strictNullChecks`; lint, formatting, Jest, and CI coverage workflows added\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
@@ -24,8 +24,16 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 
 ## Added
 
+- **[EMR] Orders API for IPD admissions** — New CRUD surface on the admissions backend: `POST /orders` to create an order against an admission, `GET /orders?admissionId=` to list orders for an admission, and `PATCH /orders/{id}/status` to transition order status. Orders carry `owner`, `admissionId` (accepts both ObjectId and UUID), `status` (`CREATED` | `DISPATCHED`), `createdBy`, and an optional `rxId` linking to a prescription. Routes and `swagger.json` regenerated; all endpoints sit behind the existing doctool auth middleware.
 - **[EkaAgents] Runtime skill configuration in echo-sdk** — New `echo.skills.SkillRuntimeConfig` (name, description, `prompt_config: PromptConfig`, `tool_names`) plus a `build_skills_from_runtime()` helper that fetches every skill's prompt in parallel via the configured prompt provider and materialises them into `Skill` instances. Individual prompt-fetch failures are logged and the offending skill is dropped, so one bad skill config no longer breaks the whole turn.
 - **[EkaAgents] `PromptConfig` descriptor** — New Pydantic model for fetching prompts from a provider (currently `langfuse`), with `name`, `version`, and `prompt_variables` and automatic whitespace-stripping on `name`. Used by `SkillRuntimeConfig` and intended for host apps that wire skill prompts dynamically.
+
+## Hardened
+
+- **[Platform] Admissions backend type-safety** — Enabled TypeScript `strictNullChecks` to align `tsc` with the editor language server and surface latent null-safety bugs; removed `diagnostics: false` from the Jest config so `ts-jest` also enforces type correctness. Cleaned up null-handling across orders, admissions, rate plans, rooms, beds, the act-as-doctool middleware, and the payment-creation Kafka consumer; `tsc --noEmit` is now green.
+- **[Platform] Lint, formatting, and pre-commit hardening** — ESLint rules tightened with `max-lines` (300), `max-lines-per-function` (60), and `complexity` (10) at warn level, plus a Husky `pre-commit` hook that runs `lint-staged` (Prettier + ESLint `--fix`) on staged TypeScript and JavaScript files. New npm scripts: `typecheck`, `lint`, `lint:check`, `format`, `format:check`, `test`, `test:coverage`, `coverage:badges`.
+- **[Platform] Jest test infrastructure and Orders unit tests** — Added a Jest + `ts-jest` setup with isolated modules, coverage scoped to `src/**` (excluding generated routes), an env stub at `jest.setup.ts`, and the first unit suite covering `OrderService.create`, `getByAdmissionId`, and `updateStatus`. Placeholder READMEs added for integration and e2e suites.
+- **[Platform] CI test-coverage workflows** — New GitHub Actions: a PR workflow that runs typecheck (non-blocking), Jest with coverage, and posts a delta table against the `main` baseline as a PR comment; and a `main`-push workflow that regenerates coverage, updates README badges via `istanbul-badges-readme`, and commits the refreshed baseline with `[skip ci]`.
 
 ## Changed
 
