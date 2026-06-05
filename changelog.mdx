@@ -10,10 +10,10 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <Update
   label="June 2, 2026"
   description="June 2, 2026"
-  tags={["Update"]}
+  tags={["Feature", "Update", "Fix"]}
   rss={{
     title: "Eka Developer Platform — June 2, 2026",
-    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\nRead more: https://developer.eka.care/changelog"
+    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\n• Appointment reschedule now links the old and new appointments via `next_aid` / `prev_aids` and carries forward existing receipts onto the new appointment\n\n• Patient profile picture chooser no longer races on bottom-sheet dismissal — camera and gallery now launch reliably on the first tap\n\nRead more: https://developer.eka.care/changelog"
   }}
 >
 
@@ -24,8 +24,13 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 
 ## Added
 
+- **[EMR] Appointment reschedule history on the doctor app** — Rescheduling an appointment now persists a forward/back link between the source and the newly created appointment. The old appointment record stores `next_aid` (the new appointment id) at reschedule time, and the new appointment stores `prev_aids` (the chain of prior appointment ids) and inherits the existing `receipts` so payments and services already attached to the original visit are preserved. Both fields are exposed on the `AppointmentsModel` returned by the Firestore manager.
 - **[EkaAgents] Runtime skill configuration in echo-sdk** — New `echo.skills.SkillRuntimeConfig` (name, description, `prompt_config: PromptConfig`, `tool_names`) plus a `build_skills_from_runtime()` helper that fetches every skill's prompt in parallel via the configured prompt provider and materialises them into `Skill` instances. Individual prompt-fetch failures are logged and the offending skill is dropped, so one bad skill config no longer breaks the whole turn.
 - **[EkaAgents] `PromptConfig` descriptor** — New Pydantic model for fetching prompts from a provider (currently `langfuse`), with `name`, `version`, and `prompt_variables` and automatic whitespace-stripping on `name`. Used by `SkillRuntimeConfig` and intended for host apps that wire skill prompts dynamically.
+
+## Fixed
+
+- **[EMR] Patient profile picture chooser race on the doctor app** — The camera and gallery options in the profile picture upload sheet previously launched their intents from `invokeOnCompletion` on the sheet-hide coroutine, which could fire out of order or be skipped if the coroutine was cancelled, occasionally leaving the chooser stuck open or failing to launch on the first tap. Both options now run the launch inline after `sheetState.hide()` in the same coroutine, so the camera capture and gallery picker fire deterministically on every tap.
 
 ## Changed
 
