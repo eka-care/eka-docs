@@ -1,0 +1,747 @@
+openapi: "3.0.1"
+info:
+  title: EkaScribe Protocol API (MedScribeAlliance v0.1)
+  version: "0.1"
+  description: >
+    Session-based medical voice capture API implementing the MedScribeAlliance
+    Protocol v0.1. Discover service capabilities, create a session, stream audio
+    chunks, then end the session to trigger asynchronous transcription and
+    structured-template extraction.
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+paths:
+  /voice/v1/.well-known/medscribealliance:
+    get:
+      summary: Discovery
+      description: >
+        Public, unauthenticated endpoint that advertises the service's protocol
+        version, supported authentication methods, audio capabilities, available
+        models and supported languages. Clients should fetch this first and use
+        the returned `models`, `capabilities.audio_formats` and
+        `capabilities.upload_methods` to configure their session. The response is
+        cacheable (`Cache-Control: max-age=10800`).
+      tags:
+        - protocol
+      responses:
+        "200":
+          description: Discovery document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryResponse"
+              example:
+                protocol: medscribealliance
+                protocol_version: "0.1"
+                supported_versions: ["0.1"]
+                service:
+                  name: Voice2Rx Medical Scribe Service
+                  documentation_url: https://developer.eka.care
+                  support_email: support@eka.care
+                endpoints:
+                  base_url: https://api.eka.care/voice/v1
+                  webhooks_url: https://api.eka.care/voice/v1/webhooks
+                  templates_url: https://api.eka.care/voice/api/v1/template
+                authentication:
+                  supported_methods: ["api_key", "oidc"]
+                  oidc:
+                    issuer: https://accounts.eka.care/oauth2
+                    authorization_endpoint: https://accounts.eka.care/oauth2/authorize
+                    token_endpoint: https://accounts.eka.care/oauth2/token
+                    scopes_supported: ["openid", "profile"]
+                capabilities:
+                  audio_formats: ["audio/webm;codecs=opus", "audio/wav", "audio/ogg", "audio/mp4", "audio/m4a", "audio/mp3"]
+                  max_chunk_duration_seconds: 20
+                  upload_methods: ["chunked", "single", "stream"]
+                  webhook_delivery: true
+                  client_sdk_delivery: true
+                models:
+                  - id: lite
+                    display_name: Lite
+                    languages: ["en", "hi"]
+                    max_session_duration_seconds: 600
+                    response_speed: fast
+                    features:
+                      realtime_transcription: false
+                      speaker_diarization: false
+                      custom_templates: false
+                  - id: pro
+                    display_name: Professional
+                    languages: ["en", "hi", "ta", "te", "bn", "mr", "gu", "kn", "ml", "pa"]
+                    max_session_duration_seconds: 3600
+                    response_speed: standard
+                    features:
+                      realtime_transcription: true
+                      speaker_diarization: true
+                      custom_templates: true
+                languages:
+                  supported: ["en", "hi", "ta", "te", "bn", "mr", "gu", "kn", "ml", "pa"]
+                  auto_detection: true
+
+  /voice/v1/sessions:
+    post:
+      summary: Create Session
+      description: >
+        Create a new scribing session. Returns a `session_id` that must be used
+        in every subsequent call (audio upload, end session, status polling) and
+        an `upload_url` to which audio is sent. `upload_type` and
+        `communication_protocol` are required and must be one of the methods
+        advertised by the discovery endpoint.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+            example:
+              session_mode: dictation
+              templates: ["eka_emr_template"]
+              model: pro
+              language_hint: ["en"]
+              transcript_language: en
+              upload_type: chunked
+              communication_protocol: http
+              additional_data:
+                source: mobile_app
+                app_version: "1.0.0"
+              patient_details:
+                oid: "PAT-12345"
+                name: John Doe
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSessionResponse"
+              example:
+                session_id: ses_abc123def456
+                status: created
+                created_at: "2025-01-19T10:30:00Z"
+                expires_at: "2025-01-19T11:30:00Z"
+                upload_url: https://api.eka.care/voice/v1/sessions/ses_abc123def456/audio
+                patient_details:
+                  oid: "PAT-12345"
+                  name: John Doe
+        "400":
+          description: Invalid request (e.g. template validation failed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/v1/sessions/{session_id}/audio/{file_name}:
+    post:
+      summary: Upload Audio
+      description: >
+        Upload a single audio chunk as a raw binary body. For `chunked` uploads,
+        call this repeatedly with sequentially numbered filenames
+        (`audio_0.webm`, `audio_1.webm`, ...); the server stores each chunk by its
+        sequence number. For `single` uploads, send one complete recording and the
+        server performs Voice Activity Detection (VAD) chunking inline. The
+        `Content-Type` header should be the audio MIME type; if omitted it is
+        inferred from the file extension.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+        - name: file_name
+          in: path
+          required: true
+          description: >
+            Audio filename with extension. For chunked uploads use
+            `<base>_<sequence>.<ext>` (e.g. `audio_0.webm`, `audio_1.mp3`).
+          schema:
+            type: string
+            example: audio_0.webm
+        - name: Content-Type
+          in: header
+          required: false
+          description: Audio MIME type. Inferred from the file extension if omitted.
+          schema:
+            type: string
+            example: audio/webm;codecs=opus
+      requestBody:
+        required: true
+        description: Raw binary audio data (max 10 MB per chunk, ≤20s duration recommended).
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Audio uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    example: ses_abc123def456
+                  success:
+                    type: boolean
+                    example: true
+                  original_filename:
+                    type: string
+                    example: audio_0.webm
+        "400":
+          description: Session ended, processing completed, or invalid audio format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "413":
+          description: Chunk too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/v1/sessions/{session_id}:
+    get:
+      summary: Get Session
+      description: >
+        Retrieve the current status of a session and, once processing finishes,
+        its transcript and structured template results. The **HTTP status code**
+        signals progress: `202` still processing, `200` completed, `206`
+        completed with partial results, `410` expired, `404` not found. After
+        calling End Session, poll this endpoint at ~1-second intervals until the
+        status is no longer `202`.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+        - name: template_id
+          in: query
+          required: false
+          description: If provided, restricts returned templates to documents for this template_id only.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCompletedResponse"
+        "202":
+          description: Session still processing — keep polling
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionProcessingResponse"
+        "206":
+          description: Session completed with partial results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionPartialResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "410":
+          description: Session expired before processing was initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpiredSessionResponse"
+
+  /voice/v1/sessions/{session_id}/end:
+    post:
+      summary: End Session
+      description: >
+        Finalize the session and start asynchronous processing. After this call
+        no further audio uploads are accepted. The server collects and orders all
+        uploaded chunks, commits the session, and queues it for transcription and
+        template extraction. Poll `GET /voice/v1/sessions/{session_id}` (or use a
+        webhook) to retrieve results once processing completes.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EndSessionRequest"
+            example:
+              audio_files_sent: 3
+      responses:
+        "202":
+          description: Session ended, processing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EndSessionResponse"
+              example:
+                session_id: ses_abc123def456
+                status: processing
+                message: Session ended. Processing started.
+                audio_files_received: 3
+                audio_files: ["0.webm", "1.webm", "2.webm"]
+        "400":
+          description: Session already ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer authentication header of the form `Bearer <token>`, where `<token>` is your auth token.
+  schemas:
+    CreateSessionRequest:
+      type: object
+      required:
+        - upload_type
+        - communication_protocol
+      properties:
+        session_id:
+          type: string
+          minLength: 16
+          maxLength: 32
+          description: Optional client-supplied session id. If omitted, the server generates one.
+          example: ses_abc123def456
+        session_mode:
+          type: string
+          enum: [consultation, dictation]
+          default: dictation
+          description: Session mode.
+        templates:
+          type: array
+          maxItems: 2
+          items:
+            type: string
+          description: Template IDs to extract (max 2). See the templates endpoint for valid IDs.
+          example: ["eka_emr_template"]
+        model:
+          type: string
+          enum: [pro, lite]
+          default: lite
+          description: Model ID from the discovery document.
+        language_hint:
+          type: array
+          items:
+            type: string
+          description: ISO 639-1 language code(s) hinting the audio input language.
+          example: ["en"]
+        transcript_language:
+          type: string
+          description: ISO 639-1 language code for the transcript output.
+          example: en
+        upload_type:
+          type: string
+          enum: [chunked, single, stream]
+          description: Audio upload method. Must be advertised by discovery.
+        communication_protocol:
+          type: string
+          enum: [websocket, http, rpc]
+          description: Communication protocol used for the session.
+        additional_data:
+          type: object
+          additionalProperties: true
+          description: Pass-through metadata returned in webhooks and status responses (≤4KB recommended).
+        patient_details:
+          type: object
+          additionalProperties: true
+          description: Patient demographic / identifier metadata. `oid` is promoted to `patient_oid` for indexing.
+    CreateSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Unique session identifier. Use in all subsequent calls.
+        status:
+          type: string
+          example: created
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        upload_url:
+          type: string
+          description: Endpoint for uploading audio to this session.
+        patient_details:
+          type: object
+          additionalProperties: true
+    EndSessionRequest:
+      type: object
+      required:
+        - audio_files_sent
+      properties:
+        audio_files_sent:
+          type: integer
+          minimum: 0
+          description: Number of audio chunks/files the client sent, used for validation.
+          example: 3
+    EndSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+          example: processing
+        message:
+          type: string
+          example: Session ended. Processing started.
+        audio_files_received:
+          type: integer
+          minimum: 0
+        audio_files:
+          type: array
+          items:
+            type: string
+    SessionProcessingResponse:
+      type: object
+      description: Returned with HTTP 202 while the session is still processing.
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+          example: processing
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        audio_files_received:
+          type: integer
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        transcript:
+          type: string
+          nullable: true
+          description: Partial or complete transcript if available.
+        patient_details:
+          type: object
+          additionalProperties: true
+          nullable: true
+    SessionCompletedResponse:
+      type: object
+      description: Returned with HTTP 200 when the session completed successfully.
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+          example: completed
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        model_used:
+          type: string
+          nullable: true
+          example: pro
+        language_detected:
+          type: string
+          nullable: true
+          description: ISO 639-1 language code detected from the audio.
+          example: en
+        audio_files_received:
+          type: integer
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        templates:
+          type: array
+          description: >
+            Template results — one entry per generated document, keyed by template_id.
+            Each entry contains status, data, document_id, and publish metadata.
+          items:
+            type: object
+            additionalProperties: true
+        transcript:
+          type: string
+          nullable: true
+        patient_details:
+          type: object
+          additionalProperties: true
+          nullable: true
+    SessionPartialResponse:
+      type: object
+      description: Returned with HTTP 206 when the session completed with partial results.
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+          example: partial
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        model_used:
+          type: string
+          nullable: true
+        language_detected:
+          type: string
+          nullable: true
+        audio_files_received:
+          type: integer
+        audio_files_processed:
+          type: integer
+          description: Number of audio files successfully processed.
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        templates:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        transcript:
+          type: string
+          nullable: true
+        processing_errors:
+          type: array
+          description: Non-fatal processing issues.
+          items:
+            type: object
+            additionalProperties: true
+        patient_details:
+          type: object
+          additionalProperties: true
+          nullable: true
+    ExpiredSessionResponse:
+      type: object
+      description: Returned with HTTP 410 when the session expired before processing started.
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+          example: expired
+        created_at:
+          type: string
+          format: date-time
+        expired_at:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: Session expired before processing was initiated
+        audio_files_received:
+          type: integer
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        templates:
+          type: object
+          additionalProperties: true
+        transcript:
+          type: string
+          nullable: true
+    DiscoveryResponse:
+      type: object
+      properties:
+        protocol:
+          type: string
+          example: medscribealliance
+        protocol_version:
+          type: string
+          example: "0.1"
+        supported_versions:
+          type: array
+          items:
+            type: string
+        service:
+          type: object
+          properties:
+            name:
+              type: string
+            documentation_url:
+              type: string
+            support_email:
+              type: string
+        endpoints:
+          type: object
+          properties:
+            base_url:
+              type: string
+            webhooks_url:
+              type: string
+            templates_url:
+              type: string
+        authentication:
+          type: object
+          properties:
+            supported_methods:
+              type: array
+              items:
+                type: string
+            oidc:
+              type: object
+              properties:
+                issuer:
+                  type: string
+                authorization_endpoint:
+                  type: string
+                token_endpoint:
+                  type: string
+                scopes_supported:
+                  type: array
+                  items:
+                    type: string
+        capabilities:
+          type: object
+          properties:
+            audio_formats:
+              type: array
+              items:
+                type: string
+            max_chunk_duration_seconds:
+              type: integer
+            upload_methods:
+              type: array
+              items:
+                type: string
+            webhook_delivery:
+              type: boolean
+            client_sdk_delivery:
+              type: boolean
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              display_name:
+                type: string
+              languages:
+                type: array
+                items:
+                  type: string
+              max_session_duration_seconds:
+                type: integer
+              response_speed:
+                type: string
+              features:
+                type: object
+                properties:
+                  realtime_transcription:
+                    type: boolean
+                  speaker_diarization:
+                    type: boolean
+                  custom_templates:
+                    type: boolean
+        languages:
+          type: object
+          properties:
+            supported:
+              type: array
+              items:
+                type: string
+            auto_detection:
+              type: boolean
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code.
+              example: invalid_audio_format
+            message:
+              type: string
+              description: Human-readable error message.
+              example: "Audio format 'audio/mp3' is not supported"
+            details:
+              type: object
+              additionalProperties: true
+              description: Additional error context.

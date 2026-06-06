@@ -1,0 +1,60 @@
+---
+title: "Create Session"
+openapi: "POST /voice/v1/sessions"
+---
+
+Create a new scribing session. The response returns a `session_id` that ties together every subsequent call — audio upload, end session and status polling — and an `upload_url` that audio chunks are POSTed to.
+
+<Info>
+`upload_type` and `communication_protocol` are **required**. Both must be values advertised by the [Discovery](/api-reference/health-ai/ekascribe/protocol/discovery) endpoint (`capabilities.upload_methods` and the supported protocols).
+</Info>
+
+<Note>
+**Supported upload types via the protocol APIs:** only **`chunked`** (HTTP binary upload) and **`stream`** (WebSocket) are currently supported through these APIs. For other use cases (e.g. single full-file / batch upload), the **[SDKs](/api-reference/health-ai/ekascribe/quick-start)** are the best option; if you must use a raw API instead, use the [deprecated EkaScribe v2 APIs](/api-reference/health-ai/ekascribe/ekascribe-v2/overview).
+</Note>
+
+### `upload_url` depends on `upload_type`
+
+The response's `upload_url` is tailored to the chosen `upload_type`:
+
+| `upload_type` | `upload_url` scheme | Use it with |
+|---------------|---------------------|-------------|
+| `chunked` | `https://…` | [Upload Audio](/api-reference/health-ai/ekascribe/protocol/upload-audio) (HTTP binary) |
+| `stream` | `wss://…` | [Stream Audio](/api-reference/health-ai/ekascribe/protocol/stream-audio) (WebSocket) |
+
+## Request fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `session_id` | string | No | Client-supplied session id (16–32 chars). If omitted, the server generates one. |
+| `session_mode` | enum | No | `dictation` (default) or `consultation`. |
+| `templates` | string[] | No | Up to **2** template IDs to extract (e.g. `eka_emr_template`, `clinical_notes_template`). |
+| `model` | enum | No | `lite` (default) or `pro`. From the discovery `models` list. |
+| `language_hint` | string[] | No | ISO 639-1 code(s) hinting the spoken language(s), e.g. `["en"]`, `["hi"]`. |
+| `transcript_language` | string | No | ISO 639-1 code for the transcript output language. |
+| `upload_type` | enum | **Yes** | `chunked`, `single`, or `stream`. |
+| `communication_protocol` | enum | **Yes** | `http`, `websocket`, or `rpc`. |
+| `additional_data` | object | No | Arbitrary pass-through metadata returned in webhooks and status responses (≤4KB recommended). |
+| `patient_details` | object | No | Patient demographic / identifier metadata. The `oid` key is promoted to `patient_oid` for indexing. |
+
+## Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `session_id` | string | Unique session identifier — use in all subsequent calls. |
+| `status` | string | Always `created` on success. |
+| `created_at` | datetime | ISO 8601 creation timestamp. |
+| `expires_at` | datetime | ISO 8601 expiry timestamp. Sessions expire (~1 hour) if not ended. |
+| `upload_url` | string | Endpoint to upload audio chunks to. |
+| `patient_details` | object | Echo of the patient details supplied at creation, if any. |
+
+## Choosing an upload type
+
+| `upload_type` | Behavior | Next step |
+|---------------|----------|-----------|
+| `chunked` | Split audio into short chunks and upload them in order over HTTP. | [Upload Audio](/api-reference/health-ai/ekascribe/protocol/upload-audio) — once per chunk (`audio_0.webm`, `audio_1.webm`, …) |
+| `stream` | Stream audio in real time over a WebSocket. | [Stream Audio](/api-reference/health-ai/ekascribe/protocol/stream-audio) — connect to the returned `wss://` URL |
+
+## Next step
+
+Send audio via [Upload Audio](/api-reference/health-ai/ekascribe/protocol/upload-audio) (chunked) or [Stream Audio](/api-reference/health-ai/ekascribe/protocol/stream-audio) (stream), then call [End Session](/api-reference/health-ai/ekascribe/protocol/end-session) and poll [Get Session](/api-reference/health-ai/ekascribe/protocol/get-session) for results.
