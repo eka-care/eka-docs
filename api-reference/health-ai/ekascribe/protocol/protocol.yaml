@@ -266,59 +266,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionCompletedResponse"
-              example:
-                session_id: ses_abc123def456
-                status: completed
-                created_at: "2026-06-06T14:21:07Z"
-                completed_at: "2026-06-06T14:21:34Z"
-                expires_at: "2026-06-06T15:21:07Z"
-                upload_url: https://api.eka.care/voice/v1/sessions/ses_abc123def456/audio
-                model_used: pro
-                language_detected: en
-                audio_files_received: 4
-                audio_files: ["0.wav", "1.wav", "2.wav", "3.wav"]
-                additional_data:
-                  _protocol:
-                    version: "0.1"
-                    upload_type: chunked
-                    communication_protocol: http
-                    requested_templates: ["eka_emr_template", "clinical_notes_template"]
-                transcript: "Patient presents with cough and fever..."
-                templates:
-                  - eka_emr_template:
-                      status: success
-                      document_id: doc_abc123
-                      document_type: eka_emr_template
-                      data:
-                        chief_complaint: cough and fever
-                      publish: {}
-                  - clinical_notes_template:
-                      status: success
-                      document_id: doc_def456
-                      data:
-                        assessment: Acute bronchitis
-                      publish: {}
         "202":
           description: Session still processing — keep polling
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionProcessingResponse"
-              example:
-                session_id: ses_abc123def456
-                status: processing
-                created_at: "2026-06-06T14:21:07Z"
-                expires_at: "2026-06-06T15:21:07Z"
-                upload_url: https://api.eka.care/voice/v1/sessions/ses_abc123def456/audio
-                audio_files_received: 4
-                audio_files: ["0.wav", "1.wav", "2.wav", "3.wav"]
-                additional_data:
-                  _protocol:
-                    version: "0.1"
-                    upload_type: chunked
-                    communication_protocol: http
-                    requested_templates: ["eka_emr_template", "clinical_notes_template"]
-                transcript: "Patient presents with cough and fever..."
         "206":
           description: Session completed with partial results
           content:
@@ -511,9 +464,6 @@ components:
       properties:
         session_id:
           type: string
-        upload_url:
-          type: string
-          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
         status:
           type: string
           example: processing
@@ -546,9 +496,6 @@ components:
       properties:
         session_id:
           type: string
-        upload_url:
-          type: string
-          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
         status:
           type: string
           example: completed
@@ -580,28 +527,11 @@ components:
         templates:
           type: array
           description: >
-            Template results as a **list** — one entry per generated document, each a
-            single-key object keyed by `template_id`. A template that produces multiple
-            documents appears multiple times, so this is a list rather than a map.
-            Each inner object carries `status`, `data`, `document_id`, `document_type`,
-            `publish` metadata (and a `presigned_url` when applicable).
+            Template results — one entry per generated document, keyed by template_id.
+            Each entry contains status, data, document_id, and publish metadata.
           items:
             type: object
             additionalProperties: true
-          example:
-            - eka_emr_template:
-                status: success
-                document_id: doc_abc123
-                document_type: eka_emr_template
-                data:
-                  chief_complaint: cough and fever
-                publish: {}
-            - clinical_notes_template:
-                status: success
-                document_id: doc_def456
-                data:
-                  assessment: Acute bronchitis
-                publish: {}
         transcript:
           type: string
           nullable: true
@@ -615,9 +545,6 @@ components:
       properties:
         session_id:
           type: string
-        upload_url:
-          type: string
-          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
         status:
           type: string
           example: partial
@@ -670,9 +597,6 @@ components:
       properties:
         session_id:
           type: string
-        upload_url:
-          type: string
-          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
         status:
           type: string
           example: expired
