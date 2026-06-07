@@ -1,0 +1,328 @@
+---
+title: "Python SDK"
+description: "Turn medical audio into structured notes in a few lines of Python — the MedScribeAlliance Protocol SDK."
+icon: "python"
+---
+
+<Info>
+This is the **new** EkaScribe Python SDK (`scribe-python-sdk`), built on the
+**[MedScribeAlliance Protocol](/api-reference/health-ai/ekascribe/protocol/overview)**.
+It replaces the legacy [`ekacare` Python SDK](/api-reference/health-ai/ekascribe/SDKs/python-sdk),
+which is now deprecated.
+</Info>
+
+Give it medical audio (a consultation or dictation) and get back structured template
+results — SOAP notes, medication lists, EMR-ready documents. The SDK handles auth,
+sessions, voice-activity detection, upload, and result polling for you.
+
+```python
+from scribe_sdk import ScribeClient
+
+with ScribeClient() as client:
+    s = client.create_session()
+    client.upload_audio_file(s.session_id, "visit.wav")
+    result = client.wait_for_results(s.session_id)
+    print(result.templates)
+```
+
+That snippet is a **full** transcription-to-notes round trip. Everything below is detail.
+
+---
+
+## Integrate in 60 seconds
+
+<Steps>
+  <Step title="Install">
+    Install directly from the Git repository (not yet on PyPI):
+
+    ```bash
+    pip install "scribe-python-sdk[audio] @ git+https://github.com/eka-care/scribe-python-sdk.git"
+    # or, with uv:  uv add "scribe-python-sdk[audio] @ git+https://github.com/eka-care/scribe-python-sdk.git"
+    ```
+
+    The `[audio]` extra adds local file decoding + mic capture. Omit it (drop `[audio]`)
+    if you only send raw PCM you already have.
+  </Step>
+
+  <Step title="Set credentials">
+    Create a `.env` file next to your script (it's auto-loaded):
+
+    ```bash .env
+    SCRIBE_ENV=prod                                  # "dev" -> api.dev.eka.care
+    SCRIBE_CLIENT_ID=your-client-id
+    SCRIBE_CLIENT_SECRET=your-client-secret
+    SCRIBE_DEFAULT_TEMPLATES=eka_emr_template,clinical_notes_template
+    ```
+
+    <Note>
+    Get your `client_id` / `client_secret` from Eka Care. They live **only** in the
+    environment — the SDK refuses to read them from a config file, so they never leak
+    into source control.
+    </Note>
+  </Step>
+
+  <Step title="Run">
+    Run the snippet at the top of this page. Done — no other setup. The SDK auto-loads
+    `.env`, logs in, picks the right host from `SCRIBE_ENV`, and applies
+    `SCRIBE_DEFAULT_TEMPLATES` so you don't repeat them on every call.
+  </Step>
+</Steps>
+
+---
+
+## The three ways to send audio
+
+Pick whichever fits your input. They all finish the same way: `wait_for_results(session_id)`.
+
+<Tabs>
+  <Tab title="A file (simplest)">
+    ```python
+    from scribe_sdk import ScribeClient
+
+    with ScribeClient() as client:
+        s = client.create_session()
+        client.upload_audio_file(s.session_id, "visit.wav")   # decode + VAD locally, upload
+        result = client.wait_for_results(s.session_id)
+        print(result.status, result.templates)
+    ```
+
+    Accepts `.wav / .mp3 / .m4a / .webm / .ogg` — a path or raw `bytes`.
+  </Tab>
+
+  <Tab title="Raw PCM">
+    Already have 16-bit mono PCM (e.g. captured from a mic)? Skip decoding:
+
+    ```python
+    from scribe_sdk import ScribeClient
+
+    with ScribeClient() as client:
+        s = client.create_session()
+        client.upload_pcm(s.session_id, pcm_bytes, sample_rate=16000)
+        result = client.wait_for_results(s.session_id)
+    ```
+  </Tab>
+
+  <Tab title="Live streaming (WebSocket)">
+    Real-time audio over a WebSocket. Streaming is **async-only**:
+
+    ```python
+    from scribe_sdk import AsyncScribeClient
+
+    async with AsyncScribeClient() as client:
+        async with await client.open_stream() as stream:
+            async for frame in mic_frames():       # raw 16-bit LE PCM, mono, 16 kHz
+                await stream.send_audio(frame)
+            await stream.stop()                    # flush + end the session
+        result = await client.wait_for_results(stream.session_id)
+    ```
+
+    <Note>
+    Everything except streaming has both a sync (`ScribeClient`) and async
+    (`AsyncScribeClient`) flavor with identical method names — just add `await`.
+    </Note>
+  </Tab>
+</Tabs>
+
+That's the whole surface: **`create_session` → send audio → `wait_for_results`**.
+
+---
+
+## Reading the result
+
+`wait_for_results()` returns a `SessionStatusResponse`:
+
+```python
+result = client.wait_for_results(s.session_id)
+
+result.status        # "completed" | "partial" | "failed" | "expired" | ...
+result.transcript    # full transcript text
+result.templates     # list of {template_id: {...}} — one entry per generated document
+```
+
+`templates` is a **list** of single-key dicts (one template can yield several documents),
+so iterate it like this:
+
+```python
+for doc in result.templates:
+    for template_id, payload in doc.items():
+        print(template_id, payload["status"])
+        print(payload.get("data"))      # the structured note for this template
+```
+
+---
+
+## Full working example: FastAPI relay
+
+A browser can't hold your `client_id` / `secret`, so the common pattern is a thin server
+that uses the SDK. Copy this into `server.py` and run `uvicorn server:app` — it exposes
+start / upload / poll endpoints your frontend can call.
+
+```python server.py
+from fastapi import FastAPI, UploadFile, HTTPException
+from contextlib import asynccontextmanager
+from scribe_sdk import AsyncScribeClient
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.scribe = AsyncScribeClient()      # reads .env once
+    app.state.chunks = {}
+    yield
+    await app.state.scribe.aclose()
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.post("/api/sessions")
+async def start():
+    s = await app.state.scribe.create_session()
+    app.state.chunks[s.session_id] = 0
+    return {"session_id": s.session_id}
+
+
+@app.post("/api/sessions/{sid}/audio")
+async def add_audio(sid: str, file: UploadFile):
+    if sid not in app.state.chunks:
+        raise HTTPException(404, "start a session first")
+    data = await file.read()
+    n = await app.state.scribe.upload_audio_file(
+        sid, data, start_index=app.state.chunks[sid], end_session=False
+    )
+    app.state.chunks[sid] += n
+    return {"chunks_uploaded": n}
+
+
+@app.post("/api/sessions/{sid}/end")
+async def end(sid: str):
+    total = app.state.chunks.pop(sid, 0)
+    await app.state.scribe.end_session(sid, audio_files_sent=total)
+    return {"ok": True}
+
+
+@app.get("/api/sessions/{sid}/results")
+async def results(sid: str):
+    status = await app.state.scribe.sessions.get(sid)   # poll this every ~1s from the browser
+    return status.model_dump(exclude_none=True)
+```
+
+The official repo ships this plus a browser UI, a CLI, and a server-side script under
+`examples/`.
+
+---
+
+## How it works
+
+The SDK speaks the **MedScribeAlliance Protocol** and always runs voice-activity
+detection (VAD) **on your machine** — only speech-bounded audio is sent, never an
+un-VADded whole file. Both upload modes follow the same lifecycle:
+
+<Steps>
+  <Step title="Create session">
+    `create_session()` → `POST /voice/v1/sessions`. Returns a `session_id` used by every
+    later call. For streaming it also returns a `wss://` URL.
+  </Step>
+  <Step title="Send audio">
+    Chunked upload POSTs speech chunks; streaming sends PCM frames over the WebSocket.
+    Audio lands in storage but isn't processed yet.
+  </Step>
+  <Step title="End session">
+    `end_session()` (or streaming's `stop()`) → `POST /voice/v1/sessions/{id}/end`. This
+    is the single trigger that commits the session and starts transcription. For
+    streaming, closing the socket alone does **not** finalize — `stop()` always calls
+    `end` for you.
+  </Step>
+  <Step title="Poll results">
+    `wait_for_results(session_id)` → `GET /voice/v1/sessions/{id}` until a terminal status,
+    then returns the `templates`.
+  </Step>
+</Steps>
+
+Your business id (`b_id`) is derived from your token automatically — you never configure it.
+
+---
+
+## Configuration
+
+Everything has a sensible default; only credentials are required. Resolution order
+(highest wins): **explicit kwargs › environment / `.env` › config file › defaults**.
+
+### Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `SCRIBE_CLIENT_ID` / `SCRIBE_CLIENT_SECRET` | Credentials (**env-only**). |
+| `SCRIBE_ENV` | `prod` (default → `api.eka.care`) or `dev` (→ `api.dev.eka.care`). |
+| `SCRIBE_DEFAULT_TEMPLATES` | Comma-separated templates used when you don't pass `templates=`. |
+| `SCRIBE_DEFAULT_MODEL` | `lite` (default) or `pro`. |
+| `SCRIBE_BASE_URL` / `SCRIBE_AUTH_BASE_URL` | Override hosts directly (wins over `SCRIBE_ENV`). |
+
+### Pass config inline (instead of env)
+
+```python
+client = ScribeClient(
+    env="dev",
+    default_templates=["clinical_notes_template"],
+    default_model="pro",
+    client_id="...",          # or leave to the environment
+    client_secret="...",
+)
+```
+
+### Per-call overrides
+
+`create_session()` accepts the same options when you want to override config for one session:
+
+```python
+s = client.create_session(
+    templates=["eka_emr_template", "clinical_notes_template"],  # up to 2
+    model="pro",
+    session_mode="consultation",        # or "dictation" (default)
+    language_hint=["en", "hi"],
+    patient_details={"name": "...", "oid": "..."},
+)
+```
+
+---
+
+## Reference
+
+### Templates
+
+| Template ID | Description |
+|---|---|
+| `clinical_notes_template` | Comprehensive structured clinical notes. |
+| `eka_emr_template` | EMR-compatible format for electronic medical records. |
+| `transcript_template` | Basic transcription with minimal structuring. |
+
+### Models
+
+| Model | Description |
+|---|---|
+| `pro` | Most accurate. |
+| `lite` | Lower latency (default). |
+
+### Languages (`language_hint`)
+
+`en`, `hi`, `gu`, `kn`, `ml`, `ta`, `te`, `bn`, `mr`, `pa` (ISO 639-1 codes).
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="login failed: 404 PROFILE_NOT_FOUND / 400 pwd mismatch">
+    Your `client_id` / `client_secret` are wrong for the selected environment. Check
+    `SCRIBE_ENV` matches where the credentials were issued (`dev` vs `prod`).
+  </Accordion>
+  <Accordion title="No templates specified and no default_templates configured">
+    Set `SCRIBE_DEFAULT_TEMPLATES` (or pass `templates=[...]` to `create_session`).
+  </Accordion>
+  <Accordion title="ModuleNotFoundError on file upload / mic capture">
+    Install with the audio extra:
+    `pip install "scribe-python-sdk[audio] @ git+https://github.com/eka-care/scribe-python-sdk.git"`.
+    It's only needed for local decoding/VAD — raw-PCM and streaming work without it.
+  </Accordion>
+</AccordionGroup>
+
+For help, contact **support@eka.care**.
