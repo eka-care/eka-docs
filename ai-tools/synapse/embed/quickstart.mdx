@@ -1,0 +1,151 @@
+---
+title: Quickstart
+description: Add the MedAssist widget to any website with one tag and a script
+---
+
+The fastest way to add MedAssist. Drop a custom element and a script onto any page — no build step, no framework required. The widget appears as a floating button that loads and opens the chat when clicked.
+
+<Steps>
+  <Step title="Create your agent">
+    Sign up at [console.eka.care](https://console.eka.care), create an agent, and customize it — theme, title, initial message, and allowed inputs are all stored with the agent.
+
+    <Note>
+    New to the console? Follow the [detailed setup guide](/api-reference/authorization/getting-started) to create your account and get set up step by step.
+    </Note>
+  </Step>
+  <Step title="Copy your agent ID">
+    Grab the `agentId` from the agent you just created.
+  </Step>
+  <Step title="Add the embed snippet">
+    Paste the custom element where you want it and the script tag just before `</body>`:
+
+    ```html
+    <eka-medassist-widget agent-id="YOUR_AGENT_ID"></eka-medassist-widget>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
+      async
+    ></script>
+    ```
+  </Step>
+  <Step title="Open your page">
+    A floating launcher button appears. Clicking it lazy-loads the widget assets and opens the chat.
+  </Step>
+</Steps>
+
+<Note>
+Only **`agent-id`** is required. Everything else — theme, title, initial message — comes from the agent config you set in the console, so you usually don't need any other attributes.
+</Note>
+
+## Full page example
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My Website</title>
+  </head>
+  <body>
+    <h1>Welcome</h1>
+
+    <eka-medassist-widget agent-id="YOUR_AGENT_ID"></eka-medassist-widget>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
+      async
+    ></script>
+  </body>
+</html>
+```
+
+## Install from npm
+
+If you bundle your own assets, install the package instead of using the CDN:
+
+```bash
+npm install @eka-care/medassist-widget-embed
+```
+
+## Use it in a framework
+
+The custom element works anywhere HTML does. Inject the loader script and render the tag:
+
+<CodeGroup>
+```jsx React
+import { useEffect } from "react";
+
+function App() {
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  return <eka-medassist-widget agent-id="YOUR_AGENT_ID" />;
+}
+```
+
+```vue Vue
+<template>
+  <eka-medassist-widget :agent-id="agentId" />
+</template>
+
+<script>
+export default {
+  data: () => ({ agentId: "YOUR_AGENT_ID" }),
+  mounted() {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js";
+    script.async = true;
+    document.body.appendChild(script);
+  },
+};
+</script>
+```
+</CodeGroup>
+
+<Tip>
+Already in a React app and want the chat rendered inline rather than as a Web Component? Use the [React SDK](/ai-tools/synapse/react/installation) instead.
+</Tip>
+
+## How it works
+
+<Steps>
+  <Step title="Register">
+    The script registers the `<eka-medassist-widget>` custom element.
+  </Step>
+  <Step title="Launcher">
+    The element renders a floating button (or a full view if `display-mode="full"`).
+  </Step>
+  <Step title="Lazy load">
+    On first open, the widget's JS and CSS are fetched — keeping your initial page light.
+  </Step>
+  <Step title="Isolation">
+    The widget runs inside a Shadow DOM, so its styles never clash with your site.
+  </Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Customization & overrides" icon="sliders" href="/ai-tools/synapse/embed/customization">
+    Every attribute you can set — theme, display mode, launcher styling, and more.
+  </Card>
+  <Card title="JavaScript API" icon="terminal" href="/ai-tools/synapse/embed/javascript-api">
+    Configure the widget programmatically with `EkaMedAssist.init()`.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Widget not appearing">
+    Confirm `agent-id` is set, check the Network tab to verify the loader script loaded, and look in the console for errors.
+  </Accordion>
+  <Accordion title="Assets return 404">
+    If you self-host assets via `data-widget-assets`, ensure `medassist-widget.js` and `medassist-widget.css` are served at that path — or omit it to use the default CDN.
+  </Accordion>
+</AccordionGroup>

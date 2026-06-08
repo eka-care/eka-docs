@@ -1,0 +1,75 @@
+---
+title: Overview
+description: Add a Synapse AI medical assistant to any website, React app, or custom UI
+---
+
+**Synapse** is the client SDK for **MedAssist** — Eka Care's AI medical-assistant chat experience. Configure an agent once in the [Eka Care console](https://console.eka.care), then drop the assistant into your product at whatever level of control you need.
+
+<Info>
+Synapse is the **client** counterpart to [Echo Agent Kit](/ai-tools/agent-kit/introduction) (the server-side framework). Synapse connects your end users to an agent over a real-time session.
+</Info>
+
+## Three ways to integrate
+
+Pick the tier that matches how much control you want. They build on each other — the embed widget wraps the React widget, which is built on the core SDK — so you can start simple and drop down a level whenever you need more control.
+
+1. **[Embed widget](/ai-tools/synapse/embed/quickstart)** — the easiest path, for any website.
+
+   A lightweight Web Component (`<eka-medassist-widget>`) you add with a single custom element and a script tag. No React, no build step — it works on plain HTML, WordPress, Webflow, or any framework. The widget assets are **lazy-loaded** when the user first opens the chat, so your page stays fast, and everything runs inside a **Shadow DOM** so its styles never clash with your site. The assistant appears as a floating button (or a fullscreen view). Best when you want it live in minutes.
+
+2. **[React SDK](/ai-tools/synapse/react/installation)** — the prebuilt UI, for React apps.
+
+   The full, polished MedAssist chat interface as a React package. You mount it into any element with `renderMedAssist(container, agentId, config)` and get back a root you can unmount — or load the bundle from a CDN and call `window.renderMedAssist`. You get streaming replies, file/audio inputs, and tool components out of the box, all themeable to your brand with the Eka design system. Best when you're already in React and want the ready-made widget rather than a Web Component.
+
+3. **[Core SDK](/ai-tools/synapse/core/quickstart)** — full control, for custom UIs.
+
+   The TypeScript foundation both widgets are built on. It handles session management, the real-time WebSocket/SSE connection, message transport, tool calls, and audio — and emits everything as events (`MESSAGE_CHUNK`, `TOOL_CALL`, `END_OF_STREAM`…) so you can render your **own** message bubbles, inputs, and tool components. No UI is included. Best when you need a fully bespoke chat experience.
+
+## How they relate
+
+| Package | npm | Who it's for | Effort |
+| --- | --- | --- | --- |
+| Embed widget | `@eka-care/medassist-widget-embed` | Any website owner | Paste a tag + script |
+| React SDK | `@eka-care/medassist-widget` | React developers | Render a component, theme it |
+| Core SDK | `@eka-care/medassist-core` | Developers building custom UI | Wire the raw SDK yourself |
+
+## Core concepts
+
+<CardGroup cols={2}>
+  <Card title="Agent" icon="robot">
+    An assistant you create in [console.eka.care](https://console.eka.care). Identified by an **`agentId`** — the one value every integration needs.
+  </Card>
+  <Card title="Session" icon="link">
+    A live connection between a user and the agent. Started once, then carries messages and events both ways.
+  </Card>
+  <Card title="Tool calls & elicitation" icon="hand-pointer">
+    The agent can ask the UI to collect input (pills, OTP, doctor cards…) and run tools mid-conversation.
+  </Card>
+  <Card title="Environments" icon="layer-group">
+    `production` (default), `staging`, or `development` — selects which backend the client talks to.
+  </Card>
+</CardGroup>
+
+## Start in the console
+
+Every integration begins the same way:
+
+<Steps>
+  <Step title="Create an account">
+    Sign up at [console.eka.care](https://console.eka.care).
+
+    <Note>
+    New here? Follow the [detailed setup guide](/api-reference/authorization/getting-started) to create your account and get authorized step by step.
+    </Note>
+  </Step>
+  <Step title="Create an agent">
+    Configure its persona, tools, theme, and initial message. This is stored in the backend.
+  </Step>
+  <Step title="Copy your agent ID">
+    You'll pass this `agentId` to whichever integration you choose.
+  </Step>
+</Steps>
+
+<Note>
+Most customization — theme, title, initial message, allowed inputs — lives with the agent in the console, so the same agent looks consistent across every integration. You only override things in code when you need to.
+</Note>
