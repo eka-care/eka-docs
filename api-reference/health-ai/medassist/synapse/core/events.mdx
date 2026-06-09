@@ -1,0 +1,88 @@
+---
+title: Events
+description: Subscribe to real-time events from the Synapse session
+---
+
+The core SDK is event-driven. After [starting a session](/api-reference/health-ai/medassist/synapse/core/quickstart#the-lifecycle), subscribe to events to receive streamed message chunks, tips, tool calls, and lifecycle signals. Drive your UI off these events.
+
+## Subscribing
+
+```ts
+import { SYNAPSE_REALTIME_EVENTS } from "@eka-care/medassist-core";
+
+function onChunk(evt) {
+  appendToCurrentMessage(evt.data.text);
+}
+
+// Register
+sdk.on(SYNAPSE_REALTIME_EVENTS.MESSAGE_CHUNK, onChunk);
+
+// Remove (pass the same function reference)
+sdk.off(SYNAPSE_REALTIME_EVENTS.MESSAGE_CHUNK, onChunk);
+```
+
+<Warning>
+`off()` requires the **same function reference** you passed to `on()`. Inline arrow functions can't be removed — keep a reference if you need to unsubscribe.
+</Warning>
+
+## Event reference
+
+Use the `SYNAPSE_REALTIME_EVENTS` enum — never hardcode the string values.
+
+| Event | Fires when |
+| --- | --- |
+| `CONNECTED` | The session connects. |
+| `DISCONNECTED` | The connection drops. Payload carries a `DisconnectionReason`. |
+| `PROGRESS_MESSAGE` | The agent emits an interim "working on it" status. |
+| `MESSAGE_CHUNK` | A streamed slice of the assistant's reply. Concatenate these. |
+| `TIPS_MESSAGE` | Suggested follow-up prompts (`data.tips`). |
+| `END_OF_STREAM` | The current assistant message is complete. |
+| `ERROR` | A stream or server error. See [error codes](/api-reference/health-ai/medassist/synapse/core/api-reference#synapse-realtime-error-codes). |
+| `TOOL_CALL` | The agent invokes a tool / asks for input. See [Tool calls](/api-reference/health-ai/medassist/synapse/core/tool-calls). |
+| `TOOL_START` | A tool begins executing. |
+| `TOOL_END` | A tool finishes executing. |
+| `AUDIO_TRANSCRIPT` | A transcript of recorded audio. See [Voice & audio](/api-reference/health-ai/medassist/synapse/core/voice). |
+
+## Event payload
+
+Every listener receives a `SynapseRealTimeEventData` object:
+
+```ts
+type SynapseRealTimeEventData = {
+  data: {
+    text?: string;     // message / chunk text
+    tips?: string[];   // suggested follow-ups
+    name?: string;     // tool or entity name
+  } & Partial<ToolCallData>; // tool fields on TOOL_CALL events
+  messageId?: string;
+  timestamp?: number;
+};
+```
+
+## Streaming a message
+
+A single assistant reply arrives as many `MESSAGE_CHUNK` events followed by one `END_OF_STREAM`. Accumulate chunks, then finalize:
+
+```ts
+let buffer = "";
+
+sdk.on(SYNAPSE_REALTIME_EVENTS.MESSAGE_CHUNK, (evt) => {
+  buffer += evt.data.text ?? "";
+  renderStreaming(buffer);
+});
+
+sdk.on(SYNAPSE_REALTIME_EVENTS.END_OF_STREAM, (evt) => {
+  commitMessage(buffer, evt.messageId);
+  buffer = "";
+});
+
+sdk.on(SYNAPSE_REALTIME_EVENTS.PROGRESS_MESSAGE, (evt) => {
+  showTypingIndicator(evt.data.text);
+});
+```
+
+## Next steps
+
+<Card title="Tool calls & elicitation" icon="hand-pointer" href="/api-reference/health-ai/medassist/synapse/core/tool-calls">
+  Handle `TOOL_CALL` events — render inputs and send results back.
+</Card>

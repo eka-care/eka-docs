@@ -1,0 +1,116 @@
+---
+title: JavaScript API
+description: Configure the embed widget programmatically with EkaMedAssist.init()
+---
+
+Once the loader script has run, it exposes a global `window.EkaMedAssist` object. Use it to set or override configuration before the user opens the widget — handy when your values are dynamic (a logged-in user's auth token, runtime context, etc.).
+
+## EkaMedAssist.init()
+
+Call `init()` with a config object. Values passed here take precedence over both the agent config and any HTML attributes.
+
+```html
+<eka-medassist-widget agent-id="YOUR_AGENT_ID"></eka-medassist-widget>
+<script
+  src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
+  async
+></script>
+
+<script>
+  window.EkaMedAssist.init({
+    agentId: "YOUR_AGENT_ID",
+    authToken: "USER_AUTH_TOKEN",
+    title: "MedAssist",
+    context: { intent: "book_appointment", userId: "123" },
+    theme: {
+      primary: "#09FBD3",
+      mode: "dark",
+      textColor: "white",
+    },
+  });
+</script>
+```
+
+### Config options
+
+These are the camelCase equivalents of the [HTML attributes](/api-reference/health-ai/medassist/synapse/embed/customization#html-attributes), plus a couple of init-only fields.
+
+<ParamField path="agentId" type="string">
+  Your MedAssist agent identifier.
+</ParamField>
+
+<ParamField path="authToken" type="string">
+  Authentication token sent with the session.
+</ParamField>
+
+<ParamField path="auth" type="string">
+  Alternative auth header / bearer token.
+</ParamField>
+
+<ParamField path="title" type="string">
+  Widget header title.
+</ParamField>
+
+<ParamField path="iconUrl" type="string">
+  Launcher button icon URL.
+</ParamField>
+
+<ParamField path="baseUrl" type="string">
+  Base URL for the agent-config and nudge endpoints.
+</ParamField>
+
+<ParamField path="displayMode" type='"full" | "widget"'>
+  Fullscreen overlay or floating launcher.
+</ParamField>
+
+<ParamField path="context" type="Record<string, unknown>">
+  Context object merged into the session. **Merged** with any `context` set via the HTML attribute, not replaced.
+</ParamField>
+
+<ParamField path="customLauncherStyles" type="string">
+  CSS injected into the launcher Shadow DOM. See [Custom launcher styling](/api-reference/health-ai/medassist/synapse/embed/customization#custom-launcher-styling).
+</ParamField>
+
+<ParamField path="redirectUrl" type="string">
+  URL to redirect to when the widget closes.
+</ParamField>
+
+<ParamField path="resize" type="boolean">
+  Allow the widget to be resized when open.
+</ParamField>
+
+<ParamField path="showCloseButton" type="boolean" default="false">
+  Force-show the close button. (Automatically shown when `redirectUrl` is set.)
+</ParamField>
+
+<ParamField path="theme" type="object">
+  Theme overrides — `backgroundImage`, `primary`, `textColor`, `mode`, `headerTinted`, `titleImg`, `tagline`. See [Theme object](/api-reference/health-ai/medassist/synapse/embed/customization#theme-object).
+</ParamField>
+
+## onClose callback
+
+Run code when the user closes the widget — for analytics, cleanup, or your own navigation:
+
+```js
+window.EkaMedAssist.onClose = function () {
+  console.log("MedAssist widget closed");
+};
+```
+
+## Self-hosting widget assets
+
+By default, the loader fetches the widget's JS and CSS from the CDN on first open. To serve your own build, point the loader at your asset directory with the `data-widget-assets` attribute on the script tag:
+
+```html
+<script
+  src="/path/to/widget-embed/index.js"
+  data-widget-assets="/path/to/widget-assets/"
+  async
+></script>
+```
+
+Ensure `medassist-widget.js` and `medassist-widget.css` are served at that path.
+
+<Tip>
+If you're building a fully custom interface rather than configuring the prebuilt widget, drop down to the [Core SDK](/api-reference/health-ai/medassist/synapse/core/quickstart).
+</Tip>
