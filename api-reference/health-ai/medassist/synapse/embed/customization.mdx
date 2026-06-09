@@ -1,0 +1,180 @@
+---
+title: Customization & overrides
+description: Every attribute, theme option, and config override for the embed widget
+---
+
+Most of the widget's look and behavior comes from the agent config you set in [console.eka.care](https://console.eka.care). When you need to override something per-page, you can do it with HTML attributes on the `<eka-medassist-widget>` element — or programmatically with [`EkaMedAssist.init()`](/api-reference/health-ai/medassist/synapse/embed/javascript-api).
+
+## HTML attributes
+
+<ParamField path="agent-id" type="string" required>
+  Your MedAssist agent identifier. The only required attribute.
+</ParamField>
+
+<ParamField path="auth-token" type="string">
+  Authentication token sent with the session.
+</ParamField>
+
+<ParamField path="title" type="string" default="Medi Clinic">
+  Display title shown in the widget header.
+</ParamField>
+
+<ParamField path="icon-url" type="string" default="https://cdn.eka.care/bot-icon.svg">
+  Icon URL for the floating launcher button.
+</ParamField>
+
+<ParamField path="base-url" type="string" default="https://matrix.eka.care/reloaded">
+  Base URL for the agent-config and nudge API endpoints.
+</ParamField>
+
+<ParamField path="display-mode" type='"widget" | "full"' default="widget">
+  `widget` shows a floating launcher button; `full` renders a fullscreen overlay.
+</ParamField>
+
+<ParamField path="context" type="JSON string">
+  A JSON object of key-value context pairs, merged into the session at init. Example: `context='{"intent":"book_appointment"}'`.
+</ParamField>
+
+<ParamField path="theme" type="JSON string">
+  A JSON theme object. See [Theme object](#theme-object) for the supported keys.
+</ParamField>
+
+<ParamField path="custom-launcher-styles" type="CSS string">
+  CSS injected into the launcher's Shadow DOM to reposition or restyle the button. See [Custom launcher styling](#custom-launcher-styling).
+</ParamField>
+
+<ParamField path="resize" type='"true" | "false"' default="false">
+  Allow the user to resize the widget once it's open.
+</ParamField>
+
+<ParamField path="redirect-url" type="string">
+  URL to redirect to when the widget closes. Setting this automatically shows a close button.
+</ParamField>
+
+<ParamField path="environment" type='"production" | "staging" | "development"' default="production">
+  Which backend environment the widget talks to. Also affects asset loading.
+</ParamField>
+
+<ParamField path="connectivity" type='"sse" | "socket"' default="socket">
+  Real-time transport: Server-Sent Events or WebSocket. Usually inherited from agent config.
+</ParamField>
+
+## Theme object
+
+Pass these keys inside the `theme` attribute (as JSON) or the `theme` field of `init()`. Theme values you set here override what the console provides.
+
+<ParamField path="primary" type="string">
+  Primary accent color (hex). Drives buttons, accents, and the user message bubble.
+</ParamField>
+
+<ParamField path="backgroundImage" type="string">
+  Background image URL for the widget interior. Enables a glass-morphism treatment for the header and footer.
+</ParamField>
+
+<ParamField path="textColor" type='"black" | "white"'>
+  Text color override.
+</ParamField>
+
+<ParamField path="mode" type='"light" | "dark"'>
+  Theme mode. When `textColor` is unset, it is derived from this (`light` → black text, `dark` → white text).
+</ParamField>
+
+<ParamField path="headerTinted" type="boolean">
+  Tint the header with the primary color.
+</ParamField>
+
+<ParamField path="titleImg" type="string">
+  Custom logo/title image URL shown in the header.
+</ParamField>
+
+<ParamField path="tagline" type="string">
+  Tagline text shown beneath the title.
+</ParamField>
+
+```html
+<eka-medassist-widget
+  agent-id="YOUR_AGENT_ID"
+  theme='{"primary":"#6B5CE0","mode":"dark","headerTinted":true}'
+></eka-medassist-widget>
+```
+
+## Display modes
+
+<Tabs>
+  <Tab title="Widget (floating)">
+    A floating launcher button in the corner; the chat opens in a panel. This is the default.
+
+    ```html
+    <eka-medassist-widget agent-id="YOUR_AGENT_ID" display-mode="widget"></eka-medassist-widget>
+    ```
+  </Tab>
+  <Tab title="Full (fullscreen)">
+    The chat takes over the viewport as a fullscreen overlay — useful for dedicated assistant pages.
+
+    ```html
+    <eka-medassist-widget agent-id="YOUR_AGENT_ID" display-mode="full"></eka-medassist-widget>
+    ```
+  </Tab>
+</Tabs>
+
+## Custom launcher styling
+
+To reposition or restyle the floating button, pass CSS via `custom-launcher-styles` (or `customLauncherStyles` in `init()`). The CSS is injected into the launcher's Shadow DOM, so media queries, hover states, and any other CSS all work. Two selectors form a stable contract:
+
+| Selector | Use it for |
+| --- | --- |
+| `:host` | The launcher wrapper — `position`, `bottom`, `right`, `left`, `top`, `transform`, `z-index`. |
+| `#medassist-open-btn` | The button itself — `size`, `background`, `box-shadow`, `border-radius`. |
+
+```html
+<eka-medassist-widget
+  agent-id="YOUR_AGENT_ID"
+  custom-launcher-styles="
+    @media (max-width: 991px) {
+      :host {
+        right: auto;
+        left: 50%;
+        bottom: 47px;
+        transform: translateX(-50%);
+      }
+    }
+    @media (max-width: 767px) {
+      :host { bottom: 34px; }
+    }
+  "
+></eka-medassist-widget>
+```
+
+<Note>
+This only affects the launcher button. The chat panel that opens on click is unaffected.
+</Note>
+
+## What comes from the console vs. your code
+
+The widget resolves config from three sources. **Higher in this list wins:**
+
+<Steps>
+  <Step title="EkaMedAssist.init() config (highest priority)">
+    Anything you pass programmatically overrides everything else.
+  </Step>
+  <Step title="Agent config (from the console)">
+    Fetched from the backend for your `agentId`. Overrides HTML attributes.
+  </Step>
+  <Step title="HTML attributes (lowest priority)">
+    Values set directly on the element.
+  </Step>
+</Steps>
+
+**Set in the console (backend):** `name`/title, `allowed` inputs (`text`, `file`, `audio`, `voice`), `nudge`, `connectivity`, `initial_message`, the full `theme` (background, accent, mode, title image, tagline, nudge color), and `hide_watermark`.
+
+**Client-only (never from the backend):** `auth`, `context` (merged with any console context), `customLauncherStyles`, `redirectUrl`, and `showCloseButton`.
+
+<Warning>
+Only four attributes are re-read after the widget mounts: `icon-url`, `display-mode`, `custom-launcher-styles`, and `redirect-url`. Changing any other attribute dynamically has no effect — set them at render time or use `init()`.
+</Warning>
+
+## Next steps
+
+<Card title="JavaScript API" icon="terminal" href="/api-reference/health-ai/medassist/synapse/embed/javascript-api">
+  Configure all of the above programmatically and hook into the close event.
+</Card>

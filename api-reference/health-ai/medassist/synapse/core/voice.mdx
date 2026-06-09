@@ -1,0 +1,74 @@
+---
+title: Voice & audio
+description: Record audio and run voice-mode conversations
+---
+
+The core SDK supports two audio paths: **recording** an audio message and sending it like any other message, and a dedicated **voice mode** for real-time spoken conversations.
+
+## Recording audio
+
+Start recording to receive audio chunks via a callback, then stop when the user is done. Each chunk is an `AudioMetaData` object.
+
+```ts
+await sdk.startRecording({
+  onChunks: (chunk) => {
+    // chunk: { audio (base64), format, duration, timestamp }
+    bufferChunk(chunk);
+  },
+  onError: (error) => console.error("recording error:", error),
+});
+
+// later, when the user stops:
+sdk.endRecording();
+```
+
+### AudioMetaData
+
+```ts
+interface AudioMetaData {
+  audio: string;    // base64-encoded audio chunk
+  format: string;   // MIME type, e.g. "audio/mp3"
+  duration: number; // milliseconds
+  timestamp: number;
+}
+```
+
+## Sending audio
+
+Send a recorded clip with `sendMessage` using the `audio` field:
+
+```ts
+await sdk.sendMessage({
+  audio: {
+    audio: base64Clip,
+    format: "audio/mp3",
+    duration: 4200,
+    timestamp: 1700000000000,
+  },
+});
+```
+
+## Transcripts
+
+When audio is transcribed, the SDK emits an `AUDIO_TRANSCRIPT` event. Use it to show the recognized text:
+
+```ts
+import { SYNAPSE_REALTIME_EVENTS } from "@eka-care/medassist-core";
+
+sdk.on(SYNAPSE_REALTIME_EVENTS.AUDIO_TRANSCRIPT, (evt) => {
+  showTranscript(evt.data.text);
+});
+```
+
+## Voice mode
+
+For continuous spoken conversation, use the `voice` getter, which returns a `VoiceAgent`:
+
+```ts
+const voice = sdk.voice;
+// drive a real-time voice conversation through the VoiceAgent
+```
+
+<Note>
+Voice mode is a distinct, real-time conversational interface — separate from one-off audio messages. Check that your agent has voice enabled in [console.eka.care](https://console.eka.care).
+</Note>
