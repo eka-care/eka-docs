@@ -41,17 +41,31 @@ Peer dependencies (installed automatically):
 
 ### Step 1: Create the Client
 
-The `baseUrl` is **required** — all API calls (session creation, upload, status polling) go through this URL.
+The `baseUrl` is **required** — every API call (session creation, upload, status polling) goes through it. If you leave it out, the SDK throws `allianceConfig.baseUrl is required` at runtime.
+
+To use Eka Care's hosted scribe service, use:
+
+| Environment | `baseUrl` |
+|---|---|
+| Production | `https://api.eka.care/voice/v1` |
+| Development | `https://api.dev.eka.care/voice/v1` |
 
 ```ts
 import { ScribeClient } from 'med-scribe-alliance-ts-sdk';
 
 const client = new ScribeClient({
-  baseUrl: 'https://api.eka.care/voice/api/v2', // your scribe service URL
+  baseUrl: 'https://api.eka.care/voice/v1', // PROD — see table above
   accessToken: 'your-bearer-token',
   debug: true, // optional: logs SDK activity to console
 });
 ```
+
+<Warning>
+**Production APIs require a secure (HTTPS) origin.** They will not work from `http://` or `http://localhost` — an insecure origin fails the CORS preflight (the `authorization` header is rejected). To develop locally, either:
+
+- Point at the **staging / development `baseUrl`** (`https://api.dev.eka.care/voice/v1`) — this works from `localhost`, or
+- Serve your own app over HTTPS / a secure domain.
+</Warning>
 
 ### Step 2: Initialize (Discovery)
 
@@ -102,7 +116,7 @@ Creates a session, starts the microphone, and begins chunked upload in one call.
 
 ```ts
 const result = await client.startRecording({
-  templates: ['soap'],           // required: template IDs for extraction
+  templates: ['clinical_notes_template'], // required: template IDs for extraction
   uploadType: 'chunked',         // 'chunked' (default) | 'single' | 'stream'
   sessionMode: 'consultation',   // optional: 'consultation' | 'dictation'
   transcriptLanguage: 'en',      // optional: language code for transcript output
@@ -123,6 +137,10 @@ if (!result.success) {
 
 const sessionId = result.data.session_id;
 ```
+
+<Note>
+Use `clinical_notes_template` for testing, or contact Eka Care to create a custom template for your use case.
+</Note>
 
 #### Pause / Resume
 
@@ -690,6 +708,13 @@ yarn add @eka-care/ekascribe-ts-sdk
 
 The wrapper uses a **singleton pattern** — `getEkaScribeInstance()` always returns the same instance for a given `env` + `clientId` combination.
 
+`allianceConfig.baseUrl` is **required** — omitting it throws `[EkaScribe] allianceConfig.baseUrl is required` at runtime. To use Eka Care's hosted scribe service, use:
+
+| Environment | `baseUrl` |
+|---|---|
+| Production | `https://api.eka.care/voice/v1` |
+| Development | `https://api.dev.eka.care/voice/v1` |
+
 ```ts
 import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
 import type { EkaScribeConfig } from '@eka-care/ekascribe-ts-sdk';
@@ -699,7 +724,7 @@ const config: EkaScribeConfig = {
   env: 'PROD',                             // 'PROD' | 'DEV'
   clientId: '<your_client_id>',            // optional
   allianceConfig: {
-    baseUrl: 'https://api.eka.care/voice/v1',  // required
+    baseUrl: 'https://api.eka.care/voice/v1',  // required — PROD; see table above
     useWorker: 'auto',                              // optional: true | false | 'auto'
     debug: false,                                   // optional
   },
@@ -708,6 +733,10 @@ const config: EkaScribeConfig = {
 
 const ekascribe = getEkaScribeInstance(config);
 ```
+
+<Warning>
+Production APIs require a secure (HTTPS) origin — they will not work from `http://localhost`. To develop locally, point at the development `baseUrl` (works from `localhost`) or serve your app over HTTPS. See the [HTTPS note](#step-1-create-the-client) under the Alliance SDK for details.
+</Warning>
 
 - Calling `getEkaScribeInstance()` again with the same config returns the same instance.
 - If `env` or `clientId` changes, the old instance is automatically reset.
@@ -770,7 +799,7 @@ ekascribe.registerCallback('onError', (event) => {
 
 ```ts
 const result = await ekascribe.startRecordingV2({
-  templates: ['soap'],                 // required: template IDs for output
+  templates: ['clinical_notes_template'], // required: template IDs (from getConfig → my_templates)
   sessionMode: 'consultation',         // optional: 'consultation' | 'dictation'
   languageHint: ['en', 'hi'],          // optional: input audio language hints
   transcriptLanguage: 'en',            // optional: output transcript language
@@ -786,6 +815,10 @@ if (result.error_code) {
 
 const sessionId = result.txn_id!;
 ```
+
+<Note>
+Use `clinical_notes_template` for testing, or contact Eka Care to create a custom template for your use case. Call `ekascribe.sessions.getConfig()` (see the **Session & document utilities** accordion) to list the templates enabled for your account.
+</Note>
 
 **Step 3 — Pause / Resume** (optional, during recording):
 
@@ -846,7 +879,7 @@ import {
 const ekascribe = getEkaScribeInstance({
   access_token: token,
   env: 'PROD',
-  allianceConfig: { baseUrl: 'https://api.eka.care/voice/api/v2' },
+  allianceConfig: { baseUrl: 'https://api.eka.care/voice/v1' },
 });
 
 // 2. Callbacks
@@ -855,7 +888,7 @@ ekascribe.registerCallback('onError', (e) => showErrorToast(e.error.message));
 
 // 3. Start
 const start = await ekascribe.startRecordingV2({
-  templates: ['soap'],
+  templates: ['clinical_notes_template'],
   sessionMode: 'consultation',
   languageHint: ['en'],
 });
@@ -935,7 +968,7 @@ const ekascribe = getEkaScribeInstance({
     position: { bottom: 20, right: 20 }, // optional
     sessionDefaults: {
       input_language: ['en'],
-      output_format_template: [{ template_id: 'soap' }],
+      output_format_template: [{ template_id: 'clinical_notes_template' }],
       model_type: 'pro',
       mode: 'consultation',
     },
@@ -1071,7 +1104,60 @@ await ekascribe.sessions.patchSessionStatus({
 }, sessionId);
 ```
 
-**Discovery** — `ekascribe.sessions.getDiscoveryDocument()` and `ekascribe.sessions.getDiscoveryConfig()` mirror the Alliance discovery methods.
+**Config** — call `ekascribe.sessions.getConfig()` to fetch your account config: supported languages, output formats, consultation modes, and `my_templates` (the valid `template_id` values to pass when starting a recording). `clinical_notes_template` is a ready-to-use testing template; contact Eka Care for a custom one.
+
+```ts
+const config = await ekascribe.sessions.getConfig();
+config.data?.my_templates.forEach((t) => console.log(t.id, t.name));
+```
+
+Response: `TGetConfigV2Response`
+
+```ts
+type TGetConfigV2Response = {
+  data?: {
+    supported_languages: TGetConfigItem[];
+    supported_output_formats: TGetConfigItem[];
+    consultation_modes: TGetConfigItem[];
+    max_selection: {
+      supported_languages: number;
+      supported_output_formats: number;
+      consultation_modes: number;
+    };
+    settings: TConfigSettings;
+    my_templates: { id: string; name: string }[];   // valid template_id values for your account
+    user_details: {
+      uuid: string;
+      fn: string;
+      mn: string;
+      ln: string;
+      dob: string;
+      gen: 'F' | 'M' | 'O';
+      s: string;
+      'w-id': string;
+      'w-n': string;
+      'b-id': string;
+      is_paid_doc: boolean;
+      is_eka_doc: boolean;
+      oid: string;
+    };
+    selected_preferences?: TSelectedPreferences;
+    clinic_name?: string;
+    specialization?: string;
+    emr_name?: string;
+    microphone_permission_check?: boolean;
+    consult_language?: string[];
+    contact_number?: string;
+    onboarding_step?: string;
+    header?: TConfigHeaderFooter;
+    footer?: TConfigHeaderFooter;
+  };
+  message?: string;
+  status_code: number;
+};
+```
+
+**Discovery** — `ekascribe.sessions.getDiscoveryDocument()` mirrors the Alliance discovery method.
 
 </Accordion>
 
