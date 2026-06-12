@@ -42,7 +42,7 @@ const sdk = new MedicalRecordsClient({
     'client-id': 'your-client-id',
     'flavour':   'your-flavour',
   },
-  cache: {},   // enables IndexedDB offline cache
+  // cache defaults to true — pass cache: false to disable IndexedDB
   onError: (err) => console.error(err),
 });
 
@@ -63,7 +63,7 @@ new MedicalRecordsClient(config: SDKConfig)
 | --- | --- | --- | --- |
 | `environment` | `SDKEnvironment` | ⚙️ Optional | `SDKEnvironment.Prod` = `api.eka.care` (default), `SDKEnvironment.Dev` = `api.dev.eka.care` |
 | `defaultHeaders` | `Record<string, string>` | ⚙️ Optional | Eka identification headers — see below |
-| `cache` | `CacheConfig` | ⚙️ Optional | Pass `{}` to enable the IndexedDB offline cache. Identity (`bid`, `patientId`) is always passed per SDK call |
+| `cache` | `boolean` | ⚙️ Optional | Defaults to `true` — IndexedDB offline cache is on by default. Pass `false` to disable (e.g. environments without IndexedDB, or when patient data must not persist on disk) |
 | `transport` | `TransportMode` | ⚙️ Optional | `TransportMode.Native` = browser fetch (default). `TransportMode.Bridge` = Electron IPC |
 | `onError` | `(err: unknown) => void` | ⚙️ Optional | Called on every SDK error |
 | `onUnauthorized` | `() => Promise<string \| undefined> \| string \| undefined` | ⚙️ Optional | Called on 401 — return a fresh token to auto-retry |
@@ -91,7 +91,7 @@ const sdk = new MedicalRecordsClient({
     'client-id': 'doc-web',
     'flavour':   'ekascribe-web',
   },
-  cache: {},
+  cache: true,   // default — omit to get the same effect
   transport: TransportMode.Native,
   onLog: (log) => {
     // log: { eventName, eventType, status, platform, entityType, params, message, patientOid, bid, timestamp }
