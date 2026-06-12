@@ -1,0 +1,156 @@
+---
+title: Cases
+description: "Organise medical records into cases (folders) with the Medical Records Web SDK"
+---
+
+Cases act as **folders** for records. A record can belong to multiple cases.
+
+All case methods require `bid` (business ID) and `patientId`:
+
+```typescript
+const BID = 'your-business-id';
+const OID = 'logged-in-user-oid';
+```
+
+## List Cases
+
+`listCases` is **cache-first**: fires `onStale` immediately with IndexedDB data, then delta-syncs with the server and resolves the promise with fresh results.
+
+```typescript
+// Simple — wait for the synced list
+const cases = await sdk.listCases({ bid: BID, patientId: OID });
+
+// Stale-while-revalidate — render cached instantly, update when fresh arrives
+const cases = await sdk.listCases({
+  bid: BID, patientId: OID,
+  onStale: (cached) => setCases(cached),
+});
+setCases(cases);
+```
+
+To list the documents inside a case:
+
+```typescript
+const docs = await sdk.listLocalDocuments({
+  bid: BID, patientId: OID,
+  filter: { caseId: 'case-uuid' },
+});
+```
+
+## Create a Case
+
+```typescript
+await sdk.createCase({
+  bid: BID, patientId: OID,
+  data: {
+    id:           crypto.randomUUID(),
+    display_name: 'Follow-up visit',
+    type:         'OP',                             // EM | IP | OP | HH
+    occurred_at:  Math.floor(Date.now() / 1000),    // required
+  },
+});
+```
+
+<Note>
+  **Offline:** the case is saved locally (`isRemoteCreated: false`) and created
+  on the server on reconnect.
+</Note>
+
+## Update a Case
+
+```typescript
+await sdk.updateCase({
+  bid: BID, patientId: OID,
+  caseId: 'case-uuid',
+  data: { display_name: 'New name', type: 'IP', occurred_at: 1748000000 },
+});
+```
+
+## Delete a Case
+
+Deletes from the server and removes the case from all linked records' `caseIDs` in the local DB.
+
+```typescript
+await sdk.deleteCase({ bid: BID, patientId: OID, caseId: 'case-uuid' });
+```
+
+## Assigning Records to Cases
+
+The case–record link lives **on the document, not the case** — every record carries a `caseIDs: string[]` array, and there is no case-side "add documents" method. Both directions are handled through the record APIs.
+
+### Assign at upload time
+
+Pass `cases` in the batch item of `addDocument`:
+
+```typescript
+await sdk.addDocument({
+  bid: BID, patientId: OID,
+  batchRequests: [{
+    documentType: 'lr',
+    documentDate: Math.floor(Date.now() / 1000),
+    cases: ['case-uuid-1', 'case-uuid-2'],   // linked from the moment it's created
+    files: [{ contentType: 'application/pdf', file_size: file.size }],
+  }],
+  files: [[file]],
+  filenames: [[file.name]],
+});
+```
+
+### Assign / unassign an existing document
+
+Use `editDocument` with `data.cases`. This is local-first — the DB is patched immediately and synced to the server in the background.
+
+<Warning>
+  `data.cases` **replaces** the document's full case list. To add a case
+  without dropping existing links, read the record's current `caseIDs` and
+  append.
+</Warning>
+
+```typescript
+// Add to a case (preserving existing links)
+await sdk.editDocument({
+  bid: BID, patientId: OID,
+  documentId: doc.documentId,
+  data: { cases: [...doc.caseIDs, 'new-case-uuid'] },
+});
+
+// Remove from a case
+await sdk.editDocument({
+  bid: BID, patientId: OID,
+  documentId: doc.documentId,
+  data: { cases: doc.caseIDs.filter(id => id !== 'case-to-remove') },
+});
+
+// Unlink from all cases
+await sdk.editDocument({
+  bid: BID, patientId: OID,
+  documentId: doc.documentId,
+  data: { cases: [] },
+});
+```
+
+### Assign multiple documents to a case
+
+There is no `case.addDocuments()` — loop `editDocument` over the documents:
+
+```typescript
+for (const doc of selectedDocs) {
+  await sdk.editDocument({
+    bid: BID, patientId: OID,
+    documentId: doc.documentId,
+    data: { cases: [...doc.caseIDs, caseId] },
+  });
+}
+```
+
+### Reading the relationship
+
+```typescript
+// Documents in a case
+const docs = await sdk.listLocalDocuments({ bid: BID, patientId: OID, filter: { caseId } });
+
+// Cases a document belongs to
+doc.caseIDs  // string[] on every record object
+```
+
+Deletion side effects are handled automatically: `deleteCase` strips that case ID from all linked records' `caseIDs`, and `deleteDocument` removes the document from any linked cases.
