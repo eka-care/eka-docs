@@ -1,0 +1,233 @@
+---
+title: Records
+description: "Upload, list, group, download, edit and delete medical documents with the Medical Records Web SDK"
+---
+
+Every records method needs two IDs:
+
+- `bid` — your business ID, provided by Eka Care when your account is set up.
+- `patientId` — the OID of the logged-in user whose records you are working with.
+
+```typescript
+const BID = 'your-business-id';
+const OID = 'logged-in-user-oid';
+```
+
+## List Documents
+
+`listDocuments` is **cache-first**: it gives you local data instantly, then updates it from the server.
+
+What happens when you call it:
+
+1. **Local read** — the SDK reads the records already stored in IndexedDB.
+2. **Instant callback** — if you passed `onStale`, those local records are handed to you right away, so your UI can render without waiting for the network.
+3. **Server fetch** — the SDK then asks the server only for records that changed since the last sync (not the whole list again) and saves them into IndexedDB. Anyone subscribed to `documents:changed` gets notified.
+4. **Final result** — the `await` completes with the full, up-to-date list. If there is no internet, you still get the local list.
+
+<Note>
+  If you don't pass `onStale`, there is no early delivery — the call waits for
+  the server fetch to complete and then returns the complete list in one go.
+</Note>
+
+```typescript
+import { SortBy } from '@eka-care/medical-records-ts-sdk';
+
+// All documents
+const docs = await sdk.listDocuments({ bid: BID, patientId: OID });
+
+// With limit and sort
+const docs = await sdk.listDocuments({
+  bid: BID, patientId: OID,
+  limit: 20,                        // default: no limit
+  sortBy: SortBy.CreatedAt,         // SortBy.UpdatedAt (default) | SortBy.CreatedAt
+});
+
+// Filter by document type
+const labReports = await sdk.listDocuments({
+  bid: BID, patientId: OID,
+  filter: { documentType: 'lr' },   // lr | ps | dc | vc | in | iv | sc | ot — from the hub API
+});
+
+// Filter by case
+const caseRecords = await sdk.listDocuments({
+  bid: BID, patientId: OID,
+  filter: { caseId: 'case-uuid' },
+});
+
+// Stale-while-revalidate — show cached instantly, update when fresh arrives
+const docs = await sdk.listDocuments({
+  bid: BID, patientId: OID,
+  onStale: (cached) => setDocs(cached),
+});
+setDocs(docs);
+
+```
+
+**`ListDocumentsFilter` fields:**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `documentType` | `string` | Filter by document type code (`'lr'`, `'ps'` etc.) — client-side |
+| `caseId` | `string` | Filter to records belonging to a case — client-side |
+| `fileType` | `string` | Filter by file type (`'IMG'`, `'PDF'`, `'HTML'`) — client-side |
+| `updatedAfter` | `number` | Only records updated after this epoch (seconds) — sent to the server |
+
+## Group Documents
+
+`groupDocuments` organises the document list into sections, ready to render as a sectioned UI (like a list with headers). Instead of one flat array, you get an array of groups — each with a `key`, a display `label`, and the `records` that fall under it.
+
+You can group two ways:
+
+- **By document type** — one group per type code: all lab reports together, all prescriptions together, and so on.
+- **By date** — one group per day, month, or year (e.g. "May 2025"), based on either the document date or the upload date.
+
+Reads from the local DB — no network call.
+
+```typescript
+import { GroupBy, DateGroupFormat, DateField } from '@eka-care/medical-records-ts-sdk';
+
+// Group by document type
+const groups = await sdk.groupDocuments({
+  bid: BID, patientId: OID,
+  groupBy: GroupBy.DocumentType,
+});
+// → [{ key: 'lr', label: 'LR', records: [...] }, ...]   — label = upper-cased type code
+
+// Group by month (default)
+const groups = await sdk.groupDocuments({
+  bid: BID, patientId: OID,
+  groupBy: GroupBy.Date,
+  dateFormat: DateGroupFormat.Month,   // Day | Month (default) | Year
+  dateField: DateField.DocumentDate,   // DocumentDate (default) | CreatedAt
+});
+// → [{ key: '2025-05', label: 'May 2025', records: [...] }, ...]
+```
+
+**`GroupDocumentsOptions`:**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `groupBy` | `GroupBy` | required | `GroupBy.DocumentType` or `GroupBy.Date` |
+| `dateFormat` | `DateGroupFormat` | `Month` | `Day` \| `Month` \| `Year` — granularity when grouping by date |
+| `dateField` | `DateField` | `DocumentDate` | `DocumentDate` \| `CreatedAt` — which date to group by |
+| `sortBy` | `SortBy` | `UpdatedAt` | `UpdatedAt` \| `CreatedAt` — sort within each group |
+| `filter` | `ListDocumentsFilter` | — | Same filters as `listDocuments` |
+
+## Upload a Document
+
+```typescript
+const file = input.files[0];
+
+await sdk.addDocument({
+  bid: BID, patientId: OID,
+  batchRequests: [{
+    documentType: 'lr',
+    documentDate: Math.floor(Date.now() / 1000),
+    cases: ['case-uuid'],                        // optional — assign to case
+    files: [{ contentType: 'application/pdf', file_size: file.size }],
+  }],
+  files: [[file]],
+  filenames: [[file.name]],
+});
+```
+
+<Note>
+  **Offline:** record + blob are saved to IndexedDB as `upload_failure` and
+  auto-retried on the next `sdk.sync()`.
+</Note>
+
+**File constraints:**
+
+| | Limit |
+| --- | --- |
+| Max batch items | 5 |
+| Max files per batch | 10 |
+| Image max | 10 MB |
+| PDF max | 25 MB |
+| Supported types | `image/jpeg` `image/jpg` `image/png` `application/pdf` |
+
+## Download a Document
+
+Cache-first — returns blobs from IndexedDB if previously fetched, otherwise downloads from S3 and caches.
+
+```typescript
+const files = await sdk.downloadFile({ bid: BID, patientId: OID, documentId: 'abc-uuid' });
+
+for (const file of files) {
+  console.log(file.blob);       // Blob — PDF / image / HTML
+  console.log(file.fileType);   // DocumentFileType — 'IMG' | 'PDF' | 'HTML'
+  console.log(file.filename);   // e.g. 'abc12345_0.pdf'
+  console.log(file.fromCache);  // true = served from IndexedDB, zero network
+}
+
+// Trigger browser download
+const a = document.createElement('a');
+a.href = URL.createObjectURL(files[0].blob);
+a.download = files[0].filename;
+a.click();
+```
+
+## Get Smart Report
+
+Cache-first — returns the AI-extracted smart report from IndexedDB if available, otherwise fetches from the API.
+
+```typescript
+const report = await sdk.getSmartReport({
+  bid: BID, patientId: OID,
+  documentId: 'abc-uuid',
+});
+
+if (report) {
+  console.log(report.verified);    // AI-verified fields
+  console.log(report.unverified);  // AI-unverified fields
+}
+// null = document has no smart report
+```
+
+## Describe a Document
+
+Returns the full details of a document. Cache-first — served from IndexedDB if the document's files were previously fetched, otherwise fetched from the API.
+
+```typescript
+const detail = await sdk.describeDocument({
+  bid: BID, patientId: OID,
+  documentId: 'abc-uuid',
+  preferenceType: 'PDF',     // optional — preferred file format ('PDF' | 'IMG' | 'HTML')
+});
+```
+
+**`DescribeDocumentResponse` fields (all optional):**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `files` | `DocumentFile[]` | File attachments — each has `asset_url` (signed S3 URL) and `file_type` (`DocumentFileType`) |
+| `smart_report` | `SmartReport` | AI-extracted fields (`verified` / `unverified`) |
+| `tags` | `string[]` | User-supplied tags |
+| `document_type` | `string` | Document type code (e.g. `'lr'`, `'ps'`) |
+| `document_date_epoch` | `number` | Document date as Unix epoch (seconds) |
+| `source` | `string` | Origin of the document |
+
+## Edit a Document
+
+Local-first — patches the DB immediately, syncs to the server in the background.
+
+```typescript
+await sdk.editDocument({
+  bid: BID, patientId: OID,
+  documentId: 'abc-uuid',
+  data: {
+    documentType: 'ps',                  // new document type
+    documentDate: 1748000000,            // new document date (epoch seconds)
+    cases:        ['case-id-1'],         // link to cases (replaces existing)
+    tags:         ['blood', 'routine'],  // tags (replaces existing)
+  },
+});
+```
+
+## Delete a Document
+
+Soft-deletes locally (hidden immediately), hard-deletes after the server confirms. Also removes the document from any linked cases in the local DB.
+
+```typescript
+await sdk.deleteDocument({ bid: BID, patientId: OID, documentId: 'abc-uuid' });
+```
