@@ -13,7 +13,7 @@ The Medical Records Web SDK (`@eka-care/medical-records-ts-sdk`) is a TypeScript
 
 - **Records Management**: Upload, list, group, download, edit and delete medical documents.
 - **Smart Reports**: Fetch AI-extracted structured data from lab reports.
-- **Cases**: Organise records into folders (cases) — a record can belong to multiple cases.
+- **Cases**: Organise records into cases (folders) — a record can belong to multiple cases.
 - **Offline Support**: All data is cached in IndexedDB; writes done offline are auto-synced on reconnect.
 - **Reactive UI Updates**: Subscribe to DB change events so your UI auto-updates on any write.
 - **Electron Support**: Route API calls through an IPC bridge with a single config switch.
@@ -23,7 +23,6 @@ The Medical Records Web SDK (`@eka-care/medical-records-ts-sdk`) is a TypeScript
 ### Prerequisites
 
 - A modern web browser (or Electron renderer) with IndexedDB support.
-- The APIs used by this SDK are Eka Care's own — they are accessible only from `eka.care` domains, so your application must be served from an `eka.care` domain.
 - A valid auth token generated via the [Connect Login](https://developer.eka.care/api-reference/authorization/client-login) API.
 
 ### Setup
@@ -96,17 +95,6 @@ const sdk = new MedicalRecordsClient({
   onLog: (log) => {
     // log: { eventName, eventType, status, platform, entityType, params, message, patientOid, bid, timestamp }
     console.log(`[${log.eventName}] ${log.status} (${log.platform})`, log.params);
-    // or forward to analytics:
-    // mixpanel.track(log.eventName, {
-    //   status:     log.status,       // 'success' | 'failure'
-    //   eventType:  log.eventType,    // 'create' | 'read' | 'update' | 'delete'
-    //   platform:   log.platform,     // 'database' | 'network'
-    //   entityType: log.entityType,   // 'records' | 'cases'
-    //   patientOid: log.patientOid,
-    //   bid:        log.bid,
-    //   message:    log.message,
-    //   ...log.params,
-    // });
   },
   onError: (err) => console.error('[SDK]', err),
   onUnauthorized: async () => await refreshToken(),
@@ -183,7 +171,6 @@ Common codes for reference:
 
 - Ensure the auth token is set via `sdk.setAuthToken()` and has not expired.
 - Verify `bid` and `patientId` are passed on every call.
-- To prevent CORS-related issues, ensure your app is served from an `eka.care` domain.
 
 #### 2. 401 Loops
 

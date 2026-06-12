@@ -3,7 +3,10 @@ title: Records
 description: "Upload, list, group, download, edit and delete medical documents with the Medical Records Web SDK"
 ---
 
-Every records method requires `bid` (business ID) and `patientId`:
+Every records method needs two IDs:
+
+- `bid` — your business ID, provided by Eka Care when your account is set up.
+- `patientId` — the OID of the logged-in user whose records you are working with.
 
 ```typescript
 const BID = 'your-business-id';
@@ -71,7 +74,14 @@ setDocs(docs);
 
 ## Group Documents
 
-Groups records from the local DB — no network call.
+`groupDocuments` organises the document list into sections, ready to render as a sectioned UI (like a list with headers). Instead of one flat array, you get an array of groups — each with a `key`, a display `label`, and the `records` that fall under it.
+
+You can group two ways:
+
+- **By document type** — one group per type code: all lab reports together, all prescriptions together, and so on.
+- **By date** — one group per day, month, or year (e.g. "May 2025"), based on either the document date or the upload date.
+
+Reads from the local DB — no network call.
 
 ```typescript
 import { GroupBy, DateGroupFormat, DateField } from '@eka-care/medical-records-ts-sdk';
