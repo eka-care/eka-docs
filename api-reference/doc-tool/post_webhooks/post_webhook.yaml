@@ -1100,9 +1100,9 @@ paths:
     post:
       tags:
         - Doctor Webhooks
-      summary: Google Review Events
+      summary: Google Review Automatic Event
       description: >-
-        When a Google review request event occurs, a webhook is sent to the registered endpoint containing the Doctor ID, Google review link, and Patient ID.
+        When a prescription ends then automatically a webhook is sent to the registered endpoint containing the Doctor ID, Google review link, and Patient ID.
 
         The receiving system can use these details to update or manage Google review information as needed.
       operationId: GoogleReviewRequestWebhook
@@ -1170,6 +1170,82 @@ paths:
                       type: string
                       example: "67978400352a61001d64e9fb"
                       description: "Unique identifier of the clinic"
+      deprecated: false
+
+  /registered_url_for_google_review_manual_events:
+    post:
+      tags:
+        - Doctor Webhooks
+      summary: Google Review Manual Event
+      description: >-
+        When a Google review request is manually triggered through doctor platform, a webhook is sent to the registered endpoint containing the Appointment ID, Doctor ID, Patient ID, Clinic ID, and Google review link.
+
+        The receiving system can use these details to update or manage Google review information as needed.
+      operationId: GoogleReviewRequestManualWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - event_time
+                - timestamp
+                - client_id
+                - business_id
+                - data
+              properties:
+                event:
+                  type: string
+                  enum:
+                    - "google_review.request_manual"
+                  example: "google_review.request_manual"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1730189586
+                  description: "Event occurred timestamp"
+                timestamp:
+                  type: integer
+                  example: 1730189586
+                  description: "Timestamp of the event"
+                client_id:
+                  type: string
+                  example: "67978400352a61001d64e9fb"
+                  description: "Client ID for the schedule"
+                business_id:
+                  type: string
+                  example: "174159057718553"
+                  description: "Business ID for the schedule"
+                data:
+                  type: object
+                  required:
+                    - doctor_id
+                    - patient_id
+                    - google_review_link
+                  properties:
+                    appointment_id:
+                      type: string
+                      example: "apt-67890"
+                      description: "Unique identifier for the appointment."
+                    doctor_id:
+                      type: string
+                      example: "doc-abc123"
+                      description: "Identifier for the respective doctor in Eka"
+                    patient_id:
+                      type: string
+                      example: "patient-xyz789"
+                      description: "Identifier for the respective patient in Eka"
+                    clinic_id:
+                      type: string
+                      example: "clinic-def456"
+                      description: "Unique identifier of the clinic"
+                    google_review_link:
+                      type: string
+                      example: "https://g.page/r/example-review-link/review"
+                      description: "Google review link"
       deprecated: false
 
   /registered_url_for_consent_form:
