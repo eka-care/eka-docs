@@ -36,7 +36,8 @@ to EkaCare in encrypted form.
     `kid` set to your Key ID.
   </Step>
   <Step title="Send it">
-    Pass the compact token in the `x-auth-token` header when creating a session.
+    Hand the token to your embedded MedAssist widget — via the `auth-token` attribute or
+    `EkaMedAssist.init({ authToken })`. See [Send the Token](#send-the-token).
   </Step>
   <Step title="EkaCare verifies">
     EkaCare looks up your secret and registered issuer by the `kid`, decrypts the token, and trusts the
@@ -111,7 +112,7 @@ Example payload:
 
 ```json
 {
-  "iss": "partner-xyz",
+  "iss": "https://partner.example.com",
   "aud": "https://eka.care",
   "sub": "+919876543210",
   "mobile_number": "+919876543210",
@@ -147,7 +148,7 @@ def mint_partner_token() -> str:
     # Your values
     now = int(time.time())
     claims = {
-        "iss":           "partner-xyz",
+        "iss":           "https://partner.example.com",
         "aud":           "https://eka.care",
         "sub":           "+919876543210",
         "mobile_number": "+919876543210",
@@ -184,7 +185,7 @@ async function mintPartnerToken() {
     const now = Math.floor(Date.now() / 1000);
 
     const claims = {
-        iss: "partner-xyz",
+        iss: "https://partner.example.com",
         aud: "https://eka.care",
         sub: "+919876543210",
         mobile_number: "+919876543210",
@@ -234,7 +235,7 @@ func mintPartnerToken() (string, error) {
 	now := time.Now().Unix()
 
 	claims := map[string]interface{}{
-		"iss":           "partner-xyz",
+		"iss":           "https://partner.example.com",
 		"aud":           "https://eka.care",
 		"sub":           "+919876543210",
 		"mobile_number": "+919876543210",
@@ -301,7 +302,7 @@ public class GenerateJWE {
 
         String payload = String.format("""
         {
-          "iss":"partner-xyz",
+          "iss":"https://partner.example.com",
           "aud":"https://eka.care",
           "sub":"+919876543210",
           "mobile_number":"+919876543210",
@@ -337,24 +338,59 @@ public class GenerateJWE {
 
 ## Send the Token
 
-Pass the compact JWE in the `x-auth-token` header when you create a session:
+The **MedAssist widget** is EkaCare's embeddable chat widget. Copy its embed snippet from your agent's
+**Widget** tab in the [Developer Console](https://console.eka.care) (or see the
+[widget quickstart](/ai-tools/synapse/embed/quickstart)), then add the token to it.
 
-```bash
-curl -X POST https://<session-endpoint> \
-  -H "Content-Type: application/json" \
-  -H "x-auth-token: <compact-jwe>" \
-  -d '{ }'
+<img
+  src="/images/widget-tab.png"
+  alt="The Widget tab in the EkaCare Developer Console, showing the embed code to copy"
+  data-zoomable
+/>
+
+There are two ways to pass the token:
+
+<CodeGroup>
+```html Custom element
+<eka-medassist-widget
+  agent-id="YOUR_AGENT_ID"
+  auth-token="COMPACT_JWE">
+</eka-medassist-widget>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
+  async
+></script>
 ```
 
-<Note>
-Replace `<session-endpoint>` with the session-creation endpoint for your agent.
-</Note>
+```html JavaScript
+<eka-medassist-widget agent-id="YOUR_AGENT_ID"></eka-medassist-widget>
+<script
+  src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
+  async
+></script>
+
+<script>
+  window.EkaMedAssist.init({
+    agentId: "YOUR_AGENT_ID",
+    authToken: "COMPACT_JWE",
+  });
+</script>
+```
+</CodeGroup>
+
+- **Custom element** — set the `auth-token` attribute on the `<eka-medassist-widget>` element. Best
+  when you can render the token into the page server-side. See the
+  [widget quickstart](/ai-tools/synapse/embed/quickstart).
+- **JavaScript** — pass `authToken` to `EkaMedAssist.init()`. Best when the token is dynamic (e.g.
+  minted per logged-in user at runtime). See the
+  [JavaScript API](/ai-tools/synapse/embed/javascript-api).
 
 ---
 
 ## How EkaCare Verifies
 
-When a request arrives with an `x-auth-token`, EkaCare:
+When EkaCare receives the token, it:
 
 1. Reads the `kid` from the token header and looks up the matching **shared secret** and registered
    **issuer**.
