@@ -6,16 +6,82 @@ ABDM allows a user to find their health records from any health facility they ha
 
 When a discovery request is initiated by the user, the HIP will receive a list of verified identifiers along with name and demographic information. Verified information includes the ABHA address, the mobile number name, gender, year of birth.
 
-### PHR Flow
+## Overview for HIP Clients
+
+If you are integrating as a HIP — a clinic, hospital, or health information system using Eka's APIs — this section explains how Care Context Discovery works end-to-end and what your system needs to handle.
+
+### How Eka fits in
+
+Eka acts as the middleware between ABDM and your system. You do not communicate with ABDM directly. Instead:
+
+- ABDM sends all discovery and linking requests to Eka.
+- Eka forwards them to your system via **webhooks**.
+- Your system processes the request and responds back to Eka via **API calls**.
+- Eka forwards your response to ABDM.
+
+### End-to-End Flow
+
+#### Phase 1 — Discovery
+
+<Steps>
+    <Step title="Patient triggers discovery from a PHR app">
+        The patient opens any ABDM-compatible PHR app (e.g. ABHA app) and searches for their records at your facility. ABDM routes the request to Eka based on your registered HIP ID.
+    </Step>
+    <Step title="Eka sends you a Discovery webhook">
+        Eka forwards the request to your registered webhook URL. The payload contains the patient's ABHA address, name, gender, year of birth, and other verified identifiers (mobile number, ABHA number).
+
+        - **Webhook Reference:** [Discovery Request Received](/api-reference/user-app/abdm-connect/webhooks/discover-care-context)
+    </Step>
+    <Step title="You search and respond with matching care contexts">
+        Search your system using the identifiers provided. Return the list of unlinked care contexts (e.g. visits, prescriptions, lab reports) that belong to this patient.
+
+        The `abha_address` in the webhook payload is a verified identifier — confirmed by ABDM, not self-declared by the patient. As per ABDM guidelines, it is the HIP's prerogative to save this to the matched patient's profile. If stored, you can use the ABHA address in future HIP-initiated linking flows to link new care contexts directly, without requiring the patient to go through discovery again.
+
+        - **API Reference:** [On Discover](/api-reference/user-app/abdm-connect/care-contexts/discover/on_discover)
+    </Step>
+</Steps>
+
+#### Phase 2 — Linking
+
+<Steps>
+    <Step title="Patient selects care contexts to link">
+        The patient reviews the care contexts returned in Phase 1 and selects the ones they want to link to their ABHA account. ABDM notifies Eka, which forwards the request to your system.
+
+        - **Webhook Reference:** [Link Initiation - Generate OTP](/api-reference/user-app/abdm-connect/webhooks/discover-link-init)
+    </Step>
+    <Step title="You generate and send an OTP">
+        Generate an OTP and deliver it to the patient's registered mobile number. Then notify Eka that the OTP has been dispatched.
+
+        - **API Reference:** [On Link Init](/api-reference/user-app/abdm-connect/care-contexts/discover/link_on_init)
+    </Step>
+    <Step title="Patient submits OTP — you verify and confirm">
+        The patient enters the OTP in the PHR app. ABDM validates it and sends a confirmation to Eka, which forwards it to your system via a webhook containing the OTP token.
+
+        Your system must validate this token against the OTP you generated in the previous step. If valid, call the `on-link-confirm` API with the list of care contexts to be linked.
+
+        **Who does the linking?** You do — by calling `on-link-confirm`, your system is confirming to ABDM that the OTP is valid and that the selected care contexts should be linked. ABDM then registers the linkage on its side. You do not need to call the separate HIP-initiated Link API for this flow.
+
+        **Which HIP are the records linked to?** The care contexts are linked to your HIP, identified by the `hip_id` present in the webhook payload. This is the same HIP the patient searched when triggering discovery — the facility whose records they are claiming.
+
+        - **Webhook Reference:** [Link Confirmation - Verify OTP](/api-reference/user-app/abdm-connect/webhooks/discover-link-confirm)
+        - **API Reference:** [On Link Confirm](/api-reference/user-app/abdm-connect/care-contexts/discover/link_on_confirm)
+    </Step>
+</Steps>
+
+Once linking is confirmed, the care contexts are registered with ABDM under the patient's ABHA account and can be accessed by HIUs (e.g. doctors, hospitals) through the ABDM consent flow.
+
+---
+
+## PHR Flow
 <Steps>
     <Step title="Discover Unlinked CareContexts">
         Use the discover api to get a list of care-contexts that are not linked to the user's account.
         Linking Process is initiated by the user by providing the care-context id and the verification code is sent to the user's mobile number.
         - **API Reference:** [Discover Unlinked CareContexts](/api-reference/user-app/abdm-connect/care-contexts/discover/discover)
     </Step>
-    <Step title="Initate the linking">
+    <Step title="Initiate the linking">
         Use the link init api to initiate the linking process, the HIP will send an OTP to the user's mobile number.
-        - **API Reference:** [Initate the linking](/api-reference/user-app/abdm-connect/care-contexts/discover/link-init)
+        - **API Reference:** [Initiate the linking](/api-reference/user-app/abdm-connect/care-contexts/discover/link-init)
     </Step>
     <Step title="Confirm the linking with OTP">
         Use `txn_id` from the previous step and OTP sent to the user's mobile number to confirm the linking.
@@ -23,7 +89,7 @@ When a discovery request is initiated by the user, the HIP will receive a list o
     </Step>
 </Steps>
 
-### HIP Flow
+## HIP Flow
 <Steps>
     <Step title="On Discover">
         The HIP receives a discovery request and returns the list of unlinked care-contexts associated with the user.

@@ -1,0 +1,176 @@
+---
+title: Encryption
+description: >
+  ECDH encryption for ABDM health data exchange using the open-source abdm-ecdh library.
+---
+
+ABDM's HIE-CM specification requires a specific ECDH-based encryption scheme for exchanging health records between parties. Use the open-source [**eka-care/abdm-ecdh**](https://github.com/eka-care/abdm-ecdh) library to perform all cryptographic operations.
+
+<Note>
+  The library implements ECDH key agreement on Curve25519 (Weierstrass form) — matching Java/BouncyCastle — with HKDF-SHA256 key derivation and AES-256-GCM encryption. This is the same algorithm required by ABDM.
+</Note>
+
+## Installation
+
+<CodeGroup>
+
+```bash Go
+go get github.com/eka-care/abdm-ecdh/go@v1.0.0
+```
+
+```bash Python
+pip install abdm-ecdh
+```
+
+```xml Java (Maven)
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.github.eka-care</groupId>
+  <artifactId>abdm-ecdh</artifactId>
+  <version>java/v1.0.0</version>
+</dependency>
+```
+
+</CodeGroup>
+
+## Usage
+
+<CodeGroup>
+
+```go Go
+package main
+
+import (
+    abdmecdh "github.com/eka-care/abdm-ecdh/go"
+    "fmt"
+)
+
+func main() {
+    e := abdmecdh.New()
+
+    // Each party generates their own key material
+    sender, err := e.GenerateKeyMaterial()
+    if err != nil {
+        panic(err)
+    }
+    requester, err := e.GenerateKeyMaterial()
+    if err != nil {
+        panic(err)
+    }
+
+    // Sender encrypts
+    enc, err := e.Encrypt(abdmecdh.EncryptionRequest{
+        StringToEncrypt:    "sensitive health data",
+        SenderNonce:        sender.Nonce,
+        RequesterNonce:     requester.Nonce,
+        SenderPrivateKey:   sender.PrivateKey,
+        RequesterPublicKey: requester.X509PublicKey,
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    // Requester decrypts
+    dec, err := e.Decrypt(abdmecdh.DecryptionRequest{
+        EncryptedData:       enc.EncryptedData,
+        SenderNonce:         sender.Nonce,
+        RequesterNonce:      requester.Nonce,
+        RequesterPrivateKey: requester.PrivateKey,
+        SenderPublicKey:     sender.X509PublicKey,
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println(dec.DecryptedData) // "sensitive health data"
+}
+```
+
+```python Python
+from abdm_ecdh import generate_key_material, encrypt, decrypt
+
+# Each party generates their own key material
+sender    = generate_key_material()
+requester = generate_key_material()
+
+# Sender encrypts
+enc = encrypt(
+    string_to_encrypt="sensitive health data",
+    sender_nonce=sender.nonce,
+    requester_nonce=requester.nonce,
+    sender_private_key=sender.private_key,
+    requester_public_key=requester.x509_public_key,
+)
+
+# Requester decrypts
+dec = decrypt(
+    encrypted_data=enc.encrypted_data,
+    sender_nonce=sender.nonce,
+    requester_nonce=requester.nonce,
+    requester_private_key=requester.private_key,
+    sender_public_key=sender.x509_public_key,
+)
+
+print(dec.decrypted_data)  # "sensitive health data"
+```
+
+```java Java
+import care.eka.abdmecdh.AbdmEcdh;
+import care.eka.abdmecdh.KeyMaterial;
+import care.eka.abdmecdh.EncryptionResponse;
+import care.eka.abdmecdh.DecryptionResponse;
+
+// Each party generates their own key material
+KeyMaterial sender = AbdmEcdh.generateKeyMaterial();
+KeyMaterial requester = AbdmEcdh.generateKeyMaterial();
+
+// Sender encrypts
+EncryptionResponse enc = AbdmEcdh.encrypt(
+    "sensitive health data",
+    sender.nonce(),
+    requester.nonce(),
+    sender.privateKey(),
+    requester.x509PublicKey()
+);
+
+// Requester decrypts
+DecryptionResponse dec = AbdmEcdh.decrypt(
+    enc.encryptedData(),
+    sender.nonce(),
+    requester.nonce(),
+    requester.privateKey(),
+    sender.x509PublicKey()
+);
+
+System.out.println(dec.decryptedData()); // "sensitive health data"
+```
+
+</CodeGroup>
+
+## Key Material
+
+`GenerateKeyMaterial` / `generate_key_material` returns:
+
+| Field | Description |
+|---|---|
+| `privateKey` / `private_key` | Base64-encoded private scalar |
+| `publicKey` / `public_key` | Base64-encoded uncompressed EC point (65 bytes) |
+| `x509PublicKey` / `x509_public_key` | Base64-encoded X.509 SubjectPublicKeyInfo DER — share with the counterparty |
+| `nonce` / `nonce` | Base64-encoded 32-byte random nonce — share with the counterparty |
+
+## Cryptographic Details
+
+| Step | Algorithm |
+|---|---|
+| Key agreement | ECDH on Curve25519 (Weierstrass form) |
+| Key derivation | HKDF-SHA256 (salt = first 20 bytes of XOR'd nonces) |
+| Encryption | AES-256-GCM (IV = last 12 bytes of XOR'd nonces) |
+| Key encoding | X.509 SubjectPublicKeyInfo DER (BouncyCastle explicit params) |
+
+For more details, see the [ABDM Encryption and Decryption Guide](https://sandbox.abdm.gov.in/sandbox/v3/new-documentation?doc=EncryptionandDecryptions) and the [abdm-ecdh source](https://github.com/eka-care/abdm-ecdh).

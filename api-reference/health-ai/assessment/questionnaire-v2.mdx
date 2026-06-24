@@ -1,0 +1,101 @@
+---
+openapi: post /assessment/api/v2/questionnaire/
+---
+
+# (V2) Get Questionnaire Data 
+
+Fetch questions, answers, practitioner details, patient demographics, and scoring for one or more
+assessments in a single request. Authentication is required — only the business that owns the
+assessments can retrieve them.
+
+<Info>
+  **v1 vs v2** — The older
+  [questionnaire_data](/api-reference/health-ai/assessment/questionnaire_data) endpoint (`GET v1`)
+  returns raw FHIR data for a single assessment. This v2 endpoint returns a structured
+  question/answer breakdown for multiple assessments at once, with enriched practitioner and
+  scoring fields.
+</Info>
+
+## Key fields in the response
+
+| Field | Description |
+|---|---|
+| `assess_data` | Ordered list of Q&A components. `component_code: P-QNA` are question/answer pairs; `P-HEAD` are section headings. |
+| `workflow_id` / `workflow_name` | The workflow that drove this assessment. |
+| `practitioner` | Details of the doctor or staff member who ran the session. |
+| `patient` | Age and gender captured at the time of the assessment. |
+| `custom_vital` | Optional numeric vital recorded during the session (e.g., blood glucose). |
+| `score_interpretation` | Scoring rules from the workflow — present only for workflows that define scoring. |
+
+## Examples
+
+### Fetching two assessments in one call
+
+### Request:
+```bash
+curl -X POST ".../api/v2/questionnaire/" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{ "assessment_ids": ["sa_123456789", "sn_987654321"] }'
+```
+
+### Response:
+Each key in `data` maps to one of the requested assessment IDs.
+
+```json
+{
+  "data": {
+    "sa_123456789": {
+      "assess_data": [
+        {
+          "question": "What symptoms are you facing?",
+          "answer": "Fever, Cough",
+          "options": null,
+          "component_code": "P-QNA"
+        },
+        {
+          "question": "How long have you had these symptoms?",
+          "answer": "3 days",
+          "options": ["1 day", "3 days", "1 week", "More than a week"],
+          "component_code": "P-QNA"
+        }
+      ],
+      "workflow_name": "General Health Check",
+      "workflow_id": 101,
+      "created_at": "2024-03-01T10:00:00Z",
+      "practitioner": {
+        "oid": "161467756044223",
+        "fn": "Ananya",
+        "mn": null,
+        "ln": "Sharma",
+        "fln": "Dr. Ananya Sharma",
+        "gender": "f",
+        "dob": "1985-06-15"
+      },
+      "patient": {
+        "age": 32,
+        "gender": "m"
+      },
+      "custom_vital": null,
+      "score_interpretation": null
+    },
+    "sn_987654321": {
+      "assess_data": [ "..." ],
+      "workflow_name": "Diabetes Screening",
+      "workflow_id": 205,
+      "created_at": "2024-03-05T14:30:00Z",
+      "practitioner": { "..." },
+      "patient": { "age": 45, "gender": "f" },
+      "custom_vital": 98,
+      "custom_vital_name": "Blood Glucose",
+      "custom_vital_id": "vital_blood_glucose",
+      "score_interpretation": {
+        "ranges": [
+          { "min": 0, "max": 5, "label": "Low Risk" },
+          { "min": 6, "max": 10, "label": "High Risk" }
+        ]
+      }
+    }
+  }
+}
+```

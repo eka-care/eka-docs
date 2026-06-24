@@ -7,7 +7,7 @@ openapi: get /assessment/api/fetch_interviews/v2/
 This API fetches and groups assessments. One can filter using any combination of these properties:
 `practitioner_uuid`, `patient_uuid`, `unique_identifier`, `transaction_id` with `status` (default: COMPLETED).
 
-One can also create a New Assessment using [🔗 INIT API](/api-reference/general-tools/assessment/assessment-flow/initialization/initialize-assessment) with any one of these properties.
+One can also create a New Assessment using [🔗 INIT API](/api-reference/health-ai/assessment/assessment-flow/initialization/initialize-assessment) with any one of these properties.
 
 ## Examples
 
@@ -15,7 +15,7 @@ One can also create a New Assessment using [🔗 INIT API](/api-reference/genera
 This request finds all assessment groups for a specific practitioner AND a specific patient. The unique_identifier can be different for each group.
 
 ### Request:
-```json
+```bash
 curl ".../v2/?practitioner_uuid=123-doc&patient_uuid=456-patient"
 ```
 
@@ -31,7 +31,7 @@ Notice how both groups in the response match the requested practitioner_uuid and
       "unique_identifier": "UID-A",
       "transaction_id": "TXN-1",
       "conversations": [
-        { "conversationid": "sa_111", "created_at": "..." }
+        { "conversationid": "sa_111", "created_at": "...", "wflow_wfid": 101 }
       ]
     },
     {
@@ -40,8 +40,8 @@ Notice how both groups in the response match the requested practitioner_uuid and
       "unique_identifier": "UID-B",
       "transaction_id": "TXN-2",
       "conversations": [
-        { "conversationid": "sa_222", "created_at": "..." },
-        { "conversationid": "sn_333", "created_at": "..." }
+        { "conversationid": "sa_222", "created_at": "...", "wflow_wfid": 101 },
+        { "conversationid": "sn_333", "created_at": "...", "wflow_wfid": 205 }
       ]
     }
   ]
@@ -52,7 +52,7 @@ Notice how both groups in the response match the requested practitioner_uuid and
 This request finds all assessment groups that share the same unique_identifier, regardless of the practitioner or patient.
 
 ### Request: 
-```json 
+```bash
 curl ".../v2/?unique_identifier=UID-XYZ"
 ```
 
@@ -68,7 +68,7 @@ Notice how both groups have the same unique_identifier, but different practition
       "unique_identifier": "UID-XYZ",
       "transaction_id": "TXN-100",
       "conversations": [
-        { "conversationid": "sa_777", "created_at": "..." }
+        { "conversationid": "sa_777", "created_at": "...", "wflow_wfid": 101 }
       ]
     },
     {
@@ -77,7 +77,72 @@ Notice how both groups have the same unique_identifier, but different practition
       "unique_identifier": "UID-XYZ",
       "transaction_id": "TXN-200",
       "conversations": [
-        { "conversationid": "sn_888", "created_at": "..." }
+        { "conversationid": "sn_888", "created_at": "...", "wflow_wfid": 101 }
+      ]
+    }
+  ]
+}
+```
+
+### Example 3: Filtering by UHID via username_alias
+During INIT, patient identifiers are stored as **OIDs** (eka's internal identifier). However, some clients pass their own primary key (e.g., UHID, MRN) during INIT instead of the OID. Use `username_alias` to handle this — set it to the name of the filter field that contains the UHID, and the API will resolve it to the corresponding OID before filtering.
+
+**Supported values:** `practitioner_uuid`, `patient_uuid`, `unique_identifier`, `transaction_id`
+
+> The field named in `username_alias` must also be provided as a query parameter with the UHID value.
+
+### Request:
+```bash
+curl --location 'https://api.eka.care/assessment/api/fetch_interviews/v2/?status=COMPLETED&unique_identifier=abc&username_alias=unique_identifier' \
+--header 'Authorization: Bearer <token>'
+```
+
+Here `unique_identifier=abc` is the UHID, and `username_alias=unique_identifier` tells the API to resolve it to an OID before filtering.
+
+### Response:
+Assessments matching the resolved OID are returned, grouped as usual.
+
+```json
+{
+  "conversations": [
+    {
+      "practitioner_uuid": "123-doc",
+      "patient_uuid": "456-patient",
+      "unique_identifier": "<resolved-oid>",
+      "transaction_id": "TXN-1",
+      "conversations": [
+        { "conversationid": "sa_111", "created_at": "...", "wflow_wfid": 101 }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### Example 4: Filtering by Workflow IDs
+
+Use `wfids` to fetch only assessments belonging to specific workflows. This is useful when you want results scoped to a particular assessment type (e.g., only diabetes screenings or only general health checks).
+
+### Request:
+```bash
+curl ".../v2/?patient_uuid=456-patient&wfids=101,205"
+```
+
+### Response:
+Only assessments whose workflow matches one of the provided `wfids` are returned.
+
+```json
+{
+  "conversations": [
+    {
+      "practitioner_uuid": "123-doc",
+      "patient_uuid": "456-patient",
+      "unique_identifier": "UID-A",
+      "transaction_id": "TXN-1",
+      "conversations": [
+        { "conversationid": "sa_111", "created_at": "2024-03-01T10:00:00Z", "wflow_wfid": 101 },
+        { "conversationid": "sn_999", "created_at": "2024-03-05T14:30:00Z", "wflow_wfid": 205 }
       ]
     }
   ]

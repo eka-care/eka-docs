@@ -1,0 +1,190 @@
+---
+title: Quickstart
+description: Connect your AI client to MedAI Tools in minutes using the hosted server.
+---
+
+**Server URL:** `https://medai-tools.eka.care/mcp`
+
+<Info>
+  **Prerequisite:** An active Eka account. On first connect, your AI client will open a browser window for OAuth login. Contact **ekaconnect@eka.care** to get access.
+</Info>
+
+Pick your AI client and follow the steps:
+
+<Tabs>
+  <Tab title="Claude Desktop">
+
+### Claude Desktop (Paid / Pro)
+
+<Steps>
+  <Step title="Open Settings">
+    In Claude Desktop, click **Settings** → **Connectors** → **Add custom connector**
+  </Step>
+  <Step title="Enter server details">
+    - Name: `MedAI Tools`
+    - URL: `https://medai-tools.eka.care/mcp`
+  </Step>
+  <Step title="Add and authenticate">
+    Click **Add**, then sign in with your Eka account when prompted.
+  </Step>
+</Steps>
+
+### Claude Desktop (Free)
+
+Free tier doesn't have the Connectors UI. Use `mcp-remote` as a bridge:
+
+<Steps>
+  <Step title="Open config">
+    Go to **Settings** → **Developer** → **Edit Config**
+  </Step>
+  <Step title="Add this configuration">
+
+```json claude_desktop_config.json
+{
+  "mcpServers": {
+    "medai-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://medai-tools.eka.care/mcp"]
+    }
+  }
+}
+```
+
+Config location: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
+
+  </Step>
+  <Step title="Save and restart">
+    Save the file, restart Claude Desktop, then authenticate when the browser opens.
+  </Step>
+</Steps>
+
+  </Tab>
+  <Tab title="Claude Code">
+
+Add to your Claude Code settings:
+
+```json ~/.claude/settings.json
+{
+  "mcpServers": {
+    "medai-tools": {
+      "type": "url",
+      "url": "https://medai-tools.eka.care/mcp"
+    }
+  }
+}
+```
+
+Or run from the terminal:
+
+```bash
+claude mcp add medai-tools --transport http https://medai-tools.eka.care/mcp
+```
+
+  </Tab>
+  <Tab title="ChatGPT">
+
+**Requirements:** ChatGPT with a paid plan (remote MCP connectors are not available on the Free tier).
+
+<Steps>
+  <Step title="Go to Settings">
+    Open [chatgpt.com](https://chatgpt.com) → click your profile → **Settings**
+  </Step>
+  <Step title="Enable developer mode">
+    Navigate to **Apps and Connectors** → toggle on **Developer mode**
+  </Step>
+  <Step title="Create connector">
+    Click **Create app**:
+    - Name: `MedAI Tools`
+    - URL: `https://medai-tools.eka.care/mcp`
+  </Step>
+  <Step title="Authenticate">
+    Click **Create** and sign in with your Eka account when the OAuth window appears.
+  </Step>
+</Steps>
+
+  </Tab>
+  <Tab title="Cursor">
+
+<Steps>
+  <Step title="Open MCP settings">
+    Press `Cmd/Ctrl + Shift + P` → **Cursor Settings** → **Tools & MCP** → **New MCP Server**
+  </Step>
+  <Step title="Add configuration">
+
+```json
+{
+  "mcpServers": {
+    "medai-tools": {
+      "url": "https://medai-tools.eka.care/mcp"
+    }
+  }
+}
+```
+
+  </Step>
+  <Step title="Connect">
+    Click **Connect**, then sign in with your Eka account.
+  </Step>
+</Steps>
+
+  </Tab>
+  <Tab title="VS Code">
+
+**Requirements:** VS Code 1.95+ with GitHub Copilot
+
+<Steps>
+  <Step title="Open Command Palette">
+    Press `Cmd/Ctrl + Shift + P` → **MCP: Add Server** → **HTTP**
+  </Step>
+  <Step title="Enter details">
+    - URL: `https://medai-tools.eka.care/mcp`
+    - Name: `medai-tools`
+  </Step>
+  <Step title="Authenticate">
+    VS Code will prompt you to sign in with your Eka account.
+  </Step>
+</Steps>
+
+Or add directly to settings:
+
+```json settings.json
+{
+  "mcp": {
+    "servers": {
+      "medai-tools": {
+        "type": "http",
+        "url": "https://medai-tools.eka.care/mcp"
+      }
+    }
+  }
+}
+```
+
+  </Tab>
+</Tabs>
+
+---
+
+## Verify the Connection
+
+Once connected, test with a prompt in your AI client:
+
+```text
+Search for Dolo 650 in the Indian drug database
+```
+
+You should see the AI call `indian_branded_drug_search` and return drug details including generic composition and manufacturer.
+
+---
+
+## Self-hosted (Partners Only)
+
+The MedAI Tools server source is available to Eka partners. Self-hosting requires Python 3.13+, Docker, AWS Bedrock access, and Eka OAuth credentials.
+
+Contact **ekaconnect@eka.care** to request source access and setup documentation.
+
+---
+
+<Note>
+**Need an Eka account?** Contact **ekaconnect@eka.care** to get started.
+</Note>

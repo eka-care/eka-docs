@@ -1,0 +1,571 @@
+openapi: 3.1.0
+info:
+  title: Medical Entity Codification API
+  version: "1.0.0"
+  description: >-
+    The Medical Entity Codification API (MedLink Named Entity Linking) maps
+    free-text medical entities — symptoms, diagnoses, lab tests and drugs — to
+    standardised ontology codes such as SNOMED CT, LOINC, ICD-10-CM and Eka's
+    medication database.
+servers:
+  - url: https://api.eka.care
+    description: Production
+security:
+  - authApiKey: []
+tags:
+  - name: Registry
+    description: Discover the ontologies, versions and indexes available for codification.
+  - name: Entity Linking
+    description: Link free-text medical entities to standardised ontology codes.
+paths:
+  /med-link/registry/:
+    get:
+      tags:
+        - Registry
+      summary: List registry
+      operationId: listRegistry
+      description: >-
+        Returns every ontology available for codification, the versions of each
+        ontology, and the active indexes backing them. Use this to discover the
+        exact `ontology` and `version` values to send to the linking endpoints.
+      responses:
+        "200":
+          description: The ontologies currently available for codification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistryResponse"
+              example:
+                ontologies:
+                  - name: snomed
+                    versions:
+                      - "20250401_extended"
+                  - name: loinc
+                    versions:
+                      - "v1.0"
+                  - name: medication
+                    versions:
+                      - "v5.0"
+                  - name: icd-10-cm
+                    versions:
+                      - "comprehend"
+  /med-link/nel/link:
+    post:
+      tags:
+        - Entity Linking
+      summary: Link entity
+      operationId: linkEntity
+      description: >-
+        Links a single free-text medical entity to candidate codes from the
+        requested ontology. The `metadata` field carries ontology-specific hints
+        — it is **strongly recommended for LOINC** (a unit can change the linked
+        code) and **optional for medication**. SNOMED CT and ICD-10-CM Comprehend
+        do not use `metadata`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NELRequest"
+            examples:
+              snomed:
+                summary: SNOMED CT — clinical finding
+                value:
+                  query: "chest pain"
+                  ontology: "snomed"
+                  version: "20250401_extended"
+                  top_k: 3
+              loinc:
+                summary: LOINC — lab test (with metadata)
+                value:
+                  query: "hemoglobin"
+                  ontology: "loinc"
+                  version: "v1.0"
+                  top_k: 3
+                  metadata:
+                    unit: "g/dl"
+                    value: "14.5"
+                    specimen: "blood"
+              medication:
+                summary: Medication — branded drug (with metadata)
+                value:
+                  query: "Dolo 650"
+                  ontology: "medication"
+                  version: "v5.0"
+                  top_k: 3
+                  metadata:
+                    form: "tablet"
+                    generic_name: "paracetamol"
+                    dose_unit: "mg"
+              icd_comprehend:
+                summary: ICD-10-CM Comprehend — diagnosis
+                value:
+                  query: "type 2 diabetes mellitus"
+                  ontology: "icd-10-cm"
+                  version: "comprehend"
+                  top_k: 3
+      responses:
+        "200":
+          description: Candidate codes for the query, ranked by relevance.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NELResponse"
+              examples:
+                snomed:
+                  summary: SNOMED CT result
+                  value:
+                    request_id: "0e95448d-7e32-44c9-8586-c33315412330"
+                    query: "chest pain"
+                    query_breakdown: null
+                    ontology: snomed
+                    version: "20250401_extended"
+                    index_name: snomed_20250401_extended_c88b15811956d4fcb54da9ae_1bfcc90540_pg
+                    model_version: c88b15811956d4fcb54da9ae6d14a733ac90e7a7
+                    results:
+                      - term_id: "29857009"
+                        term_name: "Chest pain"
+                        score: 1.0
+                        is_linked: true
+                        metadata:
+                          semantic_tag: finding
+                          is_core: true
+                          source: snomed_ct_20250401_extended
+                          language: en
+                          script: latin
+                      - term_id: "29857009"
+                        term_name: "Chest pain (finding)"
+                        score: 0.9494552299218054
+                        is_linked: true
+                        metadata:
+                          semantic_tag: finding
+                          is_core: true
+                          source: snomed_ct_20250401_extended
+                          language: en
+                          script: latin
+                loinc:
+                  summary: LOINC result (with metadata — links correctly)
+                  value:
+                    request_id: "9b4ed3f7-a05f-4234-b7d1-21823715add0"
+                    query: "hemoglobin"
+                    query_breakdown:
+                      test_name: "hemoglobin"
+                      value: "14.5"
+                      specimen: "blood"
+                      unit_orig: "g/dl"
+                    ontology: loinc
+                    version: "v1.0"
+                    index_name: loinc
+                    model_version: null
+                    results:
+                      - term_id: "718-7"
+                        term_name: "HEMOGLOBIN (HB) [Mass/Vol]"
+                        score: 1.0
+                        is_linked: true
+                        metadata:
+                          eka_id: lb-2139115007
+                          unit_normalised: "g/dl"
+                          matching_breakdown:
+                            component_match: true
+                            unit_match: true
+                            specimen_match: true
+                            value_type_match: true
+                            ref_time_match: true
+                            value_normalised: "14.5"
+                      - term_id: "59260-0"
+                        term_name: "HEMOGLOBIN (Hb) [Moles/Vol]"
+                        score: 0.5
+                        is_linked: false
+                        metadata:
+                          eka_id: lb-61274947
+                          matching_breakdown:
+                            component_match: true
+                            unit_match: false
+                            specimen_match: true
+                            value_type_match: true
+                            ref_time_match: true
+                medication:
+                  summary: Medication result (with metadata)
+                  value:
+                    request_id: "90f385a8-be21-4528-a448-73fe4afb2fcd"
+                    query: "Dolo 650"
+                    query_breakdown:
+                      brand_name: "dolo"
+                      form: "tablet"
+                      volume: "650"
+                    ontology: medication
+                    version: "v5.0"
+                    index_name: medication
+                    model_version: null
+                    results:
+                      - term_id: "b-4117370658"
+                        term_name: "Dolo 650 Tablet"
+                        score: null
+                        is_linked: true
+                        metadata:
+                          form_info: tablet
+                          volume: "650"
+                          generic_name: "paracetamol + acetaminophen"
+                          generic_id: g-3283555471
+                          generic_composition: "Paracetamol (650mg)"
+                          product_type: Tablet
+                          manufacturer_name: "Micro Labs Ltd"
+                          is_otc: false
+                          linking_requirements:
+                            form_needed: true
+                          matching_breakdown:
+                            drug_detection_score: "1.0"
+                            volume_detection_score: "1.0"
+                            form_detection_score: "1.1"
+                            volume_exact_match: true
+                            form_exact_match: true
+                            form_qualifier_exact_match: true
+                            salt_qualifier_exact_match: true
+                      - term_id: "b-3329382508"
+                        term_name: "Dolo 500 Tablet"
+                        score: null
+                        is_linked: false
+                        metadata:
+                          form_info: tablet
+                          volume: "500"
+                          generic_name: "paracetamol + acetaminophen"
+                          generic_id: g-3283555471
+                          generic_composition: "Paracetamol (500mg)"
+                          product_type: Tablet
+                          manufacturer_name: "Micro Labs Ltd"
+                          is_otc: false
+                          linking_requirements:
+                            form_needed: true
+                          matching_breakdown:
+                            drug_detection_score: "1.0"
+                            volume_detection_score: "0.39"
+                            form_detection_score: "1.1"
+                            volume_exact_match: false
+                            form_exact_match: true
+                            form_qualifier_exact_match: true
+                            salt_qualifier_exact_match: true
+                            uncoded_reason: volume_mismatch
+                icd_comprehend:
+                  summary: ICD-10-CM Comprehend result
+                  value:
+                    request_id: "78983f3b-71d7-4753-bb2d-083426aba10c"
+                    query: "type 2 diabetes mellitus"
+                    query_breakdown:
+                      entity: "diabetes mellitus"
+                      entity_score: 0.821601390838623
+                      traits:
+                        - name: DIAGNOSIS
+                          score: 0.8203471899032593
+                      attributes:
+                        - type: QUALITY
+                          text: "type 2"
+                          score: 0.6603351831436157
+                    ontology: icd-10-cm
+                    version: "comprehend"
+                    index_name: icd-10-cm-comprehend
+                    model_version: null
+                    results:
+                      - term_id: "E11"
+                        term_name: "Type 2 diabetes mellitus"
+                        score: 0.9126632213592529
+                        is_linked: true
+                      - term_id: "E11.9"
+                        term_name: "Type 2 diabetes mellitus without complications"
+                        score: 0.8281834721565247
+                        is_linked: false
+                      - term_id: "E11.22"
+                        term_name: "Type 2 diabetes mellitus with diabetic chronic kidney disease"
+                        score: 0.3605734705924988
+                        is_linked: false
+        "422":
+          description: Validation error — a required field is missing or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /med-link/nel/link/batch:
+    post:
+      tags:
+        - Entity Linking
+      summary: Link entities (batch)
+      operationId: linkEntitiesBatch
+      description: >-
+        Links up to 5 free-text entities in a single call. All queries in a
+        batch share the same `ontology`, `version`, `top_k` and `metadata`.
+        The response contains one result block per query, in request order.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NELBatchRequest"
+            example:
+              queries:
+                - "fever"
+                - "headache"
+              ontology: "snomed"
+              version: "20250401_extended"
+              top_k: 2
+      responses:
+        "200":
+          description: One result block per query, in request order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NELBatchResponse"
+              example:
+                results:
+                  - request_id: "e4b280cf-40a1-4a83-9f25-f7f07f3766ed"
+                    query: "fever"
+                    query_breakdown: null
+                    ontology: snomed
+                    version: "20250401_extended"
+                    index_name: snomed_20250401_extended_c88b15811956d4fcb54da9ae_1bfcc90540_pg
+                    model_version: c88b15811956d4fcb54da9ae6d14a733ac90e7a7
+                    results:
+                      - term_id: "386661006"
+                        term_name: "Febrile"
+                        score: 0.89858478307724
+                        is_linked: true
+                        metadata:
+                          semantic_tag: finding
+                          is_core: true
+                          source: snomed_ct_20250401_extended
+                          language: en
+                          script: latin
+                  - request_id: "e4b280cf-40a1-4a83-9f25-f7f07f3766ed"
+                    query: "headache"
+                    query_breakdown: null
+                    ontology: snomed
+                    version: "20250401_extended"
+                    index_name: snomed_20250401_extended_c88b15811956d4fcb54da9ae_1bfcc90540_pg
+                    model_version: c88b15811956d4fcb54da9ae6d14a733ac90e7a7
+                    results:
+                      - term_id: "25064002"
+                        term_name: "Headache"
+                        score: 0.9999999403953606
+                        is_linked: true
+                        metadata:
+                          semantic_tag: finding
+                          is_core: true
+                          source: snomed_ct_20250401_extended
+                          language: en
+                          script: latin
+        "422":
+          description: Validation error — a required field is missing or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+components:
+  securitySchemes:
+    authApiKey:
+      type: http
+      scheme: bearer
+      description: >-
+        Bearer access token issued by the Eka authorization flow. See
+        [Authorization](/api-reference/authorization/getting-started).
+  schemas:
+    NELRequest:
+      type: object
+      required:
+        - query
+        - ontology
+        - version
+      properties:
+        query:
+          type: string
+          minLength: 1
+          description: Free-text medical entity to link.
+          example: "chest pain"
+        ontology:
+          type: string
+          description: "Ontology name. One of: `snomed`, `loinc`, `medication`, `icd-10-cm`."
+          example: "snomed"
+        version:
+          type: string
+          description: >-
+            Ontology version. Fetch valid values from `GET /med-link/registry/`.
+          example: "20250401_extended"
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+          description: Number of candidate results to return.
+        metadata:
+          type: object
+          additionalProperties: true
+          default: {}
+          description: >-
+            Ontology-specific hints. Recommended for LOINC (`unit`, `value`,
+            `specimen`, …) and optional for medication (`form`, `generic_name`,
+            `dose_unit`, …). Ignored by SNOMED CT and ICD-10-CM Comprehend.
+        request_id:
+          type: string
+          nullable: true
+          description: Optional request ID. Generated automatically if omitted.
+    NELBatchRequest:
+      type: object
+      required:
+        - queries
+        - ontology
+        - version
+      properties:
+        queries:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 5
+          description: List of free-text entities to link (1–5).
+        ontology:
+          type: string
+          description: "Ontology name applied to every query in the batch."
+          example: "snomed"
+        version:
+          type: string
+          description: Ontology version applied to every query in the batch.
+          example: "20250401_extended"
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+          description: Number of candidate results to return per query.
+        metadata:
+          type: object
+          additionalProperties: true
+          default: {}
+          description: Ontology-specific hints applied to every query in the batch.
+        request_id:
+          type: string
+          nullable: true
+          description: Optional request ID. Generated automatically if omitted.
+    NELResult:
+      type: object
+      required:
+        - term_id
+        - term_name
+      properties:
+        term_id:
+          type: string
+          description: The ontology code for this candidate.
+          example: "29857009"
+        term_name:
+          type: string
+          description: Human-readable name of the candidate term.
+          example: "Chest pain"
+        score:
+          type: number
+          nullable: true
+          description: >-
+            Relevance/confidence of the candidate. `null` for medication, where
+            matching is reported through `metadata.matching_breakdown` instead.
+        is_linked:
+          type: boolean
+          default: false
+          description: >-
+            `true` when the pipeline is confident this candidate is the correct
+            single match for the query.
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: >-
+            Ontology-specific detail about the candidate (e.g. `semantic_tag`
+            for SNOMED, `matching_breakdown`/`eka_id` for LOINC,
+            `generic_name`/`matching_breakdown` for medication).
+    NELResponse:
+      type: object
+      required:
+        - request_id
+        - query
+        - results
+        - ontology
+        - version
+        - index_name
+      properties:
+        request_id:
+          type: string
+        query:
+          type: string
+        query_breakdown:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: >-
+            How the query was parsed. Present for LOINC, medication and
+            ICD-10-CM Comprehend; `null` for SNOMED CT.
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/NELResult"
+        ontology:
+          type: string
+        version:
+          type: string
+        index_name:
+          type: string
+          description: The index that served the request.
+        model_version:
+          type: string
+          nullable: true
+    NELBatchResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          description: One `NELResponse` per query, in request order.
+          items:
+            $ref: "#/components/schemas/NELResponse"
+    RegistryResponse:
+      type: object
+      required:
+        - ontologies
+      properties:
+        ontologies:
+          type: array
+          items:
+            $ref: "#/components/schemas/OntologyInfo"
+    OntologyInfo:
+      type: object
+      required:
+        - name
+        - versions
+      properties:
+        name:
+          type: string
+          example: "snomed"
+        versions:
+          type: array
+          items:
+            type: string
+          example:
+            - "20250401_extended"
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationError"
+    ValidationError:
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      properties:
+        loc:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+        msg:
+          type: string
+        type:
+          type: string

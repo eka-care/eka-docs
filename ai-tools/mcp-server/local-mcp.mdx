@@ -1,0 +1,338 @@
+---
+title: Local MCP SDK
+description: Self-host the Eka MCP server on your own machine using API credentials.
+---
+
+The Local MCP SDK runs the Eka MCP server as a process on your machine. Your AI client talks to it over stdio — no network exposure, no OAuth browser flow. Credentials are passed via environment variables.
+
+**Use this when you:**
+- Are building a custom integration or automation pipeline
+- Need to run offline or in a controlled environment
+- Want to embed Eka MCP tooling into your own application
+- Prefer client credentials over OIDC login
+
+---
+
+## Prerequisites
+
+<Steps>
+  <Step title="Python 3.10 or higher">
+    Verify your Python version:
+    ```bash
+    python --version
+    ```
+  </Step>
+  <Step title="Get your API credentials">
+    You need a **Client ID** and **Client Secret** from the Eka developer console.
+
+    - Get your **Client ID** and **Client Secret** from the [Eka Console](https://console.eka.care/api-keys/)
+    - If you need access to a specific workspace (clinic), get an **API Key** from the [Hub](https://hub.eka.care/account/account/apitoken/)
+
+    <Note>
+      Don't have access yet? Email **ekaconnect@eka.care** with your organization name and use case.
+    </Note>
+  </Step>
+</Steps>
+
+---
+
+## Step 1 — Install the SDK
+
+<Tabs>
+  <Tab title="pip + venv (recommended)">
+    Create an isolated virtual environment first to avoid dependency conflicts:
+
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate          # macOS / Linux
+    # venv\Scripts\activate           # Windows
+    pip install "git+https://github.com/eka-care/eka-mcp-sdk.git@main"
+    ```
+
+    <Note>
+      Keep the virtual environment activated whenever you run or configure the server. The `eka-mcp-server` command is only available inside the active `venv`.
+    </Note>
+  </Tab>
+  <Tab title="uv">
+    ```bash
+    uv add "eka-mcp-sdk @ git+https://github.com/eka-care/eka-mcp-sdk.git@main"
+    ```
+
+    If you don't have `uv` yet:
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+  </Tab>
+  <Tab title="Editable install (for contributors)">
+    Only needed if you want to **modify the SDK source code**:
+
+    ```bash
+    git clone https://github.com/eka-care/eka-mcp-sdk.git
+    cd eka-mcp-sdk
+    python3 -m venv venv
+    source venv/bin/activate          # macOS / Linux
+    # venv\Scripts\activate           # Windows
+    pip install -e .
+    ```
+
+    An editable install means changes you make to the source are reflected immediately without reinstalling.
+  </Tab>
+</Tabs>
+
+Verify the install:
+
+```bash
+eka-mcp-server --help
+```
+
+You should see the server's CLI options printed.
+
+---
+
+## Step 2 — Configure Your Client
+
+Pick your AI client below. Each config passes your credentials as environment variables directly — no `.env` file required.
+
+<Warning>
+  Never commit your `EKA_CLIENT_ID`, `EKA_CLIENT_SECRET`, or `EKA_API_KEY` to version control. Add your config file to `.gitignore` if it contains credentials.
+</Warning>
+
+<Tabs>
+  <Tab title="Claude Desktop">
+
+Open your Claude Desktop config file and add the `eka-care` server:
+
+<Tabs>
+  <Tab title="macOS">
+    **Config location:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "eka-mcp-server",
+          "env": {
+            "EKA_CLIENT_ID": "your_client_id",
+            "EKA_CLIENT_SECRET": "your_client_secret",
+            "EKA_API_KEY": "your_api_key",
+            "EKA_API_BASE_URL": "https://api.eka.care"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Windows">
+    **Config location:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "eka-mcp-server",
+          "env": {
+            "EKA_CLIENT_ID": "your_client_id",
+            "EKA_CLIENT_SECRET": "your_client_secret",
+            "EKA_API_KEY": "your_api_key",
+            "EKA_API_BASE_URL": "https://api.eka.care"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Restart Claude Desktop after saving. The Eka MCP tools will appear in your conversation.
+
+  </Tab>
+  <Tab title="Cursor">
+
+<Tabs>
+  <Tab title="macOS">
+    **Config location:** `~/Library/Application Support/Cursor/User/globalStorage/mcp.json`
+
+    ```json mcp.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "eka-mcp-server",
+          "env": {
+            "EKA_CLIENT_ID": "your_client_id",
+            "EKA_CLIENT_SECRET": "your_client_secret",
+            "EKA_API_KEY": "your_api_key",
+            "EKA_API_BASE_URL": "https://api.eka.care"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Windows">
+    **Config location:** `%APPDATA%\Cursor\User\globalStorage\mcp.json`
+
+    ```json mcp.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "eka-mcp-server",
+          "env": {
+            "EKA_CLIENT_ID": "your_client_id",
+            "EKA_CLIENT_SECRET": "your_client_secret",
+            "EKA_API_KEY": "your_api_key",
+            "EKA_API_BASE_URL": "https://api.eka.care"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Or use the UI: **Cmd/Ctrl + Shift + P** → **Cursor Settings** → **Tools & MCP** → **New MCP Server** and paste the config above.
+
+  </Tab>
+  <Tab title="VS Code">
+
+Create or edit `.vscode/mcp.json` in your workspace (or add to your user `settings.json`):
+
+```json .vscode/mcp.json
+{
+  "servers": {
+    "eka-care": {
+      "type": "stdio",
+      "command": "eka-mcp-server",
+      "env": {
+        "EKA_CLIENT_ID": "your_client_id",
+        "EKA_CLIENT_SECRET": "your_client_secret",
+        "EKA_API_KEY": "your_api_key",
+        "EKA_API_BASE_URL": "https://api.eka.care"
+      }
+    }
+  }
+}
+```
+
+**Requirements:** VS Code 1.95+ with GitHub Copilot enabled.
+
+  </Tab>
+  <Tab title="Windsurf">
+
+<Tabs>
+  <Tab title="macOS">
+    **Config location:** `~/.codeium/windsurf/mcp_config.json`
+
+    ```json mcp_config.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "eka-mcp-server",
+          "env": {
+            "EKA_CLIENT_ID": "your_client_id",
+            "EKA_CLIENT_SECRET": "your_client_secret",
+            "EKA_API_KEY": "your_api_key",
+            "EKA_API_BASE_URL": "https://api.eka.care"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Windows">
+    **Config location:** `%APPDATA%\.codeium\windsurf\mcp_config.json`
+
+    ```json mcp_config.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "eka-mcp-server",
+          "env": {
+            "EKA_CLIENT_ID": "your_client_id",
+            "EKA_CLIENT_SECRET": "your_client_secret",
+            "EKA_API_KEY": "your_api_key",
+            "EKA_API_BASE_URL": "https://api.eka.care"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+  </Tab>
+  <Tab title="Zed">
+
+Edit `~/.config/zed/settings.json`:
+
+```json settings.json
+{
+  "context_servers": {
+    "eka-care": {
+      "command": {
+        "path": "eka-mcp-server",
+        "args": [],
+        "env": {
+          "EKA_CLIENT_ID": "your_client_id",
+          "EKA_CLIENT_SECRET": "your_client_secret",
+          "EKA_API_KEY": "your_api_key",
+          "EKA_API_BASE_URL": "https://api.eka.care"
+        }
+      }
+    }
+  }
+}
+```
+
+  </Tab>
+</Tabs>
+
+---
+
+## Step 3 — Verify
+
+Restart your AI client. Then send a test prompt:
+
+```text
+Search for patient [name]
+```
+
+The AI should call `search_patients` and return results from your Eka.care workspace.
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="'eka-mcp-server' command not found">
+    The install likely went into a virtual environment that isn't on your PATH. Either:
+
+    1. Activate the virtual environment first:
+       ```bash
+       source .venv/bin/activate  # macOS/Linux
+       .venv\Scripts\activate      # Windows
+       ```
+
+    2. Or use the full path to the binary in your config:
+       ```json
+       {
+         "command": "/Users/you/project/.venv/bin/eka-mcp-server"
+       }
+       ```
+  </Accordion>
+  <Accordion title="Authentication failed / 401 errors">
+    - Double-check `EKA_CLIENT_ID` and `EKA_CLIENT_SECRET` have no extra spaces or quotes
+    - Ensure `EKA_API_KEY` matches the workspace you're trying to access
+    - Credentials are available at [console.eka.care/api-keys](https://console.eka.care/api-keys/) and [hub.eka.care](https://hub.eka.care/account/account/apitoken/)
+  </Accordion>
+  <Accordion title="Tools not appearing in the AI client">
+    - Fully restart the AI client after editing the config (not just reload)
+    - Validate your config JSON is well-formed (no trailing commas, correct brackets)
+    - Check the AI client's MCP logs — most clients expose these under Developer or Settings
+  </Accordion>
+</AccordionGroup>
+
+---
+
+<Note>
+  **Need help?** Email **ekaconnect@eka.care** with your setup details and we'll help you get connected.
+</Note>

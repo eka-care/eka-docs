@@ -1,0 +1,312 @@
+---
+title: "EkaAgents Changelog"
+description: "Feature releases, improvements, and fixes across the chatbot widget, MedAssist SDK, MCP server, and AI layer."
+---
+
+<Update
+  label="March 2026"
+  tags={["Feature", "Improvement", "Bug fix", "Platform"]}
+  rss={{
+    title: "March 2026 — EkaAgents & MedAssist Updates",
+    description: "Voice agent mode via WebRTC, MedAssist SDK on iOS and Android, in-widget OTP auth, per-tab context isolation, user feedback API, clinical guidelines MCP, and several widget stability fixes."
+  }}
+>
+
+### Voice agent mode via WebRTC
+
+The chatbot widget now supports a real-time voice agent mode using WebRTC for bidirectional audio. The WebSocket connection handles signaling (offer/answer exchange), enabling live voice conversations directly inside the embedded widget.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### MedAssist SDK integrated into iOS app
+
+The MedAssist SDK is now embedded in the iOS PHR app. Includes pill and multi-select interactive components, agent ID configuration, and typewriter text animation for AI responses.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Mobile
+
+---
+
+### MedAssist on Android — agent ID configuration
+
+Agent ID changes shipped for the Android PHR app, enabling the MedAssist chatbot to be scoped per product context on Android alongside iOS.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Mobile
+
+---
+
+### In-widget authentication — OTP tool integration
+
+Users can now authenticate via OTP directly within the chatbot. The agent triggers the auth tool, renders an inline OTP input, and proceeds with the conversation post-verification without leaving the widget.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### Per-agent, per-tab context storage
+
+The bot now maintains isolated context per agent ID and browser tab. Multiple agents or tabs can run simultaneously without conversation state bleeding across instances.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### User feedback API — thumbs up/down on bot responses
+
+A feedback API is now live. The chatbot widget collects thumbs up/down signals per message and the close-chat flow prompts for session-level feedback before teardown.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### Start new chat & session expired UI
+
+When a session expires or the refresh token fails, the widget now shows a clear "Session expired — Start new chat" prompt instead of an infinite reconnect loop or a confusing blank state.
+
+**Type:** Improvement &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### Message retry with connection status awareness
+
+If a reply doesn't arrive for a sent message, the widget now silently retries internally. When the socket is disconnected, a connection status indicator is shown rather than an error — no retry button needed in the happy path.
+
+**Type:** Improvement &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### Widget crash now shows a graceful error page
+
+Unhandled runtime errors in the widget are caught and rendered as a user-facing error page instead of a blank or broken widget. External script errors (e.g. New Relic cross-origin failures) no longer trigger the widget's error state.
+
+**Type:** Improvement &nbsp;·&nbsp; Bug fix
+
+---
+
+### Background page scroll blocked when scrolling widget on iPhone
+
+Scrolling inside the embedded widget was causing the host page to scroll simultaneously on iOS Safari. Scroll propagation is now correctly contained to the widget viewport.
+
+**Type:** Bug fix &nbsp;·&nbsp; **Surface:** Mobile
+
+---
+
+### Chatbot close button no longer blocks the host page
+
+After closing the chatbot widget, the underlying host page was unclickable due to a cleanup issue with the iframe overlay. The close flow now correctly tears down the widget DOM.
+
+**Type:** Bug fix
+
+---
+
+### MCP server — clinical guidelines hosted at medai-mcp.orbi.health
+
+Clinical guidelines MCP tools from the MedAI-Tools-DS repository are now consistently hosted and accessible at `medai-mcp.orbi.health`, replacing the previous inconsistent setup.
+
+**Type:** Platform &nbsp;·&nbsp; AI / Model
+
+</Update>
+
+<Update
+  label="February 2026"
+  tags={["Feature", "Improvement", "Bug fix", "AI / Model", "Platform"]}
+  rss={{
+    title: "February 2026 — EkaAgents & MedAssist Updates",
+    description: "Full widget theming, multi-file uploads, smaller embed bundle, draggable widget fix, WebSocket disconnection handling, improved MCP tool descriptions, and WhatsApp delivery channel."
+  }}
+>
+
+### Full theming & customisation support for the generic bot
+
+The embed widget is now fully themeable per deployment. Configurable properties include accent colour (user message bubbles, send button, pill borders), primary colour, and online/offline status label. Multi-select pill hover states, loading shimmer, and empty chat state are all covered by the theme layer.
+
+**Type:** Improvement &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### File upload support — multi-file with enforced limits
+
+Users can now upload files (JPEG, PNG, PDF) during a conversation. Limits enforced: 2 MB per file, 3 files per conversation turn, 5 files per session. Upload errors are shown inline on file selection rather than on send.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### Widget embed script — faster load & smaller bundle
+
+CSS and JS now load via optimised stylesheets for faster initial paint. A loader is shown in the iframe during initialisation. The npm bundle size of `medassist-widget-embed` has been significantly reduced.
+
+**Type:** Improvement &nbsp;·&nbsp; **Surface:** Platform
+
+---
+
+### Draggable widget — text in chat is now copyable
+
+The drag handle has been moved to the widget header, so users can select and copy text from bot responses without triggering an accidental drag.
+
+**Type:** Improvement &nbsp;·&nbsp; Bug fix
+
+---
+
+### WebSocket disconnection handling — auth timeout & session mismatch
+
+Socket close codes `1008`, `auth_timeout`, and `session_token_mismatch` are now handled explicitly. The refresh API was previously being called twice on token expiry due to a race condition — this has been fixed.
+
+**Type:** Bug fix
+
+---
+
+### MCP server — tool descriptions improved for sharper LLM calls
+
+Tool descriptions across the Eka Doctor MCP have been reviewed and rewritten so the LLM selects tools more precisely. Prompts, resources, and elucidation fields are now used consistently across all tools.
+
+**Type:** AI / Model &nbsp;·&nbsp; Platform
+
+---
+
+### Orchestrator prompt tuned for widget conversation context
+
+The main orchestrator prompt for the generic widget agent has been updated to specify when each tool should be called, improving the accuracy and coherence of patient-facing flows (create patient, fetch records, book appointment).
+
+**Type:** AI / Model &nbsp;·&nbsp; Improvement
+
+---
+
+### Doctor card revamped with new format
+
+The doctor card rendered inside the chatbot (for appointment booking flows) has been redesigned with an updated layout and information hierarchy.
+
+**Type:** Improvement &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### WhatsApp delivery channel for MedAssist
+
+MedAssist agents can now be delivered over WhatsApp as a conversation channel, in addition to web widget and iframe embed.
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+</Update>
+
+<Update
+  label="January 2026"
+  tags={["Feature", "Improvement", "Bug fix", "Platform"]}
+  rss={{
+    title: "January 2026 — EkaAgents & MedAssist Updates",
+    description: "Audio input in bot, draggable widget UX improvements, location permission tool, appointment booking reliability fixes, dev console user invite UI, and per-workspace tool filtering."
+  }}
+>
+
+### Audio input in bot — voice messages processed in background
+
+Users can now send voice messages in the chatbot. The audio is transcribed in the background and submitted as a text message — the chat shows a "…" indicator while processing instead of streaming the transcript inline.
+
+**Type:** Feature &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### Widget UX improvements — draggable, auto-scroll, full-mode default
+
+Three core UX improvements: iframe embed now opens in full mode by default; the widget is draggable so users can reposition it; new messages auto-scroll the conversation to the latest reply.
+
+**Type:** Improvement &nbsp;·&nbsp; **Surface:** Widget
+
+---
+
+### Location permission tool in Synapse
+
+The client layer (Synapse) now supports a location permission tool, enabling agents to request and use geolocation as part of a conversation flow (e.g. find nearby doctors or labs).
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+---
+
+### Appointment booking tool — reliability fixes
+
+Three reliability issues fixed in the appointment tool: duplicate slot bookings were possible even when a slot was taken; bookings could be made outside doctor availability windows; slot lookup was using the same date for start and end, returning no results.
+
+**Type:** Bug fix &nbsp;·&nbsp; Platform
+
+---
+
+### Dev console — user invite UI
+
+A user invite interface is now available in the developer console, allowing workspace admins to invite team members directly from the console UI.
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+---
+
+### Tool filter support — include/exclude tools per workspace
+
+The MCP server now supports server-side tool filtering via `include_tool` and `exclude_tool` params, as well as workspace-scoped tool configuration. Different deployments can expose only the tools relevant to their use case.
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+</Update>
+
+<Update
+  label="December 2025"
+  tags={["Feature", "AI / Model", "Platform"]}
+  rss={{
+    title: "December 2025 — EkaAgents & MedAssist Updates",
+    description: "Remote MCP server live on production, MCP submitted to OpenAI plugin directory, full MCP documentation, MedAssist Matrix delivery layer, Synapse client SDK, PHR chatbot migrated to MedAssist platform, and Langfuse evals pipeline."
+  }}
+>
+
+### Remote MCP server live on production
+
+The Eka remote MCP server is now deployed to production. Developers can connect Claude Desktop, ChatGPT, or any MCP-compatible client using OAuth + OIDC without running the server locally.
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+---
+
+### MCP submitted to OpenAI plugin directory
+
+The Eka MCP server has been submitted for listing in the OpenAI plugin / GPT Actions directory, expanding the surfaces where EkaAgents tools can be accessed.
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+---
+
+### MCP documentation published
+
+Full documentation for the Eka Doctor MCP server is now available, covering tool descriptions, installation on Claude Desktop (Windows), authentication, and usage examples.
+
+**Type:** Platform
+
+---
+
+### MedAssist Delivery Layer (Matrix) shipped
+
+The Matrix delivery layer is complete — it handles routing of agent messages across channels (web widget, iframe, WhatsApp) and manages session state independently of the AI model layer.
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+---
+
+### MedAssist Client Layer (Synapse) shipped
+
+Synapse — the client-facing SDK and abstraction layer for MedAssist — is complete. It handles session initialisation, tool call visualisation, and event-based communication between the chatbot UI and the backend agent.
+
+**Type:** Feature &nbsp;·&nbsp; Platform
+
+---
+
+### PHR chatbot migrated to MedAssist platform + prompt improvements
+
+The PHR chatbot (previously running on a separate DocAssist infrastructure) has been migrated to the unified MedAssist platform. Prompts were updated for better conversational quality on the new stack.
+
+**Type:** AI / Model &nbsp;·&nbsp; Platform
+
+---
+
+### Agent response evaluation system on Langfuse
+
+An evals pipeline is now live — agent responses are scored and traced via Langfuse, giving the team observability into model quality, tool selection accuracy, and per-session performance.
+
+**Type:** AI / Model &nbsp;·&nbsp; Platform
+
+</Update>

@@ -1,0 +1,456 @@
+---
+title: "EMR Changelog"
+description: "Updates and improvements to the Eka EMR platform — patient records, prescriptions, billing, and workflows."
+---
+
+import { SubscribeForm } from '/snippets/subscribe-form.jsx';
+
+<SubscribeForm />
+
+<Update
+  label="June 2, 2026"
+  description="June 2, 2026"
+  tags={["Fix"]}
+  rss={{
+    title: "Eka EMR — June 2, 2026",
+    description: "• Prescription pad now persists the `properties` map on examination findings and procedures through the local save flow and the genie sync middleware, completing yesterday's property-groups feature so structured Since/Note and Date/Note entries survive reloads and cross-device sync\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Fixed
+
+- **[EMR] Property persistence for examination findings and procedures** — The prescription pad now carries the `properties` map through the local upsert path and the genie sync middleware for both examination findings and procedures. Previously the save pipeline only forwarded `id` and `name` (plus `source` for findings), so structured property-group values such as Since/Note on findings and Date/Note on procedures were silently dropped on save and never made it to the synced prescription. Both reducer paths now use the shared `normalizeExaminationEntities` / `normalizeProcedureEntities` helpers and spread the full normalised entity, and the middleware emits `properties` when present.
+
+</Update>
+
+<Update
+  label="June 1, 2026"
+  description="June 1, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "EMR — June 1, 2026",
+    description: "• IPD dashboard and admit-patient drawer are now remote-loaded web components (`<ipd-dashboard>`, `<ipd-admit-patient-drawer>`) served from the IPD SDK\n\n• Lab tests table now rebuilds its fuzzy-search index when underlying data changes, eliminating stale or empty search results\n\n• Prescription pad extends property groups to examination findings and procedures — structured Since/Note for findings and Date/Note for procedures\n\n• `GET /v1/sym-and-diag/properties` adds optional `procedures`, `resource`, and `category` query parameters for context-scoped property lookup\n\n• ExaminationEntity and Procedure types now carry a `properties` map; examination entities also expose a `source` discriminator (symptom | diagnosis)\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] IPD dashboard and admit-patient drawer as remote web components** — The IPD list and admit-patient flows now render through `<ipd-dashboard>` and `<ipd-admit-patient-drawer>` custom elements loaded from a remotely-hosted IPD SDK (`elixir-dr.eka.care/ipd/main/assets/index.js`, with a matching dev URL). The host app injects Firestore, `fetchWithRefresh`, and a Firestore SDK adapter into the elements, and receives callbacks for profile mount, switch-workspace mount, admit/discharge, EMAR, IPD notes, medical history, medical document, billing payments, IPD slip print, and discharge summary. This decouples IPD shipping from the main app release cycle.
+- **[EMR] `OPEN_GLOBAL_SEARCH` bridge event** — The IPD web component (and other embedded surfaces) can now request the host app to open global search by dispatching an `OPEN_GLOBAL_SEARCH` event over the `EKA_EVENT` bus. The host respects route eligibility via `canOpenGlobalSearch(pathname)` and emits a `GLOBAL_SEARCH` track with `where: 'ipd'`.
+- **[EMR] Property groups on examination findings and procedures** — The prescription pad's examination findings and procedures rows now support the same structured property-group editor previously available only on symptoms and diagnoses. Examination findings expose a `Since` prefix-suggest group (Hour/Day/Week/Month/Year) and a `Note` open-text group; procedures expose a `Date` group and a `Note` group. Each row renders a more-options modal driven by `SymDiaPropertyInput`, with backward-compatible migration from the legacy top-level `notes` string into the structured note property group on read.
+- **[EMR] `source` discriminator on examination findings** — `ExaminationEntity` now carries an optional `source: 'symptom' | 'diagnosis'` field so the pad can track whether a finding was added from the symptoms or diagnoses path, enabling correct routing of property updates back into the originating entity.
+- **[EMR] Context-scoped sym/dia properties endpoint** — `GET /v1/sym-and-diag/properties` accepts three new optional query parameters: `procedures` (comma-separated procedure ids), `resource` (`Observation` | `Condition` | `ServiceRequest`), and `category` (e.g. `symptom`, `encounter-diagnosis`, `exam`). Callers pass a `SymDiaPropertiesContext` of `symptoms`, `diagnosis`, `examination_findings`, or `procedures` and the SDK maps it to the right `resource`/`category` pair.
+- **[EMR] Capillary Blood Glucose (CBG) and Hip Circumference vitals** — Prescription pad vitals catalogue adds two new server-backed vitals: Capillary Blood Glucose (CBG) and Hip Circumference. Both accept numeric values with decimal precision and render through the standard vitals input flow alongside existing vitals.
+
+## Improved
+
+- **[EMR] On-demand IPD SDK loading** — `ensureIpdSdkScriptLoaded()` lazily injects the IPD SDK `<script type="module">` only when an IPD surface is opened, dedupes parallel callers via a shared promise, and surfaces a clean error toast if the SDK fails to load. Subsequent navigations reuse the already-loaded `window.IpdSDK` and avoid re-fetching the bundle.
+- **[EMR] Templar prescription rendering for examination findings and procedures** — Templar templates now render the new structured `properties` map on examination findings and procedures alongside legacy `notes`, with PDF print-body config and local PDF generation pipelines updated to consume the merged shape. Existing templates that only use `notes` continue to render unchanged.
+- **[EMR] Property-aware caching for sym/dia lookups** — Property-group fetches are now cached per `context:id` (e.g. `examination_findings:<id>`, `procedures:<id>`) so switching between symptoms, diagnoses, findings, and procedures no longer collides on a single cache key.
+
+## Fixed
+
+- **[EMR] Lab tests table search returns stale or empty results** — The Lab Tests table built its Fuse fuzzy-search index once in the constructor and never refreshed it when the underlying lab data loaded or changed, so searches would miss entries or return nothing until the page was reopened. The index now rebuilds in `componentDidUpdate` whenever `data` changes, and any active search result is cleared to avoid showing matches against the stale index.
+- **[EMR] Lab tests browse-panel search returning empty/stale results** — The Fuse search index on the lab tests table was being built once in the constructor against the initial (often empty) `data` prop, so the first search after data finished loading returned no matches and later prop updates were ignored. The index now rebuilds whenever the underlying `data` prop changes, and any active search result is cleared on rebuild so users see fresh matches without having to reload the panel.
+
+## Changed
+
+- **[EMR] `ExaminationEntity` shape** — `ExaminationEntity` gains optional `properties: { [k: string]: SymDiaProperty }` and `source` fields and is exported from `prescription-types-bundle`. The legacy `notes: string` field is preserved for read-compatibility but new writes route through the `pg-5243973452` note property group; consumers reading examination notes should prefer the property-group value and fall back to `notes`.
+- **[EMR] `Procedure` shape** — `Procedure` gains optional `properties: { [k: string]: SymDiaProperty }`. Date is now authored via the structured `Date` property group (`pg-31705165`) rather than the free `date` string; the `date` field remains for back-compat reads.
+
+</Update>
+
+<Update
+  label="May 29, 2026"
+  description="May 29, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 29, 2026",
+    description: "• Health Records Android SDK introduces server-synchronized time and auto-resets stale analysing records\n\n• Android records grid consolidates the analysing state into the SmartTag component\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Server-synchronized time in Health Records Android SDK** — `TimeProvider` now tracks a server-time offset persisted via `SharedPreferences`, with `RecordsSync` parsing the `Date` header from server responses to keep the offset current. `FileEntity`, `FileStorageManagerImpl`, and `RecordsRepositoryImpl` use `TimeProvider.nowMillis()` / `nowSeconds()` instead of `System.currentTimeMillis()`, so `createdAt`, `updatedAt`, and `lastUsed` stay consistent across devices with skewed clocks.
+- **[EMR] Stale-analysing record reset in Health Records Android SDK** — `RecordsDao.resetStaleAnalysingRecords` now clears the `is_analysing` flag for documents that have been stuck in analysis past a cutoff, and the reset is triggered automatically when records are read — so a crashed or interrupted parse no longer leaves a document permanently in the analysing state.
+- **[EMR] Analysing state consolidated into SmartTag** — The `android-document-ui` records grid removes its centered analysis progress indicator and separate blur/background treatment; `SmartTag` now drives both the "Smart" and "Analysing" states via an `isAnalysing` parameter (circular progress + "Analysing" text).
+
+</Update>
+
+<Update
+  label="May 27, 2026"
+  description="May 27, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EMR — May 27, 2026",
+    description: "• Templar pt-attribute property group now carries a date field\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] Date on Templar pt attribute** — The `pt` attribute in Templar templates now carries a `date` field, enabling richer rendering of patient-attached events with explicit dates on receipts and prescriptions.
+
+</Update>
+
+<Update
+  label="May 22, 2026"
+  description="May 22, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 22, 2026",
+    description: "• AddRecordPreviewActivity in android-document-ui now uses Gson for intent parameter parsing\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Changed
+
+- **[EMR] Gson-based parameter parsing in AddRecordPreviewActivity** — `android-document-ui` swaps manual `JSONObject` parsing for `Gson().fromJson` when reading the intent's params payload, and removes explicit `finish()` calls during initial validation — simpler initialization, fewer transient activity teardowns on malformed input.
+
+</Update>
+
+<Update
+  label="May 21, 2026"
+  description="May 21, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EMR — May 21, 2026",
+    description: "• Templar receipts now print GST\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] GST on Templar receipts** — Templar receipt templates now print GST on receipts, surfacing tax breakdown alongside the line items.
+
+</Update>
+
+<Update
+  label="May 20, 2026"
+  description="May 20, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 20, 2026",
+    description: "• Health Records Android and android-document-ui bumped to network 2.0.6 / records 3.3.1\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Health Records Android → network 2.0.6** — `eka-health-records-android` bumps the `network` library in `gradle/libs.versions.toml` from 2.0.5 to 2.0.6, picking up upstream support for custom OkHttp interceptors at network init.
+- **[EMR] android-document-ui → records 3.3.1** — `android-document-ui` bumps the records dependency from 3.3.0 to 3.3.1.
+
+</Update>
+
+<Update
+  label="May 19, 2026"
+  description="May 19, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 19, 2026",
+    description: "• Templar OPD slip template moves from string templates to JSX\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Changed
+
+- **[EMR] Templar OPD slip moved from string templates to JSX** — Templar's OPD slip is rewritten from string-concatenated templates to a JSX-rendered template, aligning it with the rest of the template engine and unlocking more structured composition for downstream changes.
+
+</Update>
+
+<Update
+  label="May 18, 2026"
+  description="May 18, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "EMR — May 18, 2026",
+    description: "• AddRecordPreviewActivity hardened — background image URI resolution, scoped-storage downloads, safer activity init, and tighter temp file management\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] AddRecordPreview stability and performance in android-document-ui** — Image URI resolution and large-image validation in `AddRecordPreviewScreen` move to a background thread (`LaunchedEffect` + `Dispatchers.IO`); the preview list now hands `File` objects directly to `AsyncImage` instead of decoding bitmaps and computing orientation on the UI thread. The "Add Details" bottom sheet is gated on PDF resolution. `FileSharing` switches to `MediaStore` for downloads on Android Q+, with stream-based copy to public Downloads and URI-segment-based PDF detection. Temporary files now live in a dedicated `records_temp` cache sub-directory with better cleanup on failure.
+
+## Fixed
+
+- **[EMR] AddRecordPreviewActivity initialization on malformed params** — Manual `JSONObject` parsing of intent params now runs inside proper try/catch with `finish()` calls when params are missing or malformed, so the activity can no longer persist in an invalid state on bad input.
+
+</Update>
+
+<Update
+  label="May 17, 2026"
+  description="May 17, 2026"
+  tags={["Fix"]}
+  rss={{
+    title: "EMR — May 17, 2026",
+    description: "• Health Records Android now skips and logs missing source files during record creation instead of erroring out\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Fixed
+
+- **[EMR] Missing source files during record creation in Health Records Android** — `RecordsRepositoryImpl` now checks each source file's existence before processing or compression, logs a sync event with the document, business, and owner IDs when a file is missing, and returns `null` early so the broader record-creation path no longer surfaces a hard error when a single file has gone missing locally.
+
+</Update>
+
+<Update
+  label="May 15, 2026"
+  description="May 15, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "EMR — May 15, 2026",
+    description: "• Templar adds a new examinationFindings property group with backward-compatible notes support\n\n• Templar text rendering bug where content stayed on the same line is fixed\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] examinationFindings property group in Templar** — Templar adds a new `examinationFindings` property group with backward-compatible support for legacy notes, so prescriptions and clinical templates can render structured examination findings without breaking existing notes-only content.
+
+## Fixed
+
+- **[EMR] Text wrapping on Templar receipts** — Fixed a Templar rendering bug where text was not breaking to the next line as expected; content now wraps correctly inside its container.
+
+</Update>
+
+<Update
+  label="May 7, 2026"
+  description="May 7, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 7, 2026",
+    description: "• Templar receipt printing now uses a full patient age string (years and months) instead of years-only — note this is a breaking change to the TPdfObject type\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## ⚠️ Breaking
+
+- **[EMR] Templar receipt patient age field** — The `TPdfObject` type used by `getPatientIntroForReceipt` replaces the numeric `ageInM?: number` field with a string `age?: string`. Callers must now pass a pre-formatted age (for example, `"5 Years 3 Months"`) instead of months as an integer; the previous "compute years from months" behaviour has been removed in favour of richer year-and-month rendering. Update any caller that was passing `ageInM` to pass `age` instead.
+
+## Improved
+
+- **[EMR] Patient age rendering on receipts** — `getPatientIntroForReceipt` now prints the patient's full age string (years and months) on receipts instead of computing only whole years from months, giving a more clinically meaningful age label.
+
+</Update>
+
+<Update
+  label="May 6, 2026"
+  description="May 6, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EMR — May 6, 2026",
+    description: "• Health Records Android and Document UI introduce an analysing-state UI for parsed records\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] Analysing UI in Health Records Android and Document UI** — The Eka Health Records Android SDK and `android-document-ui` module introduce an "analysing" state UI for documents under processing, surfacing parse-in-progress to end users instead of leaving the document in an ambiguous state. Internal core SDK contracts were adapted to drive the new UI cleanly. [View docs](/SDKs/android/medical-records)
+
+</Update>
+
+<Update
+  label="May 5, 2026"
+  description="May 5, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — May 5, 2026",
+    description: "• IPD billing print now shows Total Amount, Total Discount, and Grand Total with quantity-aware MRP\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] IPD billing print totals** — The IPD billing print template (`getBodyForIpdBilling`) now computes Total Amount as `Σ(MRP × Qty)`, derives Total Discount from the difference with the line-item-discounted total, and renders an explicit Grand Total alongside Total Paid and amount due. The output replaces the previous Total MRP / Line Item Discount / Total Amount layout with a clearer Total Amount / Total Discount / Grand Total breakdown.
+
+</Update>
+
+<Update
+  label="May 1, 2026"
+  description="May 1, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EMR — May 1, 2026",
+    description: "• Templar prescription engine adds pageBreakTableTr support in getHead\n\n• Diet chart authoring extended with additional structure\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] pageBreakTableTr in Templar getHead** — The `getHead` helper in the Templar prescription engine now supports `pageBreakTableTr`, allowing template authors to declare table-row level page breaks for cleaner multi-page prescription rendering.
+
+## Improved
+
+- **[EMR] Diet chart authoring in Templar** — Diet chart support in the Templar prescription engine has been extended with additional structure and rendering refinements, building on the diet chart sections introduced on April 22.
+
+</Update>
+
+<Update
+  label="April 29, 2026"
+  description="April 29, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — April 29, 2026",
+    description: "• IPD receipt and bill print now use doctor profile first/last name fields\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Doctor name on IPD receipts and bills** — IPD receipt and bill print output now uses the doctor profile's first-name and last-name fields directly instead of a single concatenated string, giving cleaner, more consistent doctor-name rendering across IPD billing artifacts.
+
+</Update>
+
+<Update
+  label="April 28, 2026"
+  description="April 28, 2026"
+  tags={["Feature", "Fix"]}
+  rss={{
+    title: "EMR — April 28, 2026",
+    description: "• Patient Directory TS SDK adds forceApiSearch and fixes stale-cache lookup edge cases\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] forceApiSearch flag in Patient Directory TS SDK** — The Patient Directory TypeScript SDK now exposes a `forceApiSearch` option, letting integrators bypass the local cache and force a live API lookup for patient search — useful for high-confidence lookups where freshness must beat latency.
+
+## Fixed
+
+- **[EMR] Patient Directory TS SDK lookup correctness** — Resolved an edge case in the Patient Directory TypeScript SDK where stale or partial cached state could surface incorrect patient search results; lookups now consistently reflect the live directory.
+
+</Update>
+
+<Update
+  label="April 27, 2026"
+  description="April 27, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — April 27, 2026",
+    description: "• OPD slip prints now include the clinic name\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Clinic name on OPD slip** — The Templar OPD slip print template now renders the clinic name in the slip header, improving identifiability of the issuing clinic on physical copies.
+
+</Update>
+
+<Update
+  label="April 22, 2026"
+  description="April 22, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "EMR — April 22, 2026",
+    description: "• Diet charts added to prescription templates\n\n• Prescription rx and labVitals render unit_display_name with name fallback\n\n• IPD admission TinyMCE preview fix\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] Diet charts in prescription templates** — The Templar prescription engine now supports diet chart sections, enabling structured diet plans to be authored and rendered alongside prescriptions.
+
+## Improved
+
+- **[EMR] Unit display name fallback in prescriptions** — Prescription `rx` and `labVitals` sections now render `unit_display_name` when available and fall back to `name`, producing cleaner unit labels on printed prescriptions.
+
+## Fixed
+
+- **[EMR] IPD admission TinyMCE preview** — Fixed a rendering bug where the IPD admission rich-text preview was showing stale or malformed HTML in the prescription template engine.
+
+</Update>
+
+<Update
+  label="April 21, 2026"
+  description="April 21, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — April 21, 2026",
+    description: "• Prescription QR code moved to footer details\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Changed
+
+- **[EMR] Prescription QR placement** — The QR code on prescription PDFs has been moved into the footer details block for a cleaner header and consistent placement across templates.
+
+</Update>
+
+<Update
+  label="April 20, 2026"
+  description="April 20, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EMR — April 20, 2026",
+    description: "• IPD admission template upgrades\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Added
+
+- **[EMR] IPD admission template upgrades** — The prescription engine adds new fields and layout improvements to the IPD admission template, supporting richer admission notes.
+
+</Update>
+
+<Update
+  label="April 15, 2026"
+  description="April 15, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — April 15, 2026",
+    description: "• Prescription PDF cache busting and configurable signatures\n\n• Eye exam ordering fix in prescription PDFs\n\n• Patient Directory API extras field restrictions documented\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[EMR] Prescription PDF asset loading** — S3-hosted assets such as doctor signatures in prescription PDFs now include cache-busting query parameters, preventing stale cached versions from appearing. Signature display is also now controlled by a `show_signature` configuration flag for more flexible template rendering. [View docs](/integrations/core-emr/prescription)
+
+- **[EMR] Eye exam ordering in prescription PDFs** — Ophthalmology examination tables in prescription PDFs now render in the correct display order, ensuring eye-care data appears consistently across generated documents. [View docs](/integrations/core-emr/prescription)
+
+- **[EMR] Patient Directory API extras field** — The `extras` field in the Update EMR User endpoint now documents restrictions: no nested lists, no dictionaries inside lists, only one level of nesting in dictionaries, keys must not exceed 16 characters, and keys starting with `_` are ignored. [View docs](/api-reference/doc-tool/patient-directory-apis/update-emr-user)
+
+</Update>
+
+<Update
+  label="April 14, 2026"
+  description="April 14, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EMR — April 14, 2026",
+    description: "• Prescription PDF template engine — Configurable template styles for custom prescription PDF layouts.\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **[Client-Specific] Prescription PDF template engine** — Added support for configurable prescription template styles, enabling custom PDF layouts that map clinical data (symptoms, history, vitals, medications, investigations, diagnosis, advices, review, and signature) to form-specific positions. A new `template_style` configuration option controls which layout is applied during PDF generation.
+
+</Update>
+
+<Update
+  label="April 13, 2026"
+  description="April 9–13"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "EMR — April 9–13, 2026",
+    description: "• IPD billing PDFs now show Total Paid and Amount Due labels\n\n• OPD slips display tags and increased token font size\n\n• Medical Records Android SDK validates oversized images and resolves PDFs off the main thread\n\n• Health Records Android SDK handles missing files during record processing\n\nRead more: https://developer.eka.care/emr-changelog"
+  }}
+>
+
+## Improved
+
+- **IPD billing PDF layout** — The pricing summary in IPD billing PDFs now displays Total Paid and Amount Due/Overpaid labels, replacing the previous single "Amount to be paid" line for clearer printed output. [View docs](/integrations/core-emr/payments)
+
+- **OPD slip enhancements** — OPD slips now print tags and additional data fields, and the token number font size has been increased for better readability at the front desk.
+
+- **Medical Records Android SDK** — Oversized images are now validated before upload with a clear user alert, and PDF URI resolution has been moved to a background thread to prevent main-thread crashes.
+
+## Fixed
+
+- **Health Records Android SDK** — Missing files during record processing are now handled gracefully instead of causing crashes, with improved error handling in MD5 checksum generation.
+
+</Update>

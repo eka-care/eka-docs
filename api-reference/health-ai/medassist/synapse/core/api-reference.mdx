@@ -1,0 +1,229 @@
+---
+title: API reference
+description: Methods, types, and enums of @eka-care/medassist-core
+---
+
+Complete reference for the `SynapseSDK` class and the public exports of `@eka-care/medassist-core`.
+
+## SynapseSDK methods
+
+### startSession
+
+```ts
+startSession(existingSession?: { session_id: string; session_token: string }): Promise<SessionResponse>
+```
+
+Creates a new session — or validates and refreshes an existing one — and sets up the connection. Returns a [`SessionResponse`](#sessionresponse).
+
+### sendMessage
+
+```ts
+sendMessage(options: SendMessageOptions): Promise<void>
+```
+
+Sends a message, files, audio, or a tool result. Options:
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `message` | `string` | Text content. |
+| `messageId` | `string` | Optional message identifier. |
+| `files` | `File[]` | File attachments. |
+| `audio` | `AudioMetaData` | A recorded audio clip. |
+| `toolCalled` | `boolean` | Marks an elicitation-component response. |
+| `tool_declined` | `boolean` | The user declined a suggested tool. |
+| `tool_id` | `string` | The tool this message relates to. |
+| `tool_result` | `Record<string, unknown>` | Result from a tool / elicitation. |
+| `initial_prompts` | `TInitalPrompt[]` | Initial conversation prompts. |
+| `hidden` | `boolean` | Send without showing the message to the user. |
+
+### callTool
+
+```ts
+callTool(tool_id: string, message_id: string, params?: Record<string, unknown>): Promise<void>
+```
+
+Executes a tool with parameters. The result returns as a `TOOL_CALL` event.
+
+### sendFeedback
+
+```ts
+sendFeedback(messageId: string, feedback: USER_FEEDBACK, reason?: string): Promise<void>
+```
+
+Sends like/dislike feedback on a message.
+
+### on / off
+
+```ts
+on(event: SYNAPSE_REALTIME_EVENTS, listener: (...args: unknown[]) => void): void
+off(event: SYNAPSE_REALTIME_EVENTS, listener: (...args: unknown[]) => void): void
+```
+
+Register and remove event listeners. See [Events](/api-reference/health-ai/medassist/synapse/core/events). `off` needs the same function reference passed to `on`.
+
+### startRecording / endRecording
+
+```ts
+startRecording(options: {
+  onChunks: (chunks: AudioMetaData) => void;
+  onError?: (error: Error) => void;
+}): Promise<void>
+
+endRecording(): void
+```
+
+Start and stop audio recording. See [Voice & audio](/api-reference/health-ai/medassist/synapse/core/voice).
+
+### getSessionConfig
+
+```ts
+getSessionConfig(): SessionResponse
+```
+
+Returns the current session config. Throws if no session is initialized.
+
+### getAgentConfig
+
+```ts
+getAgentConfig(): Promise<AgentConfigResponse>
+```
+
+Fetches the agent's configuration — theme, connectivity, initial message, watermark.
+
+### isConnected
+
+```ts
+isConnected(): boolean
+```
+
+Whether the SDK is currently connected.
+
+### voice
+
+```ts
+get voice(): VoiceAgent
+```
+
+Returns a `VoiceAgent` for voice-mode conversations.
+
+### endSession
+
+```ts
+endSession(): void
+```
+
+Closes the connection and cleans up resources.
+
+## Types
+
+### SessionResponse
+
+```ts
+interface SessionResponse {
+  session_id: string;
+  session_token?: string;
+  session_validity_s?: string;
+  user_id?: string;
+  msg?: string;
+  initial_message?: TInitialMessage;
+}
+```
+
+### TContext
+
+```ts
+type TContext = {
+  profile?: {
+    mobile?: string;
+    name?: string;
+    age?: number;
+    gender?: string;
+    marital_status?: string;
+  };
+  intent?: string;
+  user_location?: { lat: number; long: number };
+  referer?: string;
+  [key: string]: unknown;
+};
+```
+
+### Environment
+
+```ts
+type Environment = "development" | "production" | "staging";
+```
+
+### SynapseSDKCallbacks
+
+```ts
+interface SynapseSDKCallbacks {
+  onSessionRefreshed?: (session: SessionResponse) => void;
+  onError?: (error: TSynapseError) => void;
+}
+```
+
+### TSynapseError
+
+```ts
+interface TSynapseError {
+  message: string;
+  error?: { code?: string; msg?: string } & Record<string, unknown>;
+  code?: string;
+  status?: number;
+  context?: Record<string, unknown>;
+}
+```
+
+### ToolCallData
+
+```ts
+type ToolCallData = {
+  tool_id: string | null;
+  tool_type?: SYNAPSE_TOOL_TYPES;
+  tool_name: string;
+  details?: ToolDetails; // component, status, input, _meta
+  meta?: Record<string, unknown>;
+};
+```
+
+## Enums
+
+### SYNAPSE_REALTIME_EVENTS
+
+`CONNECTED`, `DISCONNECTED`, `PROGRESS_MESSAGE`, `MESSAGE_CHUNK`, `TIPS_MESSAGE`, `END_OF_STREAM`, `ERROR`, `TOOL_CALL`, `AUDIO_TRANSCRIPT`, `TOOL_START`, `TOOL_END`. See [Events](/api-reference/health-ai/medassist/synapse/core/events#event-reference).
+
+### SYNAPSE_COMPONENTS
+
+`MOBILE` (`mobile_number`), `OTP` (`otp`), `EMAIL` (`email_address`), `PILL` (`pills`), `MULTI` (`multi`), `DOCTOR_CARD` (`doctor_card`), `CARD` (`card`), `MEDIA_CARD` (`media_card`).
+
+### SYNAPSE_EICITATION_STATUS
+
+`PROGRESS` (`progress`), `SUCCESS` (`success`), `FAILURE` (`failure`).
+
+### USER_FEEDBACK
+
+`LIKE`, `DISLIKE`, `NONE`.
+
+### SYNAPSE_REALTIME_ERROR_CODES
+
+| Constant | Value |
+| --- | --- |
+| `SESSION_INACTIVE` | `session_not_found` |
+| `SESSION_EXPIRED` | `session_expired` |
+| `INVALID_EVENT` | `invalid_event` |
+| `INVALID_CONTENT_TYPE` | `invalid_content` |
+| `PARSING_ERROR` | `parsing` |
+| `FILE_UPLOAD_INPROGRESS` | `file_upload_inprogress` |
+| `TIMEOUT` | `timeout` |
+| `SERVER_ERROR` | `server_error` |
+| `SESSION_TOKEN_MISMATCH` | `session_token_mismatch` |
+| `PROMPT_FETCH_ERROR` | `prompt_fetch_error` |
+| `INVALID_FILE_REQUEST` | `invalid_file_request` |
+
+### DisconnectionReason
+
+`CLIENT_CLOSED`, `SERVER_CLOSED`, `CONNECTION_ERROR`, `AUTHENTICATION_ERROR`, `MAX_RECONNECT_ATTEMPTS`, `TIMEOUT`, `NETWORK_ERROR`.
+
+<Note>
+Always import enum values from `@eka-care/medassist-core` rather than hardcoding their string values — the strings are an implementation detail and the enums are the stable contract.
+</Note>

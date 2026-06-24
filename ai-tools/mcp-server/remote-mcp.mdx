@@ -1,0 +1,310 @@
+---
+title: Remote MCP
+description: Connect any AI client to Eka.care in minutes — no installation required.
+---
+
+The remote MCP server is hosted by Eka.care at `https://mcp.eka.care/mcp`. You don't install anything — just point your AI client at this URL and sign in with your Eka.care account.
+
+**Server URL:** `https://mcp.eka.care/mcp`
+
+<Info>
+  **Prerequisite:** An active [Eka.care](https://eka.care) account. On first connect, your AI client will open a browser window for OAuth login.
+</Info>
+
+---
+
+## Setup by Client
+
+Pick your AI client below and follow the steps.
+
+<Tabs>
+  <Tab title="Claude Desktop">
+
+### Claude Desktop (Paid / Pro)
+
+The easiest path — add the server directly from the Connectors UI.
+
+<Steps>
+  <Step title="Open Settings">
+    In Claude Desktop, click **Settings** → **Connectors** → **Add custom connector**
+  </Step>
+  <Step title="Enter server details">
+    - Name: `Eka Care`
+    - URL: `https://mcp.eka.care/mcp`
+  </Step>
+  <Step title="Add and authenticate">
+    Click **Add**, then sign in with your Eka.care account when prompted.
+  </Step>
+</Steps>
+
+Config file location (if you prefer to edit manually):
+
+<Tabs>
+  <Tab title="macOS">
+    ```
+    ~/Library/Application Support/Claude/claude_desktop_config.json
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    %APPDATA%\Claude\claude_desktop_config.json
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Claude Desktop (Free)
+
+Free tier doesn't have the Connectors UI. Use `mcp-remote` as a bridge instead.
+
+<Steps>
+  <Step title="Open config">
+    Go to **Settings** → **Developer** → **Edit Config**
+  </Step>
+  <Step title="Add this configuration">
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "npx",
+          "args": ["-y", "mcp-remote", "https://mcp.eka.care/mcp"]
+        }
+      }
+    }
+    ```
+    Config location: `~/Library/Application Support/Claude/claude_desktop_config.json`
+  </Tab>
+  <Tab title="Windows">
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "command": "npx",
+          "args": ["-y", "mcp-remote", "https://mcp.eka.care/mcp"]
+        }
+      }
+    }
+    ```
+    Config location: `%APPDATA%\Claude\claude_desktop_config.json`
+  </Tab>
+</Tabs>
+
+  </Step>
+  <Step title="Save and restart">
+    Save the file, restart Claude Desktop, then authenticate when the browser window opens.
+  </Step>
+</Steps>
+
+  </Tab>
+  <Tab title="Cursor">
+
+<Steps>
+  <Step title="Open MCP settings">
+    Press `Cmd/Ctrl + Shift + P` → type **Cursor Settings** → select **Tools & MCP** → click **New MCP Server**
+  </Step>
+  <Step title="Add configuration">
+
+<Tabs>
+  <Tab title="macOS">
+    ```json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "url": "https://mcp.eka.care/mcp"
+        }
+      }
+    }
+    ```
+    Config location: `~/Library/Application Support/Cursor/User/globalStorage/mcp.json`
+  </Tab>
+  <Tab title="Windows">
+    ```json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "url": "https://mcp.eka.care/mcp"
+        }
+      }
+    }
+    ```
+    Config location: `%APPDATA%\Cursor\User\globalStorage\mcp.json`
+  </Tab>
+</Tabs>
+
+  </Step>
+  <Step title="Connect">
+    Click **Connect** next to the eka-care entry, then sign in with your Eka.care account.
+  </Step>
+</Steps>
+
+  </Tab>
+  <Tab title="VS Code">
+
+**Requirements:** VS Code 1.95+ with GitHub Copilot
+
+<Steps>
+  <Step title="Open Command Palette">
+    Press `Cmd/Ctrl + Shift + P`
+  </Step>
+  <Step title="Add MCP server">
+    Type and select **MCP: Add Server** → choose **HTTP (HTTP or Server-Sent Events)**
+  </Step>
+  <Step title="Enter details">
+    - URL: `https://mcp.eka.care/mcp`
+    - Server name: `eka-care`
+  </Step>
+  <Step title="Authenticate">
+    VS Code will prompt you to sign in with your Eka.care account.
+  </Step>
+</Steps>
+
+Alternatively, add directly to your config file:
+
+<Tabs>
+  <Tab title="macOS">
+    ```json settings.json
+    {
+      "mcp": {
+        "servers": {
+          "eka-care": {
+            "type": "http",
+            "url": "https://mcp.eka.care/mcp"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```json settings.json
+    {
+      "mcp": {
+        "servers": {
+          "eka-care": {
+            "type": "http",
+            "url": "https://mcp.eka.care/mcp"
+          }
+        }
+      }
+    }
+    ```
+    Config location: `%APPDATA%\Code\User\globalStorage\github.copilot-chat\mcp.json`
+  </Tab>
+</Tabs>
+
+  </Tab>
+  <Tab title="Windsurf">
+
+<Steps>
+  <Step title="Open MCP config">
+    Press `Cmd/Ctrl + ,` → navigate to **Extensions** → **MCP**
+  </Step>
+  <Step title="Add configuration">
+
+<Tabs>
+  <Tab title="macOS">
+    ```json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "serverUrl": "https://mcp.eka.care/mcp"
+        }
+      }
+    }
+    ```
+    Config location: `~/.codeium/windsurf/mcp_config.json`
+  </Tab>
+  <Tab title="Windows">
+    ```json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "serverUrl": "https://mcp.eka.care/mcp"
+        }
+      }
+    }
+    ```
+    Config location: `%APPDATA%\.codeium\windsurf\mcp_config.json`
+  </Tab>
+</Tabs>
+
+  </Step>
+  <Step title="Restart and authenticate">
+    Restart Windsurf. On first use, a browser window will open for Eka.care login.
+  </Step>
+</Steps>
+
+  </Tab>
+  <Tab title="Zed">
+
+<Steps>
+  <Step title="Open settings">
+    Go to **Zed** → **Settings** (or press `Cmd/Ctrl + ,`)
+  </Step>
+  <Step title="Add MCP server">
+    Add the following to your `settings.json`:
+
+```json settings.json
+{
+  "context_servers": {
+    "eka-care": {
+      "url": "https://mcp.eka.care/mcp",
+      "transport": "http"
+    }
+  }
+}
+```
+
+Config location: `~/.config/zed/settings.json`
+  </Step>
+  <Step title="Restart and authenticate">
+    Restart Zed. Sign in with Eka.care when prompted.
+  </Step>
+</Steps>
+
+  </Tab>
+  <Tab title="ChatGPT">
+
+**Requirements:** ChatGPT with Go model or higher (remote MCP connectors are not available on the Free tier).
+
+<Steps>
+  <Step title="Go to Settings">
+    Open [chatgpt.com](https://chatgpt.com) → click your profile (bottom-left) → **Settings**
+  </Step>
+  <Step title="Enable developer mode">
+    Navigate to **Apps and Connectors** → scroll down → toggle on **Developer mode**
+  </Step>
+  <Step title="Create connector">
+    In **Apps and Connectors**, click **Create app**:
+    - Name: `Eka Care`
+    - URL: `https://mcp.eka.care/mcp`
+  </Step>
+  <Step title="Authenticate">
+    Click **Create** and sign in with your Eka.care account when the OAuth window appears.
+  </Step>
+</Steps>
+
+  </Tab>
+</Tabs>
+
+---
+
+## Verify the Connection
+
+Once connected, test it with a simple prompt in your AI client:
+
+```text
+Search for patient [name] in my clinic
+```
+
+You should see the AI call the `search_patients` tool and return results from your Eka.care account.
+
+---
+
+<Note>
+  **Need an Eka.care account?** Contact **ekaconnect@eka.care** to get started. For enterprise or custom OAuth setups, reach out to the same address.
+</Note>

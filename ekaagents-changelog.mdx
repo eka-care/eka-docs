@@ -1,0 +1,370 @@
+---
+title: "EkaAgents Changelog"
+description: "Updates and improvements to EkaAgents — MCP Server, Echo Agent Kit, MedAssist, and agent workflows."
+---
+
+import { SubscribeForm } from '/snippets/subscribe-form.jsx';
+
+<SubscribeForm />
+
+<Update
+  label="June 2, 2026"
+  description="June 2, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — June 2, 2026",
+    description: "• echo-sdk 0.3.3 renames `AgentConfig` → `AgentPrompt` (with `PersonaConfig`/`TaskConfig` → `PromptPersona`/`PromptTask`); `GenericAgent` and `AgUiAgent` now take `agent_prompt=` instead of `agent_config=`\n\n• New `echo.skills` package with `SkillRuntimeConfig` + `build_skills_from_runtime()` helper that fetches skill prompts in parallel and drops individual failures instead of failing the turn\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## ⚠️ Breaking
+
+- **[EkaAgents] echo-sdk prompt-schema rename** — `AgentConfig`, `PersonaConfig`, and `TaskConfig` are renamed to `AgentPrompt`, `PromptPersona`, and `PromptTask` and have moved from `echo.agents.config` to `echo.prompts.schemas`. `GenericAgent` and `AgUiAgent` now require `agent_prompt=` instead of `agent_config=`, `FetchedPrompt.agent_config` is now `FetchedPrompt.agent_prompt`, and `load_agent_config()` is replaced by `load_agent_prompt()`. The old module path and kwargs are removed — callers must update imports and constructor arguments before upgrading to 0.3.3.
+- **[EkaAgents] echo-sdk skill package move** — `echo.agents.skill.Skill` is now `echo.skills.Skill`; `Skill` is no longer re-exported from `echo.agents`. Update imports to `from echo.skills import Skill`.
+
+## Added
+
+- **[EkaAgents] Runtime skill configuration in echo-sdk** — New `echo.skills.SkillRuntimeConfig` (name, description, `prompt_config: PromptConfig`, `tool_names`) plus a `build_skills_from_runtime()` helper that fetches every skill's prompt in parallel via the configured prompt provider and materialises them into `Skill` instances. Individual prompt-fetch failures are logged and the offending skill is dropped, so one bad skill config no longer breaks the whole turn.
+- **[EkaAgents] `PromptConfig` descriptor** — New Pydantic model for fetching prompts from a provider (currently `langfuse`), with `name`, `version`, and `prompt_variables` and automatic whitespace-stripping on `name`. Used by `SkillRuntimeConfig` and intended for host apps that wire skill prompts dynamically.
+
+## Changed
+
+- **[EkaAgents] Langfuse prompt provider returns `AgentPrompt`** — `LangfusePromptProvider.get_prompt()` and `FetchedPrompt` now expose `agent_prompt` (was `agent_config`); the underlying Langfuse-side schema (`role`, `goal`, `backstory`, `expected_output` on the prompt config; description in the prompt text) is unchanged.
+
+</Update>
+
+<Update
+  label="May 21, 2026"
+  description="May 21, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — May 21, 2026",
+    description: "• Eka MCP SDK v0.1.40 / v0.1.41 enables show_appointments_basic and get_patient_appointments_basic tools, with a single-filter constraint on patient_id\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] show_appointments_basic and get_patient_appointments_basic in Eka MCP SDK** — `eka-mcp-sdk` v0.1.40 enables `show_appointments_basic` (list appointments with filters) and v0.1.41 adds `get_patient_appointments_basic` (fetch appointments for a specific patient), giving agents direct read access to the appointments surface without bespoke tool wiring. [View docs](/ai-tools/medai-tools-mcp/tools)
+
+## Changed
+
+- **[EkaAgents] show_appointments_basic patient_id filter constraint** — `show_appointments_basic` in `eka-mcp-sdk` now treats `patient_id` as a single-value filter — when a patient id is supplied, other filters are ignored — making the contract explicit and reducing ambiguous query combinations.
+
+</Update>
+
+<Update
+  label="May 19, 2026"
+  description="May 19, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EkaAgents — May 19, 2026",
+    description: "• Eka MCP SDK adds a CRM lead-creation tool\n\n• Echo Agent Kit gains AG-UI streaming and Claude prompt support\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] CRM lead-creation tool in Eka MCP SDK** — `eka-mcp-sdk` ships a new MCP tool for creating CRM leads, letting agents capture and route a lead in the same conversation flow as discovery and booking.
+- **[EkaAgents] AG-UI streaming in Echo Agent Kit** — `echo-sdk` adds AG-UI streaming support so agents can emit incremental UI updates to compatible clients during a turn instead of buffering the full response.
+- **[EkaAgents] Claude prompts in Echo Agent Kit** — `echo-sdk` adds prompt support for Anthropic Claude models, broadening the LLM provider mix available to agents built on the kit.
+
+</Update>
+
+<Update
+  label="May 17, 2026"
+  description="May 17, 2026"
+  tags={["Feature"]}
+  rss={{
+    title: "EkaAgents — May 17, 2026",
+    description: "• Echo Agent Kit gains agent skills support\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Agent skills in Echo Agent Kit** — `echo-sdk` introduces a skills concept for building modular, reusable agent capabilities that can be composed into larger workflows.
+
+</Update>
+
+<Update
+  label="May 15, 2026"
+  description="May 15, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — May 15, 2026",
+    description: "• Eka MCP SDK doctor_availability now returns a richer success response\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] doctor_availability success response in Eka MCP SDK** — `eka-mcp-sdk` enriches the success response from the doctor availability flow so downstream booking tools have the context they need without re-querying.
+
+</Update>
+
+<Update
+  label="May 14, 2026"
+  description="May 14, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — May 14, 2026",
+    description: "• Eka MCP SDK ranks the user's selected hospital first in availability listings\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] Selected hospital pushed to the top in Eka MCP SDK** — `eka-mcp-sdk` now surfaces the user's selected hospital at the top of availability listings, so chosen-hospital options aren't buried under nearby alternatives during a booking flow.
+
+</Update>
+
+<Update
+  label="May 6, 2026"
+  description="May 6, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — May 6, 2026",
+    description: "• Eka MCP SDK adds service_availability_elicitation and book_service tools for health package booking\n\n• doctor_availability_elicitation now returns selected_doctor_id and selected_hospital_id in tool_result\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] service_availability_elicitation and book_service in Eka MCP SDK** — The Eka MCP SDK gains two new tools for service and health-package booking flows: `service_availability_elicitation` (interactive UI tool that lets users discover services, view available dates, and pick a slot — accepts either `suggested_service_ids` or a single `service_id`, plus optional `hospital_id`, `preferred_date`, and `preferred_slot_time`) and `book_service` (creates a health-package booking from a `ServiceBookingRequest` with deduplication of concurrent calls and slot-unavailable handling). The shared elicitation builder was also generalised with an `entity_type` parameter so the same UI contract powers both doctor and service flows. [View docs](/ai-tools/medai-tools-mcp/tools)
+
+## Improved
+
+- **[EkaAgents] doctor_availability_elicitation now returns selected_doctor_id and selected_hospital_id** — When the elicitation completes successfully, the tool result now includes `selected_doctor_id` and `selected_hospital_id` in `_meta.tool_result`, so downstream booking tools can chain off the elicitation output without re-prompting the user.
+
+</Update>
+
+<Update
+  label="May 5, 2026"
+  description="May 5, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — May 5, 2026",
+    description: "• Eka MCP SDK adapts doctor_availability_elicitation to the new search_doctor_tool, supporting multiple doctor cards in a single elicitation\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] doctor_availability_elicitation aligned with search_doctor_tool** — The Eka MCP SDK removes the legacy `doctor_discovery` tool references and updates `doctor_availability_elicitation` to consume results from `search_doctor_tool`. The tool description and UI contract were updated to render multiple doctor cards in a single elicitation, and `suggested_doctor_ids` is now an accepted input parameter so an agent can hand a shortlist directly to the elicitation. [View docs](/ai-tools/medai-tools-mcp/tools)
+
+</Update>
+
+<Update
+  label="May 2, 2026"
+  description="May 2, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — May 2, 2026",
+    description: "• Echo Agent Kit ships an audio transcription module with Gemini and Eka Care ASR providers, released as v0.1.34\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Audio transcription module in Echo Agent Kit** — Echo Agent Kit adds a new `echo.audio` module with a `BaseTranscriber` interface, a `TranscriberConfig` model, and two pluggable providers: `GeminiTranscriber` (Gemini 2.0 / 2.5 audio models) and `EkaCareTranscriber` (Eka Care ASR over HTTPS, supporting `en-IN`, `en-US`, and `hi`). Audio can be supplied as raw bytes (with explicit `mime_type`), a public URL, or a Gemini Files API URI. A new `echo[ekacare]` extra pulls in `httpx` for the Eka Care provider. `get_transcriber(config)` and `generate_transcriber_config(...)` factory helpers make it straightforward to swap providers without rewriting agent code. [View docs](/ai-tools/agent-kit/introduction)
+
+## Improved
+
+- **[EkaAgents] Echo Agent Kit v0.1.34** — Echo Agent Kit released as v0.1.34 with the new audio transcription module bundled in. The Gemini install hint was also corrected from `google-generativeai` to `google-genai`. `pip install -U echo` is safe — defaults preserve existing agent behavior.
+
+</Update>
+
+<Update
+  label="May 1, 2026"
+  description="May 1, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — May 1, 2026",
+    description: "• Echo Agent Kit ships Skills — lazy-loaded prompt + tools bundles, with LLM-driven or manual activation\n\n• Echo Agent Kit adds first-class Postgres support and PgQueryTool for parametric SQL-backed tools\n\n• Released as v0.1.33\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Skills in Echo Agent Kit** — `GenericAgent` now supports `Skill` — a lazy-loaded bundle of `(instructions + tools + description)` that can be attached and detached mid-conversation. Two activation modes are supported: `llm` (default, agent auto-injects `load_skill` / `unload_skill` meta-tools and an `<available_skills>` registry into the system prompt so the model self-routes between flows) and `manual` (host calls `await agent.activate_skill(name)` from an upstream router). Skills also expose `on_activate` / `on_deactivate` lifecycle hooks for tenant-scoped setup or telemetry. Tool-name collisions across base tools and skills are caught at agent construction. Existing agents that don't pass `skills=` are byte-for-byte unaffected. [View docs](/ai-tools/agent-kit/agents)
+
+- **[EkaAgents] Postgres engine and PgQueryTool in Echo Agent Kit** — Echo Agent Kit now ships an opt-in Postgres client (`echo[postgres]` extra) backed by an `asyncpg` connection pool with lazy initialization, plus `PgQueryTool` — a `BaseTool` subclass that runs a parametric SQL query and returns rows. SQL files can use psycopg-style `%(name)s` placeholders, which the client rewrites to asyncpg `$N` positional binds. A process-wide default client can be registered with `set_default_client(...)` so dynamic loaders that call `tool_class()` resolve correctly. Configuration is read from `ECHO_PG_*` environment variables. [View docs](/ai-tools/agent-kit/tools)
+
+## Improved
+
+- **[EkaAgents] Echo Agent Kit v0.1.33** — Echo Agent Kit released as v0.1.33 with the new Skills primitive, Postgres engine, and `PgQueryTool` bundled in. `pip install -U echo` is safe — defaults preserve existing agent behavior.
+
+</Update>
+
+<Update
+  label="April 27, 2026"
+  description="April 27, 2026"
+  tags={["Update", "Fix"]}
+  rss={{
+    title: "EkaAgents — April 27, 2026",
+    description: "• MedAssist web file uploads now validate against an updated allow-list of file types\n\n• Client-specific MedAssist widget configuration fix\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] MedAssist web file upload validation** — The MedAssist web widget now validates uploaded files against an updated allow-list of supported file types, surfacing a clear rejection for unsupported formats before the upload is attempted.
+
+## Fixed
+
+- **[EkaAgents] [Client-Specific] MedAssist web widget configuration** — Resolved a configuration regression that caused the MedAssist web widget to behave incorrectly on a partner deployment; the widget now initializes with the expected configuration on that surface.
+
+</Update>
+
+<Update
+  label="April 24, 2026"
+  description="April 24, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — April 24, 2026",
+    description: "• MCP SDK now requires mobile number for profile creation\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Changed
+
+- **[EkaAgents] Mobile number mandatory for profile creation in MCP SDK** — The MCP SDK now requires a mobile number when creating a patient profile, ensuring downstream integrations always have a contactable identifier. Existing profile creation flows must include this field. [View docs](/ai-tools/mcp-server/supported-tools)
+
+</Update>
+
+<Update
+  label="April 23, 2026"
+  description="April 23, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — April 23, 2026",
+    description: "• MCP SDK doctor discovery cards revamped for EMR client\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] [Client-Specific] Doctor card revamp** — Doctor discovery cards in the MCP SDK have been redesigned for the EMR client, with refreshed layout and additional doctor metadata surfaced inline. [View docs](/ai-tools/mcp-server/supported-tools)
+
+</Update>
+
+<Update
+  label="April 22, 2026"
+  description="April 22, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — April 22, 2026",
+    description: "• Echo Agent Kit MCP session caching redesign\n\n• MCP tool call timeout set to 10s\n\n• Doctor discovery elicitation in MCP SDK\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] MCP session caching in Echo Agent Kit** — The Echo Agent Kit MCP integration now caches MCP sessions per user, splitting tool discovery and session caches with independent idle and absolute TTLs, LRU eviction on pool exhaustion, and `user_session_id` plumbed through `MCPTool.run` via `tool_context`. Tool cache keys are partitioned by configurable headers (`tool_cache_key_headers`), and concurrent cache misses are serialized to avoid duplicate discovery work. [View docs](/ai-tools/agent-kit/mcp-integration)
+
+- **[EkaAgents] Doctor discovery elicitation** — The MCP SDK now supports interactive elicitation for `doctor_discovery` cards, allowing agents to confirm doctor availability mid-conversation before booking. [View docs](/ai-tools/mcp-server/supported-tools)
+
+## Improved
+
+- **[EkaAgents] MCP tool call timeout** — Tool calls in the Echo Agent Kit MCP integration are now bounded by a 10-second timeout, preventing slow downstream tools from blocking agent responses indefinitely.
+
+## Removed
+
+- **[EkaAgents] Legacy MCP caching layer** — The previous monolithic MCP cache has been removed from the Echo Agent Kit in favor of the new split tool/session caching design.
+
+</Update>
+
+<Update
+  label="April 20, 2026"
+  description="April 20, 2026"
+  tags={["Fix"]}
+  rss={{
+    title: "EkaAgents — April 20, 2026",
+    description: "• MedAssist web microphone restored after a same-day regression\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Fixed
+
+- **[EkaAgents] MedAssist web microphone restored** — A temporary disablement of the microphone capture path in the MedAssist web widget was reverted on the same day after a regression was identified, restoring voice input.
+
+</Update>
+
+<Update
+  label="April 18, 2026"
+  description="April 18, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "EkaAgents — April 18, 2026",
+    description: "• MedAssist web widget adds contextual popup\n\n• Onboarding nudge can now be disabled\n\n• Agent ID resolution bug fixed\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Contextual popup in MedAssist web widget** — The MedAssist web chat widget now supports a contextual popup, surfacing relevant suggestions and actions tied to the current conversation state.
+
+## Improved
+
+- **[EkaAgents] MedAssist nudge configurability** — The onboarding nudge in the MedAssist web widget can now be disabled by integration partners that don't want unsolicited prompts on first load.
+
+## Fixed
+
+- **[EkaAgents] Agent ID resolution in MedAssist web** — Fixed a bug where the MedAssist web widget could resolve to the wrong agent ID under certain configurations, ensuring conversations always route to the configured agent.
+
+</Update>
+
+<Update
+  label="April 17, 2026"
+  description="April 17, 2026"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — April 17, 2026",
+    description: "• Doctor discovery tool added to MCP SDK for EMR workspaces\n\n• MedAssist web widget responsive layout on small screens\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **[EkaAgents] Doctor discovery tool in MCP SDK** — The Eka MCP SDK now includes a doctor discovery tool for EMR workspaces, enabling agents to search for available doctors within a clinic context. [View docs](/ai-tools/mcp-server/supported-tools)
+
+- **[EkaAgents] MedAssist web widget responsive layout** — The MedAssist web chat widget now renders correctly on small screens (under 360px and 767px widths), preventing layout overflow and improving usability on mobile devices.
+
+</Update>
+
+<Update
+  label="April 16, 2026"
+  description="April 16, 2026"
+  tags={["Feature", "Update"]}
+  rss={{
+    title: "EkaAgents — April 16, 2026",
+    description: "• OTP authentication for EMR clients in MCP SDK\n\n• Workspace tool fallback to default EMR tool set\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] OTP authentication for EMR clients in MCP SDK** — The Eka MCP SDK now includes an `authentication_elicitation` tool enabled by default for EMR workspaces, supporting SMS-based OTP login with country code selection, OTP verification, and UHID profile selection. Agents can authenticate clinic users mid-conversation without leaving the AI client. [View docs](/ai-tools/mcp-server/authentication)
+
+## Improved
+
+- **[EkaAgents] MCP SDK workspace tool fallback** — When a workspace has no explicitly configured tool list, the MCP SDK now falls back to the default EMR tool set instead of failing, improving resilience for new workspace onboarding.
+
+</Update>
+
+<Update
+  label="April 13, 2026"
+  description="April 9–13"
+  tags={["Update"]}
+  rss={{
+    title: "EkaAgents — April 9–13, 2026",
+    description: "• Echo Agent Kit handles empty prompt variables gracefully\n\nRead more: https://developer.eka.care/ekaagents-changelog"
+  }}
+>
+
+## Improved
+
+- **Echo Agent Kit** — Empty prompt variables are now handled gracefully, preventing errors when prompt templates contain optional or unfilled placeholders. [View docs](/ai-tools/agent-kit/tools)
+
+</Update>

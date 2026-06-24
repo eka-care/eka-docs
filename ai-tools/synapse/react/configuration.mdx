@@ -1,0 +1,106 @@
+---
+title: Configuration reference
+description: Every option in MedAssistConfig
+---
+
+`MedAssistConfig` is the optional third argument to [`renderMedAssist`](/ai-tools/synapse/react/installation#api). Every field is optional — anything you omit falls back to the agent config you set in [console.eka.care](https://console.eka.care).
+
+## MedAssistConfig
+
+<ParamField path="title" type="string" default="Medi Clinic">
+  Header text shown to the user.
+</ParamField>
+
+<ParamField path="iconUrl" type="string" default="https://cdn.eka.care/bot-icon.svg">
+  Icon URL for the widget launcher.
+</ParamField>
+
+<ParamField path="environment" type='"development" | "staging" | "production"' default="production">
+  Which backend environment to connect to.
+</ParamField>
+
+<ParamField path="baseUrl" type="string">
+  Custom API base URL. Only used in development mode.
+</ParamField>
+
+<ParamField path="auth" type="string">
+  Auth token sent when the session is created.
+</ParamField>
+
+<ParamField path="authToken" type="string">
+  Sent as the `x-auth-token` header on the create-session API call.
+</ParamField>
+
+<ParamField path="context" type="TContext">
+  Key-value context object sent with the session to the backend. Used by the agent and its tools.
+</ParamField>
+
+<ParamField path="connectionType" type='"socket" | "sse"'>
+  Real-time transport. Usually inherited from agent config.
+</ParamField>
+
+<ParamField path="displayMode" type='"full" | "widget"' default="widget">
+  `full` is fullscreen; `widget` is a floating window. Mobile always uses the widget layout.
+</ParamField>
+
+<ParamField path="resize" type="boolean">
+  Show a resize toggle in the header.
+</ParamField>
+
+<ParamField path="allowed" type='Array<"text" | "file" | "audio" | "voice">'>
+  Input types to show. Omit to show all.
+</ParamField>
+
+<ParamField path="initialMessage" type="TInitialMessage">
+  A pre-loaded greeting and suggestion pills shown before the user types.
+</ParamField>
+
+<ParamField path="hideWatermark" type="boolean" default="false">
+  Hide the "Powered by Eka Care" footer branding.
+</ParamField>
+
+<ParamField path="onClose" type="() => void">
+  Callback fired when the user closes the widget.
+</ParamField>
+
+<ParamField path="showCloseButton" type="boolean" default="true">
+  Show the close (✕) button in the header.
+</ParamField>
+
+<ParamField path="theme" type="object">
+  Brand colors and styling. See [Theming & design system](/ai-tools/synapse/react/theming).
+</ParamField>
+
+## How config maps to the console
+
+Many fields can be set either here or on the agent in the console. When both exist, the agent config seeds the defaults and your `config` overrides them.
+
+| Field | Console relationship |
+| --- | --- |
+| `agentId` | Resolves the agent's config — name, theme, allowed inputs, nudges, initial message. |
+| `environment` | Selects which backend (dev/staging/prod) hosts the agent. |
+| `context` | Passed to the backend session; used by the agent and tool chain. |
+| `theme` | Seeded from the agent config's theme, overridable here. |
+| `initialMessage` | Can come from the agent's configured greeting and suggestion pills. |
+| `allowed` | Input-type restrictions can also be sourced from the agent config. |
+
+## Example
+
+```tsx
+const config: MedAssistConfig = {
+  title: "Moolchand Assist",
+  environment: "production",
+  displayMode: "widget",
+  allowed: ["text", "file", "audio"],
+  hideWatermark: true,
+  theme: {
+    primary: "#6B5CE0",
+    mode: "light",
+    headerTinted: true,
+  },
+  context: { intent: "general_query" },
+  onClose: () => console.log("closed"),
+};
+
+renderMedAssist(container, "YOUR_AGENT_ID", config);
+```

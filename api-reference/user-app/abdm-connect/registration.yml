@@ -189,6 +189,52 @@ paths:
       security:
       - authApiKey: []
       summary: Generate OTP
+  /abdm/na/v1/profile/login/methods:
+    post:
+      description: Searches for available authentication methods.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhrSearchAuthMethodRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhrSearchAuthMethodResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Search Auth Methods
   /abdm/na/v1/profile/login/phr:
     post:
       description: Handles login via Aadhaar number, ABHA number, or mobile number.
@@ -2369,49 +2415,7 @@ paths:
           description: OK
       security:
       - authApiKey: []
-  /abdm/v1/care-contexts/link:
-    post:
-      description: This API is used by HIP to link care contexts.
-      parameters:
-      - description: Eka User ID (OID)
-        in: header
-        name: X-Pt-Id
-        schema:
-          type: string
-      - description: Partner User ID
-        in: header
-        name: X-Partner-Pt-Id
-        schema:
-          type: string
-      - description: Partner HIP ID
-        in: header
-        name: X-Hip-Id
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LinkCareContextLinkingRequest'
-      responses:
-        4XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        5XX:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericError'
-          description: ""
-        "202":
-          description: Accepted
-      security:
-      - authApiKey: []
-      summary: Care context linking
-  /abdm/v1/care-contexts/link/on-confirm:
+  /abdm/v1/care-contexts/discover/link/on-confirm:
     post:
       description: This API is used by HIP to confirm the linking of care contexts
         after OTP verification.
@@ -2454,7 +2458,7 @@ paths:
       security:
       - authApiKey: []
       summary: Discover Link On Confirm
-  /abdm/v1/care-contexts/link/on-init:
+  /abdm/v1/care-contexts/discover/link/on-init:
     post:
       description: This API is used by HIP to initiate the linking of unlinked health
         records (care contexts). HIP must send an OTP and provide details such as
@@ -2498,6 +2502,48 @@ paths:
       security:
       - authApiKey: []
       summary: Discover Link On Init
+  /abdm/v1/care-contexts/link:
+    post:
+      description: This API is used by HIP to link care contexts.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkCareContextLinkingRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
+      summary: Care context linking
   /abdm/v1/care-contexts/linked:
     get:
       parameters:
@@ -2637,6 +2683,49 @@ paths:
           description: OK
       security:
       - authApiKey: []
+  /abdm/v1/care-contexts/sms/notify:
+    post:
+      description: This API is used by HIP to notify the gateway when a new health
+        record is ready to be shared with a user.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkUnlinkedRecordsNotificationRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "202":
+          description: Accepted
+      security:
+      - authApiKey: []
+      summary: Notify unlinked care contexts
   /abdm/v1/consents/approve:
     post:
       description: This endpoint is used to approve the consent
@@ -5027,6 +5116,8 @@ components:
       type: object
     AuthLoggedInStatusResponse:
       properties:
+        hpr_id:
+          type: string
         kyc_verified:
           type: boolean
         logged_in:
@@ -5236,6 +5327,12 @@ components:
           type: string
         consent_init_id:
           type: string
+        hi_types:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
         period:
           $ref: '#/components/schemas/CommonsPeriodWithExpiry'
         status:
@@ -5303,6 +5400,7 @@ components:
             ImmunizationRecord,
             HealthDocumentRecord,
             WellnessRecord
+            Invoice
           enum:
           - OPConsultation
           - Prescription
@@ -5311,6 +5409,7 @@ components:
           - ImmunizationRecord
           - HealthDocumentRecord
           - WellnessRecord
+          - Invoice
           items:
             type: string
           type:
@@ -6033,6 +6132,12 @@ components:
           - array
           - "null"
       type: object
+    LinkUnlinkedRecordsNotificationRequest:
+      properties:
+        mobile_number:
+          description: 10 digit mobile number of the patient
+          type: string
+      type: object
     ListsRequestDetail:
       properties:
         created_at:
@@ -6317,7 +6422,6 @@ components:
         name:
           type: string
       required:
-      - clinic_id
       - hip_id
       - name
       type: object
@@ -7371,19 +7475,32 @@ components:
     PhrLoginOTPRequest:
       properties:
         identifier:
-          description: The identifier for the selected login method.
+          description: The identifier for the selected login method. Index of the
+            search API response for search method
           examples:
           - "9876543210"
           type: string
         method:
           description: The method used for login.
           enum:
+          - search
           - phr_address
           - abha_number
           - mobile
           - aadhaar_number
           examples:
           - mobile
+          type: string
+        otp_system:
+          description: The otp system used for login.
+          enum:
+          - abdm
+          - aadhaar
+          examples:
+          - abdm
+          type: string
+        txn_id:
+          description: Transaction id received in the search api response
           type: string
       type: object
     PhrLoginOTPResponse:
@@ -7401,6 +7518,37 @@ components:
           type: string
         txn_id:
           description: Transaction id received in the previous api response
+          type: string
+      type: object
+    PhrSearchAuthMethodRequest:
+      properties:
+        abha_address:
+          description: Abha address used to search for the user
+          type: string
+      type: object
+    PhrSearchAuthMethodResponse:
+      properties:
+        abha_address:
+          type: string
+        abha_number:
+          type: string
+        auth_methods:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        blocked_methods:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        fullname:
+          type: string
+        mobile:
+          type: string
+        status:
           type: string
       type: object
     PhrVerifyLoginOTPRequest:
@@ -7532,11 +7680,17 @@ components:
           type:
           - "null"
           - integer
+        district_code:
+          type: string
+        district_name:
+          type: string
         first_name:
           description: User's first name.
           type:
           - "null"
           - string
+        full_name:
+          type: string
         gender:
           description: Gender of the user (M - Male, F - Female, O - Other).
           enum:
@@ -7576,6 +7730,29 @@ components:
           type:
           - "null"
           - string
+        profile_photo:
+          description: Base64-encoded profile photo.
+          type: string
+        state_code:
+          type: string
+        state_name:
+          type: string
+        sub_district_code:
+          type: string
+        sub_district_name:
+          type: string
+        town_code:
+          type: string
+        town_name:
+          type: string
+        village_code:
+          type: string
+        village_name:
+          type: string
+        ward_code:
+          type: string
+        ward_name:
+          type: string
         year_of_birth:
           description: Year of birth of the user.
           type:
@@ -7590,6 +7767,8 @@ components:
           type:
           - array
           - "null"
+        txn_id:
+          type: string
       type: object
     ProviderHipDetail:
       properties:
@@ -7688,6 +7867,10 @@ components:
           - "null"
         key_information:
           $ref: '#/components/schemas/RecordsKeyMaterial'
+        page_count:
+          type: integer
+        page_number:
+          type: integer
         transaction_id:
           type: string
       type: object

@@ -1,0 +1,75 @@
+---
+title: "Local Development with HTTPS (ngrok)"
+description: "Give your local server a public HTTPS URL for testing with production APIs."
+---
+
+Production APIs require a secure (HTTPS) origin — requests from `http://localhost` will fail CORS preflight checks. ngrok solves this by tunneling your local server through a public HTTPS URL in seconds.
+
+---
+
+## Step 1 — Install ngrok
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    brew install ngrok/ngrok/ngrok
+    ```
+  </Tab>
+  <Tab title="Windows (Chocolatey)">
+    ```powershell
+    choco install ngrok
+    ```
+  </Tab>
+  <Tab title="Windows (Scoop)">
+    ```powershell
+    scoop install ngrok
+    ```
+  </Tab>
+  <Tab title="Windows (manual)">
+    Download the `.zip` from [ngrok.com/download](https://ngrok.com/download), extract `ngrok.exe`, and add its folder to your PATH.
+  </Tab>
+</Tabs>
+
+---
+
+## Step 2 — Get your Auth Token
+
+1. Go to [ngrok.com](https://ngrok.com) and sign up (free)
+2. After login, go to **Dashboard → Your Authtoken**
+3. Copy the token — it looks like `2abc123XYZ_abcdefghijklmnop`
+
+---
+
+## Step 3 — Add the token (one-time only)
+
+```bash
+ngrok config add-authtoken YOUR_TOKEN_HERE
+```
+
+You only need to do this once per machine.
+
+---
+
+## Step 4 — Start your app, then run ngrok
+
+Start your local server first, then in a **second terminal**:
+
+```bash
+ngrok http <YOUR_APP_PORT>
+```
+
+Replace `<YOUR_APP_PORT>` with the port your app runs on (e.g. `3000`, `8000`, `8080`).
+
+ngrok will show output like:
+
+```
+Forwarding   https://xxxx-xx-xx-xx.ngrok-free.app -> http://localhost:<YOUR_APP_PORT>
+```
+
+Open that `https://` URL in any browser, on any device — it works and satisfies CORS requirements for production APIs.
+
+---
+
+## Stop ngrok
+
+Press `Ctrl+C` in the ngrok terminal.

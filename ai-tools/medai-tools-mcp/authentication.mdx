@@ -1,0 +1,95 @@
+---
+title: Authentication
+description: Configure authentication for MedAI Tools — open mode for development, EkaCare OAuth for production.
+---
+
+MedAI Tools supports two modes depending on your deployment:
+
+<CardGroup cols={2}>
+  <Card title="Open Mode" icon="unlock">
+    **For development and internal use**
+
+    No authentication configuration required. All tools are accessible without credentials.
+  </Card>
+  <Card title="EkaCare OAuth" icon="shield-check">
+    **For production and partner deployments**
+
+    Authenticate via Eka's OIDC provider (`accounts.eka.care`). Required for the hosted remote server at `medai-tools.eka.care`.
+  </Card>
+</CardGroup>
+
+---
+
+## Open Mode (Default)
+
+If you start the server without any auth environment variables, it runs in open mode — no login required. You'll see this in the logs:
+
+```
+INFO: Running without auth
+```
+
+This is suitable for local development, internal networks, or trusted environments where access is controlled at the network level.
+
+---
+
+## EkaCare OAuth Mode
+
+For production deployments or when using the hosted server at `https://medai-tools.eka.care/mcp`, authentication is handled via EkaCare's OIDC provider.
+
+### How It Works
+
+There are two authentication paths:
+
+1. **Full OIDC Flow** — for external clients (Claude, ChatGPT, Cursor). Your AI client opens a browser window to `accounts.eka.care`, you log in, and the client receives an access token automatically.
+
+2. **Direct Eka Token** — for internal integrations. Pass a raw Eka API token via the `Authorization` header. The server validates it against `api.eka.care` and caches the result in Redis (5-minute TTL for valid tokens, 30-second TTL for invalid ones).
+
+### Self-hosted OAuth Setup
+
+To enable EkaCare OAuth on your own instance, set the following environment variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `FASTMCP_SERVER_AUTH_EKACARE_BASE_URL` | Yes | Public URL of your server instance (e.g. `https://medai.yourdomain.com`) |
+| `FASTMCP_SERVER_AUTH_EKACARE_CLIENT_ID` | Yes | OAuth client ID issued by Eka |
+| `FASTMCP_SERVER_AUTH_EKACARE_CLIENT_SECRET` | Yes | OAuth client secret |
+| `FASTMCP_SERVER_AUTH_EKACARE_CLIENT_STORAGE_BE` | No | Redis URL for token caching (e.g. `redis://localhost:6379/0`) — improves validation performance |
+
+Add to your `.env` file:
+
+```bash .env
+FASTMCP_SERVER_AUTH_EKACARE_BASE_URL=https://medai.yourdomain.com
+FASTMCP_SERVER_AUTH_EKACARE_CLIENT_ID=your_client_id
+FASTMCP_SERVER_AUTH_EKACARE_CLIENT_SECRET=your_client_secret
+FASTMCP_SERVER_AUTH_EKACARE_CLIENT_STORAGE_BE=redis://localhost:6379/0
+```
+
+<Warning>
+Never commit `.env` files or credentials to version control. Use `.gitignore` to exclude them, and use separate credentials for development and production.
+</Warning>
+
+### Token Caching with Redis
+
+Redis is optional but recommended for production. Without it, every tool call triggers a live token validation request to `api.eka.care`. With Redis:
+
+- Valid tokens are cached for **5 minutes**
+- Invalid/expired tokens are cached for **30 seconds** (prevents hammering the auth API)
+
+---
+
+## Getting OAuth Credentials
+
+To obtain a Client ID and Secret for a self-hosted deployment, contact:
+
+**ekaconnect@eka.care**
+
+Include:
+- Your organization name
+- Deployment URL (the `BASE_URL` you plan to use)
+- Intended use case
+
+---
+
+<Note>
+For the hosted server (`https://medai-tools.eka.care/mcp`), authentication is managed by Eka — you only need an Eka account. OAuth credentials are only needed for self-hosted deployments.
+</Note>

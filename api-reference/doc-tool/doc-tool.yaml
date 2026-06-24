@@ -1323,6 +1323,443 @@ paths:
                     items:
                       type: string
                       example: "Only one of partner_clinic_ids or clinic_ids should be provided, not both."
+    get:
+      tags:
+        - Doctor and clinic API
+      summary: List Doctors
+      description: >-
+        ### Overview
+
+        Retrieve a list of all doctors registered for your business. Each entry returns the doctor's basic profile, primary specialisation, partner ID, and the clinics they are associated with.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/doctor`
+
+
+        **Method:** `GET`
+
+
+        ### Response Parameters
+
+
+        | Parameter | Type   | Description                                                |
+
+        | --------- | ------ | ---------------------------------------------------------- |
+
+        | status    | string | Status of the response (e.g., "success")                   |
+
+        | doctors   | array  | List of doctor objects belonging to the business           |
+
+      operationId: ListDoctors
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK - List of doctors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  doctors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Doctor's Eka ID
+                          example: "do1769174683513"
+                        firstname:
+                          type: string
+                          example: "Rajesh"
+                        lastname:
+                          type: string
+                          example: "Sharma"
+                        mobile:
+                          type: string
+                          example: "0000011111"
+                        email:
+                          type: string
+                          example: "dr.rajesh@example.com"
+                        specialisation:
+                          type: string
+                          description: Primary specialisation of the doctor
+                          example: "Cardiology"
+                        clinics:
+                          type: array
+                          description: Clinics this doctor is associated with
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "c-ab2c-34f2d-2gwd-2g2g"
+                              name:
+                                type: string
+                                example: "Sunrise Clinic"
+                        partner_id:
+                          type: string
+                          description: Identifier provided by partner, if any
+                          example: "Part_doc"
+        '400':
+          description: Bad Request - Business could not be resolved from auth token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Business not found."
+  /cdr/v1/doctor/{doc_id}/:
+    get:
+      tags:
+        - Doctor and clinic API
+      summary: Get Doctor by ID
+      description: >-
+        ### Overview
+
+        Retrieve a single doctor's profile using either the Eka ID or the partner-provided ID.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/doctor/{doc_id}/`
+
+
+        **Method:** `GET`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description                                            | Required |
+
+        | --------- | ------ | ------------------------------------------------------ | -------- |
+
+        | doc_id    | string | Doctor's Eka ID or partner-provided ID                 | Yes      |
+
+      operationId: GetDoctorById
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: doc_id
+          in: path
+          description: Doctor's Eka ID or partner-provided ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "do1769174683513"
+      responses:
+        '200':
+          description: OK - Doctor profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  doctor:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "do1769174683513"
+                      firstname:
+                        type: string
+                        example: "Rajesh"
+                      lastname:
+                        type: string
+                        example: "Sharma"
+                      mobile:
+                        type: string
+                        example: "0000011111"
+                      email:
+                        type: string
+                        example: "dr.rajesh@example.com"
+                      profile_image_url:
+                        type: string
+                        nullable: true
+                        example: "https://example.com/images/dr-rajesh.jpg"
+                      about:
+                        type: string
+                        example: "Dr. Rajesh Sharma is a renowned cardiologist with over 15 years of experience."
+                      specialisation:
+                        type: string
+                        example: "Cardiology"
+                      clinics:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "c-ab2c-34f2d-2gwd-2g2g"
+                            name:
+                              type: string
+                              example: "Sunrise Clinic"
+                      partner_id:
+                        type: string
+                        example: "Part_doc"
+        '404':
+          description: Doctor not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Doctor not found"
+    patch:
+      tags:
+        - Doctor and clinic API
+      summary: Update Doctor
+      description: >-
+        ### Overview
+
+        Update an existing doctor's profile. Only the fields included in the request body will be updated; all fields are optional.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/doctor/{doc_id}/`
+
+
+        **Method:** `PATCH`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description                          | Required |
+
+        | --------- | ------ | ------------------------------------ | -------- |
+
+        | doc_id    | string | Doctor's Eka ID                      | Yes      |
+
+      operationId: UpdateDoctor
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: doc_id
+          in: path
+          description: Doctor's Eka ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "do1769174683513"
+      requestBody:
+        description: 'Fields to update on the doctor profile. All fields are optional.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  example: "Rajesh"
+                lastname:
+                  type: string
+                  example: "Sharma"
+                mobile:
+                  type: string
+                  example: "0000011111"
+                email:
+                  type: string
+                  format: email
+                  example: "dr.rajesh@example.com"
+                gender:
+                  type: string
+                  enum: ["M", "F", "O"]
+                  example: "M"
+                dob:
+                  type: string
+                  example: "1999-01-01"
+                specialisations:
+                  type: array
+                  items:
+                    type: string
+                  example: ["Cardiology"]
+                qualifications:
+                  type: array
+                  items:
+                    type: string
+                  example: ["MBBS", "MD"]
+                about:
+                  type: string
+                  example: "Updated bio"
+                profile_image_url:
+                  type: string
+                  format: uri
+                  example: "https://example.com/images/dr-rajesh.jpg"
+                clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Add these Eka clinic IDs to the doctor's existing clinic associations
+                  example: ["c-ab2c-34f2d-2gwd-2g2g"]
+                partner_clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Add clinics matching these partner IDs to the doctor's existing clinic associations
+                  example: ["Part_clinic_1"]
+                partner_id:
+                  type: string
+                  example: "Part_doc"
+            example:
+              about: "Updated bio for the doctor"
+              specialisations: ["Cardiology"]
+              clinic_ids: ["c-ab2c-34f2d-2gwd-2g2g"]
+      responses:
+        '200':
+          description: OK - Doctor updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  ekaid:
+                    type: string
+                    example: "do1769174683513"
+        '400':
+          description: Bad Request - Validation failed or doc_id missing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Doctor ID is required for PATCH"
+        '404':
+          description: Doctor not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Doctor not found"
+    delete:
+      tags:
+        - Doctor and clinic API
+      summary: Delete Doctor
+      description: >-
+        ### Overview
+
+        Soft-delete a doctor by their Eka ID or partner-provided ID. Once deleted, the doctor will no longer appear in list or get responses.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/doctor/{doc_id}/`
+
+
+        **Method:** `DELETE`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description                                            | Required |
+
+        | --------- | ------ | ------------------------------------------------------ | -------- |
+
+        | doc_id    | string | Doctor's Eka ID or partner-provided ID                 | Yes      |
+
+      operationId: DeleteDoctor
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: doc_id
+          in: path
+          description: Doctor's Eka ID or partner-provided ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "do1769174683513"
+      responses:
+        '200':
+          description: OK - Doctor deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Doctor Deleted Successfully"
+        '404':
+          description: Doctor not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Doctor not found"
   /cdr/v1/clinic/:
     post:
       tags:
@@ -1482,6 +1919,405 @@ paths:
                     items:
                       type: string
                       example: "Only one of doctor_ids or partner_doctor_ids should be provided, not both."
+    get:
+      tags:
+        - Doctor and clinic API
+      summary: List Clinics
+      description: >-
+        ### Overview
+
+        Retrieve a list of all clinics registered for your business. Each entry includes basic clinic details and the doctors associated with that clinic.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/clinic`
+
+
+        **Method:** `GET`
+
+
+        ### Response Parameters
+
+
+        | Parameter | Type   | Description                                                |
+
+        | --------- | ------ | ---------------------------------------------------------- |
+
+        | status    | string | Status of the response (e.g., "success")                   |
+
+        | clinics   | array  | List of clinic objects belonging to the business           |
+
+      operationId: ListClinics
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK - List of clinics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  clinics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Clinic's Eka ID
+                          example: "c-ab2c-34f2d-2gwd-2g2g"
+                        name:
+                          type: string
+                          example: "Sunrise Clinic"
+                        pincode:
+                          type: string
+                          example: "560001"
+                        address:
+                          type: string
+                          example: "123 Main Street, Block A"
+                        doctors:
+                          type: array
+                          description: Doctors associated with this clinic
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "do1769174683513"
+                              firstname:
+                                type: string
+                                example: "Rajesh"
+                              lastname:
+                                type: string
+                                example: "Sharma"
+                        partner_id:
+                          type: string
+                          example: "Clinic_321_Indore"
+        '400':
+          description: Bad Request - Business could not be resolved from auth token
+  /cdr/v1/clinic/{clinic_id}/:
+    get:
+      tags:
+        - Doctor and clinic API
+      summary: Get Clinic by ID
+      description: >-
+        ### Overview
+
+        Retrieve a single clinic's details using either the Eka ID or the partner-provided ID.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/clinic/{clinic_id}/`
+
+
+        **Method:** `GET`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description                                          | Required |
+
+        | --------- | ------ | ---------------------------------------------------- | -------- |
+
+        | clinic_id | string | Clinic's Eka ID or partner-provided ID               | Yes      |
+
+      operationId: GetClinicById
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: clinic_id
+          in: path
+          description: Clinic's Eka ID or partner-provided ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "c-ab2c-34f2d-2gwd-2g2g"
+      responses:
+        '200':
+          description: OK - Clinic details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  clinic:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "c-ab2c-34f2d-2gwd-2g2g"
+                      name:
+                        type: string
+                        example: "Sunrise Clinic"
+                      pincode:
+                        type: string
+                        example: "560001"
+                      contact:
+                        type: string
+                        example: "9876543210"
+                      mobile:
+                        type: string
+                        example: "+919876543210"
+                      address:
+                        type: string
+                        example: "123 Main Street, Block A"
+                      doctors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "do1769174683513"
+                            firstname:
+                              type: string
+                              example: "Rajesh"
+                            lastname:
+                              type: string
+                              example: "Sharma"
+                      partner_id:
+                        type: string
+                        example: "Clinic_321_Indore"
+        '404':
+          description: Clinic not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Clinic not found"
+    patch:
+      tags:
+        - Doctor and clinic API
+      summary: Update Clinic
+      description: >-
+        ### Overview
+
+        Update an existing clinic. Only the fields included in the request body will be updated; all fields are optional.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/clinic/{clinic_id}/`
+
+
+        **Method:** `PATCH`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description       | Required |
+
+        | --------- | ------ | ----------------- | -------- |
+
+        | clinic_id | string | Clinic's Eka ID   | Yes      |
+
+      operationId: UpdateClinic
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: clinic_id
+          in: path
+          description: Clinic's Eka ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "c-ab2c-34f2d-2gwd-2g2g"
+      requestBody:
+        description: 'Fields to update on the clinic. All fields are optional.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Sunrise Clinic"
+                address:
+                  type: string
+                  example: "123 Main Street, Block A"
+                partner_id:
+                  type: string
+                  example: "Clinic_321_Indore"
+                pincode:
+                  type: string
+                  example: "560001"
+                contact:
+                  type: string
+                  pattern: "^\\d{10,11}$"
+                  example: "9876543210"
+                doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Add these Eka doctor IDs to the clinic's existing doctor associations
+                  example: ["do1769174683513"]
+                partner_doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Add doctors matching these partner IDs to the clinic's existing doctor associations
+                  example: ["Part_Doc_1"]
+                city:
+                  type: string
+                  example: "Bangalore"
+                state:
+                  type: string
+                  example: "Karnataka"
+            example:
+              address: "456 New Street, Block B"
+              contact: "9876543210"
+              doctor_ids: ["do1769174683513"]
+      responses:
+        '200':
+          description: OK - Clinic updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  ekaid:
+                    type: string
+                    example: "c-ab2c-34f2d-2gwd-2g2g"
+        '400':
+          description: Bad Request - Validation failed or clinic_id missing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Clinic ID is required for PATCH"
+        '404':
+          description: Clinic not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Clinic not found"
+    delete:
+      tags:
+        - Doctor and clinic API
+      summary: Delete Clinic
+      description: >-
+        ### Overview
+
+        Soft-delete a clinic by Eka ID or partner-provided ID. Deleted clinics no longer appear in list or get responses.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/clinic/{clinic_id}/`
+
+
+        **Method:** `DELETE`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description                                          | Required |
+
+        | --------- | ------ | ---------------------------------------------------- | -------- |
+
+        | clinic_id | string | Clinic's Eka ID or partner-provided ID               | Yes      |
+
+      operationId: DeleteClinic
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: clinic_id
+          in: path
+          description: Clinic's Eka ID or partner-provided ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "c-ab2c-34f2d-2gwd-2g2g"
+      responses:
+        '200':
+          description: OK - Clinic deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Clinic Deleted Successfully"
+        '404':
+          description: Clinic not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "Clinic not found"
   /cdr/v1/ekauser/:
     post:
       tags:
@@ -1693,6 +2529,469 @@ paths:
                       type: string
                       example: "Only one of doctor_ids or partner_doctor_ids should be provided, not both."
       deprecated: false
+    get:
+      tags:
+        - HIP Users API
+      summary: List Eka Users
+      description: >-
+        ### Overview
+
+        Retrieve a list of all Eka Users (HIP Users) registered for your business. Each entry includes the user's profile, role, seat type, and the doctors and clinics they are associated with.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/ekauser`
+
+
+        **Method:** `GET`
+
+
+        ### Response Parameters
+
+
+        | Parameter | Type   | Description                                                |
+
+        | --------- | ------ | ---------------------------------------------------------- |
+
+        | status    | string | Status of the response (e.g., "success")                   |
+
+        | users     | array  | List of Eka User objects belonging to the business         |
+
+      operationId: ListEkaUsers
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK - List of Eka Users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "176917697553584"
+                        firstname:
+                          type: string
+                          example: "Amit"
+                        lastname:
+                          type: string
+                          example: "Kumar"
+                        mobile:
+                          type: string
+                          example: "+919876543210"
+                        email:
+                          type: string
+                          example: "amit.kumar@example.com"
+                        is_admin:
+                          type: boolean
+                          example: false
+                        seat_type:
+                          type: string
+                          description: "Seat type (b - basic, p - premium)"
+                          example: "b"
+                        doctors:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "do1769174683513"
+                              firstname:
+                                type: string
+                                example: "Rajesh"
+                              lastname:
+                                type: string
+                                example: "Sharma"
+                        clinics:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "c-ab2c-34f2d-2gwd-2g2g"
+                              name:
+                                type: string
+                                example: "Sunrise Clinic"
+                        partner_id:
+                          type: string
+                          example: "Part_user_1"
+        '400':
+          description: Bad Request - Business could not be resolved from auth token
+  /cdr/v1/ekauser/{user_id}/:
+    get:
+      tags:
+        - HIP Users API
+      summary: Get Eka User by ID
+      description: >-
+        ### Overview
+
+        Retrieve a single Eka User's profile using either the Eka ID or the partner-provided ID.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/ekauser/{user_id}/`
+
+
+        **Method:** `GET`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description                                                | Required |
+
+        | --------- | ------ | ---------------------------------------------------------- | -------- |
+
+        | user_id   | string | Eka User's Eka ID or partner-provided ID                   | Yes      |
+
+      operationId: GetEkaUserById
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: user_id
+          in: path
+          description: Eka User's Eka ID or partner-provided ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "176917697553584"
+      responses:
+        '200':
+          description: OK - Eka User details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "176917697553584"
+                      firstname:
+                        type: string
+                        example: "Amit"
+                      lastname:
+                        type: string
+                        example: "Kumar"
+                      mobile:
+                        type: string
+                        example: "+919876543210"
+                      email:
+                        type: string
+                        example: "amit.kumar@example.com"
+                      is_admin:
+                        type: boolean
+                        example: false
+                      seat_type:
+                        type: string
+                        description: "Seat type (b - basic, p - premium)"
+                        example: "b"
+                      doctors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "do1769174683513"
+                            firstname:
+                              type: string
+                              example: "Rajesh"
+                            lastname:
+                              type: string
+                              example: "Sharma"
+                      clinics:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "c-ab2c-34f2d-2gwd-2g2g"
+                            name:
+                              type: string
+                              example: "Sunrise Clinic"
+                      partner_id:
+                        type: string
+                        example: "Part_user_1"
+        '404':
+          description: Eka User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "NOT_FOUND"
+                      message:
+                        type: string
+                        example: "User not found. Please check the provided ID."
+    patch:
+      tags:
+        - HIP Users API
+      summary: Update Eka User
+      description: >-
+        ### Overview
+
+        Update an existing Eka User. Only the fields included in the request body will be updated; all fields are optional.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/ekauser/{user_id}/`
+
+
+        **Method:** `PATCH`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description       | Required |
+
+        | --------- | ------ | ----------------- | -------- |
+
+        | user_id   | string | Eka User's Eka ID | Yes      |
+
+      operationId: UpdateEkaUser
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: user_id
+          in: path
+          description: Eka User's Eka ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "176917697553584"
+      requestBody:
+        description: 'Fields to update on the Eka User. All fields are optional.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  example: "Amit"
+                lastname:
+                  type: string
+                  example: "Kumar"
+                mobile:
+                  type: string
+                  example: "9876543210"
+                email:
+                  type: string
+                  format: email
+                  example: "amit.kumar@example.com"
+                auth_userid:
+                  type: string
+                  example: "Prateek_@_123"
+                gender:
+                  type: string
+                  enum: ["M", "F", "O"]
+                  example: "M"
+                dob:
+                  type: string
+                  format: date
+                  example: "1990-05-15"
+                is_admin:
+                  type: boolean
+                  example: true
+                seat_type:
+                  type: string
+                  enum: ["b", "p"]
+                  example: "p"
+                persona:
+                  type: string
+                  enum: ["S", "D"]
+                  example: "D"
+                doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["do1769174683513"]
+                partner_doctor_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["Part_doc_1"]
+                clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["c-ab2c-34f2d-2gwd-2g2g"]
+                partner_clinic_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["Part_clinic_1"]
+                partner_id:
+                  type: string
+                  example: "Part_user_1"
+            example:
+              is_admin: true
+              seat_type: "p"
+              clinic_ids: ["c-ab2c-34f2d-2gwd-2g2g"]
+      responses:
+        '200':
+          description: OK - Eka User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  ekaid:
+                    type: string
+                    example: "176917697553584"
+        '400':
+          description: Bad Request - Validation failed or user_id missing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "EkaUser ID is required for PATCH"
+        '404':
+          description: Eka User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "EkaUser not found"
+    delete:
+      tags:
+        - HIP Users API
+      summary: Delete Eka User
+      description: >-
+        ### Overview
+
+        Soft-delete an Eka User by Eka ID or partner-provided ID. Deleted users no longer appear in list or get responses.
+
+
+        **Endpoint:** `{{HOST}}/cdr/v1/ekauser/{user_id}/`
+
+
+        **Method:** `DELETE`
+
+
+        ### Path Parameters
+
+
+        | Parameter | Type   | Description                                                | Required |
+
+        | --------- | ------ | ---------------------------------------------------------- | -------- |
+
+        | user_id   | string | Eka User's Eka ID or partner-provided ID                   | Yes      |
+
+      operationId: DeleteEkaUser
+      parameters:
+        - name: auth
+          in: header
+          description: >-
+            The auth token of the business. It is used to authenticate the client. This should be fetched from auth api.
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: >-
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: user_id
+          in: path
+          description: Eka User's Eka ID or partner-provided ID
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: "176917697553584"
+      responses:
+        '200':
+          description: OK - Eka User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "EkaUser Deleted Successfully"
+        '404':
+          description: Eka User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  message:
+                    type: string
+                    example: "EkaUser not found"
   /dr/v1/business/clinic/{clinic_id}:
     get:
       tags:

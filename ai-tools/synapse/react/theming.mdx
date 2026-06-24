@@ -1,0 +1,101 @@
+---
+title: Theming & design system
+description: Brand the MedAssist widget with the Eka design system
+---
+
+The widget is built on a token-based design system. You provide a small `theme` object; the SDK derives a full, accessible color system from it — a primary scale, auto-contrasting text, header and surface colors, and light/dark variants — and applies them as CSS variables on the widget root.
+
+## The theme object
+
+Pass `theme` inside [`MedAssistConfig`](/ai-tools/synapse/react/configuration#medassistconfig).
+
+<ParamField path="primary" type="string">
+  Brand color (hex). Drives buttons, the user message bubble, borders, and accents.
+</ParamField>
+
+<ParamField path="background" type="string">
+  Solid background color (hex, rgb, or hsl).
+</ParamField>
+
+<ParamField path="backgroundImage" type="string">
+  Background image URL. Overrides `background` and switches the header/footer to a glass-morphism treatment.
+</ParamField>
+
+<ParamField path="textColor" type='"black" | "white"'>
+  Text color mode.
+</ParamField>
+
+<ParamField path="mode" type='"light" | "dark"'>
+  Theme mode. Derives `textColor` when it isn't set explicitly.
+</ParamField>
+
+<ParamField path="headerTinted" type="boolean">
+  When `true`, the header uses the primary color as its background.
+</ParamField>
+
+<ParamField path="titleImg" type="string">
+  Custom image for the header title.
+</ParamField>
+
+<ParamField path="tagline" type="string">
+  Optional subtitle shown under the title.
+</ParamField>
+
+```tsx
+renderMedAssist(container, "YOUR_AGENT_ID", {
+  theme: {
+    primary: "#6B5CE0",
+    mode: "dark",
+    headerTinted: true,
+    tagline: "Your health companion",
+  },
+});
+```
+
+## How a single primary becomes a full theme
+
+From your `primary` color, the SDK:
+
+- **Generates a 50–900 scale** — lighter shades (50–400), the base (500), and darker shades (600–900) via HSL manipulation — used for hover, active, and variant states.
+- **Computes `primary-foreground`** — automatically picks black or white for text that sits on the primary color, so contrast stays readable whatever brand color you pick.
+- **Derives surfaces** — background, header, footer, message bubbles, and input backgrounds, mixed with a touch of primary and adjusted for light/dark.
+
+## CSS variables
+
+The computed tokens are set as CSS variables on the widget root. The most useful ones:
+
+| Variable | Purpose |
+| --- | --- |
+| `--primary` | Accent color — buttons, user bubble, borders. |
+| `--primary-foreground` | Auto-contrast text on primary backgrounds. |
+| `--primary-50` … `--primary-900` | The derived primary scale. |
+| `--background` | Widget background (base gray mixed with primary). |
+| `--foreground` | Default text color. |
+| `--header-bg` / `--header-stroke` | Header background and border. |
+| `--footer-bg` / `--footer-stroke` | Footer background and border. |
+| `--bot-message-bg` | Bot message bubble background. |
+| `--normal-text-color` | Bot message text color. |
+| `--input-box-bg` | Chat input background. |
+| `--header-tagline` | Header subtitle / connection-status text. |
+| `--theme-background-image` | Background image URL (when set). |
+
+## Background image mode
+
+When `backgroundImage` is set, the widget switches to a layered, glass-morphism look:
+
+- `--background` becomes transparent.
+- Header and footer get transparent backgrounds with semi-opaque borders and a stronger blur.
+- The message area gets a subtle blur with a dark overlay for legibility.
+
+## Test your theme
+
+A theme that looks right in one mode can fail in another. Verify any change across all four combinations:
+
+| | `headerTinted: false` | `headerTinted: true` |
+| --- | --- | --- |
+| **Light mode** | ✅ check | ✅ check |
+| **Dark mode** | ✅ check | ✅ check |
+
+<Tip>
+Also test with both a light and a dark `primary` color — the auto-contrast logic flips `primary-foreground` between black and white, and you want to confirm header and button text stay readable in both.
+</Tip>
