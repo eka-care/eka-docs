@@ -1002,6 +1002,138 @@ paths:
           description: ''
           headers: { }
       deprecated: false
+  /registered_url_for_prescription_communication_events:
+    post:
+      tags:
+        - Prescription Webhooks
+      summary: Prescription Communication Event
+      description: >-
+
+        This webhook is triggered when a user performs an on-demand "Send Rx" action from the tool, sharing a prescription with the patient. The registered endpoint receives details about the prescription that was communicated, including the prescription ID, prescription URL, doctor, patient and appointment information.
+
+
+        The receiver can use the `prescription_id` or `prescription_url` from the webhook event to retrieve or render the shared prescription.
+
+      operationId: PrescriptionCommunicationWebhook
+      parameters: [ ]
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service
+                - event
+                - event_time
+                - transaction_id
+                - business_id
+                - data
+              properties:
+                service:
+                  type: string
+                  example: "prescription"
+                  description: "Service that emitted the event"
+                event:
+                  type: string
+                  enum:
+                    - "prescription.communication"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1782207271381
+                  description: "Event occurred timestamp in milliseconds"
+                timestamp:
+                  type: integer
+                  example: 0
+                  description: "Timestamp of the event"
+                transaction_id:
+                  type: string
+                  example: "2f924bba-e055-4b45-8b7d-f8e1259ec01a"
+                  description: "Unique transaction identifier for the event"
+                business_id:
+                  type: string
+                  example: "7177796085787388"
+                  description: "Business ID for the prescription"
+                client_id:
+                  type: string
+                  example: ""
+                  description: "Client ID for the prescription"
+                data:
+                  type: object
+                  required:
+                    - prescription_id
+                    - prescription_url
+                    - doctor_id
+                    - patient_id
+                    - clinic_id
+                    - appointment_id
+                  properties:
+                    actor_oid:
+                      type: string
+                      example: "177796085790372"
+                      description: "Identifier of the actor who triggered the communication"
+                    appointment_id:
+                      type: string
+                      example: "d-149c99c8-9f02-4300-8528-d602da6311ad"
+                      description: "Unique identifier for the appointment"
+                    clinic_id:
+                      type: string
+                      example: "c-603d3b6ed2d1496ca0fe6d82"
+                      description: "Identifier for the clinic in Eka"
+                    doc_name:
+                      type: object
+                      description: "Name of the doctor"
+                      properties:
+                        salutation:
+                          type: string
+                          example: "Dr."
+                          description: "Doctor's salutation"
+                        first_name:
+                          type: string
+                          example: "Shreya"
+                          description: "Doctor's first name"
+                        last_name:
+                          type: string
+                          example: "Gupta"
+                          description: "Doctor's last name"
+                    doctor_id:
+                      type: string
+                      example: "do1777976297512"
+                      description: "Identifier for the doctor in Eka"
+                    patient_id:
+                      type: string
+                      example: "178153131932085"
+                      description: "Identifier for the patient in Eka"
+                    patient_name:
+                      type: object
+                      description: "Name of the patient"
+                      properties:
+                        salutation:
+                          type: string
+                          example: ""
+                          description: "Patient's salutation"
+                        first_name:
+                          type: string
+                          example: "test"
+                          description: "Patient's first name"
+                        last_name:
+                          type: string
+                          example: ""
+                          description: "Patient's last name"
+                    prescription_id:
+                      type: string
+                      example: "P-DW-198A8DA9-6B88-5A88-9C38-2407352F28E9"
+                      description: "Prescription ID"
+                    prescription_url:
+                      type: string
+                      example: "https://prescription-store-s3.eka.care/P-DW-198A8DA9-6B88-5A88-9C38-2407352F28E9.pdf?v=1782207271381"
+                      description: "URL of the shared prescription PDF"
+      responses:
+        '200':
+          description: ''
+          headers: { }
+      deprecated: false
   /registered_url_for_doctor_events:
     post:
       tags:
