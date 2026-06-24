@@ -47,44 +47,69 @@ yarn add @eka-care/ekascribe-ts-sdk
 Here's a complete working example to record a consultation and get structured medical notes:
 
 ```ts
-// 1. Create a config variable to manage tokens
-const sdkConfig = {
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+
+// 1. Get the SDK instance. `allianceConfig.baseUrl` is required.
+const ekascribe = getEkaScribeInstance({
   access_token: '<your_access_token>',
-};
-
-// Get instance and use it throughout your application
-const ekascribe = getEkaScribeInstance(sdkConfig);
-
-// 2. Fetch available configurations (languages, templates, etc.)
-const config = await ekascribe.getEkascribeConfig();
-
-// 3. Initialize a transcription session
-await ekascribe.initTransaction({
-  mode: 'consultation',
-  input_language: ['en-IN'], // If you're not offering users a language change option in your UI, use ['auto_detect'] for the best results.
-  output_format_template: [{ template_id: 'your_template_id' }],
-  txn_id: 'unique-transaction-id',
-  transfer: 'vaded',
-  model_type: 'pro',
+  env: 'PROD', // 'PROD' | 'DEV'
+  allianceConfig: {
+    baseUrl: 'https://api.eka.care/voice/v1', // PROD (use https://api.dev.eka.care/voice/v1 for dev)
+  },
 });
 
-// 4. Start recording - microphone permission will be requested
-await ekascribe.startRecording();
+// 2. Register callbacks before recording (errors, token refresh, upload progress)
+ekascribe.registerCallback('onError', (event) => {
+  console.error(`[${event.error.code}] ${event.error.message}`);
+});
+ekascribe.registerCallback('onTokenRequired', async () => {
+  return await refreshMyAuthToken(); // return the new token string
+});
+
+// 3. Start recording - creates a session, requests mic permission, and begins chunked upload
+const result = await ekascribe.startRecordingV2({
+  templates: ['clinical_notes_template'], // required: template IDs for extraction (from getConfig → my_templates)
+  languageHint: ['auto_detect'],          // required: input audio language hints. If you're not offering users a language change option in your UI, use ['auto_detect'] for the best results.
+  sessionMode: 'consultation',            // required: 'consultation' | 'dictation'
+  model: 'pro',                           // required: 'pro' | 'lite'
+  uploadType: 'chunked',                  // optional: 'chunked' (default) | 'single'
+});
+
+if (result.error_code) {
+  console.error(result.error_code, result.message);
+}
+const sessionId = result.txn_id!;
 
 // ... consultation happens ...
 
-// 5. Stop recording - SDK handles chunking, upload & commit automatically
-await ekascribe.endRecording();
+// 4. Pause / resume recording at any time (optional)
+ekascribe.pauseRecording();  // pauses VAD - mic stays open, no new chunks created
+ekascribe.resumeRecording(); // resumes VAD processing
 
-// 6. Get the structured output
-const result = await ekascribe.pollSessionOutput({
-  txn_id: 'unique-transaction-id',
+// 5. Stop recording - SDK flushes the last chunk, waits for uploads & ends the session
+const endResult = await ekascribe.endRecording();
+if (endResult.error_code === 'audio_upload_failed') {
+  await ekascribe.retryUploadRecording(); // retry the failed chunks
+}
+
+// 6. Poll for the structured output until processing completes
+const status = await ekascribe.getSessionStatus(sessionId, {
+  poll: { maxAttempts: 60, intervalMs: 2000 },
 });
 
-console.log(result);
+if (status.success) {
+  console.log('Templates:', status.data.templates);
+  console.log('Transcript:', status.data.transcript);
+}
 ```
 
 That's it. The SDK handles VAD, audio chunking, file uploads, retries, and polling - you just call the methods.
+
+<Warning>
+Production APIs require a secure (HTTPS) origin and won't work from `http://localhost`. Use [ngrok](/api-reference/health-ai/ekascribe/local-development-ngrok) to tunnel over HTTPS, or point at the development `baseUrl` (`https://api.dev.eka.care/voice/v1`) which works from plain `localhost`.
+</Warning>
+
+For the full method reference, callbacks, widget, and session utilities, see the [TypeScript SDK guide](/api-reference/health-ai/ekascribe/SDKs/TS-sdk).
 
 ---
 
