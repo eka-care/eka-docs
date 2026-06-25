@@ -6996,7 +6996,173 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
-  
+  /appointments/v1/{appointment_id}/reschedule:
+    patch:
+      tags:
+        - Appointment API
+      summary: Reschedule Appointment
+      description: >-
+
+        ### Overview
+
+
+        This API is used to reschedule an appointment. Rescheduling does **not**
+        update the existing appointment. Instead, a brand new appointment is
+        created with the supplied `start_time` and `end_time`, while the previous
+        appointment's status is marked as `RES` (which represents *rescheduled*).
+
+
+        The newly created appointment carries a `prev_aids` field — an array
+        containing the ids of the previous, rescheduled appointment(s). Each
+        previous appointment in turn carries a `next_aid` field, which holds the
+        id of the next appointment it was rescheduled to. This forms a linked
+        chain across the reschedule history.
+
+
+        The response of this API is the **new appointment** that is created as a
+        result of the reschedule.
+
+
+      operationId: RescheduleAppointment
+      parameters:
+        - name: auth
+          in: header
+          required: True
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: appointment_id
+          in: path
+          description: 'The id (aid) of the existing appointment to reschedule. When partner_appointment_id is supplied, this is treated as the partner appointment id.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - start_time
+                - end_time
+              properties:
+                start_time:
+                  type: integer
+                  description: 'New start time of the appointment as a Unix epoch in seconds.'
+                  example: 1730189586
+                end_time:
+                  type: integer
+                  description: 'New end time of the appointment as a Unix epoch in seconds. Must be after start_time.'
+                  example: 1730193186
+                partner_appointment_id:
+                  type: string
+                  description: >-
+                    Optional partner-provided appointment id. When omitted, the server generates the new appointment id and the `appointment_id` path param is used as-is. When supplied, the new id is derived with the help of this field and the `appointment_id` path param is treated as a partner appointment id.
+            example:
+              start_time: 1730189586
+              end_time: 1730193186
+              partner_appointment_id: api-3f9c2b18-7e44-4a51-9
+      responses:
+        '200':
+          description: OK — the newly created (rescheduled) appointment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointment_id:
+                    type: string
+                    description: 'Id of the newly created appointment.'
+                  patient_id:
+                    type: string
+                  doctor_id:
+                    type: string
+                    nullable: true
+                  clinic_id:
+                    type: string
+                  status:
+                    type: string
+                  mode:
+                    type: string
+                  start_time:
+                    type: integer
+                    description: 'Start time as a Unix epoch in seconds.'
+                  end_time:
+                    type: integer
+                    description: 'End time as a Unix epoch in seconds.'
+                  created_at:
+                    type: integer
+                    description: 'Creation time as a Unix epoch in seconds.'
+                  prev_aids:
+                    type: array
+                    items:
+                      type: string
+                    description: 'Ids of the previous rescheduled appointment(s).'
+                  next_aid:
+                    type: string
+                    description: 'Id of the next appointment this one was rescheduled to. Present only on previous appointments.'
+              example:
+                appointment_id: "api-3f9c2b18-7e44-4a51-9c2d-1b6f0a8e5d23"
+                patient_id: "patient-oid-123"
+                doctor_id: "doctor-oid-456"
+                clinic_id: "clinic-789"
+                status: "BK"
+                mode: "IN_CLINIC"
+                start_time: 1730189586
+                end_time: 1730193186
+                created_at: 1730185000
+                prev_aids:
+                  - "api-1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "end_time must be after start_time"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Appointment \"api-1a2b3c4d\" was not found"
+        '409':
+          description: Conflict — an appointment with the derived new id already exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Appointment \"api-3f9c2b18\" already exists"
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
