@@ -7019,6 +7019,10 @@ paths:
         chain across the reschedule history.
 
 
+        The response of this API is the **new appointment** that is created as a
+        result of the reschedule.
+
+
       operationId: RescheduleAppointment
       parameters:
         - name: auth
@@ -7030,7 +7034,7 @@ paths:
             eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
         - name: appointment_id
           in: path
-          description: 'The id (aid) of the existing appointment to reschedule. When partner_id is 1, this is treated as the partner appointment id.'
+          description: 'The id (aid) of the existing appointment to reschedule. When partner_appointment_id is supplied, this is treated as the partner appointment id.'
           required: true
           style: simple
           schema:
@@ -7054,23 +7058,14 @@ paths:
                   type: integer
                   description: 'New end time of the appointment as a Unix epoch in seconds. Must be after start_time.'
                   example: 1730193186
-                partner_id:
-                  type: integer
-                  enum:
-                    - 0
-                    - 1
-                  default: 0
-                  description: >-
-                    0 (default): the server generates the new appointment id. 1: `partner_appointment_id` is required and the new id is generated with combination of given partner_appointment_id.
-                  example: 0
                 partner_appointment_id:
                   type: string
-                  description: 'Partner provided appointment Id. Required when partner_id is 1; ignored when partner_id is 0.'
+                  description: >-
+                    Optional partner-provided appointment id. When omitted, the server generates the new appointment id and the `appointment_id` path param is used as-is. When supplied, the new id is derived with the help of this field and the `appointment_id` path param is treated as a partner appointment id.
             example:
               start_time: 1730189586
               end_time: 1730193186
-              partner_id: 0
-              partner_appointment_id : api-3f9c2b18-7e44-4a51-9
+              partner_appointment_id: api-3f9c2b18-7e44-4a51-9
       responses:
         '200':
           description: OK — the newly created (rescheduled) appointment.
