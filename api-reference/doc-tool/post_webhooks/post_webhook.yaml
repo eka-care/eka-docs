@@ -2143,3 +2143,877 @@ paths:
           description: ""
           headers: {}
       deprecated: false
+
+  /registered_url_for_ipd_admissions_events:
+    post:
+      tags:
+        - IPD Webhooks
+      summary: IPD Admission 
+      description: >-
+
+        When an IPD (In-Patient Department) admission is created or updated, a webhook event is sent to registered webhooks with the full admission details, including the patient, attending doctor, facility, department, bed, category, rate plan, insurance and billing information.
+
+
+        **Field Definitions**
+
+
+        • **service**: string - The type of service. For IPD events, this will be `ipd`.
+
+
+        • **event**: string - The type of event. For admissions, this will be `ipd_admissions.created` or `ipd_admissions.updated`.
+
+
+        • **event_time**: integer - Event occurrence timestamp (epoch seconds).
+
+
+        • **transaction_id**: string - Unique transaction identifier for the event.
+
+
+        • **timestamp**: integer - Timestamp of the event (epoch seconds).
+
+
+        • **business_id**: string - The eka ID of the business.
+
+
+        • **client_id**: string - Client ID associated with the event.
+
+
+        • **data**: object - Contains detailed information about the admission.
+
+
+        • **id** / **ipid**: string - Unique identifiers for the admission.
+
+
+        • **stage** / **status**: string - Current stage and status of the admission (e.g. `AD`, `BED_ASSIGNED`).
+
+
+        • **patient** / **doc** / **attendee**: object - Patient, attending doctor and attendee details.
+
+
+        • **facility** / **department** / **bed** / **category**: Location and allocation details for the admission.
+
+
+        • **rateplan** / **insurance** / **totalbilled** / **totalpaid**: Billing, package and insurance details.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: IPDAdmissionWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service
+                - event
+                - event_time
+                - timestamp
+                - business_id
+                - data
+              properties:
+                service:
+                  type: string
+                  example: "ipd"
+                  description: "Type of service"
+                event:
+                  type: string
+                  enum:
+                    - "ipd_admissions.created"
+                    - "ipd_admissions.updated"
+                  example: "ipd_admissions.created"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1782804321
+                  description: "Event occurred timestamp"
+                transaction_id:
+                  type: string
+                  example: "a9f54d1a-4080-4eec-9db1-ccbfc1771a5d"
+                  description: "Unique transaction identifier for the event"
+                timestamp:
+                  type: integer
+                  example: 1782804321
+                  description: "Timestamp of the event"
+                business_id:
+                  type: string
+                  example: "7175620245483777"
+                  description: "Business ID for the admission"
+                client_id:
+                  type: string
+                  example: "EC_1777984421469"
+                  description: "Client ID for the admission"
+                data:
+                  type: object
+                  required:
+                    - id
+                    - ipid
+                    - pid
+                    - docid
+                    - facilityid
+                    - stage
+                    - status
+                  properties:
+                    actor_oid:
+                      type: string
+                      example: "175620245502842"
+                      description: "Identifier of the actor who triggered the event"
+                    admission_date:
+                      type: string
+                      example: "2026-06-30 07:24:21.985000+00:00"
+                      description: "Date and time of admission"
+                    attendee:
+                      type: object
+                      description: "Attendee accompanying the patient"
+                      properties:
+                        id:
+                          type: string
+                          example: "attendee-id"
+                          description: "Attendee identifier"
+                        name:
+                          type: string
+                          example: "Sachin New"
+                          description: "Attendee name"
+                        phone:
+                          type: object
+                          properties:
+                            c:
+                              type: string
+                              example: "+91"
+                              description: "Country code"
+                            n:
+                              type: string
+                              example: "8765434565"
+                              description: "Phone number"
+                        relation:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "sm-1034094231"
+                              description: "Relation identifier"
+                            label:
+                              type: string
+                              example: "Father"
+                              description: "Relation label"
+                    bed:
+                      type: string
+                      example: "6a42477e282b241a943db696"
+                      description: "Bed identifier assigned to the patient"
+                    bid:
+                      type: string
+                      example: "7175620245483777"
+                      description: "Business identifier"
+                    category:
+                      type: object
+                      description: "Bed/room category details"
+                      properties:
+                        id:
+                          type: string
+                          example: "68e7622e24b43838dd2e7af2"
+                          description: "Category identifier"
+                        name:
+                          type: string
+                          example: "VIP"
+                          description: "Category name"
+                    created_at:
+                      type: string
+                      example: "2026-06-30 07:25:18.779000+00:00"
+                      description: "Creation timestamp"
+                    custom_attributes:
+                      type: object
+                      description: "Custom attributes for the admission"
+                    date:
+                      type: string
+                      example: "2026-06-30 07:24:21.985000+00:00"
+                      description: "Admission date"
+                    department:
+                      type: object
+                      description: "Department details"
+                      properties:
+                        id:
+                          type: string
+                          example: "surgery"
+                          description: "Department identifier"
+                        name:
+                          type: string
+                          example: "Surgery"
+                          description: "Department name"
+                    doc:
+                      type: object
+                      description: "Attending doctor details"
+                      properties:
+                        id:
+                          type: string
+                          example: "175620245502842"
+                          description: "Doctor identifier"
+                        name:
+                          type: string
+                          example: "Imtiyaz's m,"
+                          description: "Doctor name"
+                    docid:
+                      type: string
+                      example: "175620245502842"
+                      description: "Identifier for the attending doctor"
+                    duration:
+                      type: object
+                      description: "Expected duration of stay"
+                      properties:
+                        unit:
+                          type: string
+                          example: "days"
+                          description: "Unit of duration"
+                        value:
+                          type: integer
+                          example: 5
+                          description: "Duration value"
+                    facility:
+                      type: object
+                      description: "Facility details"
+                      properties:
+                        id:
+                          type: string
+                          example: "68ad85d786ddd9001d409348"
+                          description: "Facility identifier"
+                        name:
+                          type: string
+                          example: "Imtiyaz"
+                          description: "Facility name"
+                    facilityid:
+                      type: string
+                      example: "68ad85d786ddd9001d409348"
+                      description: "Identifier for the facility"
+                    id:
+                      type: string
+                      example: "a9f54d1a-4080-4eec-9db1-ccbfc1771a5d"
+                      description: "Unique identifier for the admission"
+                    insurance:
+                      type: object
+                      description: "Insurance details for the admission"
+                      properties:
+                        coverage_type:
+                          type: array
+                          items:
+                            type: string
+                          example: ["ipd"]
+                          description: "Coverage types"
+                        payment_type:
+                          type: string
+                          example: "cash"
+                          description: "Payment type"
+                        pre_approved:
+                          type: boolean
+                          example: false
+                          description: "Whether the claim is pre-approved"
+                        pre_approved_amount:
+                          type: number
+                          example: 0
+                          description: "Pre-approved amount"
+                        type:
+                          type: string
+                          example: "None"
+                          description: "Insurance type"
+                    ipid:
+                      type: string
+                      example: "IPD84"
+                      description: "Human-readable IPD identifier"
+                    medico_legal_case:
+                      type: boolean
+                      example: false
+                      description: "Whether this is a medico-legal case"
+                    patient:
+                      type: object
+                      description: "Patient details"
+                      properties:
+                        formData:
+                          type: array
+                          items:
+                            type: object
+                          example: []
+                          description: "Patient form data"
+                        id:
+                          type: string
+                          example: "177805765470391"
+                          description: "Patient identifier in Eka"
+                        poid:
+                          type: string
+                          example: ""
+                          description: "Partner patient identifier"
+                        profile:
+                          type: object
+                          properties:
+                            personal:
+                              type: object
+                              properties:
+                                age:
+                                  type: object
+                                  properties:
+                                    dob:
+                                      type: string
+                                      example: "2004-05-06T00:00:00.000Z"
+                                      description: "Date of birth"
+                                gender:
+                                  type: string
+                                  example: "Male"
+                                  description: "Patient gender"
+                                name:
+                                  type: string
+                                  example: "sachin Jaiswal"
+                                  description: "Patient name"
+                                phone:
+                                  type: object
+                                  properties:
+                                    c:
+                                      type: string
+                                      example: "+91"
+                                      description: "Country code"
+                                    n:
+                                      type: string
+                                      example: "9131157898"
+                                      description: "Phone number"
+                        uuid:
+                          type: string
+                          example: "CS-7175620245483777-177805765470391"
+                          description: "Patient UUID"
+                    pid:
+                      type: string
+                      example: "177805765470391"
+                      description: "Identifier for the patient"
+                    procedures:
+                      type: array
+                      items:
+                        type: object
+                      example: []
+                      description: "Procedures associated with the admission"
+                    rateplan:
+                      type: object
+                      description: "Rate plan / package details"
+                      properties:
+                        id:
+                          type: string
+                          example: "698b01130bc0d53ade702618"
+                          description: "Rate plan identifier"
+                        inclusions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "698b0147996ddf4a5dff7790"
+                                description: "Inclusion identifier"
+                              name:
+                                type: string
+                                example: "Operation Charge, OT Charges, Nursing Charges, ICU Charges, Room Rent, Misc."
+                                description: "Inclusion name"
+                              rate:
+                                type: number
+                                example: 50000
+                                description: "Inclusion rate"
+                          description: "List of inclusions in the rate plan"
+                        name:
+                          type: string
+                          example: "Full Treatment Package -  ₹50000"
+                          description: "Rate plan name"
+                    refer:
+                      type: object
+                      description: "Referral details"
+                      properties:
+                        id:
+                          type: string
+                          example: ""
+                          description: "Referrer identifier"
+                        name:
+                          type: string
+                          example: ""
+                          description: "Referrer name"
+                    stage:
+                      type: string
+                      example: "AD"
+                      description: "Current stage of the admission"
+                    status:
+                      type: string
+                      example: "BED_ASSIGNED"
+                      description: "Current status of the admission"
+                    totalbilled:
+                      type: number
+                      example: 0
+                      description: "Total amount billed"
+                    totalbilled_updated_at:
+                      type: string
+                      example: "2026-06-30 07:25:18.779000+00:00"
+                      description: "Timestamp when total billed was last updated"
+                    totalpaid:
+                      type: number
+                      example: 0
+                      description: "Total amount paid"
+                    totalpaid_updated_at:
+                      type: string
+                      example: "2026-06-30 07:25:18.779000+00:00"
+                      description: "Timestamp when total paid was last updated"
+                    updated_at:
+                      type: string
+                      example: "2026-06-30 07:25:18.779000+00:00"
+                      description: "Last update timestamp"
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+
+  /registered_url_for_ipd_admissions_events_events:
+    post:
+      tags:
+        - IPD Webhooks
+      summary: IPD Admission Event 
+      description: >-
+
+        When an event occurs against an IPD admission (such as a clearance, stage change or other workflow action), a webhook event is sent to registered webhooks describing the action that was performed.
+
+
+        **Field Definitions**
+
+
+        • **service**: string - The type of service. For IPD events, this will be `ipd`.
+
+
+        • **event**: string - The type of event. This will be `ipd_admissions_events.created` or `ipd_admissions_events.updated`.
+
+
+        • **event_time**: integer - Event occurrence timestamp (epoch seconds).
+
+
+        • **transaction_id**: string - Unique transaction identifier for the event.
+
+
+        • **timestamp**: integer - Timestamp of the event (epoch seconds).
+
+
+        • **business_id**: string - The eka ID of the business.
+
+
+        • **client_id**: string - Client ID associated with the event.
+
+
+        • **data**: object - Contains details about the admission event.
+
+
+        • **kind**: string - The kind of event (e.g. `CLEARANCE`).
+
+
+        • **by**: object - The actor who performed the action.
+
+
+        • **to**: string - The resulting state of the action (e.g. `COMPLETED`).
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: IPDAdmissionEventWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service
+                - event
+                - event_time
+                - timestamp
+                - business_id
+                - data
+              properties:
+                service:
+                  type: string
+                  example: "ipd"
+                  description: "Type of service"
+                event:
+                  type: string
+                  enum:
+                    - "ipd_admissions_events.created"
+                    - "ipd_admissions_events.updated"
+                  example: "ipd_admissions_events.created"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1782811749
+                  description: "Event occurred timestamp"
+                transaction_id:
+                  type: string
+                  example: "93cfa0eb-f9af-4391-afd7-7f8409e45c22"
+                  description: "Unique transaction identifier for the event"
+                timestamp:
+                  type: integer
+                  example: 1782811749
+                  description: "Timestamp of the event"
+                business_id:
+                  type: string
+                  example: "7175620245483777"
+                  description: "Business ID for the admission"
+                client_id:
+                  type: string
+                  example: "EC_1777984421469"
+                  description: "Client ID for the admission"
+                data:
+                  type: object
+                  required:
+                    - id
+                    - kind
+                  properties:
+                    at:
+                      type: string
+                      example: "2026-06-30 09:29:02.364000+00:00"
+                      description: "Timestamp when the event occurred"
+                    by:
+                      type: object
+                      description: "Actor who performed the action"
+                      properties:
+                        id:
+                          type: string
+                          example: "175620245502842"
+                          description: "Actor identifier"
+                        name:
+                          type: string
+                          example: "Dr Imtiyaz m,"
+                          description: "Actor name"
+                    clearance_type:
+                      type: string
+                      example: "pharmacy"
+                      description: "Type of clearance (present when kind is CLEARANCE)"
+                    id:
+                      type: string
+                      example: "93cfa0eb-f9af-4391-afd7-7f8409e45c22"
+                      description: "Unique identifier for the event"
+                    kind:
+                      type: string
+                      example: "CLEARANCE"
+                      description: "Kind of admission event"
+                    to:
+                      type: string
+                      example: "COMPLETED"
+                      description: "Resulting state of the action"
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+
+  /registered_url_for_ipd_admissions_clearances_events:
+    post:
+      tags:
+        - IPD Webhooks
+      summary: IPD Admission Clearance 
+      description: >-
+
+        When a clearance is created or updated against an IPD admission (for example a pharmacy, billing or housekeeping clearance), a webhook event is sent to registered webhooks with the clearance status and details.
+
+
+        **Field Definitions**
+
+
+        • **service**: string - The type of service. For IPD events, this will be `ipd`.
+
+
+        • **event**: string - The type of event. This will be `ipd_admissions_clearances.created` or `ipd_admissions_clearances.updated`.
+
+
+        • **event_time**: integer - Event occurrence timestamp (epoch seconds).
+
+
+        • **transaction_id**: string - Unique transaction identifier for the event.
+
+
+        • **timestamp**: integer - Timestamp of the event (epoch seconds).
+
+
+        • **business_id**: string - The eka ID of the business.
+
+
+        • **client_id**: string - Client ID associated with the event.
+
+
+        • **data**: object - Contains details about the clearance.
+
+
+        • **type**: string - The type of clearance (e.g. `pharmacy`).
+
+
+        • **status**: string - Status of the clearance (e.g. `COMPLETED`).
+
+
+        • **completed_by**: object - The actor who completed the clearance.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: IPDAdmissionClearanceWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service
+                - event
+                - event_time
+                - timestamp
+                - business_id
+                - data
+              properties:
+                service:
+                  type: string
+                  example: "ipd"
+                  description: "Type of service"
+                event:
+                  type: string
+                  enum:
+                    - "ipd_admissions_clearances.created"
+                    - "ipd_admissions_clearances.updated"
+                  example: "ipd_admissions_clearances.created"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1782811750
+                  description: "Event occurred timestamp"
+                transaction_id:
+                  type: string
+                  example: "ipd/7175620245483777/admissions/6909b0faba49e0b2f147cf58/clearances/pharmacy"
+                  description: "Unique transaction identifier for the event"
+                timestamp:
+                  type: integer
+                  example: 1782811750
+                  description: "Timestamp of the event"
+                business_id:
+                  type: string
+                  example: "7175620245483777"
+                  description: "Business ID for the admission"
+                client_id:
+                  type: string
+                  example: "EC_1777984421469"
+                  description: "Client ID for the admission"
+                data:
+                  type: object
+                  required:
+                    - type
+                    - status
+                  properties:
+                    completed_at:
+                      type: string
+                      example: "2026-06-30 09:29:02.236000+00:00"
+                      description: "Timestamp when the clearance was completed"
+                    completed_by:
+                      type: object
+                      description: "Actor who completed the clearance"
+                      properties:
+                        id:
+                          type: string
+                          example: "175620245502842"
+                          description: "Actor identifier"
+                        name:
+                          type: string
+                          example: "Dr Imtiyaz m,"
+                          description: "Actor name"
+                    status:
+                      type: string
+                      example: "COMPLETED"
+                      description: "Status of the clearance"
+                    type:
+                      type: string
+                      example: "pharmacy"
+                      description: "Type of clearance"
+                    updated_at:
+                      type: string
+                      example: "2026-06-30 09:29:02.236000+00:00"
+                      description: "Last update timestamp"
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+
+  /registered_url_for_ipd_admissions_estimates_events:
+    post:
+      tags:
+        - IPD Webhooks
+      summary: IPD Admission Estimate 
+      description: >-
+
+        When a cost estimate line item is created or updated against an IPD admission, a webhook event is sent to registered webhooks with the estimate details, including the service, rate, quantity and any discount applied.
+
+
+        **Field Definitions**
+
+
+        • **service**: string - The type of service. For IPD events, this will be `ipd`.
+
+
+        • **event**: string - The type of event. This will be `ipd_admissions_estimates.created` or `ipd_admissions_estimates.updated`.
+
+
+        • **event_time**: integer - Event occurrence timestamp (epoch seconds).
+
+
+        • **transaction_id**: string - Unique transaction identifier for the event.
+
+
+        • **timestamp**: integer - Timestamp of the event (epoch seconds).
+
+
+        • **business_id**: string - The eka ID of the business.
+
+
+        • **client_id**: string - Client ID associated with the event.
+
+
+        • **data**: object - Contains details about the estimate line item.
+
+
+        • **name** / **service_id**: The estimate item name and the service identifier it refers to.
+
+
+        • **rate** / **quantity** / **discount**: Pricing details for the estimate line item.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: IPDAdmissionEstimateWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service
+                - event
+                - event_time
+                - timestamp
+                - business_id
+                - data
+              properties:
+                service:
+                  type: string
+                  example: "ipd"
+                  description: "Type of service"
+                event:
+                  type: string
+                  enum:
+                    - "ipd_admissions_estimates.created"
+                    - "ipd_admissions_estimates.updated"
+                  example: "ipd_admissions_estimates.created"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1782812696
+                  description: "Event occurred timestamp"
+                transaction_id:
+                  type: string
+                  example: "8c2c435c-fa95-4556-9d6e-400ea2f2433d"
+                  description: "Unique transaction identifier for the event"
+                timestamp:
+                  type: integer
+                  example: 1782812696
+                  description: "Timestamp of the event"
+                business_id:
+                  type: string
+                  example: "7175620245483777"
+                  description: "Business ID for the admission"
+                client_id:
+                  type: string
+                  example: "EC_1777984421469"
+                  description: "Client ID for the admission"
+                data:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - service_id
+                  properties:
+                    added_by:
+                      type: string
+                      example: "175620245502842"
+                      description: "Identifier of the actor who added the estimate"
+                    created_at:
+                      type: string
+                      example: "2026-06-30 09:44:49.434000+00:00"
+                      description: "Creation timestamp"
+                    date:
+                      type: string
+                      example: "2026-06-30 09:44:48.238000+00:00"
+                      description: "Estimate date"
+                    discount:
+                      type: object
+                      description: "Discount applied to the estimate line item"
+                      properties:
+                        category:
+                          type: string
+                          example: "percentage"
+                          description: "Discount category"
+                        value:
+                          type: number
+                          example: 0
+                          description: "Discount value"
+                    id:
+                      type: string
+                      example: "8c2c435c-fa95-4556-9d6e-400ea2f2433d"
+                      description: "Unique identifier for the estimate"
+                    name:
+                      type: string
+                      example: "test"
+                      description: "Name of the estimate line item"
+                    quantity:
+                      type: integer
+                      example: 1
+                      description: "Quantity for the estimate line item"
+                    rate:
+                      type: number
+                      example: 500
+                      description: "Rate for the estimate line item"
+                    remarks:
+                      type: string
+                      example: ""
+                      description: "Additional remarks"
+                    service_id:
+                      type: string
+                      example: "2961-500-7175620245483777-68ad85d786ddd9001d409348"
+                      description: "Identifier of the service the estimate refers to"
+                    updated_at:
+                      type: string
+                      example: "2026-06-30 09:44:49.434000+00:00"
+                      description: "Last update timestamp"
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
