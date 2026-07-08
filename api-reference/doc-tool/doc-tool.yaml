@@ -7591,6 +7591,794 @@ paths:
                 message: "Admission \"adm-3f9c2b18\" was not found"
       deprecated: false
 
+  /appointments/v1/ipd/admission:
+    post:
+      tags:
+        - IPD API
+      summary: Create IPD Admission
+      description: >-
+
+        ### Overview
+
+
+        This API creates a single **IPD (In-Patient Department) admission**,
+        scoped to the caller's business (`b-id`). An admission document captures
+        the full in-patient episode — the patient, their attendee, insurance, bed
+        and rateplan, the responsible doctor/department/facility, and the
+        admission's lifecycle state.
+
+
+        The admission `id` is **server-generated** and the acting `oid` (from the
+        `auth` header) is recorded as `actor_oid`; neither is accepted in the
+        request body. The billing totals (`totalbilled`/`totalpaid`), timestamps
+        (`created_at`/`updated_at`) and `archived` flag are also owned by the
+        server and must not be supplied.
+
+
+        The admission's lifecycle is tracked with two fields: a coarse `stage`
+        (`IN` → Recommended Admission, `AD` → active Admission, `DC` →
+        Discharged) and a granular `status` within that stage. When omitted,
+        `stage` defaults to the active inpatient stage (`AD`) and `status`
+        defaults to `BED_ASSIGNED`.
+
+
+        The `admission_date` and `date` fields are optional ISO-8601 date-time
+        strings and default to the server `now` when omitted. All timestamp
+        fields are returned as ISO-8601 date-time strings.
+
+
+        Not every detail is mandatory: `insurance`, `procedures`, `notes`,
+        `medico_legal_case` and `custom_attributes` are all optional. For the
+        `attendee`, only the mobile number (`phone.n`) is required — the
+        attendee `id`, `name` and `relation` are optional.
+
+
+      operationId: CreateIpdAdmission
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The IPD admission to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - ipid
+                - pid
+                - patient
+                - attendee
+                - refer
+                - doc
+                - docid
+                - category
+                - department
+                - facility
+                - facilityid
+                - bed
+                - duration
+                - rateplan
+              properties:
+                ipid:
+                  type: string
+                  minLength: 1
+                  description: 'Patient IPD case number.'
+                pid:
+                  type: string
+                  minLength: 1
+                patient:
+                  type: object
+                  additionalProperties: true
+                  required:
+                    - id
+                    - uuid
+                    - poid
+                    - formData
+                    - profile
+                  properties:
+                    id:
+                      type: string
+                    uuid:
+                      type: string
+                    poid:
+                      type: string
+                    formData:
+                      type: array
+                      items:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          label:
+                            type: string
+                          type:
+                            type: string
+                          key:
+                            type: string
+                          value:
+                            description: 'String, number, or array of strings.'
+                    profile:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        personal:
+                          type: object
+                          additionalProperties: true
+                          properties:
+                            gender:
+                              type: string
+                            name:
+                              type: string
+                            phone:
+                              type: object
+                              additionalProperties: true
+                            age:
+                              type: object
+                              additionalProperties: true
+                attendee:
+                  type: object
+                  additionalProperties: true
+                  description: >-
+                    Only the attendee mobile number (`phone.n`) is required;
+                    every other attendee field is optional.
+                  required:
+                    - phone
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    phone:
+                      type: object
+                      additionalProperties: true
+                      required:
+                        - n
+                      properties:
+                        c:
+                          type: string
+                          description: 'Country code.'
+                        n:
+                          type: string
+                          minLength: 1
+                          description: 'Attendee mobile number (required).'
+                    relation:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        id:
+                          type: string
+                        label:
+                          type: string
+                insurance:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                    pre_approved_id:
+                      type: string
+                    pre_approved_amount:
+                      type: number
+                    pre_approved:
+                      type: boolean
+                    number:
+                      type: string
+                    type:
+                      type: string
+                    payment_type:
+                      type: string
+                    insurance_provider:
+                      type: string
+                    insurance_name:
+                      type: string
+                    policy_id_picture:
+                      type: string
+                    medical_claim:
+                      type: string
+                    coverage_type:
+                      type: array
+                      items:
+                        type: string
+                    sum_insured:
+                      type: string
+                    tpa:
+                      type: string
+                procedures:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                    required:
+                      - id
+                      - name
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      date:
+                        type: string
+                      notes:
+                        type: string
+                refer:
+                  type: object
+                  description: 'Referring doctor (id + name).'
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                doc:
+                  type: object
+                  description: 'The responsible doctor (id + name).'
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                docid:
+                  type: string
+                category:
+                  type: object
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                department:
+                  type: object
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                facility:
+                  type: object
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                facilityid:
+                  type: string
+                bed:
+                  type: string
+                duration:
+                  type: object
+                  additionalProperties: true
+                  required:
+                    - value
+                    - unit
+                  properties:
+                    value:
+                      type: number
+                    unit:
+                      type: string
+                rateplan:
+                  type: object
+                  additionalProperties: true
+                  required:
+                    - id
+                    - name
+                    - inclusions
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    inclusions:
+                      type: array
+                      items:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          rate:
+                            type: number
+                notes:
+                  type: string
+                medico_legal_case:
+                  type: boolean
+                custom_attributes:
+                  type: object
+                  description: 'Map of custom attribute keys to arrays of string values.'
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: string
+                stage:
+                  type: string
+                  description: 'Coarse lifecycle stage; defaults to the active inpatient stage (`AD`).'
+                  enum:
+                    - IN
+                    - AD
+                    - DC
+                status:
+                  type: string
+                  description: 'Granular lifecycle status; defaults to `BED_ASSIGNED`.'
+                  enum:
+                    - ADMISSION_RECOMMENDED
+                    - ADMISSION_ON_HOLD
+                    - ADMISSION_CONFIRMED
+                    - ADMISSION_CANCELLED
+                    - BED_ASSIGNED
+                    - UNDER_CARE
+                    - NOT_RECEIVED
+                    - FIT_FOR_DISCHARGE
+                    - DISCHARGE_INITIATED
+                    - REFERRAL_INITIATED
+                    - LAMA_IN_PROGRESS
+                    - DAMA_IN_PROGRESS
+                    - DEATH_BEING_RECORDED
+                    - PATIENT_MISSING
+                    - DISCHARGED
+                    - LAMA_COMPLETED
+                    - DAMA_COMPLETED
+                    - REFERRED
+                    - DECEASED
+                    - ABSCONDED
+                admission_date:
+                  type: string
+                  description: 'ISO-8601 date-time; defaults to the server now.'
+                date:
+                  type: string
+                  description: 'ISO-8601 date-time; defaults to the server now.'
+            example:
+              ipid: "IPD-2026-000481"
+              pid: "pid-321"
+              patient:
+                id: "pat-77"
+                uuid: "9c2d1b6f-0a8e-5d23-8b1a-2c3d4e5f6a7b"
+                poid: "poid-555"
+                formData: []
+                profile:
+                  personal:
+                    gender: "M"
+                    name: "Suresh Kumar"
+              attendee:
+                id: "att-01"
+                name: "Ramesh Kumar"
+                phone:
+                  c: "+91"
+                  n: "9876543210"
+                relation:
+                  id: "rel-son"
+                  label: "Son"
+              insurance:
+                number: "POL-8891"
+                type: "Cashless"
+                payment_type: "Insurance"
+                insurance_provider: "Star Health"
+                pre_approved: true
+                pre_approved_amount: 50000
+              refer:
+                id: "ref-01"
+                name: "Dr. Anita Rao"
+              doc:
+                id: "doctor-oid-456"
+                name: "Dr. Vivek Sharma"
+              docid: "doctor-oid-456"
+              category:
+                id: "cat-icu"
+                name: "ICU"
+              department:
+                id: "dept-med"
+                name: "General Medicine"
+              facility:
+                id: "fac-01"
+                name: "Eka General Hospital"
+              facilityid: "fac-01"
+              bed: "ICU-04"
+              duration:
+                value: 3
+                unit: "days"
+              rateplan:
+                id: "rp-standard"
+                name: "Standard ICU"
+                inclusions: []
+              stage: "AD"
+              status: "BED_ASSIGNED"
+              admission_date: "2026-06-28T09:30:00.000Z"
+              date: "2026-06-28"
+      responses:
+        '201':
+          description: Created — the newly created IPD admission.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  id:
+                    type: string
+                    description: 'Server-generated admission document id.'
+                  bid:
+                    type: string
+                    description: 'Business id the admission belongs to.'
+                  admission_date:
+                    type: string
+                    description: 'Admission date-time as an ISO-8601 string.'
+                  discharge_date:
+                    type: string
+                    description: 'Discharge date-time as an ISO-8601 string. Present once discharged.'
+                  ipid:
+                    type: string
+                    description: 'Patient IPD case number.'
+                  attendee:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      phone:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          c:
+                            type: string
+                            description: 'Country code.'
+                          n:
+                            type: string
+                            description: 'Phone number.'
+                      relation:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          id:
+                            type: string
+                          label:
+                            type: string
+                  patient:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      uuid:
+                        type: string
+                      poid:
+                        type: string
+                      formData:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: true
+                          properties:
+                            label:
+                              type: string
+                            type:
+                              type: string
+                            key:
+                              type: string
+                            value:
+                              description: 'String, number, or array of strings.'
+                      profile:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          personal:
+                            type: object
+                            additionalProperties: true
+                            properties:
+                              gender:
+                                type: string
+                              name:
+                                type: string
+                              phone:
+                                type: object
+                                additionalProperties: true
+                              age:
+                                type: object
+                                additionalProperties: true
+                  insurance:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      number:
+                        type: string
+                      type:
+                        type: string
+                      payment_type:
+                        type: string
+                      insurance_provider:
+                        type: string
+                      insurance_name:
+                        type: string
+                      pre_approved:
+                        type: boolean
+                      pre_approved_amount:
+                        type: number
+                      sum_insured:
+                        type: string
+                      tpa:
+                        type: string
+                  procedures:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        date:
+                          type: string
+                        notes:
+                          type: string
+                  refer:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  doc:
+                    type: object
+                    description: 'The responsible doctor (id + name).'
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  notes:
+                    type: string
+                  medico_legal_case:
+                    type: boolean
+                  stage:
+                    type: string
+                    description: 'Coarse lifecycle stage of the admission.'
+                    enum:
+                      - IN
+                      - AD
+                      - DC
+                  status:
+                    type: string
+                    description: 'Granular lifecycle status within the current stage.'
+                    enum:
+                      - ADMISSION_RECOMMENDED
+                      - ADMISSION_ON_HOLD
+                      - ADMISSION_CONFIRMED
+                      - ADMISSION_CANCELLED
+                      - BED_ASSIGNED
+                      - UNDER_CARE
+                      - NOT_RECEIVED
+                      - FIT_FOR_DISCHARGE
+                      - DISCHARGE_INITIATED
+                      - REFERRAL_INITIATED
+                      - LAMA_IN_PROGRESS
+                      - DAMA_IN_PROGRESS
+                      - DEATH_BEING_RECORDED
+                      - PATIENT_MISSING
+                      - DISCHARGED
+                      - LAMA_COMPLETED
+                      - DAMA_COMPLETED
+                      - REFERRED
+                      - DECEASED
+                      - ABSCONDED
+                  duration:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      value:
+                        type: number
+                      unit:
+                        type: string
+                  bed:
+                    type: string
+                  rateplan:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      inclusions:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: true
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            rate:
+                              type: number
+                  docid:
+                    type: string
+                  category:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  date:
+                    type: string
+                  department:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  pid:
+                    type: string
+                  created_at:
+                    type: string
+                    description: 'Creation date-time as an ISO-8601 string.'
+                  updated_at:
+                    type: string
+                    description: 'Last-update date-time as an ISO-8601 string.'
+                  facility:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  facilityid:
+                    type: string
+                  totalbilled:
+                    type: number
+                    description: 'Total amount billed for the admission.'
+                  totalpaid:
+                    type: number
+                    description: 'Total amount paid against the admission.'
+                  totalbilled_updated_at:
+                    type: string
+                  totalpaid_updated_at:
+                    type: string
+                  custom_attributes:
+                    type: object
+                    description: 'Map of custom attribute keys to arrays of string values.'
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                  clearances_summary:
+                    type: object
+                    description: 'Denormalized discharge-clearance state.'
+                    additionalProperties: true
+                    properties:
+                      statuses:
+                        type: object
+                        description: 'One entry per clearance type; each PENDING or COMPLETED.'
+                        additionalProperties:
+                          type: string
+                          enum:
+                            - PENDING
+                            - COMPLETED
+                      completed_count:
+                        type: integer
+                      total:
+                        type: integer
+                      all_complete:
+                        type: boolean
+                  archived:
+                    type: boolean
+                  actor_oid:
+                    type: string
+                    description: 'oid of the actor that created/last acted on the admission.'
+              example:
+                id: "adm-3f9c2b18-7e44-4a51"
+                bid: "123456"
+                admission_date: "2026-06-28T09:30:00.000Z"
+                ipid: "IPD-2026-000481"
+                attendee:
+                  id: "att-01"
+                  name: "Ramesh Kumar"
+                  phone:
+                    c: "+91"
+                    n: "9876543210"
+                  relation:
+                    id: "rel-son"
+                    label: "Son"
+                patient:
+                  id: "pat-77"
+                  uuid: "9c2d1b6f-0a8e-5d23-8b1a-2c3d4e5f6a7b"
+                  poid: "poid-555"
+                  formData: []
+                  profile:
+                    personal:
+                      gender: "M"
+                      name: "Suresh Kumar"
+                insurance:
+                  number: "POL-8891"
+                  type: "Cashless"
+                  payment_type: "Insurance"
+                  insurance_provider: "Star Health"
+                  pre_approved: true
+                  pre_approved_amount: 50000
+                refer:
+                  id: "ref-01"
+                  name: "Dr. Anita Rao"
+                doc:
+                  id: "doctor-oid-456"
+                  name: "Dr. Vivek Sharma"
+                stage: "AD"
+                status: "BED_ASSIGNED"
+                duration:
+                  value: 3
+                  unit: "days"
+                bed: "ICU-04"
+                rateplan:
+                  id: "rp-standard"
+                  name: "Standard ICU"
+                  inclusions: []
+                docid: "doctor-oid-456"
+                category:
+                  id: "cat-icu"
+                  name: "ICU"
+                date: "2026-06-28"
+                department:
+                  id: "dept-med"
+                  name: "General Medicine"
+                pid: "pid-321"
+                created_at: "2026-06-28T09:30:00.000Z"
+                updated_at: "2026-06-28T09:30:00.000Z"
+                facility:
+                  id: "fac-01"
+                  name: "Eka General Hospital"
+                facilityid: "fac-01"
+                totalbilled: 0
+                totalpaid: 0
+                actor_oid: "operator-oid-789"
+        '400':
+          description: Bad Request — the request body failed validation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "body/ipid must NOT have fewer than 1 characters"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
