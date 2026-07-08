@@ -1,0 +1,100 @@
+---
+title: Installation & setup
+description: Render the prebuilt MedAssist chat widget inside your React app
+---
+
+The React SDK ships the full, prebuilt MedAssist chat UI. You mount it into a DOM element with `renderMedAssist` and get back a React root you can unmount. Use this when you're already in a React app and want the polished widget — themed to your brand — without writing chat UI yourself.
+
+## Install
+
+```bash
+npm install @eka-care/medassist-widget
+```
+
+## Render in a React app
+
+`renderMedAssist` mounts the widget into a container element. Call it from an effect against a `ref`, and unmount via the returned root on cleanup.
+
+```tsx
+import { renderMedAssist, type MedAssistConfig } from "@eka-care/medassist-widget";
+import { useEffect, useRef } from "react";
+
+export function AssistantWidget() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const config: MedAssistConfig = {
+      title: "My Medical Assistant",
+      environment: "production",
+      theme: { primary: "#6B5CE0", textColor: "black" },
+    };
+
+    const root = renderMedAssist(containerRef.current, "YOUR_AGENT_ID", config);
+
+    return () => root.unmount();
+  }, []);
+
+  return <div ref={containerRef} />;
+}
+```
+
+### API
+
+**`renderMedAssist(container, agentId, config?)`**
+
+<ParamField path="container" type="HTMLElement" required>
+  The DOM element to mount the widget into.
+</ParamField>
+
+<ParamField path="agentId" type="string" required>
+  Your MedAssist agent identifier from [console.eka.care](https://console.eka.care).
+</ParamField>
+
+<ParamField path="config" type="MedAssistConfig">
+  Optional configuration. See the [Configuration reference](/api-reference/health-ai/medassist/synapse/react/configuration).
+</ParamField>
+
+Returns a React `Root` — call `.unmount()` to tear the widget down.
+
+## Use from a script tag (CDN)
+
+The same function is attached to `window` as `window.renderMedAssist`, so you can use the prebuilt bundle without a build step. Remember to include the stylesheet.
+
+```html
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/@eka-care/medassist-widget@latest/dist/medassist-widget.css"
+/>
+
+<div id="medassist-widget"></div>
+
+<script src="https://unpkg.com/@eka-care/medassist-widget@latest/dist/medassist-widget.js"></script>
+<script>
+  window.renderMedAssist(
+    document.getElementById("medassist-widget"),
+    "YOUR_AGENT_ID",
+    { title: "MedAssist Chat" }
+  );
+</script>
+```
+
+<Note>
+`window.renderMedAssist` is attached automatically when the bundle loads — whether imported as a module or included via a script tag.
+</Note>
+
+<Tip>
+Want zero build wiring and a framework-agnostic Web Component instead? Use the [embed widget](/api-reference/health-ai/medassist/synapse/embed/quickstart). Need a fully custom UI? Drop to the [Core SDK](/api-reference/health-ai/medassist/synapse/core/quickstart).
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="gear" href="/api-reference/health-ai/medassist/synapse/react/configuration">
+    Every field of `MedAssistConfig`.
+  </Card>
+  <Card title="Theming & design system" icon="palette" href="/api-reference/health-ai/medassist/synapse/react/theming">
+    Brand the widget with the Eka design system.
+  </Card>
+</CardGroup>

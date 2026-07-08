@@ -2,13 +2,16 @@
 title: "TypeScript SDK"
 ---
 
-# Eka Care Ekascribe Typescript SDK Integration
+Capture and process audio in the browser and generate structured medical documentation through Eka Care's voice transcription service.
 
-This guide explains how to integrate the Eka Care Ekascribe Typescript SDK into your application.
+<Info>
+**Two packages, one protocol.** There are two ways to integrate in TypeScript:
 
-## Overview
+- **`med-scribe-alliance-ts-sdk`** — the open-source [MedScribe Alliance Protocol](https://github.com/MedScribeAlliance/scribe-emr-protocol) SDK. A direct `ScribeClient` over the protocol: discovery, recording, chunked upload, session lifecycle, output retrieval. **This is the recommended integration and the main guide below.**
+- **`@eka-care/ekascribe-ts-sdk`** — an Eka Care convenience wrapper built on top of the same protocol. Adds a prebuilt recording **Widget**, **session/document utilities** (history, details, documents), and Eka `env`/`clientId` handling. Use it only if you want those extras — see [Eka Care wrapper (advanced)](#eka-care-wrapper-advanced) at the end.
 
-The Eka Care Ekascribe SDK allows you to capture and process audio, generating structured medical documentation using Eka Care's voice transcription API.
+Both speak the same backend. Start with the Alliance SDK; reach for the wrapper if you need the widget or EMR session utilities.
+</Info>
 
 ## Prerequisites
 
@@ -16,11 +19,670 @@ The Eka Care Ekascribe SDK allows you to capture and process audio, generating s
 - `npm` or `yarn`
 - Microphone access via browser permissions
 - Stable network connectivity
-- Access token from Eka Care
+- An access token from Eka Care
 
 ## Installation
 
-Install the SDK using `npm` or `yarn`:
+```bash
+npm install med-scribe-alliance-ts-sdk
+```
+
+Peer dependencies (installed automatically):
+
+- `@ricky0123/vad-web` — Voice Activity Detection
+- `@breezystack/lamejs` — MP3 encoding
+- `zod` — Schema validation
+
+[npm package →](https://www.npmjs.com/package/med-scribe-alliance-ts-sdk)
+
+---
+
+## Integration Guide (Step-by-Step)
+
+### Step 1: Create the Client
+
+The `baseUrl` is **required** — every API call (session creation, upload, status polling) goes through it. If you leave it out, the SDK throws `allianceConfig.baseUrl is required` at runtime.
+
+To use Eka Care's hosted scribe service, use:
+
+| Environment | `baseUrl` |
+|---|---|
+| Production | `https://api.eka.care/voice/v1` |
+| Development | `https://api.dev.eka.care/voice/v1` |
+
+```ts
+import { ScribeClient } from 'med-scribe-alliance-ts-sdk';
+
+const client = new ScribeClient({
+  baseUrl: 'https://api.eka.care/voice/v1', // PROD — see table above
+  accessToken: 'your-bearer-token',
+  debug: true, // optional: logs SDK activity to console
+});
+```
+
+<Warning>
+**Production APIs require a secure (HTTPS) origin.** They will not work from `http://` or `http://localhost` — an insecure origin fails the CORS preflight (the `authorization` header is rejected).
+
+**Recommended:** Use **[ngrok](/api-reference/health-ai/ekascribe/local-development-ngrok)** to give your local server a public HTTPS URL and test against the production `baseUrl` directly.
+
+Alternatively, point at the **staging `baseUrl`** (`https://api.dev.eka.care/voice/v1`) which works from plain `localhost`.
+</Warning>
+
+### Step 2: Initialize (Discovery)
+
+`init()` fetches the discovery document from the server. This tells the SDK what the server supports (models, languages, upload methods, audio formats, etc.).
+
+```ts
+const initResult = await client.init();
+if (!initResult.success) {
+  console.error('Init failed:', initResult.error.message);
+  return;
+}
+```
+
+> `startRecording()` calls `init()` automatically if not already initialized. You can skip this step if you go directly to recording.
+
+### Step 3: Register Callbacks
+
+Register callbacks **before** starting a recording. These are how you receive events from the SDK.
+
+```ts
+// Upload progress
+client.registerCallback('onUploadEvent', (event) => {
+  if (event.type === 'progress') {
+    console.log(`Uploaded ${event.data.successCount}/${event.data.totalCount}`);
+  }
+});
+
+// Recording state changes
+client.registerCallback('onRecordingStateChange', (event) => {
+  console.log('Recording state:', event.type); // 'started' | 'paused' | 'resumed' | 'ended'
+});
+
+// Errors (VAD failures, network issues, validation)
+client.registerCallback('onError', (event) => {
+  console.error(`[${event.error.code}] ${event.error.message}`);
+});
+
+// Auto token refresh on 401
+client.registerCallback('onTokenRequired', async (event) => {
+  const newToken = await refreshMyAuthToken();
+  event.resolve(newToken);
+});
+```
+
+### Step 4: Start Recording
+
+Creates a session, starts the microphone, and begins chunked upload in one call.
+
+```ts
+const result = await client.startRecording({
+  templates: ['clinical_notes_template'], // required: template IDs for extraction
+  uploadType: 'chunked',         // 'chunked' (default) | 'single' | 'stream'
+  sessionMode: 'consultation',   // optional: 'consultation' | 'dictation'
+  transcriptLanguage: 'en',      // optional: language code for transcript output
+  languageHint: ['en', 'hi'],    // optional: language codes for audio input. If you're not offering users a language change option in your UI, use ['auto_detect'] for the best results.
+  patientDetails: {              // optional
+    name: 'John Doe',
+    age: '45',
+    gender: 'male',
+  },
+  additionalData: {},            // optional: any extra data for the session
+  txnId: 'your-transaction-id',  // optional: external transaction ID
+});
+
+if (!result.success) {
+  console.error('Failed to start:', result.error.message);
+  return;
+}
+
+const sessionId = result.data.session_id;
+```
+
+<Note>
+Use `clinical_notes_template` for testing, or contact Eka Care to create a custom template for your use case.
+</Note>
+
+#### Pause / Resume
+
+```ts
+client.pauseRecording();  // pauses VAD — mic stays open, no new chunks created
+client.resumeRecording(); // resumes VAD processing
+```
+
+### Step 5: End Recording
+
+Stops the microphone, flushes the last audio chunk, waits for all uploads to complete, and tells the server the session has ended (triggers server-side processing).
+
+```ts
+const stopResult = await client.endRecording();
+
+if (stopResult.success) {
+  console.log(`${stopResult.data.totalFiles} files uploaded`);
+  console.log(`${stopResult.data.failedUploads.length} failed`);
+}
+```
+
+### Step 6: Poll for Results
+
+After ending the recording, poll the server until processing is complete.
+
+```ts
+const abortController = new AbortController();
+
+const status = await client.getSessionStatus(sessionId, {
+  poll: {
+    maxAttempts: 60,
+    intervalMs: 2000,
+    signal: abortController.signal, // optional: abort polling early
+    onProgress: (s) => {
+      console.log(`Status: ${s.status}`);
+      if (s.templates) {
+        console.log('Templates:', s.templates);
+      }
+    },
+  },
+});
+
+if (status.success) {
+  console.log('Final status:', status.data.status);
+  console.log('Templates:', status.data.templates);
+  console.log('Transcript:', status.data.transcript);
+}
+```
+
+### Step 7: Clean Up
+
+```ts
+await client.reset(); // stops recording if active, clears all state and caches
+```
+
+### Flow Diagram
+
+```
+  new ScribeClient({ baseUrl, accessToken })
+         │
+         ▼
+      init()  ──────────  Fetches discovery (auto-called by startRecording)
+         │
+         ▼
+  registerCallback()  ──  Set up event handlers before recording
+         │
+         ▼
+  startRecording()  ────  Creates session → starts mic → begins upload
+         │
+    pause / resume  ────  Optional during recording
+         │
+         ▼
+  endRecording()  ──────  Stops mic → flushes audio → ends session → triggers processing
+         │
+         ▼
+  getSessionStatus()  ──  Poll until completed/failed
+         │
+         ▼
+  Read results  ────────  templates, transcript, errors
+```
+
+---
+
+## Important Notes
+
+- **`baseUrl` is the root for all API calls.** Session creation, audio upload, status polling — everything uses this URL. Make sure it's correct and accessible.
+- **`accessToken` must be a valid Bearer token.** All API requests include `Authorization: Bearer <token>`. If it expires, register `onTokenRequired` to auto-refresh.
+- **Register callbacks before `startRecording()`.** Events fire immediately once recording starts — if callbacks aren't registered, you'll miss upload progress and errors.
+- **`endRecording()` triggers server processing.** Once you call it, the server begins processing the uploaded audio. Use `cancelSession()` instead if you don't want processing to happen.
+- **`cancelSession()` does NOT trigger processing.** It stops the recorder locally, cleans up state, and tells the server the session is cancelled. No `endSession` call is made to the backend.
+- **All async methods return `SDKResult<T>`, never throw.** Always check `result.success` before accessing `result.data`. Errors are in `result.error`.
+- **The SDK validates inputs against the discovery document.** If the server doesn't support an upload type, language, or model you requested, you'll get a `ValidationError` before the API call is made.
+- **SharedWorker is optional.** If you provide `workerScriptUrl`, the SDK offloads MP3 compression and upload to a SharedWorker. If the worker fails to load, it silently falls back to main-thread processing.
+- **Microphone permission is requested on `startRecording()`.** The browser will prompt the user for mic access. If denied, you'll get an error via `onError` callback.
+- **`reset()` is a full teardown.** It destroys the transport, clears discovery cache, removes all callbacks, and sets the client back to uninitialized state. You'll need to call `init()` (or `startRecording()`) again after reset.
+- **Polling supports `AbortSignal`.** Pass `signal` in poll options to cancel polling early (e.g. when the user navigates away).
+
+---
+
+## Other Operations
+
+### Cancel a Session
+
+Stops the recorder locally **without** triggering server-side processing, then tells the server the session is cancelled.
+
+```ts
+await client.cancelSession(); // cancels the current active session
+await client.cancelSession('specific-session-id'); // or by ID
+```
+
+### Update a Session (Patch)
+
+Update session properties after creation.
+
+```ts
+await client.updateSession({
+  patient_details: { name: 'Jane Doe', age: '30', gender: 'female' },
+  additional_data: { notes: 'Follow-up visit' },
+  templates: ['soap', 'prescription'],
+});
+```
+
+### Two-Step Flow (Create Session + Record Separately)
+
+```ts
+// Step 1: Create session
+const session = await client.createSession({
+  templates: ['soap'],
+  upload_type: 'chunked',
+  communication_protocol: 'http',
+  session_mode: 'consultation',
+});
+
+if (!session.success) return;
+
+// Step 2: Start recording with the existing session
+await client.startRecordingWithSession(session.data, {
+  uploadType: 'chunked',
+});
+```
+
+### Get Status for a Specific Template
+
+```ts
+const status = await client.getSessionStatus(sessionId, {
+  templateId: 'soap',
+});
+```
+
+### Retry Failed Uploads
+
+```ts
+if (client.hasFailedUploads()) {
+  const retryResult = await client.retryFailedUploads();
+  console.log(`Retried: ${retryResult.data.retried}, Succeeded: ${retryResult.data.succeeded}`);
+}
+```
+
+### Update Auth Token
+
+```ts
+client.setAccessToken('new-bearer-token');
+```
+
+---
+
+## Configuration
+
+```ts
+interface ScribeSDKConfig {
+  /** Base URL of the scribe service (required) */
+  baseUrl: string;
+
+  /** Bearer token for authentication */
+  accessToken?: string;
+
+  /** Transport mode: 'direct' (HTTP) or 'ipc' (Electron). Default: 'direct' */
+  mode?: 'direct' | 'ipc';
+
+  /** IPC bridge — required when mode is 'ipc' */
+  ipcTransport?: IpcBridge;
+
+  /** SharedWorker: true (require), false (disable), 'auto' (detect). Default: 'auto' */
+  useWorker?: boolean | 'auto';
+
+  /** URL to worker.bundle.js. Use getWorkerUrl() to resolve. */
+  workerScriptUrl?: string;
+
+  /** Enable debug logging. Default: false */
+  debug?: boolean;
+
+  /** Auto-fetch discovery document on init. Default: true */
+  autoDiscovery?: boolean;
+}
+```
+
+## Recording Options
+
+```ts
+interface RecordingOptions {
+  templates: string[];                   // Template IDs for extraction (required)
+  model?: string;                        // Model ID from discovery
+  languageHint?: string[];               // Language codes for audio input
+  transcriptLanguage?: string;           // Language code for transcript output
+  uploadType?: string;                   // 'chunked' | 'single' | 'stream' (default: 'chunked')
+  communicationProtocol?: string;        // 'http' | 'websocket' (default: 'http')
+  additionalData?: Record<string, any>;  // Extra data for the session
+  deviceId?: string;                     // Specific microphone device ID
+  sessionMode?: string;                  // 'consultation' | 'dictation'
+  patientDetails?: PatientDetails;       // Patient info
+  txnId?: string;                        // External transaction ID
+}
+```
+
+## API Reference
+
+### Lifecycle
+
+| Method | Returns | Description |
+|---|---|---|
+| `init()` | `SDKResult<void>` | Fetch discovery document. Called automatically by `startRecording`. |
+| `reset()` | `Promise<void>` | Stop recording, clear all state and caches. |
+
+### Recording
+
+| Method | Returns | Description |
+|---|---|---|
+| `startRecording(options)` | `SDKResult<CreateSessionResponse>` | Create session + start mic + begin upload. |
+| `startRecordingWithSession(session, options?)` | `SDKResult<void>` | Attach recorder to an existing session. |
+| `pauseRecording()` | `void` | Pause VAD (mic stays open, no chunks created). |
+| `resumeRecording()` | `void` | Resume VAD processing. |
+| `endRecording()` | `SDKResult<StopRecordingResult>` | Stop mic, flush audio, wait for uploads, end session. |
+| `isRecording()` | `boolean` | Whether a recording is active. |
+| `isRecordingPaused()` | `boolean` | Whether the active recording is paused. |
+| `retryFailedUploads()` | `SDKResult<RetryUploadResult>` | Retry uploads that failed during the last recording. |
+| `hasFailedUploads()` | `boolean` | Whether there are retryable failed uploads. |
+
+### Session
+
+| Method | Returns | Description |
+|---|---|---|
+| `createSession(request)` | `SDKResult<CreateSessionResponse>` | Create a session without starting a recording. |
+| `getSessionStatus(sessionId?, options?)` | `SDKResult<GetSessionStatusResponse>` | Get status. Supports `poll` and `templateId` options. |
+| `getCurrentSession()` | `CreateSessionResponse \| null` | Get the active session if any. |
+| `updateSession(request, sessionId?)` | `SDKResult<PatchSessionResponse>` | Patch session (patient details, status, etc.). |
+| `cancelSession(sessionId?)` | `SDKResult<PatchSessionResponse>` | Cancel session (stops recorder, no server processing). |
+
+### Discovery
+
+| Method | Returns | Description |
+|---|---|---|
+| `getDiscoveryDocument()` | `DiscoveryDocument \| null` | Raw discovery document. |
+| `getDiscoveryConfig()` | `SDKResult<ResolvedConfig>` | Resolved config from discovery. |
+| `refreshDiscovery()` | `SDKResult<ResolvedConfig>` | Force-refresh discovery. |
+
+### Auth
+
+| Method | Description |
+|---|---|
+| `setAccessToken(token)` | Update Bearer token. Propagates to transport, recorder, and worker. |
+
+### Callbacks
+
+Register with `client.registerCallback(name, handler)`, remove with `client.removeCallback(name, handler)`.
+
+| Callback | Payload | Description |
+|---|---|---|
+| `onRecordingStateChange` | `RecordingStateChangeEvent` | Recording started, paused, resumed, or ended. |
+| `onAudioEvent` | `AudioEvent` | Speech detection, silence warnings, chunk ready. |
+| `onUploadEvent` | `UploadEvent` | Upload progress and failures. |
+| `onSessionEvent` | `SessionEvent` | Session created, ended, status updates. |
+| `onError` | `ErrorEvent` | VAD, worker, transport, or validation errors. |
+| `onTokenRequired` | `TokenRequiredEvent` | 401 received — call `event.resolve(newToken)` to retry. |
+
+#### Payload Shapes
+
+```ts
+// onRecordingStateChange
+interface RecordingStateChangeEvent {
+  type: 'started' | 'paused' | 'resumed' | 'ended';
+  timestamp: string;
+  data?: any;
+}
+
+// onAudioEvent — discriminated union by `type`
+type AudioEvent =
+  | { type: 'user_speech';      timestamp: string; data: { isSpeaking: boolean } }
+  | { type: 'silence_warning';  timestamp: string; data: { durationMs: number } }
+  | { type: 'chunk_ready';      timestamp: string; data: { chunkIndex: number; fileName: string; chunkData: Uint8Array[] } }
+  | { type: 'frame_processed';  timestamp: string; data: { isSpeech: number; notSpeech: number; frame: Float32Array; duration: number } };
+
+// onUploadEvent
+type UploadEvent =
+  | { type: 'progress'; timestamp: string; data: { successCount: number; totalCount: number } }
+  | { type: 'failed';   timestamp: string; data: { fileName: string; error: string } }
+  | { type: 'retry';    timestamp: string; data: { fileName: string; attempt: number } };
+
+// onSessionEvent
+type SessionEvent =
+  | { type: 'created';        timestamp: string; data: CreateSessionResponse }
+  | { type: 'ended';          timestamp: string; data: EndSessionResponse }
+  | { type: 'discarded';      timestamp: string; data: { sessionId: string | null; reason: 'cleared' | 'cancelled' | 'reset' } }
+  | { type: 'status_update';  timestamp: string; data: GetSessionStatusResponse }
+  | { type: 'partial_result'; timestamp: string; data: any };
+
+// onError
+interface ErrorEvent {
+  type: 'vad_error' | 'worker_error' | 'transport_error' | 'validation_error';
+  timestamp: string;
+  error: { code: string; message: string; details?: any };
+}
+
+// onTokenRequired — call event.resolve(newToken) to retry the failed request
+interface TokenRequiredEvent {
+  resolve: (newToken: string) => void;
+}
+```
+
+## Request / Response Types
+
+#### Session
+
+```ts
+interface CreateSessionRequest {
+  templates: string[];
+  upload_type: string;                   // 'chunked' | 'single' | 'stream'
+  communication_protocol: string;        // 'http' | 'websocket'
+  model?: string;
+  language_hint?: string[];
+  transcript_language?: string;
+  additional_data?: Record<string, any>;
+  session_mode?: string;                 // 'consultation' | 'dictation'
+  patient_details?: PatientDetails;
+  session_id?: string;                   // optional client-supplied ID
+}
+
+interface CreateSessionResponse {
+  session_id: string;
+  status: SessionStatus;
+  created_at: string;
+  expires_at: string;
+  upload_url: string;
+  patient_details?: PatientDetails;
+}
+
+interface PatchSessionRequest {
+  user_status?: string;
+  processing_status?: string;
+  patient_details?: PatientDetails;
+  additional_data?: Record<string, any>;
+  language_hint?: string[];
+  transcript_language?: string;
+  templates?: string[];
+}
+
+interface PatchSessionResponse {
+  session_id: string;
+  status: string;
+  message: string;
+}
+
+interface EndSessionResponse {
+  session_id: string;
+  status: SessionStatus;
+  message: string;
+  audio_files_received: number;
+  audio_files: string[];
+}
+
+interface GetSessionStatusResponse {
+  session_id: string;
+  status: SessionStatus;
+  created_at: string;
+  expires_at?: string | null;
+  expired_at?: string | null;
+  completed_at?: string | null;
+  model_used?: string | null;
+  language_detected?: string | null;
+  audio_files_received: number;
+  audio_files: string[];
+  audio_files_processed?: number;
+  additional_data: Record<string, any>;
+  templates?: TemplateEntry[];           // { [templateId]: { status, data, fhir, error, ... } }
+  transcript?: string;
+  processing_errors?: ProcessingError[];
+  error?: { code: string; message: string; details?: Record<string, any> };
+  patient_details?: PatientDetails;
+  message?: string;
+}
+
+interface ProcessTemplateResponse {
+  session_id: string;
+  template_id: string;
+  status: string;
+  message: string;
+}
+
+interface PatientDetails {
+  oid?: string;
+  name?: string;
+  age?: string;
+  gender?: string;
+  mobile?: number;
+}
+```
+
+#### Recording
+
+```ts
+interface StopRecordingResult {
+  failedUploads: string[];
+  totalFiles: number;
+}
+
+interface EndRecordingResult extends StopRecordingResult {
+  sessionEnded: boolean;
+  endSessionResponse?: EndSessionResponse;
+}
+
+interface RetryUploadResult {
+  retried: number;
+  succeeded: number;
+  stillFailed: string[];
+}
+
+interface PollOptions {
+  maxAttempts?: number;
+  intervalMs?: number;
+  onProgress?: (status: GetSessionStatusResponse) => void;
+  signal?: AbortSignal;
+}
+```
+
+## Error Handling
+
+All public async methods return `SDKResult<T>` — errors are returned, not thrown:
+
+```ts
+type SDKResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: ScribeError };
+```
+
+```ts
+const result = await client.startRecording({ templates: ['soap'] });
+
+if (!result.success) {
+  console.error(result.error.code, result.error.message);
+  return;
+}
+
+// result.data is typed as CreateSessionResponse
+console.log(result.data.session_id);
+```
+
+### Error Classes
+
+| Error | HTTP | Description |
+|---|---|---|
+| `ScribeError` | — | Base error class |
+| `ValidationError` | 400 | Invalid request or config |
+| `AuthenticationError` | 401 | Auth failed (after token refresh attempt) |
+| `ForbiddenError` | 403 | Access denied |
+| `SessionNotFoundError` | 404 | Session doesn't exist |
+| `SessionExpiredError` | 410 | Session expired |
+| `RateLimitError` | 429 | Rate limit exceeded |
+| `DiscoveryError` | — | Discovery fetch/parse failed |
+| `TransportError` | — | Network / IPC failure |
+| `WorkerError` | — | SharedWorker failure |
+| `UploadError` | — | Audio upload failure |
+
+## SharedWorker Support
+
+The SDK offloads MP3 compression and upload to a SharedWorker for better main-thread performance. The worker is bundled separately as `dist/worker.bundle.js`.
+
+### Setup
+
+```ts
+import { ScribeClient, getWorkerUrl } from 'med-scribe-alliance-ts-sdk';
+
+const client = new ScribeClient({
+  baseUrl: 'https://api.example.com',
+  workerScriptUrl: getWorkerUrl(), // or a custom path
+});
+```
+
+### Serving the Worker
+
+The worker file must be served as a static asset:
+
+**Copy to your public directory:**
+```bash
+cp node_modules/med-scribe-alliance-ts-sdk/dist/worker.bundle.js public/
+```
+
+**Or use a CDN blob URL (avoids same-origin restrictions):**
+```ts
+import { createWorkerBlobUrl } from 'med-scribe-alliance-ts-sdk';
+
+const workerUrl = await createWorkerBlobUrl();
+const client = new ScribeClient({
+  baseUrl: '...',
+  workerScriptUrl: workerUrl,
+});
+```
+
+**Or set a global override:**
+```ts
+window.__MEDSCRIBE_WORKER_URL__ = '/assets/worker.bundle.js';
+```
+
+If the SharedWorker fails to initialize, the SDK silently falls back to main-thread compression and upload.
+
+## Electron / IPC Mode
+
+For Electron apps where network requests must go through the main process:
+
+```ts
+import { ScribeClient, TransportMode } from 'med-scribe-alliance-ts-sdk';
+
+const client = new ScribeClient({
+  baseUrl: 'https://api.example.com',
+  mode: TransportMode.IPC,
+  ipcTransport: {
+    send: (request) => ipcRenderer.send('scribe-request', request),
+    onResponse: (handler) => ipcRenderer.on('scribe-response', (_, res) => handler(res)),
+  },
+});
+```
+
+IPC mode always uses main-thread compression (SharedWorker can't access the IPC bridge).
+
+---
+
+## Eka Care Wrapper (Advanced)
+
+<Info>
+**You only need this section if you want the wrapper-only features:** the prebuilt recording **Widget**, **session/document utilities** (history, details, documents), or Eka `env`/`clientId` handling. For everything else, the [Alliance `ScribeClient`](#integration-guide-step-by-step) above is the recommended path.
+</Info>
+
+`@eka-care/ekascribe-ts-sdk` is an Eka Care convenience wrapper over the same protocol. It exposes a singleton instance instead of `new ScribeClient()`, and the recording flow mirrors the Alliance API with slightly different method names and return shapes.
 
 ```bash
 npm install @eka-care/ekascribe-ts-sdk
@@ -28,64 +690,31 @@ npm install @eka-care/ekascribe-ts-sdk
 yarn add @eka-care/ekascribe-ts-sdk
 ```
 
-## Bundler Setup
+[npm package →](https://www.npmjs.com/package/@eka-care/ekascribe-ts-sdk)
 
-The SDK uses a SharedWorker for background audio uploads. Modern bundlers handle this automatically.
+### Alliance → wrapper method map
 
-### Vite
+| Operation | Alliance (`ScribeClient`) | Eka wrapper |
+|---|---|---|
+| Create client | `new ScribeClient(config)` | `getEkaScribeInstance(config)` (singleton) |
+| Start recording | `startRecording()` → `SDKResult` | `startRecordingV2()` → `TStartRecordingResponse` (`txn_id`, `error_code`) |
+| Token refresh | `onTokenRequired` → `event.resolve(token)` | `onTokenRequired` → `return token` |
+| Retry uploads | `retryFailedUploads()` | `retryUploadRecording()` |
+| Teardown | `reset()` | `resetInstance()` |
+| Get output | `getSessionStatus(id, { poll })` | `getSessionStatus(id, { poll })` (same) |
 
-Works out of the box.
+<AccordionGroup>
 
-```ts
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
-```
+<Accordion title="Initialize the wrapper (getEkaScribeInstance)">
 
-### Webpack 5
+The wrapper uses a **singleton pattern** — `getEkaScribeInstance()` always returns the same instance for a given `env` + `clientId` combination.
 
-Works out of the box. The `new URL(..., import.meta.url)` pattern is natively supported.
+`allianceConfig.baseUrl` is **required** — omitting it throws `[EkaScribe] allianceConfig.baseUrl is required` at runtime. To use Eka Care's hosted scribe service, use:
 
-```ts
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
-```
-
-### Next.js
-
-Ensure the SDK is only used on the client side:
-
-```tsx
-'use client';
-
-import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
-```
-
-### Browser (Script Tag)
-
-```html
-<script type="module">
-  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
-</script>
-```
-
----
-
-## Instance Management
-
-The SDK uses a **singleton pattern**. `getEkaScribeInstance()` always returns the same instance for a given `env` + `clientId` combination.
-
-```ts
-const ekascribe = getEkaScribeInstance(config);
-```
-
-- Calling `getEkaScribeInstance()` multiple times with the same config returns the same instance.
-- If `env` or `clientId` changes, the old instance is automatically reset.
-- If only `access_token` changes, the token is updated on the existing instance without resetting.
-- The SDK supports **one active recording at a time**. Always call `endRecording()` or `cancelSession()` before starting a new recording. If you call `startRecordingV2()` while a recording is active, the SDK cleans up the old recording locally but does **not** end the session on the server — the old session will be left abandoned until it expires.
-
----
-
-## Integration Guide
-
-### Step 1: Initialize the SDK
+| Environment | `baseUrl` |
+|---|---|
+| Production | `https://api.eka.care/voice/v1` |
+| Development | `https://api.dev.eka.care/voice/v1` |
 
 ```ts
 import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
@@ -96,17 +725,24 @@ const config: EkaScribeConfig = {
   env: 'PROD',                             // 'PROD' | 'DEV'
   clientId: '<your_client_id>',            // optional
   allianceConfig: {
-    baseUrl: 'https://api.eka.care/voice/v1',  // required
+    baseUrl: 'https://api.eka.care/voice/v1',  // required — PROD; see table above
     useWorker: 'auto',                              // optional: true | false | 'auto'
     debug: false,                                   // optional
   },
-  sharedWorkerUrl: workerUrl,              // optional — see SharedWorker section
+  sharedWorkerUrl: workerUrl,              // optional
 };
 
 const ekascribe = getEkaScribeInstance(config);
 ```
 
-#### `EkaScribeConfig`
+<Warning>
+Production APIs require a secure (HTTPS) origin — they will not work from `http://localhost`. **Recommended:** use **[ngrok](/api-reference/health-ai/ekascribe/local-development-ngrok)** to tunnel your local server over HTTPS and test against production directly. Alternatively, point at the development `baseUrl` (`https://api.dev.eka.care/voice/v1`) which works from plain `localhost`.
+</Warning>
+
+- Calling `getEkaScribeInstance()` again with the same config returns the same instance.
+- If `env` or `clientId` changes, the old instance is automatically reset.
+- If only `access_token` changes, the token is updated without resetting.
+- One active recording at a time. Call `endRecording()` or `cancelSession()` before starting a new one.
 
 ```ts
 interface EkaScribeConfig {
@@ -123,26 +759,25 @@ interface EkaScribeConfig {
     useWorker?: boolean | 'auto'; // SharedWorker: true | false | 'auto' (default: 'auto')
     debug?: boolean;              // Enable debug logging (default: false)
   };
-  widget?: WidgetConfig;          // Widget configuration — see Widget section
+  widget?: WidgetConfig;          // Widget configuration — see Widget accordion
 }
 ```
 
-### Step 2: Register Callbacks
+Next: register callbacks and run a recording with the wrapper methods — see the accordion below.
 
-Register callbacks **before** starting a recording. Events fire immediately once recording starts.
+</Accordion>
+
+<Accordion title="Complete a recording (wrapper methods)">
+
+A full session with the wrapper, end to end. The steps mirror the Alliance flow but use the wrapper's method names and return shapes (`startRecordingV2`, `resetInstance`, `error_code`/`txn_id` instead of `SDKResult`).
+
+**Step 1 — Register callbacks** (before recording). The wrapper's `onTokenRequired` **returns** the token instead of calling `event.resolve()`:
 
 ```ts
-import type { EkaCallbackMap } from '@eka-care/ekascribe-ts-sdk';
-
-// Token refresh — SDK calls this automatically on 401
+// Token refresh — wrapper calls this automatically on 401
 ekascribe.registerCallback('onTokenRequired', async () => {
-  const newToken = await fetchFreshToken(); // your token refresh logic
-  return newToken; // must return the new token string
-});
-
-// Recording state changes
-ekascribe.registerCallback('onRecordingStateChange', (event) => {
-  console.log('State:', event.type); // 'started' | 'paused' | 'resumed' | 'ended'
+  const newToken = await myAuthService.refreshToken();
+  return newToken; // return the token string (10s timeout)
 });
 
 // Upload progress
@@ -152,698 +787,175 @@ ekascribe.registerCallback('onUploadEvent', (event) => {
   }
 });
 
-// Errors
+// Recording state + errors
+ekascribe.registerCallback('onRecordingStateChange', (event) => {
+  console.log('State:', event.type); // 'started' | 'paused' | 'resumed' | 'ended'
+});
 ekascribe.registerCallback('onError', (event) => {
   console.error(`[${event.error.code}] ${event.error.message}`);
 });
 ```
 
-See [Callbacks Reference](#callbacks-reference) for all callback types and payloads.
-
-### Step 3: Start Recording
-
-Creates a session and starts the microphone in one call.
+**Step 2 — Start recording** with `startRecordingV2()`. Returns `TStartRecordingResponse` — check `error_code`, read the session id from `txn_id`:
 
 ```ts
-import type { RecordingOptions } from '@eka-care/ekascribe-ts-sdk';
-
-const options: RecordingOptions = {
-  templates: ['template-id'],             // required: template IDs for output
-  sessionMode: 'consultation',            // optional: 'consultation' | 'dictation'
-  languageHint: ['en', 'hi'],            // optional: input audio language hints
-  transcriptLanguage: 'en',              // optional: output transcript language
-  model: 'pro',                          // optional: 'pro' | 'lite'
-  uploadType: 'chunked',                 // optional: 'chunked' (default) | 'single'
-  deviceId: microphoneId,                // optional: specific microphone device ID
-  patientDetails: {                      // optional
-    name: 'John Doe',
-    age: '45',
-    gender: 'male',
-  },
-  additionalData: {},                    // optional: any extra data for the session
-};
-
-const result = await ekascribe.startRecordingV2(options);
+const result = await ekascribe.startRecordingV2({
+  templates: ['clinical_notes_template'], // required: template IDs (from getConfig → my_templates)
+  sessionMode: 'consultation',         // optional: 'consultation' | 'dictation'
+  languageHint: ['en', 'hi'],          // optional: input audio language hints. If you're not offering users a language change option in your UI, use ['auto_detect'] for the best results.
+  transcriptLanguage: 'en',            // optional: output transcript language
+  model: 'pro',                        // optional: 'pro' | 'lite'
+  uploadType: 'chunked',               // optional: 'chunked' (default) | 'single'
+  patientDetails: { name: 'John Doe', age: '45', gender: 'male' }, // optional
+});
 
 if (result.error_code) {
   console.error(result.error_code, result.message);
   return;
 }
 
-const sessionId = result.txn_id;
-console.log('Recording started:', sessionId);
+const sessionId = result.txn_id!;
 ```
 
-#### `RecordingOptions`
+<Note>
+Use `clinical_notes_template` for testing, or contact Eka Care to create a custom template for your use case. Call `ekascribe.sessions.getConfig()` (see the **Session & document utilities** accordion) to list the templates enabled for your account.
+</Note>
+
+**Step 3 — Pause / Resume** (optional, during recording):
 
 ```ts
-interface RecordingOptions {
-  templates: string[];                   // Template IDs for extraction (required)
-  model?: string;                        // Model ID ('pro' | 'lite')
-  languageHint?: string[];               // Language codes for audio input
-  transcriptLanguage?: string;           // Language code for transcript output
-  uploadType?: string;                   // 'chunked' | 'single' (default: 'chunked')
-  communicationProtocol?: string;        // 'http' (default)
-  additionalData?: Record<string, any>;  // Extra data for the session
-  deviceId?: string;                     // Specific microphone device ID
-  sessionMode?: string;                  // 'consultation' | 'dictation'
-  patientDetails?: PatientDetails;       // Patient info
-  sessionId?: string;                    // External session/transaction ID
-}
-
-interface PatientDetails {
-  oid?: string;
-  name?: string;
-  age?: string;
-  gender?: string;
-  mobile?: number;
-}
+ekascribe.pauseRecording();
+ekascribe.resumeRecording();
 ```
 
-#### Response: `TStartRecordingResponse`
-
-```ts
-type TStartRecordingResponse = {
-  error_code?: ERROR_CODE;  // present only on error
-  status_code: number;
-  message: string;
-  txn_id?: string;          // session ID — present on success
-  business_id?: string;
-  oid?: string;
-  uuid?: string;
-};
-```
-
-### Step 4: Pause / Resume
-
-```ts
-const pauseResult = ekascribe.pauseRecording();
-// later...
-const resumeResult = ekascribe.resumeRecording();
-```
-
-#### Response: `TPauseRecordingResponse`
-
-```ts
-type TPauseRecordingResponse = {
-  status_code: number;
-  message: string;
-  error_code?: ERROR_CODE;
-  is_paused?: boolean;
-};
-```
-
-### Step 5: End Recording
-
-Stops the microphone, flushes pending audio, waits for all uploads, and ends the session on the server (triggers processing).
+**Step 4 — End recording** with `endRecording()`. On `audio_upload_failed`, retry with `retryUploadRecording()`:
 
 ```ts
 const endResult = await ekascribe.endRecording();
 
-if (endResult.error_code) {
-  switch (endResult.error_code) {
-    case 'audio_upload_failed':
-      // Some audio files failed to upload — retry
-      await ekascribe.retryUploadRecording();
-      break;
-    case 'end_recording_failed':
-    case 'internal_server_error':
-      console.error(endResult.error_code, endResult.message);
-      break;
-  }
+if (endResult.error_code === 'audio_upload_failed') {
+  await ekascribe.retryUploadRecording(); // retry the failed chunks
 }
 ```
 
-#### Response: `TEndRecordingResponse`
-
-```ts
-type TEndRecordingResponse = {
-  error_code?: ERROR_CODE;
-  status_code: number;
-  message: string;
-  failed_files?: string[];       // files that failed to upload
-  total_audio_files?: string[];  // all audio files generated
-};
-```
-
-### Step 6: Get Output
-
-Use `getSessionStatus()` to poll for results after ending the recording.
+**Step 5 — Poll for results** with `getSessionStatus()` (same shape as the Alliance SDK — returns `SDKResult`):
 
 ```ts
 const status = await ekascribe.getSessionStatus(sessionId, {
   poll: {
     maxAttempts: 60,
     intervalMs: 2000,
-    signal: abortController.signal,   // optional: cancel polling early
-    onProgress: (sessionData) => {
-      console.log('Status:', sessionData.status);
-      // Display partial results as they come in
-      if (sessionData.templates) {
-        console.log('Templates:', sessionData.templates);
-      }
-    },
+    onProgress: (s) => console.log('Status:', s.status),
   },
 });
 
 if (status.success) {
-  console.log('Final status:', status.data.status);
   console.log('Templates:', status.data.templates);
   console.log('Transcript:', status.data.transcript);
 }
 ```
 
-#### Response: `SDKResult<GetSessionStatusResponse>`
+**Step 6 — Cancel instead of end** (optional) — stops recording **without** triggering processing:
 
 ```ts
-// All async Alliance methods return SDKResult — check result.success
-type SDKResult<T> =
-  | { success: true; data: T; httpStatus?: number }
-  | { success: false; error: ScribeError };
-
-type GetSessionStatusResponse = {
-  session_id: string;
-  status: SessionStatus;
-  created_at: string;
-  expires_at?: string | null;
-  completed_at?: string | null;
-  model_used?: string | null;
-  language_detected?: string | null;
-  audio_files_received: number;
-  audio_files: string[];
-  audio_files_processed?: number;
-  additional_data: Record<string, any>;
-  templates?: TemplateEntry[];
-  transcript?: string;
-  processing_errors?: ProcessingError[];
-  error?: { code: string; message: string };
-};
+await ekascribe.cancelSession();            // current session
+await ekascribe.cancelSession('session-id'); // or by id
 ```
 
-### Step 7: Clean Up
+**Step 7 — Clean up** — `resetInstance()` tears down the singleton (clears state, destroys the widget, removes callbacks). Call `getEkaScribeInstance()` again afterwards:
 
 ```ts
-// Reset the singleton — clears all state, destroys widget, removes callbacks
 await ekascribe.resetInstance();
 ```
 
-After calling `resetInstance()`, you must call `getEkaScribeInstance()` again to get a new instance.
-
-### Flow Diagram
-
-```
-  getEkaScribeInstance(config)
-         |
-         v
-  registerCallback()  ──  Set up event handlers before recording
-         |
-         v
-  startRecordingV2()  ──  Creates session + starts mic + begins upload
-         |
-    pause / resume    ──  Optional during recording
-         |
-         v
-  endRecording()      ──  Stops mic + flushes audio + ends session
-         |
-         v
-  getSessionStatus()  ──  Poll until completed/failed
-         |
-         v
-  Read results        ──  templates, transcript, errors
-```
-
----
-
-## Callbacks Reference
-
-Register with `registerCallback(name, handler)`. Remove with `removeCallback(name, handler)`.
-
-### `onTokenRequired`
-
-Called automatically when the SDK receives a 401 from any API call. Your handler must return a fresh access token. The SDK will update its internal token and retry the failed request.
+#### Full example
 
 ```ts
-ekascribe.registerCallback('onTokenRequired', async () => {
-  // Call your auth service to get a fresh token
-  const newToken = await myAuthService.refreshToken();
-  return newToken; // return the token string
+import {
+  getEkaScribeInstance,
+  type EkaScribeConfig,
+} from '@eka-care/ekascribe-ts-sdk';
+
+// 1. Initialize
+const ekascribe = getEkaScribeInstance({
+  access_token: token,
+  env: 'PROD',
+  allianceConfig: { baseUrl: 'https://api.eka.care/voice/v1' },
 });
-```
 
-**Important:**
-- The handler must return `Promise<string>` or `string`
-- The SDK times out after 10 seconds — if your refresh takes longer, the request fails
-- Once the token is returned, the SDK calls `updateAuthTokens()` internally — you don't need to call it yourself
-- This replaces the old pattern of manually checking `status_code: 401` in every response
+// 2. Callbacks
+ekascribe.registerCallback('onTokenRequired', async () => await refreshToken());
+ekascribe.registerCallback('onError', (e) => showErrorToast(e.error.message));
 
-#### Type
-
-```ts
-// Consumer-facing type (EkaScribe SDK)
-onTokenRequired: () => Promise<string> | string;
-```
-
-### `onRecordingStateChange`
-
-Fired when recording state transitions.
-
-```ts
-ekascribe.registerCallback('onRecordingStateChange', (event) => {
-  console.log(event.type); // 'started' | 'paused' | 'resumed' | 'ended'
+// 3. Start
+const start = await ekascribe.startRecordingV2({
+  templates: ['clinical_notes_template'],
+  sessionMode: 'consultation',
+  languageHint: ['en'],
 });
-```
+if (start.error_code) return showError(start.message);
+const sessionId = start.txn_id!;
 
-#### Type
+// 4. ...user records (pause/resume optional)...
 
-```ts
-interface RecordingStateChangeEvent {
-  type: 'started' | 'paused' | 'resumed' | 'ended';
-  timestamp: string;
-  data?: any;
+// 5. End
+const end = await ekascribe.endRecording();
+if (end.error_code === 'audio_upload_failed') {
+  await ekascribe.retryUploadRecording();
 }
-```
 
-### `onAudioEvent`
-
-Fired for speech detection, silence warnings, chunk creation, and frame processing.
-
-```ts
-ekascribe.registerCallback('onAudioEvent', (event) => {
-  switch (event.type) {
-    case 'user_speech':
-      console.log('Speaking:', event.data.isSpeaking);
-      break;
-    case 'silence_warning':
-      console.log('Silence duration:', event.data.durationMs, 'ms');
-      break;
-    case 'chunk_ready':
-      console.log('Chunk:', event.data.fileName);
-      break;
-    case 'frame_processed':
-      // Raw audio frame data
-      break;
-  }
+// 6. Results
+const status = await ekascribe.getSessionStatus(sessionId, {
+  poll: { maxAttempts: 60, intervalMs: 2000 },
 });
+if (status.success) displayResults(status.data.templates, status.data.transcript);
+
+// 7. Cleanup on unmount
+await ekascribe.resetInstance();
 ```
 
-#### Type
+</Accordion>
+
+<Accordion title="Bundler setup (Vite / Webpack / Next.js)">
+
+The wrapper uses a SharedWorker for background audio uploads. Modern bundlers handle this automatically.
+
+**Vite** — works out of the box.
+**Webpack 5** — works out of the box (`new URL(..., import.meta.url)` is natively supported).
+
+**Next.js** — ensure the SDK is used only on the client:
+
+```tsx
+'use client';
+
+import { getEkaScribeInstance } from '@eka-care/ekascribe-ts-sdk';
+```
+
+**Browser (script tag):**
+
+```html
+<script type="module">
+  import { getEkaScribeInstance } from 'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk/dist/index.mjs';
+</script>
+```
+
+**SharedWorker URL** — pass `sharedWorkerUrl` in config. Resolve it with the wrapper's helper:
 
 ```ts
-type AudioEvent =
-  | { type: 'user_speech'; timestamp: string; data: { isSpeaking: boolean } }
-  | { type: 'silence_warning'; timestamp: string; data: { durationMs: number } }
-  | { type: 'chunk_ready'; timestamp: string; data: { chunkIndex: number; fileName: string; chunkData: Uint8Array[] } }
-  | { type: 'frame_processed'; timestamp: string; data: { isSpeech: number; notSpeech: number; frame: Float32Array; duration: number } };
+import { createWorkerBlobUrl } from '@eka-care/ekascribe-ts-sdk';
+
+const workerUrl = await createWorkerBlobUrl();
+const ekascribe = getEkaScribeInstance({ /* ... */ sharedWorkerUrl: workerUrl });
+// Remember to URL.revokeObjectURL(workerUrl) when done.
 ```
 
-### `onUploadEvent`
+</Accordion>
 
-Fired for upload progress, failures, and retries.
+<Accordion title="Prebuilt Widget (zero-UI recording)">
 
-```ts
-ekascribe.registerCallback('onUploadEvent', (event) => {
-  switch (event.type) {
-    case 'progress':
-      console.log(`${event.data.successCount}/${event.data.totalCount} uploaded`);
-      break;
-    case 'failed':
-      console.error(`Upload failed: ${event.data.fileName}`, event.data.error);
-      break;
-    case 'retry':
-      console.log(`Retrying ${event.data.fileName}, attempt ${event.data.attempt}`);
-      break;
-  }
-});
-```
+The wrapper provides an optional pre-built recording UI injected via Shadow DOM — you write zero UI code.
 
-#### Type
-
-```ts
-type UploadEvent =
-  | { type: 'progress'; timestamp: string; data: { successCount: number; totalCount: number } }
-  | { type: 'failed'; timestamp: string; data: { fileName: string; error: string } }
-  | { type: 'retry'; timestamp: string; data: { fileName: string; attempt: number } };
-```
-
-### `onSessionEvent`
-
-Fired on session lifecycle events.
-
-```ts
-ekascribe.registerCallback('onSessionEvent', (event) => {
-  switch (event.type) {
-    case 'created':
-      console.log('Session created:', event.data.session_id);
-      break;
-    case 'ended':
-      console.log('Session ended:', event.data.session_id);
-      break;
-    case 'status_update':
-      console.log('Status update:', event.data.status);
-      break;
-    case 'partial_result':
-      console.log('Partial result:', event.data);
-      break;
-  }
-});
-```
-
-#### Type
-
-```ts
-type SessionEvent =
-  | { type: 'created'; timestamp: string; data: CreateSessionResponse }
-  | { type: 'ended'; timestamp: string; data: EndSessionResponse }
-  | { type: 'status_update'; timestamp: string; data: GetSessionStatusResponse }
-  | { type: 'partial_result'; timestamp: string; data: any };
-```
-
-### `onError`
-
-Fired on SDK errors — VAD failures, worker errors, network issues, validation errors.
-
-```ts
-ekascribe.registerCallback('onError', (event) => {
-  console.error(`[${event.type}] ${event.error.code}: ${event.error.message}`);
-});
-```
-
-#### Type
-
-```ts
-interface ErrorEvent {
-  type: 'vad_error' | 'worker_error' | 'transport_error' | 'validation_error';
-  timestamp: string;
-  error: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
-```
-
-### Removing Callbacks
-
-```ts
-const handler = (event) => { /* ... */ };
-
-ekascribe.registerCallback('onUploadEvent', handler);
-// later...
-ekascribe.removeCallback('onUploadEvent', handler);
-```
-
-### Retry Failed Uploads
-
-If `endRecording()` returns `audio_upload_failed`, retry the failed uploads:
-
-```ts
-const result = await ekascribe.retryUploadRecording();
-```
-
-#### Response: `TEndRecordingResponse`
-
-```ts
-{
-  status_code: number;
-  message: string;
-  error_code?: ERROR_CODE;
-  failed_files?: string[];       // files still failing after retry
-  total_audio_files?: string[];
-}
-```
-
-### Cancel a Session
-
-Cancel a session **without** triggering server-side processing.
-
-```ts
-// Cancel current active session
-await ekascribe.cancelSession();
-
-// Or cancel a specific session by ID
-await ekascribe.cancelSession('session-id');
-```
-
-#### Response: `SDKResult<PatchSessionResponse>`
-
-```ts
-const result = await ekascribe.cancelSession();
-if (result.success) {
-  console.log('Session cancelled');
-}
-```
-
-### Pre-Recorded Audio Upload
-
-Upload a pre-recorded audio file instead of live recording. Use this for non-real-time flows.
-
-**Flow:**
-
-1. Create session via `ekascribe.sessions.createSession()`
-2. Upload audio via `processPreRecordedAudio()`
-3. End session via `ekascribe.sessions.endSession()`
-
-```ts
-const result = await ekascribe.processPreRecordedAudio({
-  uploadUrl: session.upload_url,       // from createSession response
-  audioFile: audioBlob,                // File or Blob
-});
-```
-
-#### Request
-
-```ts
-{
-  uploadUrl: string;        // S3 upload URL from session
-  audioFile: File | Blob;   // the audio file
-}
-```
-
-#### Response: `TStartRecordingResponse`
-
-```ts
-{
-  status_code: number;
-  message: string;
-  error_code?: ERROR_CODE;
-}
-```
-
----
-
-## Session Utils
-
-### `getSessionHistory(request)`
-
-Fetch previous sessions.
-
-```ts
-const sessions = await ekascribe.sessions.getSessionHistory({
-  txn_count: 10,        // number of sessions to fetch
-  oid: 'patient-oid',   // optional: filter by patient oid
-});
-```
-
-#### Response: `TGetTransactionHistoryResponse`
-
-```ts
-{
-  data: Array<{
-    txn_id: string;
-    b_id: string;
-    created_at: string;
-    mode: string;
-    oid: string;
-    patient_details?: TPatientDetails;
-    processing_status: 'success' | 'system_failure' | 'request_failure' | 'cancelled' | 'in-progress';
-    user_status: 'init' | 'commit';
-    uuid: string;
-  }>;
-  status: string;
-  code: number;
-  message: string;
-  retrieved_count: number;
-}
-```
-
-### `getSessionDetails(request)`
-
-Get detailed information about a specific session, including documents, context, and presigned URLs.
-
-```ts
-const details = await ekascribe.sessions.getSessionDetails({
-  session_id: 'session-id',
-  presigned: true,         // include presigned URLs for documents
-});
-```
-
-Each document in the response contains a `presigned_url`. To get the actual document content (notes, transcript, etc.), you need to fetch it from this URL:
-
-```ts
-const doc = details.data?.documents[0];
-if (doc?.presigned_url) {
-  const response = await fetch(doc.presigned_url);
-  const content = await response.json();
-}
-```
-
-> Presigned URLs are temporary — check `presigned_url_expires_at` (epoch timestamp) before using. Call `getDocument(documentId)` to get a fresh presigned URL if expired.
-
-#### Request
-
-```ts
-type TGetV1SessionDetailsRequest = {
-  session_id: string;
-  presigned?: boolean;   // default: false
-};
-```
-
-#### Response: `TGetV1SessionDetailsResponse`
-
-```ts
-type TGetV1SessionDetailsResponse = {
-  data?: {
-    schema_version: string;
-    session_id: string;
-    uuid: string;
-    wid: string;
-    created_at: number;
-    expires_at: number;
-    upload_url: string;
-    status: string;
-    user_status: 'init' | 'recording_started' | 'commit' | string;
-    transfer: string;
-    flavour: string;
-    patient_details: TPatientDetails | Record<string, unknown>;
-    audio_matrix: Record<string, unknown>;
-    additional_data: {
-      input_languages?: { id: string; name: string }[];
-      output_format_template?: {
-        template_id: string;
-        template_name?: string;
-        template_type?: string;
-      }[];
-      [key: string]: unknown;
-    };
-    documents: Array<{
-      document_id: string;
-      session_id: string;
-      template_id: string;
-      document_name: string;
-      document_type: 'notes' | 'context' | 'transcript' | 'integration';
-      type: string;
-      status: string;
-      errors: Array<{ type: string | null; code: string; msg: string }>;
-      warnings: Array<{ type: string | null; code: string; msg: string }>;
-      publish: Record<string, unknown>;
-      created_at: number;
-      presigned_url: string | null;
-      presigned_url_expires_at: number | null;
-      vault_doc_id: string | null;
-      lang?: string;
-    }>;
-    context: {
-      past_sessions?: Array<{ date_epoch: number; session_id: string }>;
-      documents?: string[];
-      attachments?: Array<{ id: string; patient_oid?: string }>;
-    };
-  };
-  status_code: number;
-  message?: string;
-};
-```
-
-### `getDocument(documentId)`
-
-Fetch a single document by ID. Use this to get a fresh presigned URL if the previous one has expired.
-
-```ts
-const doc = await ekascribe.documents.getDocument('document-id');
-if (doc.data?.presigned_url) {
-  const response = await fetch(doc.presigned_url);
-  const content = await response.json();
-}
-```
-
-#### Response: `TPostV1DocumentResponse`
-
-```ts
-type TPostV1DocumentResponse = {
-  status_code: number;
-  status?: string;
-  message?: string;
-  data?: {
-    document_id: string;
-    session_id: string;
-    template_id: string;
-    document_name: string;
-    type: string;
-    status: string;
-    errors: unknown[];
-    warnings: unknown[];
-    usage_information: Record<string, unknown>;
-    document_path: {
-      bucket: string;
-      folder: string;
-      filename: string;
-    };
-    presigned_url: string;
-    created_at: string;
-    updated_at: number;
-    publish: Record<string, unknown>;
-  };
-};
-```
-
-### `patchSessionStatus(request, sessionId?)`
-
-Update session properties (patient details, status, templates).
-
-```ts
-await ekascribe.sessions.patchSessionStatus({
-  patient_details: { name: 'Jane Doe', age: '30', gender: 'female' },
-  additional_data: { notes: 'Follow-up visit' },
-  templates: ['soap', 'prescription'],
-}, sessionId);
-```
-
----
-
-## Discovery
-
-### `getDiscoveryDocument()`
-
-Get the raw discovery document fetched during initialization. Contains server capabilities (supported models, languages, upload methods, audio formats).
-
-```ts
-const discovery = ekascribe.sessions.getDiscoveryDocument();
-```
-
-Returns `DiscoveryDocument | null`.
-
-### `getDiscoveryConfig()`
-
-Get the resolved configuration derived from the discovery document.
-
-```ts
-const config = ekascribe.sessions.getDiscoveryConfig();
-
-if (config.success) {
-  console.log('Resolved config:', config.data);
-}
-```
-
-Returns `SDKResult<ResolvedConfig>`.
-
----
-
-## Widget
-
-The SDK provides an optional pre-built recording UI. When enabled, the SDK injects a floating widget into your page via Shadow DOM — you write zero UI code.
-
-### Integration
-
-**Step 1:** Enable the widget in SDK config with session defaults and callbacks:
+**Step 1:** Enable the widget in config with session defaults and callbacks:
 
 ```ts
 const ekascribe = getEkaScribeInstance({
@@ -857,7 +969,7 @@ const ekascribe = getEkaScribeInstance({
     position: { bottom: 20, right: 20 }, // optional
     sessionDefaults: {
       input_language: ['en'],
-      output_format_template: [{ template_id: 'soap' }],
+      output_format_template: [{ template_id: 'clinical_notes_template' }],
       model_type: 'pro',
       mode: 'consultation',
     },
@@ -873,7 +985,7 @@ const ekascribe = getEkaScribeInstance({
 });
 ```
 
-**Step 2:** Call `startForPatient()` for each patient — the widget appears and the user interacts with it directly (pause, resume, stop). You receive results via callbacks.
+**Step 2:** Call `startForPatient()` per patient — the widget appears and the user drives it (pause, resume, stop). Results arrive via callbacks.
 
 ```ts
 await ekascribe.startForPatient({
@@ -887,9 +999,9 @@ await ekascribe.startForPatient({
 });
 ```
 
-That's it. The widget handles `startRecordingV2()`, `pauseRecording()`, `resumeRecording()`, `endRecording()`, and `getSessionStatus()` internally.
+The widget handles `startRecordingV2()`, `pauseRecording()`, `resumeRecording()`, `endRecording()`, and `getSessionStatus()` internally.
 
-### Widget State Flow
+**Widget state flow:**
 
 ```
 COLLAPSED ──> RECORDING ──> PAUSED ──> RECORDING ──> PROCESSING ──> DONE
@@ -900,8 +1012,6 @@ COLLAPSED ──> RECORDING ──> PAUSED ──> RECORDING ──> PROCESSING 
                                                    │
                                                ERROR
 ```
-
-### Types
 
 ```ts
 interface WidgetConfig {
@@ -943,68 +1053,147 @@ interface WidgetCallbacks {
 }
 ```
 
----
+</Accordion>
 
-## Authentication
+<Accordion title="Session & document utilities">
 
-### `updateAuthTokens(token)`
+Wrapper-only helpers for fetching session history, details, and documents.
 
-Manually update the access token. This propagates the token to all internal transports and the worker.
+**`getSessionHistory(request)`** — fetch previous sessions.
+
+```ts
+const sessions = await ekascribe.sessions.getSessionHistory({
+  txn_count: 10,        // number of sessions to fetch
+  oid: 'patient-oid',   // optional: filter by patient oid
+});
+```
+
+**`getSessionDetails(request)`** — detailed info including documents, context, and presigned URLs.
+
+```ts
+const details = await ekascribe.sessions.getSessionDetails({
+  session_id: 'session-id',
+  presigned: true,         // include presigned URLs for documents
+});
+
+const doc = details.data?.documents[0];
+if (doc?.presigned_url) {
+  const response = await fetch(doc.presigned_url);
+  const content = await response.json();
+}
+```
+
+> Presigned URLs are temporary — check `presigned_url_expires_at` (epoch) before using. Call `getDocument(documentId)` for a fresh URL if expired.
+
+**`getDocument(documentId)`** — fetch a single document by ID (and a fresh presigned URL).
+
+```ts
+const doc = await ekascribe.documents.getDocument('document-id');
+if (doc.data?.presigned_url) {
+  const response = await fetch(doc.presigned_url);
+  const content = await response.json();
+}
+```
+
+**`patchSessionStatus(request, sessionId?)`** — update session properties.
+
+```ts
+await ekascribe.sessions.patchSessionStatus({
+  patient_details: { name: 'Jane Doe', age: '30', gender: 'female' },
+  additional_data: { notes: 'Follow-up visit' },
+  templates: ['soap', 'prescription'],
+}, sessionId);
+```
+
+**Config** — call `ekascribe.sessions.getConfig()` to fetch your account config: supported languages, output formats, consultation modes, and `my_templates` (the valid `template_id` values to pass when starting a recording). `clinical_notes_template` is a ready-to-use testing template; contact Eka Care for a custom one.
+
+```ts
+const config = await ekascribe.sessions.getConfig();
+config.data?.my_templates.forEach((t) => console.log(t.id, t.name));
+```
+
+Response: `TGetConfigV2Response`
+
+```ts
+type TGetConfigV2Response = {
+  data?: {
+    supported_languages: TGetConfigItem[];
+    supported_output_formats: TGetConfigItem[];
+    consultation_modes: TGetConfigItem[];
+    max_selection: {
+      supported_languages: number;
+      supported_output_formats: number;
+      consultation_modes: number;
+    };
+    settings: TConfigSettings;
+    my_templates: { id: string; name: string }[];   // valid template_id values for your account
+    user_details: {
+      uuid: string;
+      fn: string;
+      mn: string;
+      ln: string;
+      dob: string;
+      gen: 'F' | 'M' | 'O';
+      s: string;
+      'w-id': string;
+      'w-n': string;
+      'b-id': string;
+      is_paid_doc: boolean;
+      is_eka_doc: boolean;
+      oid: string;
+    };
+    selected_preferences?: TSelectedPreferences;
+    clinic_name?: string;
+    specialization?: string;
+    emr_name?: string;
+    microphone_permission_check?: boolean;
+    consult_language?: string[];
+    contact_number?: string;
+    onboarding_step?: string;
+    header?: TConfigHeaderFooter;
+    footer?: TConfigHeaderFooter;
+  };
+  message?: string;
+  status_code: number;
+};
+```
+
+**Discovery** — `ekascribe.sessions.getDiscoveryDocument()` mirrors the Alliance discovery method.
+
+</Accordion>
+
+<Accordion title="Pre-recorded audio upload">
+
+Upload a pre-recorded audio file instead of live recording, for non-real-time flows.
+
+1. Create session via `ekascribe.sessions.createSession()`
+2. Upload audio via `processPreRecordedAudio()`
+3. End session via `ekascribe.sessions.endSession()`
+
+```ts
+const result = await ekascribe.processPreRecordedAudio({
+  uploadUrl: session.upload_url,       // from createSession response
+  audioFile: audioBlob,                // File or Blob
+});
+```
+
+</Accordion>
+
+<Accordion title="Authentication (updateAuthTokens)">
+
+Manually update the access token — propagates to all internal transports and the worker.
 
 ```ts
 ekascribe.updateAuthTokens({ access_token: 'new-token' });
 ```
 
-> If you have `onTokenRequired` registered, the SDK handles 401s automatically. You only need `updateAuthTokens()` for proactive token rotation (e.g., before expiry).
+> If you have `onTokenRequired` registered, the wrapper handles 401s automatically. You only need `updateAuthTokens()` for proactive token rotation (e.g., before expiry).
 
----
+</Accordion>
 
-## SharedWorker Configuration
+<Accordion title="Wrapper error codes">
 
-The SDK offloads audio compression and upload to a SharedWorker for better main-thread performance. If SharedWorker is unavailable or fails, the SDK silently falls back to main-thread processing.
-
-### Setup
-
-```ts
-import { createWorkerBlobUrl } from '@eka-care/ekascribe-ts-sdk';
-
-// Option 1: Use the built-in helper (recommended)
-const workerUrl = await createWorkerBlobUrl();
-
-// Option 2: Fetch from CDN
-async function getWorkerUrl() {
-  const res = await fetch(
-    'https://cdn.jsdelivr.net/npm/@eka-care/ekascribe-ts-sdk@latest/dist/worker.bundle.js'
-  );
-  const script = await res.text();
-  const blob = new Blob([script], { type: 'application/javascript' });
-  return URL.createObjectURL(blob);
-}
-const workerUrl = await getWorkerUrl();
-
-// Option 3: Copy to public directory
-// cp node_modules/@eka-care/ekascribe-ts-sdk/dist/worker.bundle.js public/
-const workerUrl = '/worker.bundle.js';
-```
-
-Pass the URL in config:
-
-```ts
-const ekascribe = getEkaScribeInstance({
-  // ...
-  sharedWorkerUrl: workerUrl,
-});
-```
-
-**Notes:**
-
-- The worker URL must be accessible from the same origin or have proper CORS headers
-- Remember to revoke blob URLs when done: `URL.revokeObjectURL(workerUrl)`
-- If `sharedWorkerUrl` is not provided, the SDK uses the main thread (no SharedWorker)
-
----
-
-## Error Codes
+The wrapper's `TStartRecordingResponse` / `TEndRecordingResponse` carry an `error_code` field (unlike the Alliance `SDKResult` error classes).
 
 | Error Code | Description |
 |---|---|
@@ -1021,11 +1210,11 @@ const ekascribe = getEkaScribeInstance({
 | `unauthorized` | Authentication failed (invalid or expired token) |
 | `forbidden` | Insufficient permissions |
 
----
+</Accordion>
 
-## Deprecated Methods
+<Accordion title="Deprecated wrapper methods">
 
-These methods are from the older SDK version. They still work but are not recommended for new integrations.
+These methods are from older wrapper versions. They still work but are not recommended for new integrations.
 
 | Deprecated Method | Use Instead |
 |---|---|
@@ -1035,152 +1224,10 @@ These methods are from the older SDK version. They still work but are not recomm
 | `commitTransactionCall()` | Handled automatically by `endRecording()` |
 | `stopTransactionCall()` | Handled automatically by `endRecording()` |
 
-### `initTransaction(request)`
+</Accordion>
 
-Creates a session on the server. Must be followed by `startRecording()`.
-
-```ts
-const result = await ekascribe.initTransaction({
-  mode: 'consultation',
-  input_language: ['en-IN'],
-  output_format_template: [{ template_id: 'template-id' }],
-  txn_id: 'unique-id',
-  transfer: 'chunked',
-  model_type: 'pro',
-  patient_details: {                // optional
-    username: 'John Doe',
-    age: 45,
-    biologicalSex: 'M',
-  },
-});
-// result: { status_code, message, txn_id?, error_code? }
-```
-
-### `startRecording(microphoneID?)`
-
-Starts recording for an already initialized session.
-
-```ts
-const result = await ekascribe.startRecording();
-// result: { status_code, message, txn_id?, error_code? }
-```
-
-### `getTemplateOutput(request)`
-
-Fetches processed template output for a session.
-
-```ts
-const result = await ekascribe.getTemplateOutput({ txn_id: 'session-id' });
-// result: { status_code, message?, response? }
-```
-
-### `getOutputTranscription(request)`
-
-Fetches the transcription output for a session.
-
-```ts
-const result = await ekascribe.getOutputTranscription({ txn_id: 'session-id' });
-// result: { status_code, message?, response? }
-```
-
-### `commitTransactionCall()`
-
-Commits the current transaction on the server.
-
-```ts
-const result = await ekascribe.commitTransactionCall();
-// result: { status_code, message, error_code?, failed_files? }
-```
-
-### `stopTransactionCall()`
-
-Stops the current transaction on the server.
-
-```ts
-const result = await ekascribe.stopTransactionCall();
-// result: { status_code, message, error_code? }
-```
+</AccordionGroup>
 
 ---
 
-## Full Example
-
-```ts
-import {
-  getEkaScribeInstance,
-  type EkaScribeConfig,
-  type RecordingOptions,
-} from '@eka-care/ekascribe-ts-sdk';
-
-// 1. Initialize
-const config: EkaScribeConfig = {
-  access_token: token,
-  env: 'PROD',
-  allianceConfig: {
-    baseUrl: 'https://api.eka.care/voice/api/v2',
-  },
-};
-
-const ekascribe = getEkaScribeInstance(config);
-
-// 2. Register callbacks
-ekascribe.registerCallback('onTokenRequired', async () => {
-  return await refreshToken();
-});
-
-ekascribe.registerCallback('onUploadEvent', (event) => {
-  if (event.type === 'progress') {
-    updateProgressUI(event.data.successCount, event.data.totalCount);
-  }
-});
-
-ekascribe.registerCallback('onError', (event) => {
-  showErrorToast(event.error.message);
-});
-
-// 3. Start recording
-const startResult = await ekascribe.startRecordingV2({
-  templates: ['soap'],
-  sessionMode: 'consultation',
-  languageHint: ['en'],
-  patientDetails: { name: 'John Doe', age: '45', gender: 'male' },
-});
-
-if (startResult.error_code) {
-  showError(startResult.message);
-  return;
-}
-
-const sessionId = startResult.txn_id!;
-
-// 4. User interacts...
-// pauseBtn.onclick = () => ekascribe.pauseRecording();
-// resumeBtn.onclick = () => ekascribe.resumeRecording();
-
-// 5. End recording
-const endResult = await ekascribe.endRecording();
-
-if (endResult.error_code === 'audio_upload_failed') {
-  await ekascribe.retryUploadRecording();
-}
-
-// 6. Get results
-const status = await ekascribe.getSessionStatus(sessionId, {
-  poll: {
-    maxAttempts: 60,
-    intervalMs: 2000,
-    onProgress: (s) => updateStatusUI(s.status),
-  },
-});
-
-if (status.success) {
-  displayResults(status.data.templates, status.data.transcript);
-}
-
-// 7. Cleanup on unmount
-await ekascribe.resetInstance();
-```
-
----
-
-Refer [EkaScribe TS SDK](https://github.com/eka-care/eka-js-sdk) for SDK implementation.
+Refer to the [MedScribe Alliance Protocol](https://github.com/MedScribeAlliance/scribe-emr-protocol), the [MedScribe Alliance TS SDK](https://github.com/eka-care/medScribeAlliance-ts-sdk), and the [EkaScribe TS SDK](https://github.com/eka-care/eka-js-sdk) repositories for implementation details.

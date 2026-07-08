@@ -6996,7 +6996,601 @@ paths:
                   code: "SERVER_ERROR"
                   message: "An unexpected error occurred on the server"
       deprecated: false
-  
+  /appointments/v1/{appointment_id}/reschedule:
+    patch:
+      tags:
+        - Appointment API
+      summary: Reschedule Appointment
+      description: >-
+
+        ### Overview
+
+
+        This API is used to reschedule an appointment. Rescheduling does **not**
+        update the existing appointment. Instead, a brand new appointment is
+        created with the supplied `start_time` and `end_time`, while the previous
+        appointment's status is marked as `RES` (which represents *rescheduled*).
+
+
+        The newly created appointment carries a `prev_aids` field — an array
+        containing the ids of the previous, rescheduled appointment(s). Each
+        previous appointment in turn carries a `next_aid` field, which holds the
+        id of the next appointment it was rescheduled to. This forms a linked
+        chain across the reschedule history.
+
+
+        The response of this API is the **new appointment** that is created as a
+        result of the reschedule.
+
+
+      operationId: RescheduleAppointment
+      parameters:
+        - name: auth
+          in: header
+          required: True
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: appointment_id
+          in: path
+          description: 'The id (aid) of the existing appointment to reschedule. When partner_appointment_id is supplied, this is treated as the partner appointment id.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - start_time
+                - end_time
+              properties:
+                start_time:
+                  type: integer
+                  description: 'New start time of the appointment as a Unix epoch in seconds.'
+                  example: 1730189586
+                end_time:
+                  type: integer
+                  description: 'New end time of the appointment as a Unix epoch in seconds. Must be after start_time.'
+                  example: 1730193186
+                partner_appointment_id:
+                  type: string
+                  description: >-
+                    Optional partner-provided appointment id. When omitted, the server generates the new appointment id and the `appointment_id` path param is used as-is. When supplied, the new id is derived with the help of this field and the `appointment_id` path param is treated as a partner appointment id.
+            example:
+              start_time: 1730189586
+              end_time: 1730193186
+              partner_appointment_id: api-3f9c2b18-7e44-4a51-9
+      responses:
+        '200':
+          description: OK — the newly created (rescheduled) appointment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointment_id:
+                    type: string
+                    description: 'Id of the newly created appointment.'
+                  patient_id:
+                    type: string
+                  doctor_id:
+                    type: string
+                    nullable: true
+                  clinic_id:
+                    type: string
+                  status:
+                    type: string
+                  mode:
+                    type: string
+                  start_time:
+                    type: integer
+                    description: 'Start time as a Unix epoch in seconds.'
+                  end_time:
+                    type: integer
+                    description: 'End time as a Unix epoch in seconds.'
+                  created_at:
+                    type: integer
+                    description: 'Creation time as a Unix epoch in seconds.'
+                  prev_aids:
+                    type: array
+                    items:
+                      type: string
+                    description: 'Ids of the previous rescheduled appointment(s).'
+                  next_aid:
+                    type: string
+                    description: 'Id of the next appointment this one was rescheduled to. Present only on previous appointments.'
+              example:
+                appointment_id: "api-3f9c2b18-7e44-4a51-9c2d-1b6f0a8e5d23"
+                patient_id: "patient-oid-123"
+                doctor_id: "doctor-oid-456"
+                clinic_id: "clinic-789"
+                status: "BK"
+                mode: "IN_CLINIC"
+                start_time: 1730189586
+                end_time: 1730193186
+                created_at: 1730185000
+                prev_aids:
+                  - "api-1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "end_time must be after start_time"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Appointment \"api-1a2b3c4d\" was not found"
+        '409':
+          description: Conflict — an appointment with the derived new id already exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Appointment \"api-3f9c2b18\" already exists"
+      deprecated: false
+
+  /appointments/v1/ipd/admission/{admission_id}:
+    get:
+      tags:
+        - IPD API
+      summary: Get IPD Admission
+      description: >-
+
+        ### Overview
+
+
+        This API fetches a single **IPD (In-Patient Department) admission** by
+        its id, scoped to the caller's business (`b-id`). An admission document
+        captures the full in-patient episode — the patient, their attendee,
+        insurance, bed and rateplan, the responsible doctor/department/facility,
+        billing totals, and the admission's lifecycle state.
+
+
+        The admission's lifecycle is tracked with two fields: a coarse `stage`
+        (`IN` → Recommended Admission, `AD` → active Admission, `DC` →
+        Discharged) and a granular `status` within that stage (for example
+        `ADMISSION_CONFIRMED`, `BED_ASSIGNED`, `UNDER_CARE`, `DISCHARGED`).
+
+
+        The `admission_id` path param is the admission id. All timestamp fields are returned as ISO-8601
+        date-time strings.
+
+
+      operationId: GetIpdAdmission
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission to fetch (document id under `ipd/{b-id}/admissions`).'
+          required: true
+          style: simple
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK — the requested IPD admission.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  id:
+                    type: string
+                    description: 'Admission document id.'
+                  bid:
+                    type: string
+                    description: 'Business id the admission belongs to.'
+                  admission_date:
+                    type: string
+                    description: 'Admission date-time as an ISO-8601 string.'
+                  discharge_date:
+                    type: string
+                    description: 'Discharge date-time as an ISO-8601 string. Present once discharged.'
+                  ipid:
+                    type: string
+                    description: 'Patient IPD case number.'
+                  attendee:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      phone:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          c:
+                            type: string
+                            description: 'Country code.'
+                          n:
+                            type: string
+                            description: 'Phone number.'
+                      relation:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          id:
+                            type: string
+                          label:
+                            type: string
+                  patient:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      uuid:
+                        type: string
+                      poid:
+                        type: string
+                      formData:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: true
+                          properties:
+                            label:
+                              type: string
+                            type:
+                              type: string
+                            key:
+                              type: string
+                            value:
+                              description: 'String, number, or array of strings.'
+                      profile:
+                        type: object
+                        additionalProperties: true
+                        properties:
+                          personal:
+                            type: object
+                            additionalProperties: true
+                            properties:
+                              gender:
+                                type: string
+                              name:
+                                type: string
+                              phone:
+                                type: object
+                                additionalProperties: true
+                              age:
+                                type: object
+                                additionalProperties: true
+                  insurance:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      number:
+                        type: string
+                      type:
+                        type: string
+                      payment_type:
+                        type: string
+                      insurance_provider:
+                        type: string
+                      insurance_name:
+                        type: string
+                      pre_approved:
+                        type: boolean
+                      pre_approved_amount:
+                        type: number
+                      sum_insured:
+                        type: string
+                      tpa:
+                        type: string
+                  procedures:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        date:
+                          type: string
+                        notes:
+                          type: string
+                  refer:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  doc:
+                    type: object
+                    description: 'The responsible doctor (id + name).'
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  notes:
+                    type: string
+                  medico_legal_case:
+                    type: boolean
+                  stage:
+                    type: string
+                    description: 'Coarse lifecycle stage of the admission.'
+                    enum:
+                      - IN
+                      - AD
+                      - DC
+                  status:
+                    type: string
+                    description: 'Granular lifecycle status within the current stage.'
+                    enum:
+                      - ADMISSION_RECOMMENDED
+                      - ADMISSION_ON_HOLD
+                      - ADMISSION_CONFIRMED
+                      - ADMISSION_CANCELLED
+                      - BED_ASSIGNED
+                      - UNDER_CARE
+                      - NOT_RECEIVED
+                      - FIT_FOR_DISCHARGE
+                      - DISCHARGE_INITIATED
+                      - REFERRAL_INITIATED
+                      - LAMA_IN_PROGRESS
+                      - DAMA_IN_PROGRESS
+                      - DEATH_BEING_RECORDED
+                      - PATIENT_MISSING
+                      - DISCHARGED
+                      - LAMA_COMPLETED
+                      - DAMA_COMPLETED
+                      - REFERRED
+                      - DECEASED
+                      - ABSCONDED
+                  duration:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      value:
+                        type: number
+                      unit:
+                        type: string
+                  bed:
+                    type: string
+                  rateplan:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      inclusions:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: true
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            rate:
+                              type: number
+                  docid:
+                    type: string
+                  category:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  date:
+                    type: string
+                  department:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  pid:
+                    type: string
+                  created_at:
+                    type: string
+                    description: 'Creation date-time as an ISO-8601 string.'
+                  updated_at:
+                    type: string
+                    description: 'Last-update date-time as an ISO-8601 string.'
+                  facility:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  facilityid:
+                    type: string
+                  totalbilled:
+                    type: number
+                    description: 'Total amount billed for the admission.'
+                  totalpaid:
+                    type: number
+                    description: 'Total amount paid against the admission.'
+                  totalbilled_updated_at:
+                    type: string
+                  totalpaid_updated_at:
+                    type: string
+                  custom_attributes:
+                    type: object
+                    description: 'Map of custom attribute keys to arrays of string values.'
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                  clearances_summary:
+                    type: object
+                    description: 'Denormalized discharge-clearance state.'
+                    additionalProperties: true
+                    properties:
+                      statuses:
+                        type: object
+                        description: 'One entry per clearance type; each PENDING or COMPLETED.'
+                        additionalProperties:
+                          type: string
+                          enum:
+                            - PENDING
+                            - COMPLETED
+                      completed_count:
+                        type: integer
+                      total:
+                        type: integer
+                      all_complete:
+                        type: boolean
+                  archived:
+                    type: boolean
+                  actor_oid:
+                    type: string
+                    description: 'oid of the actor that last acted on the admission.'
+              example:
+                id: "adm-3f9c2b18-7e44-4a51"
+                bid: "123456"
+                admission_date: "2026-06-28T09:30:00.000Z"
+                ipid: "IPD-2026-000481"
+                attendee:
+                  id: "att-01"
+                  name: "Ramesh Kumar"
+                  phone:
+                    c: "+91"
+                    n: "9876543210"
+                  relation:
+                    id: "rel-son"
+                    label: "Son"
+                patient:
+                  id: "pat-77"
+                  uuid: "9c2d1b6f-0a8e-5d23-8b1a-2c3d4e5f6a7b"
+                  poid: "poid-555"
+                  formData: []
+                  profile:
+                    personal:
+                      gender: "M"
+                      name: "Suresh Kumar"
+                insurance:
+                  number: "POL-8891"
+                  type: "Cashless"
+                  payment_type: "Insurance"
+                  insurance_provider: "Star Health"
+                  pre_approved: true
+                  pre_approved_amount: 50000
+                refer:
+                  id: "ref-01"
+                  name: "Dr. Anita Rao"
+                doc:
+                  id: "doctor-oid-456"
+                  name: "Dr. Vivek Sharma"
+                stage: "AD"
+                status: "UNDER_CARE"
+                duration:
+                  value: 3
+                  unit: "days"
+                bed: "ICU-04"
+                rateplan:
+                  id: "rp-standard"
+                  name: "Standard ICU"
+                  inclusions: []
+                docid: "doctor-oid-456"
+                category:
+                  id: "cat-icu"
+                  name: "ICU"
+                date: "2026-06-28"
+                department:
+                  id: "dept-med"
+                  name: "General Medicine"
+                pid: "pid-321"
+                created_at: "2026-06-28T09:30:00.000Z"
+                updated_at: "2026-07-01T14:12:00.000Z"
+                facility:
+                  id: "fac-01"
+                  name: "Eka General Hospital"
+                facilityid: "fac-01"
+                totalbilled: 125000
+                totalpaid: 50000
+                totalbilled_updated_at: "2026-07-01T14:12:00.000Z"
+                totalpaid_updated_at: "2026-06-30T11:00:00.000Z"
+                clearances_summary:
+                  statuses:
+                    billing: "PENDING"
+                    pharmacy: "COMPLETED"
+                  completed_count: 1
+                  total: 2
+                  all_complete: false
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found — no admission exists with the given id for this business.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Admission \"adm-3f9c2b18\" was not found"
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:

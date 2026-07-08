@@ -189,6 +189,52 @@ paths:
       security:
       - authApiKey: []
       summary: Generate OTP
+  /abdm/na/v1/profile/login/methods:
+    post:
+      description: Searches for available authentication methods.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhrSearchAuthMethodRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhrSearchAuthMethodResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Search Auth Methods
   /abdm/na/v1/profile/login/phr:
     post:
       description: Handles login via Aadhaar number, ABHA number, or mobile number.
@@ -7429,19 +7475,32 @@ components:
     PhrLoginOTPRequest:
       properties:
         identifier:
-          description: The identifier for the selected login method.
+          description: The identifier for the selected login method. Index of the
+            search API response for search method
           examples:
           - "9876543210"
           type: string
         method:
           description: The method used for login.
           enum:
+          - search
           - phr_address
           - abha_number
           - mobile
           - aadhaar_number
           examples:
           - mobile
+          type: string
+        otp_system:
+          description: The otp system used for login.
+          enum:
+          - abdm
+          - aadhaar
+          examples:
+          - abdm
+          type: string
+        txn_id:
+          description: Transaction id received in the search api response
           type: string
       type: object
     PhrLoginOTPResponse:
@@ -7459,6 +7518,37 @@ components:
           type: string
         txn_id:
           description: Transaction id received in the previous api response
+          type: string
+      type: object
+    PhrSearchAuthMethodRequest:
+      properties:
+        abha_address:
+          description: Abha address used to search for the user
+          type: string
+      type: object
+    PhrSearchAuthMethodResponse:
+      properties:
+        abha_address:
+          type: string
+        abha_number:
+          type: string
+        auth_methods:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        blocked_methods:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        fullname:
+          type: string
+        mobile:
+          type: string
+        status:
           type: string
       type: object
     PhrVerifyLoginOTPRequest:
@@ -7677,6 +7767,8 @@ components:
           type:
           - array
           - "null"
+        txn_id:
+          type: string
       type: object
     ProviderHipDetail:
       properties:

@@ -1,0 +1,56 @@
+---
+title: "Get Session"
+openapi: "GET /voice/v1/sessions/{session_id}"
+---
+
+Retrieve the current status of a session and — once processing finishes — its transcript and structured template results. This is the endpoint you **poll** after [End Session](/api-reference/health-ai/ekascribe/protocol/end-session).
+
+<Info>
+The **HTTP status code is the signal**. The same endpoint returns different status codes and response shapes depending on where the session is in its lifecycle.
+</Info>
+
+## Polling guidance
+
+After you receive `202 Accepted` from End Session, poll this endpoint at **~1-second intervals** until the status is no longer `202`:
+
+```
+POST /voice/v1/sessions/{session_id}/end        → 202 Accepted
+GET  /voice/v1/sessions/{session_id}            → 202  (wait 1s, retry)
+GET  /voice/v1/sessions/{session_id}            → 202  (wait 1s, retry)
+GET  /voice/v1/sessions/{session_id}            → 200  ✓ results ready
+```
+
+<Tip>
+Prefer not to poll? Register a [webhook](/api-reference/connect/webhooks/register-webhook) to be notified automatically when processing completes, and call Get Session once on receipt.
+</Tip>
+
+## Status codes
+
+| HTTP status | `status` | Meaning | Body |
+|-------------|----------|---------|------|
+| `202` | `processing` / `initialized` | Still processing — keep polling. | `SessionProcessingResponse` |
+| `200` | `completed` | Finished successfully; transcript + templates available. | `SessionCompletedResponse` |
+| `206` | `partial` | Finished, but some templates failed. | `SessionPartialResponse` |
+| `200` | `failed` | Processing failed (terminal). Inspect the response for details. | `SessionCompletedResponse` shape |
+| `410` | `expired` | Session expired before processing was initiated. | `ExpiredSessionResponse` |
+| `404` | — | Session does not exist. | `ErrorResponse` |
+
+## Response fields by state
+
+Every state also echoes `upload_url` (the session's audio upload endpoint — HTTPS for chunked, `wss://` for stream).
+
+### `202` Processing
+`session_id`, `status`, `created_at`, `expires_at`, `audio_files_received`, `audio_files[]`, `additional_data`, `transcript` (partial/empty), `patient_details`.
+
+### `200` Completed
+Adds `completed_at`, `model_used`, `language_detected`, the full `transcript`, and `templates` — an array with one entry per generated document, keyed by `template_id` (each entry carries `status`, `data`, `document_id`, `publish` metadata, and a `presigned_url` when applicable).
+
+### `206` Partial
+Same as completed, plus `audio_files_processed` and `processing_errors[]` describing the non-fatal failures.
+
+### `410` Expired
+`session_id`, `status: expired`, `created_at`, `expired_at`, `message`, `audio_files_received`, `audio_files[]`, empty `templates`/`transcript`.
+
+## Filtering to one template
+
+Pass `?template_id=<id>` to restrict the returned `templates` to documents for a single template only — useful when a session requested multiple templates but you only need one.

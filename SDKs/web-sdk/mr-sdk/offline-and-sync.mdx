@@ -1,0 +1,116 @@
+---
+title: Offline & Sync
+description: "Offline support, background sync, reactive UI updates, logging and Electron setup for the Medical Records Web SDK"
+---
+
+The SDK stores everything in **IndexedDB** and syncs in the background.
+
+## What Happens Offline
+
+| Action | Offline behavior |
+| --- | --- |
+| `listDocuments` | Returns cached records immediately |
+| `listCases` | Returns cached cases immediately |
+| `addDocument` | Saves record + blob as `upload_failure` — retried on reconnect |
+| `editDocument` | Patches DB (`isEdited: true`) — synced on reconnect |
+| `deleteDocument` | Soft-deletes (`isArchived: true`) — hard-deleted on reconnect |
+| `createCase` | Saves locally (`isRemoteCreated: false`) — created on reconnect |
+
+## Sync
+
+```typescript
+// Auto-runs on every SDK init (page load)
+// Manual trigger:
+window.addEventListener('online', () => sdk.sync());
+await sdk.sync();
+```
+
+### Clear cache on logout
+
+```typescript
+await sdk.clearDbForBid('BID');   // wipe all locally cached data for the business
+```
+
+## Reactive UI Updates
+
+Subscribe to DB change events — the UI auto-updates on any write (upload, edit, delete, sync).
+
+```typescript
+// Subscribe once (e.g. in useEffect)
+const unsub = sdk.subscribe('documents:changed', () => {
+  sdk.listLocalDocuments({ bid, patientId }).then(setRecords);
+});
+
+const unsubCases = sdk.subscribe('cases:changed', () => {
+  sdk.listLocalCases({ bid, patientId }).then(setCases);
+});
+
+// Cleanup on unmount
+return () => { unsub(); unsubCases(); };
+```
+
+**Events:**
+
+| Event | Fired after |
+| --- | --- |
+| `documents:changed` | Any record write (upload, edit, delete, sync) |
+| `cases:changed` | Any case write |
+
+### Pending sync count
+
+```typescript
+const { documents, cases } = await sdk.getPendingCounts();
+// documents — count of unsynced documents (uploading / edited / archived)
+// cases     — count of unsynced cases (not yet created or edited on server)
+```
+
+## Logging
+
+The SDK emits a structured **event** for every CRUD operation (create / read / update / delete) on records and cases, routed through your `onLog` callback. Events are analytics-ready — forward them straight to Mixpanel, Sentry, Datadog, etc. If `onLog` is not configured, logging is a no-op.
+
+```typescript
+import type { SDKLog } from '@eka-care/medical-records-ts-sdk';
+
+const sdk = new MedicalRecordsClient({
+  onLog: (log: SDKLog) => {
+    // Forward to your analytics / logging system
+    console.log(`[${log.eventName}] ${log.status} (${log.platform})`, log.params);
+  },
+});
+```
+
+**`SDKLog` shape:**
+
+```typescript
+interface SDKLog {
+  eventName:  string;           // e.g. "Records_TS_SDK_CREATE", "Cases_TS_SDK_DELETE"
+  eventType:  EventType;        // enum — 'create' | 'read' | 'update' | 'delete'
+  status:     EventStatus;      // enum — 'success' | 'failure'
+  platform:   EventPlatform;    // enum — 'database' | 'network' (layer where the event occurred)
+  entityType: EventEntityType;  // enum — 'records' | 'cases'
+  params?:    Record<string, unknown>;      // document IDs, counts, error details, etc.
+  message?:   string;                       // optional human-readable description
+  patientOid?: string;                      // patient / user OID the event is scoped to
+  bid?:       string;                       // business / tenant ID the event is scoped to
+  timestamp:  number;                       // Unix milliseconds
+}
+```
+
+**Event names** follow the pattern `{Records|Cases}_TS_SDK_{CREATE|READ|UPDATE|DELETE}`. Each operation typically fires two events — one with `platform: 'database'` (local write) and one with `platform: 'network'` (server sync) — each with its own `success` / `failure` status.
+
+## Electron Setup
+
+IndexedDB works natively in the Electron **renderer process**. Only the transport differs:
+
+```typescript
+import { TransportMode } from '@eka-care/medical-records-ts-sdk';
+
+// Electron
+new MedicalRecordsClient({ transport: TransportMode.Bridge, defaultHeaders: {...} })
+
+// Browser
+new MedicalRecordsClient({ transport: TransportMode.Native, defaultHeaders: {...} })
+```
+
+`bridge` routes Eka API calls through `window.networkApi` (IPC → main → `net.fetch`).
+S3 uploads always use `fetch()` directly — the IPC bridge cannot carry binary data.

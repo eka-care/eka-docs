@@ -1,0 +1,133 @@
+---
+title: Quickstart
+description: Build a custom MedAssist UI on the raw Synapse core SDK
+---
+
+`@eka-care/medassist-core` is the foundation the embed and React widgets are built on. It manages the session, real-time connection, message transport, tool calls, and audio — and leaves the entire UI to you. Reach for it when you want a fully bespoke chat experience.
+
+<Info>
+If you want a ready-made UI, use the [React SDK](/api-reference/health-ai/medassist/synapse/react/installation) or [embed widget](/api-reference/health-ai/medassist/synapse/embed/quickstart) instead. The core SDK is for building your own.
+</Info>
+
+## Install
+
+```bash
+npm install @eka-care/medassist-core
+```
+
+## The lifecycle
+
+<Steps>
+  <Step title="Instantiate">
+    Create a `SynapseSDK` with your `agentId` and options.
+  </Step>
+  <Step title="Start a session">
+    `startSession()` connects and returns the session info (including any initial message).
+  </Step>
+  <Step title="Listen for events">
+    Subscribe with `on()` to receive streamed message chunks, tool calls, and errors.
+  </Step>
+  <Step title="Send messages">
+    Call `sendMessage()` to send text, files, audio, or tool results.
+  </Step>
+  <Step title="End the session">
+    `endSession()` closes the connection and cleans up.
+  </Step>
+</Steps>
+
+## End-to-end example
+
+```ts
+import { SynapseSDK, SYNAPSE_REALTIME_EVENTS } from "@eka-care/medassist-core";
+
+// 1. Instantiate
+const sdk = new SynapseSDK({
+  agentId: "YOUR_AGENT_ID",
+  environment: "production",
+  context: {
+    profile: { name: "John Doe", age: 30, gender: "M" },
+  },
+  callbacks: {
+    onError: (error) => console.error("SDK error:", error),
+    onSessionRefreshed: (session) => console.log("refreshed:", session.session_id),
+  },
+});
+
+// 2. Start the session
+const session = await sdk.startSession();
+console.log("connected:", session.session_id);
+
+// 3. Listen for events
+sdk.on(SYNAPSE_REALTIME_EVENTS.MESSAGE_CHUNK, (evt) => {
+  process.stdout.write(evt.data.text ?? "");
+});
+sdk.on(SYNAPSE_REALTIME_EVENTS.END_OF_STREAM, () => console.log("\n--- done ---"));
+sdk.on(SYNAPSE_REALTIME_EVENTS.ERROR, (err) => console.error("stream error:", err));
+
+// 4. Send a message
+await sdk.sendMessage({ message: "I have chest pain" });
+
+// 5. End when finished
+// sdk.endSession();
+```
+
+## Constructor options
+
+`new SynapseSDK(config)` accepts:
+
+<ParamField path="agentId" type="string" required>
+  Your MedAssist agent identifier.
+</ParamField>
+
+<ParamField path="environment" type='"development" | "staging" | "production"' default="production">
+  Which backend to connect to.
+</ParamField>
+
+<ParamField path="userId" type="string">
+  Optional user identifier.
+</ParamField>
+
+<ParamField path="connectionType" type="ConnectionType" default="ConnectionType.SSE">
+  `ConnectionType.SSE` or `ConnectionType.SOCKET`.
+</ParamField>
+
+<ParamField path="context" type="TContext">
+  User context — `profile`, `intent`, `user_location`, `referer`, and any custom keys. See the [API reference](/api-reference/health-ai/medassist/synapse/core/api-reference#tcontext).
+</ParamField>
+
+<ParamField path="overrides" type="SynapseSDKOverrides">
+  UI/behavior overrides — `prompt`, `firstMessage`, `language`, `primaryColor`.
+</ParamField>
+
+<ParamField path="callbacks" type="SynapseSDKCallbacks">
+  `onSessionRefreshed` and `onError` callbacks.
+</ParamField>
+
+<ParamField path="auth" type="string">
+  Optional auth header.
+</ParamField>
+
+<ParamField path="authToken" type="string">
+  Optional auth token.
+</ParamField>
+
+<ParamField path="serverUrl" type="string">
+  Optional custom server URL.
+</ParamField>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Events" icon="bolt" href="/api-reference/health-ai/medassist/synapse/core/events">
+    Subscribe to streamed messages, tips, and lifecycle events.
+  </Card>
+  <Card title="Tool calls & elicitation" icon="hand-pointer" href="/api-reference/health-ai/medassist/synapse/core/tool-calls">
+    Render the inputs the agent asks for and reply with results.
+  </Card>
+  <Card title="Voice & audio" icon="microphone" href="/api-reference/health-ai/medassist/synapse/core/voice">
+    Record audio and run voice-mode conversations.
+  </Card>
+  <Card title="API reference" icon="book" href="/api-reference/health-ai/medassist/synapse/core/api-reference">
+    Every method, type, and enum.
+  </Card>
+</CardGroup>

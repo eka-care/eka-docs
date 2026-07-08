@@ -1,0 +1,120 @@
+---
+title: Tool calls & elicitation
+description: Render the inputs the agent asks for and send results back
+---
+
+Mid-conversation, the agent can call a **tool** — and many tools need input from the user first. This is **elicitation**: the server tells your UI which component to render (a set of pills, an OTP box, a doctor card…), you collect the input, and you send the result back. The agent continues with the answer.
+
+## The flow
+
+<Steps>
+  <Step title="Receive a TOOL_CALL event">
+    The agent requests a tool. The event payload carries a `ToolCallData` describing what to render.
+  </Step>
+  <Step title="Render the component">
+    Branch on `details.component` (a `SYNAPSE_COMPONENTS` value) and show the matching UI.
+  </Step>
+  <Step title="Collect input and reply">
+    When the user responds, call `sendMessage({ toolCalled: true, tool_result, ... })` — or `callTool()` to execute a tool directly.
+  </Step>
+  <Step title="Continue">
+    The agent processes the result and streams its next message.
+  </Step>
+</Steps>
+
+## Handling a TOOL_CALL event
+
+```ts
+import {
+  SYNAPSE_REALTIME_EVENTS,
+  SYNAPSE_COMPONENTS,
+  SYNAPSE_EICITATION_STATUS,
+} from "@eka-care/medassist-core";
+
+sdk.on(SYNAPSE_REALTIME_EVENTS.TOOL_CALL, (evt) => {
+  const { tool_id, tool_name, details } = evt.data;
+  if (!details) return;
+
+  switch (details.component) {
+    case SYNAPSE_COMPONENTS.PILL:
+      renderPills(details.input, evt.messageId, tool_id);
+      break;
+    case SYNAPSE_COMPONENTS.OTP:
+      renderOtpInput(details.input, evt.messageId, tool_id);
+      break;
+    case SYNAPSE_COMPONENTS.DOCTOR_CARD:
+      renderDoctorCard(details.input, evt.messageId, tool_id);
+      break;
+    // …handle the other component types
+  }
+});
+```
+
+## Component types
+
+`details.component` is one of `SYNAPSE_COMPONENTS`:
+
+| Value | Component |
+| --- | --- |
+| `MOBILE` (`mobile_number`) | Mobile number input |
+| `OTP` (`otp`) | One-time-passcode input |
+| `EMAIL` (`email_address`) | Email input |
+| `PILL` (`pills`) | Single-choice pills |
+| `MULTI` (`multi`) | Multi-select |
+| `DOCTOR_CARD` (`doctor_card`) | Doctor selection card |
+| `CARD` (`card`) | Generic card |
+| `MEDIA_CARD` (`media_card`) | Media card |
+
+## Elicitation status
+
+A tool call moves through `SYNAPSE_EICITATION_STATUS` states, carried on `details.status`:
+
+| Status | Meaning |
+| --- | --- |
+| `PROGRESS` (`progress`) | Awaiting user input — render the component. |
+| `SUCCESS` (`success`) | The tool completed successfully. |
+| `FAILURE` (`failure`) | The tool failed. |
+
+## Replying
+
+Once the user responds, send the result. Use `sendMessage` with the elicitation flags:
+
+```ts
+await sdk.sendMessage({
+  toolCalled: true,
+  tool_id,
+  tool_result: { otp: "123456" },
+});
+```
+
+To execute a tool directly with parameters — for example after the user picks a doctor — use `callTool`:
+
+```ts
+await sdk.callTool("doctor_availability", "msg-123", {
+  doctor_id: "dr-456",
+  hospital_id: "hosp-789",
+});
+```
+
+The response comes back as a `TOOL_CALL` event with an updated `status`.
+
+<Note>
+If the user dismisses a suggested tool, send `sendMessage({ tool_declined: true, tool_id })` so the agent knows to move on.
+</Note>
+
+## Message feedback
+
+Let users rate a message; report it with `sendFeedback` and the `USER_FEEDBACK` enum:
+
+```ts
+import { USER_FEEDBACK } from "@eka-care/medassist-core";
+
+await sdk.sendFeedback("msg-123", USER_FEEDBACK.LIKE);
+await sdk.sendFeedback("msg-123", USER_FEEDBACK.DISLIKE, "Not relevant");
+```
+
+## Next steps
+
+<Card title="API reference" icon="book" href="/ai-tools/synapse/core/api-reference">
+  Full signatures for `sendMessage`, `callTool`, `sendFeedback`, and the related types.
+</Card>

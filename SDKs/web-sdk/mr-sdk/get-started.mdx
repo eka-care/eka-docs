@@ -1,0 +1,191 @@
+---
+title: Get Started
+description: "Complete implementation guide for the Medical Records Web SDK"
+---
+
+# Medical Records Web SDK - Implementation
+
+This guide provides everything you need to integrate the Medical Records Web SDK into your application.
+
+## Overview
+
+The Medical Records Web SDK (`@eka-care/medical-records-ts-sdk`) is a TypeScript SDK for the Eka Care Medical Records API. It is **offline-first** and works in both **browser** and **Electron** renderer environments. It provides:
+
+- **Records Management**: Upload, list, group, download, edit and delete medical documents.
+- **Smart Reports**: Fetch AI-extracted structured data from lab reports.
+- **Cases**: Organise records into cases (folders) — a record can belong to multiple cases.
+- **Offline Support**: All data is cached in IndexedDB; writes done offline are auto-synced on reconnect.
+- **Reactive UI Updates**: Subscribe to DB change events so your UI auto-updates on any write.
+- **Electron Support**: Route API calls through an IPC bridge with a single config switch.
+
+## Installation
+
+### Prerequisites
+
+- A modern web browser (or Electron renderer) with IndexedDB support.
+- A valid auth token generated via the [Connect Login](https://developer.eka.care/api-reference/authorization/client-login) API.
+
+### Setup
+
+```bash
+npm install @eka-care/medical-records-ts-sdk
+```
+
+## Quick Start
+
+```typescript
+import { MedicalRecordsClient } from '@eka-care/medical-records-ts-sdk';
+
+const sdk = new MedicalRecordsClient({
+  defaultHeaders: {
+    'client-id': 'your-client-id',
+    'flavour':   'your-flavour',
+  },
+  // cache defaults to true — pass cache: false to disable IndexedDB
+  onError: (err) => console.error(err),
+});
+
+sdk.setAuthToken('eyJhbGciOi...');
+
+const docs = await sdk.listDocuments({ bid: 'your-business-id', patientId: 'oid' });
+```
+
+## Configuration
+
+```typescript
+new MedicalRecordsClient(config: SDKConfig)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `environment` | `SDKEnvironment` | ⚙️ Optional | `SDKEnvironment.Prod` = `api.eka.care` (default), `SDKEnvironment.Dev` = `api.dev.eka.care` |
+| `defaultHeaders` | `Record<string, string>` | ⚙️ Optional | Eka identification headers — see below |
+| `cache` | `boolean` | ⚙️ Optional | Defaults to `true` — IndexedDB offline cache is on by default. Pass `false` to disable (e.g. environments without IndexedDB, or when patient data must not persist on disk) |
+| `transport` | `TransportMode` | ⚙️ Optional | `TransportMode.Native` = browser fetch (default). `TransportMode.Bridge` = Electron IPC |
+| `onError` | `(err: unknown) => void` | ⚙️ Optional | Called on every SDK error |
+| `onUnauthorized` | `() => Promise<string \| undefined> \| string \| undefined` | ⚙️ Optional | Called on 401 — return a fresh token to auto-retry |
+| `onLog` | `(log: SDKLog) => void` | ⚙️ Optional | Receives structured CRUD events emitted by the SDK — see [Offline & Sync → Logging](https://developer.eka.care/SDKs/web-sdk/mr-sdk/offline-and-sync) |
+
+### Identification headers
+
+```typescript
+defaultHeaders: {
+  'client-id': 'doc-web',       // app identifier
+  'flavour':   'ekascribe-web', // app variant
+}
+```
+
+These headers are merged into every HTTP request automatically.
+
+### Full config example
+
+```typescript
+import { MedicalRecordsClient, SDKEnvironment, TransportMode } from '@eka-care/medical-records-ts-sdk';
+
+const sdk = new MedicalRecordsClient({
+  environment: SDKEnvironment.Prod,
+  defaultHeaders: {
+    'client-id': 'doc-web',
+    'flavour':   'ekascribe-web',
+  },
+  cache: true,   // default — omit to get the same effect
+  transport: TransportMode.Native,
+  onLog: (log) => {
+    // log: { eventName, eventType, status, platform, entityType, params, message, patientOid, bid, timestamp }
+    console.log(`[${log.eventName}] ${log.status} (${log.platform})`, log.params);
+  },
+  onError: (err) => console.error('[SDK]', err),
+  onUnauthorized: async () => await refreshToken(),
+});
+```
+
+## Authentication
+
+```typescript
+sdk.setAuthToken('eyJhbGciOi...');  // set after login
+sdk.setAuthToken(undefined);         // clear (falls back to cookie auth)
+```
+
+The token is sent as `Authorization: Bearer <token>` on every request.
+On a 401 response, `onUnauthorized` is called — return a fresh token to auto-retry once.
+
+## Error Handling
+
+```typescript
+import {
+  EkaCareApiError,
+  UploadFailedError,
+  StorageLimitExceededError,
+} from '@eka-care/medical-records-ts-sdk';
+
+try {
+  await sdk.addDocument({ ... });
+} catch (err) {
+  if (err instanceof UploadFailedError) {
+    // Auth succeeded but S3 upload failed — record saved as upload_failure
+    // sdk.sync() retries automatically
+    console.error('Failed IDs:', err.failures.map(f => f.documentId));
+  } else if (err instanceof StorageLimitExceededError) {
+    // The tenant's storage quota is full — upload rejected by server
+    console.error('Storage limit exceeded');
+  } else if (err instanceof EkaCareApiError) {
+    console.error(err.message, err.statusCode, err.responseBody);
+  }
+}
+```
+
+<Note>
+  `editDocument`, `deleteDocument`, `createCase`, `updateCase`, `deleteCase`
+  **never throw** on network failure — local state is always updated and server
+  sync retries automatically.
+</Note>
+
+## Document Types
+
+The document type is supplied by your UI — the SDK just stores the code (passed as `documentType` on upload/edit). The type codes come from the hub API.
+
+Common codes for reference:
+
+| Code | Label |
+| --- | --- |
+| `ps` | Prescription |
+| `lr` | Lab Report |
+| `dc` | Discharge Summary |
+| `vc` | Vaccine Certificate |
+| `in` | Insurance |
+| `iv` | Invoice |
+| `sc` | Scan |
+| `ot` | Other |
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. APIs Not Being Called
+
+**Problem**: API requests are not triggered or return errors.
+
+**Solution**:
+
+- Ensure the auth token is set via `sdk.setAuthToken()` and has not expired.
+- Verify `bid` and `patientId` are passed on every call.
+
+#### 2. 401 Loops
+
+**Problem**: Requests keep failing with 401.
+
+**Solution**:
+
+- Implement `onUnauthorized` and return a fresh token — the SDK auto-retries once.
+- If the refresh itself fails, redirect the user to login.
+
+#### 3. Stale Data in UI
+
+**Problem**: The UI shows old records after an upload, edit or delete.
+
+**Solution**:
+
+- Subscribe to `documents:changed` / `cases:changed` events and re-query the local DB. See [Offline & Sync](https://developer.eka.care/SDKs/web-sdk/mr-sdk/offline-and-sync).
+
