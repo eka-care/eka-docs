@@ -1,0 +1,1699 @@
+openapi: "3.0.1"
+info:
+  title: EkaScribe Protocol API (MedScribeAlliance v0.1)
+  version: "0.1"
+  description: >
+    Session-based medical voice capture API implementing the MedScribeAlliance
+    Protocol v0.1. Discover service capabilities, create a session, stream audio
+    chunks, then end the session to trigger asynchronous transcription and
+    structured-template extraction.
+servers:
+  - url: https://api.eka.care
+    description: Production server
+  - url: https://api.dev.eka.care
+    description: Development server
+paths:
+  /voice/v1/.well-known/medscribealliance:
+    get:
+      summary: Discovery
+      description: >
+        Public, unauthenticated endpoint that advertises the service's protocol
+        version, supported authentication methods, audio capabilities, available
+        models and supported languages. Clients should fetch this first and use
+        the returned `models`, `capabilities.audio_formats` and
+        `capabilities.upload_methods` to configure their session. The response is
+        cacheable (`Cache-Control: max-age=10800`).
+      tags:
+        - protocol
+      responses:
+        "200":
+          description: Discovery document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryResponse"
+              example:
+                protocol: medscribealliance
+                protocol_version: "0.1"
+                supported_versions: ["0.1"]
+                service:
+                  name: Voice2Rx Medical Scribe Service
+                  documentation_url: https://developer.eka.care
+                  support_email: support@eka.care
+                endpoints:
+                  base_url: https://api.eka.care/voice/v1
+                  webhooks_url: https://api.eka.care/voice/v1/webhooks
+                  templates_url: https://api.eka.care/voice/api/v1/template
+                authentication:
+                  supported_methods: ["api_key", "oidc"]
+                  oidc:
+                    issuer: https://accounts.eka.care/oauth2
+                    authorization_endpoint: https://accounts.eka.care/oauth2/authorize
+                    token_endpoint: https://accounts.eka.care/oauth2/token
+                    scopes_supported: ["openid", "profile"]
+                capabilities:
+                  audio_formats: ["audio/webm;codecs=opus", "audio/wav", "audio/ogg", "audio/mp4", "audio/m4a", "audio/mp3"]
+                  max_chunk_duration_seconds: 20
+                  upload_methods: ["chunked", "single", "stream"]
+                  webhook_delivery: true
+                  client_sdk_delivery: true
+                models:
+                  - id: lite
+                    display_name: Lite
+                    languages: ["en", "hi"]
+                    max_session_duration_seconds: 600
+                    response_speed: fast
+                    features:
+                      realtime_transcription: false
+                      speaker_diarization: false
+                      custom_templates: false
+                  - id: pro
+                    display_name: Professional
+                    languages: ["en", "hi", "ta", "te", "bn", "mr", "gu", "kn", "ml", "pa"]
+                    max_session_duration_seconds: 3600
+                    response_speed: standard
+                    features:
+                      realtime_transcription: true
+                      speaker_diarization: true
+                      custom_templates: true
+                languages:
+                  supported: ["en", "hi", "ta", "te", "bn", "mr", "gu", "kn", "ml", "pa"]
+                  auto_detection: true
+
+  /voice/v1/sessions:
+    post:
+      summary: Create Session
+      description: >
+        Create a new scribing session. Returns a `session_id` that must be used
+        in every subsequent call (audio upload, end session, status polling) and
+        an `upload_url` to which audio is sent. Only `upload_type` is required —
+        use `single` (one audio file, max 10 MB via the API; for larger
+        recordings use the SDKs, which chunk automatically) unless you need
+        chunked or streaming upload. The communication protocol is derived from
+        `upload_type` by the server: `single`/`chunked` → http, `stream` →
+        websocket.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+            example:
+              language_hint: ["en"]
+              model: pro
+              templates: ["clinical_notes_template"]
+              upload_type: single
+              additional_data:
+                source: mobile_app
+                app_version: "1.0.0"
+              patient_details:
+                oid: "PAT-12345"
+                name: John Doe
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSessionResponse"
+              example:
+                session_id: ses_abc123def456
+                status: created
+                created_at: "2025-01-19T10:30:00Z"
+                expires_at: "2025-01-19T11:30:00Z"
+                upload_url: https://api.eka.care/voice/v1/sessions/ses_abc123def456/audio
+                patient_details:
+                  oid: "PAT-12345"
+                  name: John Doe
+        "400":
+          description: Invalid request (e.g. template validation failed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/v1/sessions/{session_id}/audio/{file_name}:
+    post:
+      summary: Upload Audio
+      description: >
+        Upload audio as a raw binary body. For `single` uploads (the default
+        upload type), send one complete recording (max 10 MB) and the server
+        performs Voice Activity Detection (VAD) chunking inline — for larger
+        recordings use `chunked` uploads or the SDKs. For `chunked` uploads,
+        call this repeatedly with sequentially numbered filenames
+        (`audio_0.webm`, `audio_1.webm`, ...); the server stores each chunk by
+        its sequence number. The audio content type is detected automatically
+        from the file extension; set the `Content-Type` header only to
+        override it.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+        - name: file_name
+          in: path
+          required: true
+          description: >
+            Audio filename with extension. For chunked uploads use
+            `<base>_<sequence>.<ext>` (e.g. `audio_0.webm`, `audio_1.mp3`).
+          schema:
+            type: string
+            example: audio_0.webm
+        - name: Content-Type
+          in: header
+          required: false
+          description: >
+            Audio MIME type. Leave unset — the server detects it automatically
+            from the `file_name` extension (`.webm`, `.mp3`, `.wav`, `.ogg`,
+            `.m4a`, `.mp4`). Generic values like `application/octet-stream`
+            are also auto-resolved from the extension.
+          schema:
+            type: string
+            enum:
+              - audio/webm;codecs=opus
+              - audio/mp3
+              - audio/wav
+              - audio/ogg
+              - audio/m4a
+              - audio/mp4
+      requestBody:
+        required: true
+        description: Raw binary audio data (max 10 MB per chunk, ≤20s duration recommended).
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Audio uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    example: ses_abc123def456
+                  success:
+                    type: boolean
+                    example: true
+                  original_filename:
+                    type: string
+                    example: audio_0.webm
+        "400":
+          description: Session ended, processing completed, or invalid audio format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "413":
+          description: Chunk too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/v1/sessions/{session_id}:
+    patch:
+      summary: Update Session
+      description: >
+        Update a session's metadata before it is committed. Use this to attach
+        or correct `patient_details`, change the requested `templates`, adjust
+        `language_hint`, or switch `session_mode` / `model`. `session_mode` and
+        `model` can only be changed while the session is still open (before
+        End Session) — attempting to change them afterwards returns `409`.
+        Unknown fields are rejected.
+      tags:
+        - sessions
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchSessionRequest"
+            example:
+              patient_details:
+                oid: "PAT-12345"
+                name: John Doe
+              templates: ["clinical_notes_template"]
+              language_hint: ["en", "hi"]
+      responses:
+        "200":
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatchSessionResponse"
+              example:
+                session_id: ses_abc123def456
+                status: success
+                message: Session updated successfully
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: session_mode / model can no longer be changed (session already committed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error (unknown or invalid fields)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: Get Session
+      description: >
+        Retrieve the current status of a session and, once processing finishes,
+        its transcript and structured template results. The **HTTP status code**
+        signals progress: `202` still processing, `200` completed, `206`
+        completed with partial results, `410` expired, `404` not found. After
+        calling End Session, poll this endpoint at ~1-second intervals until the
+        status is no longer `202`.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+        - name: template_id
+          in: query
+          required: false
+          description: If provided, restricts returned templates to documents for this template_id only.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCompletedResponse"
+              example:
+                session_id: ses_abc123def456
+                status: completed
+                created_at: "2026-06-06T14:21:07Z"
+                completed_at: "2026-06-06T14:21:34Z"
+                expires_at: "2026-06-06T15:21:07Z"
+                upload_url: https://api.eka.care/voice/v1/sessions/ses_abc123def456/audio
+                model_used: pro
+                language_detected: en
+                audio_files_received: 4
+                audio_files: ["0.wav", "1.wav", "2.wav", "3.wav"]
+                additional_data:
+                  _protocol:
+                    version: "0.1"
+                    upload_type: chunked
+                    communication_protocol: http
+                    requested_templates: ["eka_emr_template", "clinical_notes_template"]
+                transcript: "Patient presents with cough and fever..."
+                templates:
+                  - eka_emr_template:
+                      status: success
+                      document_id: doc_abc123
+                      document_type: eka_emr_template
+                      data:
+                        chief_complaint: cough and fever
+                      publish: {}
+                  - clinical_notes_template:
+                      status: success
+                      document_id: doc_def456
+                      data:
+                        assessment: Acute bronchitis
+                      publish: {}
+        "202":
+          description: Session still processing — keep polling
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionProcessingResponse"
+              example:
+                session_id: ses_abc123def456
+                status: processing
+                created_at: "2026-06-06T14:21:07Z"
+                expires_at: "2026-06-06T15:21:07Z"
+                upload_url: https://api.eka.care/voice/v1/sessions/ses_abc123def456/audio
+                audio_files_received: 4
+                audio_files: ["0.wav", "1.wav", "2.wav", "3.wav"]
+                additional_data:
+                  _protocol:
+                    version: "0.1"
+                    upload_type: chunked
+                    communication_protocol: http
+                    requested_templates: ["eka_emr_template", "clinical_notes_template"]
+                transcript: "Patient presents with cough and fever..."
+        "206":
+          description: Session completed with partial results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionPartialResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "410":
+          description: Session expired before processing was initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpiredSessionResponse"
+
+  /voice/v1/sessions/{session_id}/end:
+    post:
+      summary: End Session
+      description: >
+        Finalize the session and start asynchronous processing. After this call
+        no further audio uploads are accepted. The server collects and orders all
+        uploaded chunks, commits the session, and queues it for transcription and
+        template extraction. Poll `GET /voice/v1/sessions/{session_id}` (or use a
+        webhook) to retrieve results once processing completes.
+      tags:
+        - protocol
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EndSessionRequest"
+            example:
+              audio_files_sent: 3
+      responses:
+        "202":
+          description: Session ended, processing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EndSessionResponse"
+              example:
+                session_id: ses_abc123def456
+                status: processing
+                message: Session ended. Processing started.
+                audio_files_received: 3
+                audio_files: ["0.webm", "1.webm", "2.webm"]
+        "400":
+          description: Session already ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/v1/sessions/{session_id}/process/template/{template_id}:
+    post:
+      summary: Regenerate Notes
+      description: >
+        Re-run note generation for an already-processed session with a specific
+        template. Useful when you add a template after the fact or want a second
+        output format from the same recording. Processing is asynchronous —
+        the call returns `202` with a `document_id`; poll Get Session (or Get
+        Document) until the document status is `success`.
+      tags:
+        - sessions
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+        - name: template_id
+          in: path
+          required: true
+          description: Template ID to generate notes with (from List Templates)
+          schema:
+            type: string
+            example: clinical_notes_template
+      responses:
+        "202":
+          description: Note generation started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessTemplateResponse"
+              example:
+                session_id: ses_abc123def456
+                template_id: clinical_notes_template
+                document_id: doc_9f8e7d6c
+                status: in-progress
+                message: Template generation in progress
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/api/v1/template:
+    post:
+      summary: Create Template
+      description: >
+        Create a custom note template. Describe the exact structure, sections
+        and style you want in `desc` using plain text or markdown — for example
+        "SOAP note with Subjective, Objective, Assessment, Plan; use bullet
+        points; include a medication table". EkaScribe uses this description as
+        the authoring instruction when generating notes. Pass the returned
+        `template_id` in Create Session (`templates`) or Convert Notes.
+      tags:
+        - templates
+      security:
+        - auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateCreateRequest"
+            example:
+              title: Cardiology OPD Note
+              desc: |
+                Generate a cardiology outpatient note with these sections:
+                ## Chief Complaint
+                ## History of Present Illness
+                ## Examination (bullet points, include vitals table)
+                ## Assessment
+                ## Plan (numbered list with medications and follow-up date)
+              section_ids: []
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateCreateResponse"
+              example:
+                msg: created successfully
+                template_id: tpl_7d1a2b3c4d5e
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: List Templates
+      description: >
+        List every template available to your workspace — Eka's default
+        templates (e.g. `clinical_notes_template`, `transcript_template`) plus
+        any custom templates you created. The full template object is returned
+        for each entry, so this is also the read path for a single template:
+        filter the response by `id`.
+      tags:
+        - templates
+      security:
+        - auth: []
+      responses:
+        "200":
+          description: Templates available to the workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplatesListResponse"
+              example:
+                items:
+                  - id: clinical_notes_template
+                    title: Clinical Notes
+                    desc: Standard clinical note
+                    section_ids: []
+                    default: true
+                    is_favorite: false
+                  - id: tpl_7d1a2b3c4d5e
+                    title: Cardiology OPD Note
+                    desc: "Generate a cardiology outpatient note with..."
+                    section_ids: []
+                    default: false
+                    is_favorite: true
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/api/v1/template/{template_id}:
+    patch:
+      summary: Update Template
+      description: >
+        Update a custom template's title or description. Only the fields you
+        send are changed. Default (Eka-provided) templates cannot be modified.
+      tags:
+        - templates
+      security:
+        - auth: []
+      parameters:
+        - name: template_id
+          in: path
+          required: true
+          description: Template ID returned by Create Template
+          schema:
+            type: string
+            example: tpl_7d1a2b3c4d5e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateUpdateRequest"
+            example:
+              title: Cardiology OPD Note v2
+              desc: "Updated instructions..."
+      responses:
+        "200":
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                msg: updated successfully
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete Template
+      description: >
+        Archive (soft-delete) a custom template. The template stops appearing in
+        List Templates and can no longer be used for new sessions; notes already
+        generated with it are unaffected.
+      tags:
+        - templates
+      security:
+        - auth: []
+      parameters:
+        - name: template_id
+          in: path
+          required: true
+          description: Template ID to delete
+          schema:
+            type: string
+            example: tpl_7d1a2b3c4d5e
+      responses:
+        "200":
+          description: Template archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                msg: archived successfully
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/api/v1/transaction/{session_id}/convert-to-template:
+    post:
+      summary: Convert Notes
+      description: >
+        Generate the notes of a session for a given `template_id` — convert an
+        existing session's transcript into a different note format, translate it
+        to another language (`target_language`), or bring your own `transcript`
+        and have EkaScribe structure it with the template. Processing is
+        asynchronous: the call returns `202` with a `document_id`; fetch the
+        result with Get Document once its status is `success`.
+      tags:
+        - templates
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: The session whose notes you want to convert
+          schema:
+            type: string
+            example: ses_abc123def456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConvertNotesRequest"
+            example:
+              template_id: clinical_notes_template
+              target_language: hi
+      responses:
+        "202":
+          description: Conversion started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConvertNotesResponse"
+              example:
+                status: in-progress
+                template_id: clinical_notes_template
+                document_id: doc_9f8e7d6c
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/api/v1/documents:
+    post:
+      summary: Create or Update Document
+      description: >
+        Create a new document on a session (omit `document_id` → `201`), or
+        update an existing one (include `document_id` → `200`) — for example to
+        save a doctor's edits to generated notes. Every response includes a
+        presigned **PUT** URL: upload the document content (markdown) to that
+        URL to store it.
+      tags:
+        - documents
+      security:
+        - auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentRequest"
+            example:
+              session_id: ses_abc123def456
+              template_id: clinical_notes_template
+              type: custom
+              document_name: Edited clinical note
+              status: success
+      responses:
+        "201":
+          description: Document created (also `200` when updating an existing document)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentEnvelopeResponse"
+              example:
+                status: success
+                data:
+                  document_id: doc_9f8e7d6c
+                  session_id: ses_abc123def456
+                  template_id: clinical_notes_template
+                  document_name: Edited clinical note
+                  type: markdown
+                  document_type: custom
+                  status: success
+                  errors: []
+                  warnings: []
+                  usage_information: {}
+                  presigned_url: https://s3.amazonaws.com/...&X-Amz-Signature=...
+                  created_at: "2026-06-06T14:21:07Z"
+                  updated_at: "2026-06-06T14:25:12Z"
+                  publish: {}
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/api/v1/documents/{document_id}:
+    get:
+      summary: Get Document
+      description: >
+        Fetch a document's metadata and a presigned **GET** URL to download its
+        content (markdown). Use this to retrieve generated notes by
+        `document_id` — e.g. the `document_id` returned by Get Session,
+        Regenerate Notes or Convert Notes.
+      tags:
+        - documents
+      security:
+        - auth: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          description: Document ID
+          schema:
+            type: string
+            example: doc_9f8e7d6c
+      responses:
+        "200":
+          description: Document metadata with download URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentEnvelopeResponse"
+              example:
+                status: success
+                data:
+                  document_id: doc_9f8e7d6c
+                  session_id: ses_abc123def456
+                  template_id: clinical_notes_template
+                  document_name: Clinical note
+                  type: markdown
+                  document_type: template
+                  status: success
+                  errors: []
+                  warnings: []
+                  usage_information: {}
+                  presigned_url: https://s3.amazonaws.com/...&X-Amz-Signature=...
+                  created_at: "2026-06-06T14:21:07Z"
+                  updated_at: "2026-06-06T14:25:12Z"
+                  publish: {}
+        "404":
+          description: Document not found (or deleted)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete Document
+      description: >
+        Archive (soft-delete) a document. The document disappears from session
+        listings and Get Document returns `404` for it afterwards. Deleting an
+        already-deleted document is a no-op and still returns success.
+      tags:
+        - documents
+      security:
+        - auth: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          description: Document ID to delete
+          schema:
+            type: string
+            example: doc_9f8e7d6c
+      responses:
+        "200":
+          description: Document archived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Document deleted successfully
+        "404":
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voice/api/v1/sessions/{session_id}:
+    get:
+      summary: List Session Documents
+      description: >
+        Fetch a session's full record — status, patient details, audio quality
+        matrix and, most importantly, the list of **all documents** generated or
+        created on the session (notes, transcripts, custom documents). Set
+        `presigned=true` to include a download URL for each document.
+      tags:
+        - documents
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+            example: ses_abc123def456
+        - name: presigned
+          in: query
+          required: false
+          description: Include a presigned download URL per document
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Session details with its documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionDetailsResponse"
+              example:
+                status: success
+                data:
+                  schema_version: "1.0"
+                  session_id: ses_abc123def456
+                  status: completed
+                  created_at: "2026-06-06T14:21:07Z"
+                  patient_details:
+                    oid: "PAT-12345"
+                    name: John Doe
+                  audio_matrix:
+                    quality: 0.92
+                  documents:
+                    - document_id: doc_9f8e7d6c
+                      session_id: ses_abc123def456
+                      template_id: clinical_notes_template
+                      document_name: Clinical note
+                      type: template
+                      status: success
+                      download_url: https://s3.amazonaws.com/...
+                      created_at: "2026-06-06T14:21:30Z"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer authentication header of the form `Bearer <token>`, where `<token>` is your auth token.
+  schemas:
+    CreateSessionRequest:
+      type: object
+      required:
+        - upload_type
+      properties:
+        language_hint:
+          type: array
+          items:
+            type: string
+          description: ISO 639-1 language code(s) hinting the audio input language.
+          example: ["en"]
+        model:
+          type: string
+          enum: [pro, lite]
+          default: pro
+          description: Model ID from the discovery document.
+        templates:
+          type: array
+          maxItems: 2
+          items:
+            type: string
+          description: Optional template IDs to extract (max 2). See List Templates for valid IDs.
+          example: ["clinical_notes_template"]
+        upload_type:
+          type: string
+          enum: [single, chunked, stream]
+          default: single
+          description: >
+            Audio upload method. `single` — one complete audio file up to
+            10 MB; `chunked` — sequential HTTP chunks for longer recordings;
+            `stream` — real-time WebSocket. The communication protocol is derived
+            automatically (single/chunked → http, stream → websocket).
+        session_id:
+          type: string
+          minLength: 16
+          maxLength: 32
+          description: Optional client-supplied session id (16–32 chars). If omitted, the server generates one.
+          example: ses_abc123def456
+        additional_data:
+          type: object
+          additionalProperties: true
+          description: Optional pass-through metadata returned in webhooks and status responses (≤4KB recommended).
+        patient_details:
+          type: object
+          additionalProperties: true
+          description: Optional patient demographic / identifier metadata. `oid` is promoted to `patient_oid` for indexing.
+    CreateSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Unique session identifier. Use in all subsequent calls.
+        status:
+          type: string
+          example: created
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        upload_url:
+          type: string
+          description: Endpoint for uploading audio to this session.
+        patient_details:
+          type: object
+          additionalProperties: true
+    EndSessionRequest:
+      type: object
+      properties:
+        audio_files_sent:
+          type: integer
+          minimum: 0
+          description: Optional number of audio chunks/files the client sent, used for reconciliation logging.
+          example: 3
+    EndSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+          example: processing
+        message:
+          type: string
+          example: Session ended. Processing started.
+        audio_files_received:
+          type: integer
+          minimum: 0
+        audio_files:
+          type: array
+          items:
+            type: string
+    SessionProcessingResponse:
+      type: object
+      description: Returned with HTTP 202 while the session is still processing.
+      properties:
+        session_id:
+          type: string
+        upload_url:
+          type: string
+          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
+        status:
+          type: string
+          example: processing
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        audio_files_received:
+          type: integer
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        transcript:
+          type: string
+          nullable: true
+          description: Partial or complete transcript if available.
+        patient_details:
+          type: object
+          additionalProperties: true
+          nullable: true
+    SessionCompletedResponse:
+      type: object
+      description: Returned with HTTP 200 when the session completed successfully.
+      properties:
+        session_id:
+          type: string
+        upload_url:
+          type: string
+          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
+        status:
+          type: string
+          example: completed
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        model_used:
+          type: string
+          nullable: true
+          example: pro
+        language_detected:
+          type: string
+          nullable: true
+          description: ISO 639-1 language code detected from the audio.
+          example: en
+        audio_files_received:
+          type: integer
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        templates:
+          type: array
+          description: >
+            Template results as a **list** — one entry per generated document, each a
+            single-key object keyed by `template_id`. A template that produces multiple
+            documents appears multiple times, so this is a list rather than a map.
+            Each inner object carries `status`, `data`, `document_id`, `document_type`,
+            `publish` metadata (and a `presigned_url` when applicable).
+          items:
+            type: object
+            additionalProperties: true
+          example:
+            - eka_emr_template:
+                status: success
+                document_id: doc_abc123
+                document_type: eka_emr_template
+                data:
+                  chief_complaint: cough and fever
+                publish: {}
+            - clinical_notes_template:
+                status: success
+                document_id: doc_def456
+                data:
+                  assessment: Acute bronchitis
+                publish: {}
+        transcript:
+          type: string
+          nullable: true
+        patient_details:
+          type: object
+          additionalProperties: true
+          nullable: true
+    SessionPartialResponse:
+      type: object
+      description: Returned with HTTP 206 when the session completed with partial results.
+      properties:
+        session_id:
+          type: string
+        upload_url:
+          type: string
+          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
+        status:
+          type: string
+          example: partial
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        model_used:
+          type: string
+          nullable: true
+        language_detected:
+          type: string
+          nullable: true
+        audio_files_received:
+          type: integer
+        audio_files_processed:
+          type: integer
+          description: Number of audio files successfully processed.
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        templates:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        transcript:
+          type: string
+          nullable: true
+        processing_errors:
+          type: array
+          description: Non-fatal processing issues.
+          items:
+            type: object
+            additionalProperties: true
+        patient_details:
+          type: object
+          additionalProperties: true
+          nullable: true
+    ExpiredSessionResponse:
+      type: object
+      description: Returned with HTTP 410 when the session expired before processing started.
+      properties:
+        session_id:
+          type: string
+        upload_url:
+          type: string
+          description: Audio upload URL for the session (HTTPS for chunked, wss:// for stream).
+        status:
+          type: string
+          example: expired
+        created_at:
+          type: string
+          format: date-time
+        expired_at:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: Session expired before processing was initiated
+        audio_files_received:
+          type: integer
+        audio_files:
+          type: array
+          items:
+            type: string
+        additional_data:
+          type: object
+          additionalProperties: true
+        templates:
+          type: object
+          additionalProperties: true
+        transcript:
+          type: string
+          nullable: true
+    DiscoveryResponse:
+      type: object
+      properties:
+        protocol:
+          type: string
+          example: medscribealliance
+        protocol_version:
+          type: string
+          example: "0.1"
+        supported_versions:
+          type: array
+          items:
+            type: string
+        service:
+          type: object
+          properties:
+            name:
+              type: string
+            documentation_url:
+              type: string
+            support_email:
+              type: string
+        endpoints:
+          type: object
+          properties:
+            base_url:
+              type: string
+            webhooks_url:
+              type: string
+            templates_url:
+              type: string
+        authentication:
+          type: object
+          properties:
+            supported_methods:
+              type: array
+              items:
+                type: string
+            oidc:
+              type: object
+              properties:
+                issuer:
+                  type: string
+                authorization_endpoint:
+                  type: string
+                token_endpoint:
+                  type: string
+                scopes_supported:
+                  type: array
+                  items:
+                    type: string
+        capabilities:
+          type: object
+          properties:
+            audio_formats:
+              type: array
+              items:
+                type: string
+            max_chunk_duration_seconds:
+              type: integer
+            upload_methods:
+              type: array
+              items:
+                type: string
+            webhook_delivery:
+              type: boolean
+            client_sdk_delivery:
+              type: boolean
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              display_name:
+                type: string
+              languages:
+                type: array
+                items:
+                  type: string
+              max_session_duration_seconds:
+                type: integer
+              response_speed:
+                type: string
+              features:
+                type: object
+                properties:
+                  realtime_transcription:
+                    type: boolean
+                  speaker_diarization:
+                    type: boolean
+                  custom_templates:
+                    type: boolean
+        languages:
+          type: object
+          properties:
+            supported:
+              type: array
+              items:
+                type: string
+            auto_detection:
+              type: boolean
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code.
+              example: invalid_audio_format
+            message:
+              type: string
+              description: Human-readable error message.
+              example: "Audio format 'audio/mp3' is not supported"
+            details:
+              type: object
+              additionalProperties: true
+              description: Additional error context.
+    PatchSessionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        patient_details:
+          type: object
+          additionalProperties: true
+          description: Patient demographic / identifier metadata. The `oid` key is promoted to `patient_oid` for indexing.
+        templates:
+          type: array
+          items:
+            type: string
+          description: Replace the requested template IDs (up to 2).
+        language_hint:
+          type: array
+          items:
+            type: string
+          description: ISO 639-1 code(s) hinting the spoken language(s).
+        additional_data:
+          type: object
+          additionalProperties: true
+          description: Arbitrary pass-through metadata merged into the session.
+        session_mode:
+          type: string
+          enum: [consultation, dictation]
+          description: Updatable only before the session is committed (End Session).
+        model:
+          type: string
+          enum: [pro, lite]
+          description: Updatable only before the session is committed (End Session).
+        user_status:
+          type: string
+          description: Client-side session status marker.
+        processing_status:
+          type: string
+          description: Processing status override (advanced use).
+    PatchSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Session updated successfully
+    ProcessTemplateResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+        template_id:
+          type: string
+        document_id:
+          type: string
+          nullable: true
+          description: ID of the document being generated. Poll Get Document until its status is `success`.
+        status:
+          type: string
+          example: in-progress
+        message:
+          type: string
+          example: Template generation in progress
+    TemplateCreateRequest:
+      type: object
+      required: [title, section_ids]
+      properties:
+        title:
+          type: string
+          description: Display name of the template.
+          example: Cardiology OPD Note
+        desc:
+          type: string
+          description: >
+            The template instructions in plain text or markdown. Describe the
+            sections, ordering, formatting (bullets, tables, headings) and tone
+            you want in the generated note. This is what EkaScribe follows when
+            generating notes with this template.
+        section_ids:
+          type: array
+          items:
+            type: string
+          description: Pass an empty array `[]`. Describe your desired structure in `desc` instead.
+          example: []
+        type:
+          type: string
+          description: "Template type. Use `custom` (default) for your own templates."
+          example: custom
+    TemplateCreateResponse:
+      type: object
+      properties:
+        msg:
+          type: string
+          example: created successfully
+        template_id:
+          type: string
+          example: tpl_7d1a2b3c4d5e
+    TemplateUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        desc:
+          type: string
+          description: Updated template instructions (plain text or markdown).
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Template ID — pass this in Create Session `templates` or Convert Notes.
+        title:
+          type: string
+        desc:
+          type: string
+          description: The template instructions.
+        section_ids:
+          type: array
+          items:
+            type: string
+        default:
+          type: boolean
+          description: True for Eka-provided templates available to every workspace.
+        is_favorite:
+          type: boolean
+    TemplatesListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Template"
+    MessageResponse:
+      type: object
+      properties:
+        msg:
+          type: string
+    ConvertNotesRequest:
+      type: object
+      properties:
+        template_id:
+          type: string
+          description: Template to generate the notes with (from List Templates).
+          example: clinical_notes_template
+        transcript:
+          type: string
+          description: >
+            Optional. Bring your own transcript — if provided, notes are
+            generated from this text instead of the session's stored transcript.
+        target_language:
+          type: string
+          description: Optional ISO 639-1 code to translate the generated notes into (e.g. `hi`).
+          example: hi
+    ConvertNotesResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: in-progress
+        template_id:
+          type: string
+        document_id:
+          type: string
+          description: Fetch this with Get Document once processing completes.
+    CreateDocumentRequest:
+      type: object
+      required: [session_id]
+      properties:
+        session_id:
+          type: string
+          description: The session this document belongs to.
+          example: ses_abc123def456
+        document_id:
+          type: string
+          description: Omit to create a new document; include to update an existing one.
+        template_id:
+          type: string
+          description: Template the document is associated with, if any.
+        type:
+          type: string
+          enum: [context, transcript, custom, notes, integration]
+          default: custom
+          description: Document category.
+        document_name:
+          type: string
+          description: Human-readable document name.
+        status:
+          type: string
+          default: in-progress
+          description: Document status, e.g. `in-progress` or `success`.
+        errors:
+          type: array
+          items: {}
+        warnings:
+          type: array
+          items: {}
+        usage_information:
+          type: object
+          additionalProperties: true
+    Document:
+      type: object
+      properties:
+        document_id:
+          type: string
+        session_id:
+          type: string
+        template_id:
+          type: string
+        document_name:
+          type: string
+        type:
+          type: string
+          example: markdown
+          description: Content format of the document.
+        document_type:
+          type: string
+          description: Document category (`template`, `custom`, `transcript`, ...).
+        status:
+          type: string
+          example: success
+        errors:
+          type: array
+          items: {}
+        warnings:
+          type: array
+          items: {}
+        usage_information:
+          type: object
+          additionalProperties: true
+        presigned_url:
+          type: string
+          description: >
+            Presigned S3 URL. On Create/Update it is a **PUT** URL to upload
+            content; on Get it is a **GET** URL to download content.
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        publish:
+          type: object
+          additionalProperties: true
+          description: Publish status per integration, when the document has been published.
+    DocumentEnvelopeResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: "#/components/schemas/Document"
+    SessionDocument:
+      type: object
+      properties:
+        document_id:
+          type: string
+        session_id:
+          type: string
+        template_id:
+          type: string
+        document_name:
+          type: string
+        type:
+          type: string
+          description: Document category (`template`, `custom`, `transcript`, ...).
+        status:
+          type: string
+        errors:
+          type: array
+          items: {}
+        warnings:
+          type: array
+          items: {}
+        usage_information:
+          type: object
+          additionalProperties: true
+        publish:
+          type: object
+          additionalProperties: true
+        created_at: {}
+        commit_at: {}
+        processed_at: {}
+        download_url:
+          type: string
+          nullable: true
+          description: Presigned download URL — present when `presigned=true`.
+        download_url_expires_at:
+          type: integer
+          nullable: true
+        lang:
+          type: string
+          nullable: true
+    SessionDetailsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            schema_version:
+              type: string
+            session_id:
+              type: string
+            created_at: {}
+            expires_at: {}
+            committed_at: {}
+            processed_at: {}
+            status:
+              type: string
+              nullable: true
+            patient_details:
+              type: object
+              additionalProperties: true
+            additional_data:
+              type: object
+              additionalProperties: true
+            audio_matrix:
+              type: object
+              properties:
+                quality:
+                  type: number
+                  nullable: true
+                  description: Overall audio quality score (0–1).
+            documents:
+              type: array
+              items:
+                $ref: "#/components/schemas/SessionDocument"

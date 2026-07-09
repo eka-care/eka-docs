@@ -1,0 +1,41 @@
+---
+title: "MedScribe Alliance Protocol"
+description: "The open protocol every EkaScribe API is built on — and why that matters for your integration"
+---
+
+All EkaScribe APIs are built on top of the **[MedScribe Alliance scribe-emr protocol](https://github.com/MedScribeAlliance/scribe-emr-protocol)** — an open, standardized, session-based protocol for connecting medical scribe services with EMRs and clinical applications.
+
+**EkaScribe is the first medical scribe service to open-source and implement this protocol.**
+
+## Why an open protocol?
+
+Medical scribing integrations have historically been proprietary: every vendor with its own session model, upload mechanics and result formats, and every EMR forced to build one-off integrations. The MedScribe Alliance protocol fixes that:
+
+- **No vendor lock-in** — integrate once against the protocol; any compliant scribe service works the same way.
+- **Standard session lifecycle** — create session → send audio → end session → fetch results, identical across implementations.
+- **Self-describing services** — the [Discovery](/ekascribe/api-reference/protocol/discovery) endpoint advertises each service's capabilities (models, audio formats, languages, upload methods) so clients configure themselves at runtime instead of hard-coding assumptions.
+- **Transport flexibility** — the same protocol backs chunked HTTP upload and real-time WebSocket streaming.
+
+The protocol specification, schemas and reference material are public in the [scribe-emr-protocol repository](https://github.com/MedScribeAlliance/scribe-emr-protocol). Contributions and feedback are welcome there.
+
+## How EkaScribe maps to the protocol
+
+| Protocol concept | EkaScribe API |
+|------------------|---------------|
+| Service discovery | [Discovery](/ekascribe/api-reference/protocol/discovery) — `GET /voice/v1/.well-known/medscribealliance` |
+| Session lifecycle | [Sessions APIs](/ekascribe/api-reference/sessions/overview) — create, upload/stream audio, end, poll |
+| Structured outputs | [Templates](/ekascribe/api-reference/templates/create-template) and [Documents](/ekascribe/api-reference/documents/create-update-document) |
+
+<Info>
+The current implementation follows **protocol version 0.1**. The Discovery response carries `protocol_version` and `supported_versions`, so clients can negotiate compatibility programmatically.
+</Info>
+
+## Start with Discovery
+
+Discovery is the protocol's entry point — public, unauthenticated, and cacheable (3 hours):
+
+```bash
+curl https://api.eka.care/voice/v1/.well-known/medscribealliance
+```
+
+Use the advertised `models`, `capabilities.audio_formats` and `capabilities.upload_methods` to configure your [Create Session](/ekascribe/api-reference/sessions/create-session) call.

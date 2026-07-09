@@ -1,0 +1,61 @@
+---
+title: "Authenticate & Try the APIs"
+description: "Paste your client credentials once and call every EkaScribe API live from these docs"
+---
+
+Every API page in this section has a built-in playground — you can call the real API from your browser. Authenticate once and try the whole EkaScribe flow end-to-end, no code required.
+
+## Step 1 — Get your access token
+
+<Steps>
+  <Step title="Open the Client Login API">
+    Go to **[Client Login](/api-reference/authorization/client-login)** and click **Try it**.
+  </Step>
+  <Step title="Paste your credentials">
+    Enter your `client_id` and `client_secret` in the request body and hit **Send**.
+
+    ```json
+    {
+      "client_id": "your-client-id",
+      "client_secret": "your-client-secret"
+    }
+    ```
+
+    <Info>
+    Don't have credentials? Create them in the <a href="https://console.eka.care" target="_blank">Eka Developer Console</a> under **Manage API Credentials**.
+    </Info>
+  </Step>
+  <Step title="Copy the access_token">
+    The response contains your token:
+
+    ```json
+    { "access_token": "eyJhbGciOi...", "expires_in": 1800, "refresh_token": "..." }
+    ```
+  </Step>
+</Steps>
+
+## Step 2 — Set the token once
+
+On any EkaScribe API page, paste the `access_token` into the **Authorization → Bearer** field of the playground. The docs remember it, so every other EkaScribe endpoint page is instantly authenticated too.
+
+## Step 3 — Try the APIs, one by one
+
+Walk the real flow directly from the docs:
+
+| # | Try | What you'll see |
+|---|-----|----------------|
+| 1 | [List Templates](/ekascribe/api-reference/templates/list-templates) | The note templates available to your workspace |
+| 2 | [Create Session](/ekascribe/api-reference/sessions/create-session) | A new `session_id` — use it in the next calls |
+| 3 | [Upload Audio](/ekascribe/api-reference/sessions/upload-audio) | Send an audio chunk to your session |
+| 4 | [End Session](/ekascribe/api-reference/sessions/end-session) | Processing starts (`202`) |
+| 5 | [Get Session](/ekascribe/api-reference/sessions/get-session) | `202` while processing → `200` with the structured note |
+| 6 | [List Session Documents](/ekascribe/api-reference/documents/list-session-documents) | Every document generated on the session |
+| 7 | [Get Document](/ekascribe/api-reference/documents/get-document) | Note metadata + a download URL for the content |
+
+<Tip>
+Want to try a custom format? [Create Template](/ekascribe/api-reference/templates/create-template) with your own markdown instructions, then pass its `template_id` in Create Session — the notes come back in your format.
+</Tip>
+
+<Note>
+Access tokens expire (`expires_in` is in seconds — typically 30 minutes). If calls start returning `401`, run Step 1 again, or use the [Refresh Token API](/api-reference/authorization/refresh-token-v2). You can also create a **long-lived token** against your client in the Developer Console and use it directly as the Bearer token.
+</Note>

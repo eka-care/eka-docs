@@ -1,0 +1,90 @@
+---
+title: "Sessions Overview"
+description: "Session-based voice capture and transcription — the core EkaScribe flow"
+---
+
+A **session** is the unit of work in EkaScribe: it ties together audio capture, processing and results under a single `session_id`. The Sessions APIs implement the open [MedScribe Alliance Protocol v0.1](/ekascribe/api-reference/protocol/overview) — a standardized, session-based interface for medical voice capture and structured transcription.
+
+<Info>
+All protocol endpoints are served under the base path `/voice/v1` on `https://api.eka.care` (production) or `https://api.dev.eka.care` (development).
+</Info>
+
+## Why the protocol APIs
+
+- **Single session lifecycle** — one `session_id` ties discovery, upload, processing and results together; no separate transaction/presigned-URL juggling.
+- **Direct chunked upload** — stream audio chunks straight to the session as raw binary, or send one file and let the server chunk it via VAD.
+- **Self-describing** — the discovery endpoint advertises supported models, audio formats, languages and limits so clients can configure themselves at runtime.
+- **Provider-agnostic** — the same protocol backs HTTP, WebSocket and streaming clients.
+
+## Authentication
+
+Every endpoint except [Discovery](/ekascribe/api-reference/protocol/discovery) requires a bearer token:
+
+```
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+Get a token with your `client_id`/`client_secret` via the [Client Login API](/api-reference/authorization/client-login) — or try it interactively on [Authenticate & Try](/ekascribe/authenticate-and-try).
+
+## The session flow
+
+```
+1. Discovery        GET  /voice/v1/.well-known/medscribealliance   (public)
+        │           → capabilities, models, languages
+        ▼
+2. Create Session   POST /voice/v1/sessions                        → 201 Created
+        │           → session_id, upload_url, expires_at
+        ▼
+3. Send audio  ── one of, based on upload_type ──────────────────────────
+        │     single  → Upload Audio (HTTP binary, one file ≤10 MB)   → 200 OK
+        │     chunked → Upload Audio (HTTP binary, repeat per chunk)  → 200 OK
+        │              POST /voice/v1/sessions/{session_id}/audio/{file_name}
+        │     stream  → Stream Audio (WebSocket)
+        │              wss://…/voice/v1/stream/sessions/{stream_id}/audio
+        ▼
+4. End Session      POST /voice/v1/sessions/{session_id}/end       → 202 Accepted
+        │           → processing started (canonical finalize for both paths)
+        ▼
+5. Get Session      GET  /voice/v1/sessions/{session_id}          (poll ~1s until ≠202)
+                    → 200 completed · 206 partial · 410 expired
+```
+
+<Steps>
+  <Step title="Discover capabilities">
+    Call [Discovery](/ekascribe/api-reference/protocol/discovery) to learn which `models`, `audio_formats` and `upload_methods` are available. Cache the result (valid for 3 hours).
+  </Step>
+  <Step title="Create a session">
+    Call [Create Session](/ekascribe/api-reference/sessions/create-session) with your chosen `model`, `templates` and `upload_type` (use `single` for one-file uploads; the communication protocol is derived automatically). Store the returned `session_id` and `upload_url`.
+  </Step>
+  <Step title="Send audio">
+    Based on your `upload_type`: send one file (`single`, ≤10 MB) or sequential chunks (`chunked`) over HTTP with [Upload Audio](/ekascribe/api-reference/sessions/upload-audio), or stream in real time over a WebSocket with [Stream Audio](/ekascribe/api-reference/sessions/stream-audio) (`stream`).
+  </Step>
+  <Step title="End the session">
+    Call [End Session](/ekascribe/api-reference/sessions/end-session) to lock the session and trigger transcription + template extraction. This is the canonical finalize for both audio paths.
+  </Step>
+  <Step title="Retrieve results">
+    Poll [Get Session](/ekascribe/api-reference/sessions/get-session) at ~1-second intervals (or register a webhook) until the status is no longer `202`. The response carries the transcript and structured template results.
+  </Step>
+</Steps>
+
+## Key identifiers
+
+| ID | Created by | Used in |
+|----|-----------|---------|
+| `session_id` | Create Session (or client-supplied, 16–32 chars) | Upload Audio, End Session, status polling |
+| `upload_url` | Create Session | The endpoint audio chunks are POSTed to |
+
+## API reference
+
+| API | Endpoint | Auth |
+|-----|----------|------|
+| [Discovery](/ekascribe/api-reference/protocol/discovery) | `GET /voice/v1/.well-known/medscribealliance` | Public |
+| [Create Session](/ekascribe/api-reference/sessions/create-session) | `POST /voice/v1/sessions` | Bearer |
+| [Upload Audio](/ekascribe/api-reference/sessions/upload-audio) | `POST /voice/v1/sessions/{session_id}/audio/{file_name}` | Bearer |
+| [Stream Audio](/ekascribe/api-reference/sessions/stream-audio) | `wss://…/voice/v1/stream/sessions/{stream_id}/audio` | Bearer |
+| [End Session](/ekascribe/api-reference/sessions/end-session) | `POST /voice/v1/sessions/{session_id}/end` | Bearer |
+| [Get Session](/ekascribe/api-reference/sessions/get-session) | `GET /voice/v1/sessions/{session_id}` | Bearer |
+| [Update Session](/ekascribe/api-reference/sessions/update-session) | `PATCH /voice/v1/sessions/{session_id}` | Bearer |
+| [Regenerate Notes](/ekascribe/api-reference/sessions/regenerate-notes) | `POST /voice/v1/sessions/{session_id}/process/template/{template_id}` | Bearer |
+
+Beyond sessions, EkaScribe also exposes [Templates](/ekascribe/api-reference/templates/create-template) (define your note formats) and [Documents](/ekascribe/api-reference/documents/create-update-document) (read, list and edit generated notes).

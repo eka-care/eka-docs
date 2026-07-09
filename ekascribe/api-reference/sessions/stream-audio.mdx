@@ -3,10 +3,10 @@ title: "Stream Audio (WebSocket)"
 description: "Real-time audio streaming over WebSocket for upload_type: stream"
 ---
 
-When a session is created with `upload_type: stream`, [Create Session](/api-reference/health-ai/ekascribe/protocol/create-session) returns a **`wss://` URL** in the `upload_url` field instead of an HTTPS upload URL. Connect to it and stream audio in real time.
+When a session is created with `upload_type: stream`, [Create Session](/ekascribe/api-reference/sessions/create-session) returns a **`wss://` URL** in the `upload_url` field instead of an HTTPS upload URL. Connect to it and stream audio in real time.
 
 <Info>
-This is the alternative to [Upload Audio](/api-reference/health-ai/ekascribe/protocol/upload-audio) (HTTP binary). A session uses **one** path or the other, decided by `upload_type`:
+This is the alternative to [Upload Audio](/ekascribe/api-reference/sessions/upload-audio) (HTTP binary). A session uses **one** path or the other, decided by `upload_type`:
 - `chunked` → HTTP binary upload
 - `stream` → WebSocket (this page)
 </Info>
@@ -66,10 +66,10 @@ When the audio is done:
     Send a `stop` event (JSON mode) or simply close the WebSocket. The server flushes any buffered audio to storage.
   </Step>
   <Step title="Call End Session">
-    Call [End Session](/api-reference/health-ai/ekascribe/protocol/end-session) (`POST /voice/v1/sessions/{session_id}/end`). For protocol streaming sessions this is the **single, canonical finalize trigger** — closing the socket flushes audio but does **not** start processing on its own.
+    Call [End Session](/ekascribe/api-reference/sessions/end-session) (`POST /voice/v1/sessions/{session_id}/end`). For protocol streaming sessions this is the **single, canonical finalize trigger** — closing the socket flushes audio but does **not** start processing on its own.
   </Step>
   <Step title="Poll for results">
-    Poll [Get Session](/api-reference/health-ai/ekascribe/protocol/get-session) at ~1-second intervals until the status is no longer `202`.
+    Poll [Get Session](/ekascribe/api-reference/sessions/get-session) at ~1-second intervals until the status is no longer `202`.
   </Step>
 </Steps>
 

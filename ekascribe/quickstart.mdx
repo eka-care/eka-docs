@@ -1,0 +1,224 @@
+---
+title: "Quickstart"
+description: "From audio to a structured clinical note in five API calls"
+---
+
+This guide takes a recorded consultation and returns a structured clinical note. The whole flow is five HTTP calls — no SDK required.
+
+## Prerequisites
+
+<Steps>
+  <Step title="Get API credentials">
+    <a href="https://login.eka.care/workspace/sign-in/?next=https://console.eka.care&product_type=emr&signup=user_only&tab=sign-up" target="_blank">Sign up on Eka</a>, then in the <a href="https://console.eka.care" target="_blank">Developer Console</a> go to **Manage API Credentials** and create a client. Save the `client_id` and `client_secret` — the secret is shown only once.
+  </Step>
+  <Step title="Have an audio file ready">
+    Any consultation or dictation recording in `webm`, `wav`, `mp3`, `m4a`, `mp4` or `ogg`.
+  </Step>
+</Steps>
+
+## The complete flow
+
+<CodeGroup>
+
+```bash cURL
+BASE=https://api.eka.care
+
+# 1. Authenticate — exchange credentials for an access token
+TOKEN=$(curl -s -X POST $BASE/connect-auth/v1/account/login \
+  -H "Content-Type: application/json" \
+  -d '{"client_id":"YOUR_CLIENT_ID","client_secret":"YOUR_CLIENT_SECRET"}' \
+  | jq -r .access_token)
+
+# 2. Create a session
+SESSION_ID=$(curl -s -X POST $BASE/voice/v1/sessions \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "language_hint": ["en"],
+    "model": "pro",
+    "templates": ["clinical_notes_template"],
+    "upload_type": "single"
+  }' | jq -r .session_id)
+
+# 3. Upload the audio file (content type is detected from the extension)
+curl -s -X POST "$BASE/voice/v1/sessions/$SESSION_ID/audio/audio_0.webm" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-binary @consultation.webm
+
+# 4. End the session — processing starts
+curl -s -X POST "$BASE/voice/v1/sessions/$SESSION_ID/end" \
+  -H "Authorization: Bearer $TOKEN"
+
+# 5. Poll until done (HTTP 202 = still processing, 200 = completed)
+curl -s "$BASE/voice/v1/sessions/$SESSION_ID" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+```python Python
+import requests, time
+
+BASE = "https://api.eka.care"
+
+# 1. Authenticate — exchange credentials for an access token
+token = requests.post(f"{BASE}/connect-auth/v1/account/login", json={
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+}).json()["access_token"]
+auth = {"Authorization": f"Bearer {token}"}
+
+# 2. Create a session
+session = requests.post(f"{BASE}/voice/v1/sessions", headers=auth, json={
+    "language_hint": ["en"],
+    "model": "pro",
+    "templates": ["clinical_notes_template"],
+    "upload_type": "single",
+}).json()
+sid = session["session_id"]
+
+# 3. Upload the audio file (content type is detected from the extension)
+with open("consultation.webm", "rb") as f:
+    requests.post(
+        f"{BASE}/voice/v1/sessions/{sid}/audio/audio_0.webm",
+        headers=auth,
+        data=f,
+    )
+
+# 4. End the session — processing starts
+requests.post(f"{BASE}/voice/v1/sessions/{sid}/end", headers=auth)
+
+# 5. Poll until done (HTTP 202 = still processing, 200 = completed)
+while True:
+    r = requests.get(f"{BASE}/voice/v1/sessions/{sid}", headers=auth)
+    if r.status_code != 202:
+        break
+    time.sleep(1)
+
+result = r.json()
+print(result["transcript"])
+print(result["templates"])   # structured note per requested template
+```
+
+```javascript JavaScript
+import { readFile } from "node:fs/promises";
+
+const BASE = "https://api.eka.care";
+
+// 1. Authenticate — exchange credentials for an access token
+const { access_token } = await fetch(`${BASE}/connect-auth/v1/account/login`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    client_id: "YOUR_CLIENT_ID",
+    client_secret: "YOUR_CLIENT_SECRET",
+  }),
+}).then((r) => r.json());
+const auth = { Authorization: `Bearer ${access_token}` };
+
+// 2. Create a session
+const session = await fetch(`${BASE}/voice/v1/sessions`, {
+  method: "POST",
+  headers: { ...auth, "Content-Type": "application/json" },
+  body: JSON.stringify({
+    language_hint: ["en"],
+    model: "pro",
+    templates: ["clinical_notes_template"],
+    upload_type: "single",
+  }),
+}).then((r) => r.json());
+
+// 3. Upload the audio file (content type is detected from the extension)
+await fetch(
+  `${BASE}/voice/v1/sessions/${session.session_id}/audio/audio_0.webm`,
+  {
+    method: "POST",
+    headers: auth,
+    body: await readFile("consultation.webm"),
+  }
+);
+
+// 4. End the session — processing starts
+await fetch(`${BASE}/voice/v1/sessions/${session.session_id}/end`, {
+  method: "POST",
+  headers: auth,
+});
+
+// 5. Poll until done (HTTP 202 = still processing, 200 = completed)
+let result;
+while (true) {
+  const r = await fetch(`${BASE}/voice/v1/sessions/${session.session_id}`, {
+    headers: auth,
+  });
+  if (r.status !== 202) { result = await r.json(); break; }
+  await new Promise((s) => setTimeout(s, 1000));
+}
+
+console.log(result.transcript);
+console.log(result.templates); // structured note per requested template
+```
+
+</CodeGroup>
+
+The completed response contains the transcript and one structured document per requested template:
+
+```json
+{
+  "session_id": "ses_abc123def456",
+  "status": "completed",
+  "transcript": "Patient presents with cough and fever...",
+  "templates": [
+    {
+      "clinical_notes_template": {
+        "status": "success",
+        "document_id": "doc_abc123",
+        "data": { "chief_complaint": "cough and fever", "assessment": "Acute bronchitis" }
+      }
+    }
+  ]
+}
+```
+
+<Note>
+`upload_type: "single"` sends one complete audio file — **max 10 MB** via the API. For larger recordings, create the session with `upload_type: "chunked"` and upload sequential chunks (`audio_0.webm`, `audio_1.webm`, ...), or use an [SDK](#prefer-an-sdk) which records, chunks and uploads automatically. For live scribing, use `upload_type: "stream"` with the [WebSocket API](/ekascribe/api-reference/sessions/stream-audio).
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Try it in the browser" icon="play" href="/ekascribe/authenticate-and-try">
+    Paste your credentials and call every API from the docs — no code needed.
+  </Card>
+  <Card title="Create your own template" icon="file-lines" href="/ekascribe/api-reference/templates/create-template">
+    Define your note format in markdown and pass its ID in `templates`.
+  </Card>
+  <Card title="Explore the Sessions API" icon="waveform-lines" href="/ekascribe/api-reference/sessions/overview">
+    Discovery, streaming, session updates, webhooks and status codes.
+  </Card>
+  <Card title="Get notified via webhook" icon="bell" href="/api-reference/connect/webhooks/getting-started">
+    Skip polling — receive a callback when the note is ready.
+  </Card>
+</CardGroup>
+
+## Prefer an SDK?
+
+SDKs handle microphone capture, voice-activity detection, chunking, retries and polling for you:
+
+```ts
+import { getEkaScribeInstance } from "@eka-care/ekascribe-ts-sdk";
+
+const ekascribe = getEkaScribeInstance({ access_token: "YOUR_ACCESS_TOKEN" });
+
+await ekascribe.initTransaction({
+  mode: "consultation",
+  input_language: ["en-IN"],
+  output_format_template: [{ template_id: "clinical_notes_template" }],
+  txn_id: "unique-session-id",
+  transfer: "vaded",
+  model_type: "pro",
+});
+await ekascribe.startRecording();
+// ... consultation happens ...
+await ekascribe.endRecording();
+
+const result = await ekascribe.pollSessionOutput({ txn_id: "unique-session-id" });
+```
+
+Available for [TypeScript](/ekascribe/sdks/TS-sdk), [Python](/ekascribe/sdks/scribe-python-sdk), [Java](/ekascribe/sdks/java-sdk), [Android](/ekascribe/sdks/android-sdk) and [iOS](/ekascribe/sdks/ios-sdk).

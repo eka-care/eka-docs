@@ -1,0 +1,82 @@
+---
+title: "Upload Audio"
+openapi: "POST /voice/v1/sessions/{session_id}/audio/{file_name}"
+---
+
+Upload audio to a session as a **raw binary body** (not multipart/form-data, not JSON). The filename is supplied in the URL path and determines how the audio is stored. This is the path for sessions created with `upload_type: single` (the default) or `chunked`.
+
+<Info>
+**Content-Type is detected automatically** from the `file_name` extension (`.webm`, `.mp3`, `.wav`, `.ogg`, `.m4a`, `.mp4`) — you can leave the header unset, and generic values like `application/octet-stream` are auto-resolved too. Set it explicitly only if your file has no meaningful extension.
+</Info>
+
+<Note>
+Streaming over a WebSocket instead? Create the session with `upload_type: stream` and use [Stream Audio](/ekascribe/api-reference/sessions/stream-audio).
+</Note>
+
+## Path parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `session_id` | The `session_id` returned by [Create Session](/ekascribe/api-reference/sessions/create-session). |
+| `file_name` | Audio filename with extension. For chunked uploads use `<base>_<sequence>.<ext>` (e.g. `audio_0.webm`). |
+
+## Single upload flow (default)
+
+For `upload_type: single`, call this endpoint **once** with the complete recording (max **10 MB**) — the server chunks it via voice-activity detection:
+
+```
+POST /voice/v1/sessions/ses_abc123def456/audio/audio_0.webm
+```
+
+<Note>
+Recording larger than 10 MB? Use `upload_type: chunked` and split it, or let an [SDK](/ekascribe/quickstart#prefer-an-sdk) handle recording, chunking and upload automatically.
+</Note>
+
+## Chunked upload flow
+
+Call this endpoint **once per chunk**, in order, with sequentially numbered filenames:
+
+```
+POST /voice/v1/sessions/ses_abc123def456/audio/audio_0.webm
+POST /voice/v1/sessions/ses_abc123def456/audio/audio_1.webm
+POST /voice/v1/sessions/ses_abc123def456/audio/audio_2.webm
+```
+
+- Filename format: `<base>_<sequence>.<ext>` — the base name is arbitrary, the sequence number determines order.
+- The server stores each chunk by its sequence number (e.g. `0.webm`, `1.webm`).
+
+When all chunks are uploaded, call [End Session](/ekascribe/api-reference/sessions/end-session) and poll [Get Session](/ekascribe/api-reference/sessions/get-session) for results.
+
+## Supported audio formats
+
+`audio/webm;codecs=opus` · `audio/wav` · `audio/ogg` · `audio/ogg;codecs=opus` · `audio/mp4` · `audio/m4a` · `audio/mp3`
+
+## Limits
+
+| Limit | Value |
+|-------|-------|
+| Max file/chunk size | 10 MB |
+| Recommended chunk duration (chunked mode) | ≤ 20 seconds |
+
+## Example request
+
+```bash
+curl -X POST \
+  "https://api.eka.care/voice/v1/sessions/ses_abc123def456/audio/audio_0.webm" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  --data-binary "@consultation.webm"
+```
+
+## Error codes
+
+| Status | `error.code` | When |
+|--------|--------------|------|
+| 400 | `session_ended` | The session was already ended (committed). |
+| 400 | `session_completed` | Processing already finished (`success`/`failure`). |
+| 400 | `invalid_audio_format` | The MIME type is not in the supported list. |
+| 404 | `session_not_found` | The `session_id` does not exist. |
+| 413 | `chunk_too_large` | The chunk exceeds the maximum size. |
+
+## Next step
+
+When all chunks are uploaded, call [End Session](/ekascribe/api-reference/sessions/end-session).
