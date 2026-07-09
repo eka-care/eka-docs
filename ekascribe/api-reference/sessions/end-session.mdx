@@ -3,54 +3,6 @@ title: "End Session"
 openapi: "POST /voice/v1/sessions/{session_id}/end"
 ---
 
-Finalize the session and start asynchronous processing. After this call, **no further audio uploads are accepted** for the session.
+Lock the session and start processing — no body required. After this call no more audio is accepted.
 
-## What happens server-side
-
-<Steps>
-  <Step title="Collect & order chunks">
-    The server lists every audio file uploaded to the session and sorts them by sequence number (`0.webm`, `1.webm`, …).
-  </Step>
-  <Step title="Commit the session">
-    The session is committed (`user_status: commit`) so it can no longer receive uploads.
-  </Step>
-  <Step title="Queue for processing">
-    A processing event is queued; transcription and template extraction run asynchronously.
-  </Step>
-  <Step title="Return 202 Accepted">
-    The response confirms how many audio files were received and lists them.
-  </Step>
-</Steps>
-
-## Path parameters
-
-| Parameter | Description |
-|-----------|-------------|
-| `session_id` | The `session_id` returned by [Create Session](/ekascribe/api-reference/sessions/create-session). |
-
-## Request fields
-
-The request body is **optional** — a plain `POST` with no body ends the session.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `audio_files_sent` | integer | No | Number of audio chunks/files the client sent. If provided, it is logged for reconciliation against what the server received. |
-
-## Response fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `session_id` | string | The session identifier. |
-| `status` | string | Session status after ending — typically `processing`. |
-| `message` | string | Human-readable status message. |
-| `audio_files_received` | integer | Count of audio files the server received and stored. |
-| `audio_files` | string[] | Ordered list of stored audio files. |
-
-## Retrieving results
-
-Processing is asynchronous. After receiving `202 Accepted`:
-
-- **Poll** `GET /voice/v1/sessions/{session_id}` until `status` is `completed`. Status codes mirror processing state — `202` (in progress), `200` (completed), `206` (partial), `410` (expired).
-- Or **register a webhook** to be notified automatically when processing completes.
-
-The completed response includes the full `transcript` and the structured `templates` results for the template IDs requested at session creation.
+On `202 Accepted`, poll [Get Session](/ekascribe/api-reference/sessions/get-session) (or use a [webhook](/api-reference/connect/webhooks/getting-started)) until the results are ready.

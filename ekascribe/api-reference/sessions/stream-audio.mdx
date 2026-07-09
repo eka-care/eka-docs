@@ -1,85 +1,24 @@
 ---
 title: "Stream Audio (WebSocket)"
-description: "Real-time audio streaming over WebSocket for upload_type: stream"
+description: "Real-time audio streaming for upload_type: stream"
 ---
 
-When a session is created with `upload_type: stream`, [Create Session](/ekascribe/api-reference/sessions/create-session) returns a **`wss://` URL** in the `upload_url` field instead of an HTTPS upload URL. Connect to it and stream audio in real time.
+Sessions created with `upload_type: stream` return a **`wss://` URL** as `upload_url`. Connect and stream — the server auto-detects the wire format from your first frame.
 
-<Info>
-This is the alternative to [Upload Audio](/ekascribe/api-reference/sessions/upload-audio) (HTTP binary). A session uses **one** path or the other, decided by `upload_type`:
-- `chunked` → HTTP binary upload
-- `stream` → WebSocket (this page)
-</Info>
-
-## 1. Get the WebSocket URL
-
-```json
-// POST /voice/v1/sessions  (upload_type: "stream")  → 201
-{
-  "session_id": "ses_abc123def456",
-  "status": "created",
-  "upload_url": "wss://api.eka.care/voice/v1/stream/sessions/str_a1b2c3d4e5f6/audio",
-  ...
-}
-```
-
-The `upload_url` is a full `wss://` endpoint bound to this session. It contains an internal `stream_id` — connect to it exactly as returned.
-
-## 2. Connect and stream
-
-The server **auto-detects the wire format** from your first frame. Use whichever fits your client:
-
-### Option A — Raw binary PCM
-
-Send raw **16-bit little-endian, mono, 16 kHz PCM** audio as binary WebSocket frames:
+**Option A — raw binary:** send 16-bit LE, mono, 16 kHz PCM as binary frames.
 
 ```js
 const ws = new WebSocket(uploadUrl);
 ws.binaryType = "arraybuffer";
-ws.onopen = () => {
-  // stream PCM chunks as they are captured
-  ws.send(pcmChunk);   // ArrayBuffer / Uint8Array of 16-bit PCM
-};
+ws.onopen = () => ws.send(pcmChunk);
 ```
 
-### Option B — JSON envelope (Twilio / Vobiz Media Streams compatible)
-
-Send text frames using the Media Streams envelope. Audio payloads are base64-encoded PCM:
+**Option B — JSON envelope** (Twilio/Vobiz Media Streams compatible), base64 PCM payloads:
 
 ```json
 { "event": "start", "start": { "mediaFormat": { "encoding": "audio/x-l16", "sampleRate": 16000 } } }
-{ "event": "media", "media": { "payload": "<base64-encoded PCM>" } }
-{ "event": "media", "media": { "payload": "<base64-encoded PCM>" } }
+{ "event": "media", "media": { "payload": "<base64 PCM>" } }
 { "event": "stop" }
 ```
 
-<Note>
-Declare your sample rate in the `start` event's `mediaFormat.sampleRate` if it differs from the 16 kHz default. The server applies Voice Activity Detection (VAD) and accumulates speech-boundary-aware chunks (~10–25s) which are written to storage automatically.
-</Note>
-
-## 3. Finish: close, then end the session
-
-When the audio is done:
-
-<Steps>
-  <Step title="Stop streaming">
-    Send a `stop` event (JSON mode) or simply close the WebSocket. The server flushes any buffered audio to storage.
-  </Step>
-  <Step title="Call End Session">
-    Call [End Session](/ekascribe/api-reference/sessions/end-session) (`POST /voice/v1/sessions/{session_id}/end`). For protocol streaming sessions this is the **single, canonical finalize trigger** — closing the socket flushes audio but does **not** start processing on its own.
-  </Step>
-  <Step title="Poll for results">
-    Poll [Get Session](/ekascribe/api-reference/sessions/get-session) at ~1-second intervals until the status is no longer `202`.
-  </Step>
-</Steps>
-
-## Format summary
-
-| Property | Value |
-|----------|-------|
-| Transport | WebSocket (`wss://`) |
-| Audio encoding | 16-bit signed PCM, little-endian, mono |
-| Default sample rate | 16000 Hz |
-| Frame modes | Raw binary **or** JSON envelope (`start` / `media` / `stop`) |
-| Chunking | Server-side VAD, ~10–25s speech-aware chunks |
-| Finalize | `stop` / socket close → flush; **End Session** → process |
+**To finish:** close the socket (flushes audio), then call [End Session](/ekascribe/api-reference/sessions/end-session) — closing alone does **not** start processing. Then poll [Get Session](/ekascribe/api-reference/sessions/get-session).

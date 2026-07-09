@@ -3,19 +3,8 @@ title: "Create or Update Document"
 openapi: "POST /voice/api/v1/documents"
 ---
 
-Create a new document on a session, or update an existing one — the typical use case is **saving a doctor's edits** to generated notes.
-
-- **Create**: omit `document_id` → returns `201` with a new document.
-- **Update**: include `document_id` → returns `200`; only the non-null fields you send are changed.
-
-Every response includes a **presigned PUT URL**. Upload the document content (markdown) to that URL to store it:
+Create a document on a session (omit `document_id` → `201`) or update one (include `document_id` → `200`) — e.g. to save a doctor's edits. The response includes a presigned **PUT** URL — upload the markdown content there:
 
 ```bash
-curl -X PUT "<presigned_url>" \
-  -H "Content-Type: text/markdown" \
-  --data-binary @note.md
+curl -X PUT "<presigned_url>" -H "Content-Type: text/markdown" --data-binary @note.md
 ```
-
-<Info>
-Document metadata (name, status, type) lives on this API; the document **content** always goes through the presigned URL.
-</Info>

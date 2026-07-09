@@ -3,22 +3,14 @@ title: "Create Template"
 openapi: "POST /voice/api/v1/template"
 ---
 
-Create a custom note template. A template tells EkaScribe exactly how to structure the generated notes.
-
-**You only need a `title` and a `desc`.** Describe the format you want in `desc` using plain text or markdown — sections, ordering, bullet points, tables, tone. EkaScribe follows this description when generating notes.
+Create a custom note template: just a `title` and a `desc` describing your format in plain text or markdown (sections, bullets, tables, tone). Always pass `section_ids: []`.
 
 ```json
 {
   "title": "Cardiology OPD Note",
-  "desc": "Generate a cardiology outpatient note with these sections:\n## Chief Complaint\n## History of Present Illness\n## Examination (bullet points, include a vitals table)\n## Assessment\n## Plan (numbered list with medications and follow-up date)",
+  "desc": "## Chief Complaint\n## History\n## Examination (bullets, vitals table)\n## Plan (numbered, with follow-up date)",
   "section_ids": []
 }
 ```
 
-<Info>
-Always pass `section_ids: []`. Structure is defined by your `desc` markdown, not by sections.
-</Info>
-
-Use the returned `template_id`:
-- in [Create Session](/ekascribe/api-reference/sessions/create-session) `templates` to generate notes with it during a live session,
-- in [Convert Notes](/ekascribe/api-reference/templates/convert-notes) or [Regenerate Notes](/ekascribe/api-reference/sessions/regenerate-notes) for existing sessions.
+Use the returned `template_id` in [Create Session](/ekascribe/api-reference/sessions/create-session) or [Convert Notes](/ekascribe/api-reference/templates/convert-notes).
