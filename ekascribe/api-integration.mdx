@@ -1,0 +1,99 @@
+---
+title: "Build with AI (CLAUDE.md)"
+description: "Drop this file into your project and ask Claude, Cursor or any coding agent to build the EkaScribe flow for you"
+---
+
+Copy the file below into your project as `CLAUDE.md` (or paste it into any LLM) and prompt: *"Build me a page with record, stop and transcribe buttons that uses the EkaScribe API per CLAUDE.md."* It contains everything an agent needs — auth, the 4-call flow, request/response shapes and constraints.
+
+````markdown CLAUDE.md
+# EkaScribe API Integration Guide
+
+Goal: record or pick an audio file of a doctor–patient conversation and get back
+a structured clinical note using the EkaScribe API.
+
+Base URL: https://api.eka.care
+
+## Authentication
+
+POST /connect-auth/v1/account/login
+Body: { "client_id": "<id>", "client_secret": "<secret>" }
+→ 200 { "access_token": "...", "expires_in": 1800, "refresh_token": "..." }
+
+Send `Authorization: Bearer <access_token>` on every other call.
+SECURITY: never put client_secret in browser code — exchange it on a small
+backend/proxy and hand only the short-lived access_token to the UI. If the
+browser is blocked by CORS, route all calls through that proxy.
+
+## The flow — 4 calls
+
+### 1. Create session
+POST /voice/v1/sessions
+Body: {
+  "upload_type": "single",                     // REQUIRED. single = one file ≤ 10 MB
+  "model": "pro",                              // optional: pro | lite
+  "language_hint": ["en"],                     // optional ISO 639-1 codes
+  "templates": ["clinical_notes_template"]     // optional, max 2 template IDs
+}
+→ 201 { "session_id": "...", "upload_url": "...", "expires_at": "..." }
+
+### 2. Upload audio
+POST /voice/v1/sessions/{session_id}/audio/audio_0.webm
+Body: RAW audio bytes (not multipart, not JSON, no base64).
+Content-Type header optional — detected from the filename extension
+(.webm .mp3 .wav .ogg .m4a .mp4).
+→ 200 { "success": true }
+
+### 3. End session (starts processing)
+POST /voice/v1/sessions/{session_id}/end     — no body needed
+→ 202
+
+### 4. Poll for the result
+GET /voice/v1/sessions/{session_id}          — every ~1 s
+HTTP status is the signal:
+  202 → still processing, keep polling
+  200 → done:
+    {
+      "transcript": "…",
+      "templates": [
+        { "clinical_notes_template": {
+            "status": "success",
+            "document_id": "doc_…",
+            "data": { …structured note… } } }
+      ]
+    }
+  206 → done but some templates failed
+  410 → session expired (create a new one)
+
+## UI to build
+
+- Input for the access token (or client_id/secret form hitting the proxy)
+- "Start Recording" / "Stop" buttons using MediaRecorder (audio/webm),
+  plus a file picker as fallback
+- "Transcribe" button that runs: create → upload → end → poll,
+  with a visible status (recording / uploading / processing / done)
+- Render the transcript and the structured note (templates[i][id].data);
+  show readable errors for 4xx/410/timeouts
+
+## Rules & limits
+
+- single upload: one file, max 10 MB. Longer recordings: create the session
+  with "upload_type": "chunked" and upload audio_0.webm, audio_1.webm, …
+  in order before calling end.
+- Poll every ~1 s; give up after ~5 minutes.
+- Sessions expire ~1 hour after creation if never ended.
+- 401 → token expired; re-authenticate.
+- List available templates: GET /voice/api/v1/template
+  → { "items": [ { "id", "title", "desc" } ] }
+- Create a custom note format: POST /voice/api/v1/template
+  Body: { "title": "…", "desc": "<markdown describing the note structure>", "section_ids": [] }
+  → use the returned template_id in step 1.
+
+## Reference
+
+- Docs: https://developer.eka.care/ekascribe/overview
+- Full docs for LLMs: https://developer.eka.care/llms-full.txt
+````
+
+<Note>
+Need credentials? Create them in the <a href="https://console.eka.care" target="_blank">Eka Developer Console</a> under **Manage API Credentials**.
+</Note>

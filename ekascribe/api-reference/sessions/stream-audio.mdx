@@ -1,0 +1,24 @@
+---
+title: "Stream Audio (WebSocket)"
+description: "Real-time audio streaming for upload_type: stream"
+---
+
+Sessions created with `upload_type: stream` return a **`wss://` URL** as `upload_url`. Connect and stream — the server auto-detects the wire format from your first frame.
+
+**Option A — raw binary:** send 16-bit LE, mono, 16 kHz PCM as binary frames.
+
+```js
+const ws = new WebSocket(uploadUrl);
+ws.binaryType = "arraybuffer";
+ws.onopen = () => ws.send(pcmChunk);
+```
+
+**Option B — JSON envelope** (Twilio/Vobiz Media Streams compatible), base64 PCM payloads:
+
+```json
+{ "event": "start", "start": { "mediaFormat": { "encoding": "audio/x-l16", "sampleRate": 16000 } } }
+{ "event": "media", "media": { "payload": "<base64 PCM>" } }
+{ "event": "stop" }
+```
+
+**To finish:** close the socket (flushes audio), then call [End Session](/ekascribe/api-reference/sessions/end-session) — closing alone does **not** start processing. Then poll [Get Session](/ekascribe/api-reference/sessions/get-session).

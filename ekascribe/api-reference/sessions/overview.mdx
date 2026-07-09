@@ -1,0 +1,27 @@
+---
+title: "Sessions Overview"
+description: "Session-based voice capture and transcription — the core EkaScribe flow"
+---
+
+A **session** ties audio capture, processing and results together under one `session_id`. Base path: `/voice/v1` on `https://api.eka.care`. All endpoints except Discovery need `Authorization: Bearer YOUR_ACCESS_TOKEN` ([get a token](/ekascribe/authenticate-and-try)).
+
+```
+1. Create Session   POST /voice/v1/sessions                        → session_id, upload_url
+2. Send audio       POST /voice/v1/sessions/{id}/audio/{file}     (single/chunked, HTTP)
+                    or wss://… WebSocket                           (stream)
+3. End Session      POST /voice/v1/sessions/{id}/end               → 202, processing starts
+4. Get Session      GET  /voice/v1/sessions/{id}                  (poll ~1s until ≠202)
+                    → transcript + structured notes per template
+```
+
+| API | Endpoint |
+|-----|----------|
+| [Create Session](/ekascribe/api-reference/sessions/create-session) | `POST /voice/v1/sessions` |
+| [Upload Audio](/ekascribe/api-reference/sessions/upload-audio) | `POST /voice/v1/sessions/{session_id}/audio/{file_sequence}` |
+| [Stream Audio](/ekascribe/api-reference/sessions/stream-audio) | `wss://…` (from `upload_url`) |
+| [End Session](/ekascribe/api-reference/sessions/end-session) | `POST /voice/v1/sessions/{session_id}/end` |
+| [Get Session](/ekascribe/api-reference/sessions/get-session) | `GET /voice/v1/sessions/{session_id}` |
+| [Update Session](/ekascribe/api-reference/sessions/update-session) | `PATCH /voice/v1/sessions/{session_id}` |
+| [Regenerate Notes](/ekascribe/api-reference/sessions/regenerate-notes) | `POST /voice/v1/sessions/{session_id}/process/template/{template_id}` |
+
+Also see [Templates](/ekascribe/api-reference/templates/create-template) (define note formats) and [Documents](/ekascribe/api-reference/documents/create-update-document) (read and edit generated notes).

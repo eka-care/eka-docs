@@ -1,0 +1,15 @@
+---
+title: "Get Session"
+openapi: "GET /voice/v1/sessions/{session_id}"
+---
+
+Poll this after [End Session](/ekascribe/api-reference/sessions/end-session) at ~1-second intervals. **The HTTP status code is the signal:**
+
+| Status | Meaning |
+|--------|---------|
+| `202` | Still processing — keep polling |
+| `200` | Done — `transcript` + `templates` (with `document_id` per template) in the body |
+| `206` | Done, but some templates failed |
+| `410` | Session expired |
+
+Pass `?template_id=<id>` to return only one template's result. Prefer not to poll? Register a [webhook](/api-reference/connect/webhooks/register-webhook).
