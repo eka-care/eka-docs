@@ -1,18 +1,23 @@
 ---
 title: "Upload Audio"
 openapi: "POST /voice/v1/sessions/{session_id}/audio/{file_sequence}"
+playground: simple
 ---
 
 Send audio as a **raw binary body** (not multipart, not JSON). `single`: call once with the complete file (≤10 MB) as `audio_0.webm`. `chunked`: call once per chunk, incrementing the sequence (`audio_0.webm`, `audio_1.webm`, …).
+
+<Warning>
+This endpoint can't be tried from the browser — the docs playground can't send raw binary bodies. Use the cURL below (or any HTTP client) instead; every other EkaScribe endpoint works in the playground.
+</Warning>
 
 <Info>
 No `Content-Type` header needed — it's detected from the `file_sequence` extension (`.webm`, `.mp3`, `.wav`, `.ogg`, `.m4a`, `.mp4`).
 </Info>
 
 ```bash
-curl -X POST "https://api.eka.care/voice/v1/sessions/{session_id}/audio/audio_0.webm" \
+curl -X POST "https://api.eka.care/voice/v1/sessions/{session_id}/audio/audio_0.mp3" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  --data-binary "@consultation.webm"
+  --data-binary "@/path/to/consultation.mp3"
 ```
 
 When all audio is uploaded, call [End Session](/ekascribe/api-reference/sessions/end-session). For real-time streaming use [Stream Audio](/ekascribe/api-reference/sessions/stream-audio) instead.
