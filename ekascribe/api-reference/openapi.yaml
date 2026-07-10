@@ -330,12 +330,16 @@ paths:
           schema:
             type: string
             example: ses_abc123def456
-        - name: template_id
+        - name: document_id
           in: query
           required: false
-          description: If provided, restricts returned templates to documents for this template_id only.
+          description: >
+            If provided, returns only that document's result — e.g. a
+            `document_id` from Process Template — instead of all session
+            documents.
           schema:
             type: string
+            example: doc_9f8e7d6c
       responses:
         "200":
           description: Session completed successfully
@@ -472,13 +476,14 @@ paths:
 
   /voice/v1/sessions/{session_id}/process/template/{template_id}:
     post:
-      summary: Regenerate Notes
+      summary: Process Template
       description: >
-        Re-run note generation for an already-processed session with a specific
-        template. Useful when you add a template after the fact or want a second
-        output format from the same recording. Processing is asynchronous —
-        the call returns `202` with a `document_id`; poll Get Session (or Get
-        Document) until the document status is `success`.
+        After a session ends, generate another document from it for the given
+        template. Every template processed — via Create Session `templates` or
+        this API — creates a document, listed in the session's documents. The
+        call is asynchronous: it returns `202` with a new `document_id`; fetch
+        it with Get Session `?document_id=...` or Get Document once its status
+        is `success`.
       tags:
         - sessions
       security:
@@ -527,7 +532,7 @@ paths:
         "SOAP note with Subjective, Objective, Assessment, Plan; use bullet
         points; include a medication table". EkaScribe uses this description as
         the authoring instruction when generating notes. Pass the returned
-        `template_id` in Create Session (`templates`) or Convert Notes.
+        `template_id` in Create Session (`templates`) or Process Template.
       tags:
         - templates
       security:
@@ -686,61 +691,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /voice/api/v1/transaction/{session_id}/convert-to-template:
-    post:
-      summary: Convert Notes
-      description: >
-        Generate the notes of a session for a given `template_id` — convert an
-        existing session's transcript into a different note format, translate it
-        to another language (`target_language`), or bring your own `transcript`
-        and have EkaScribe structure it with the template. Processing is
-        asynchronous: the call returns `202` with a `document_id`; fetch the
-        result with Get Document once its status is `success`.
-      tags:
-        - templates
-      security:
-        - auth: []
-      parameters:
-        - name: session_id
-          in: path
-          required: true
-          description: The session whose notes you want to convert
-          schema:
-            type: string
-            example: ses_abc123def456
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ConvertNotesRequest"
-            example:
-              template_id: clinical_notes_template
-              target_language: hi
-      responses:
-        "202":
-          description: Conversion started
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ConvertNotesResponse"
-              example:
-                status: in-progress
-                template_id: clinical_notes_template
-                document_id: doc_9f8e7d6c
-        "404":
-          description: Session not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
   /voice/api/v1/documents:
     post:
       summary: Create or Update Document
@@ -809,8 +759,8 @@ paths:
       description: >
         Fetch a document's metadata and a presigned **GET** URL to download its
         content (markdown). Use this to retrieve generated notes by
-        `document_id` — e.g. the `document_id` returned by Get Session,
-        Regenerate Notes or Convert Notes.
+        `document_id` — e.g. the `document_id` returned by Get Session or
+        Process Template.
       tags:
         - documents
       security:
@@ -1485,7 +1435,7 @@ components:
       properties:
         id:
           type: string
-          description: Template ID — pass this in Create Session `templates` or Convert Notes.
+          description: Template ID — pass this in Create Session `templates` or Process Template.
         title:
           type: string
         desc:
@@ -1512,33 +1462,6 @@ components:
       properties:
         msg:
           type: string
-    ConvertNotesRequest:
-      type: object
-      properties:
-        template_id:
-          type: string
-          description: Template to generate the notes with (from List Templates).
-          example: clinical_notes_template
-        transcript:
-          type: string
-          description: >
-            Optional. Bring your own transcript — if provided, notes are
-            generated from this text instead of the session's stored transcript.
-        target_language:
-          type: string
-          description: Optional ISO 639-1 code to translate the generated notes into (e.g. `hi`).
-          example: hi
-    ConvertNotesResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: in-progress
-        template_id:
-          type: string
-        document_id:
-          type: string
-          description: Fetch this with Get Document once processing completes.
     CreateDocumentRequest:
       type: object
       required: [session_id]
