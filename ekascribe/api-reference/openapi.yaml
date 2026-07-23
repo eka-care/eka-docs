@@ -246,6 +246,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /voice/v1/sessions/{session_id}/audio:
+    get:
+      summary: Get Session Audio
+      description: >
+        Fetch the complete recording of a session as a presigned download URL
+        (single combined MP3). Available for businesses with full-audio access
+        enabled — contact support to enable it for your workspace. The combined
+        audio is prepared in the background after End Session; until it is
+        ready this endpoint returns `404 audio_not_available`, so retry after a
+        short delay. The recording is retained for 24 hours after the
+        consultation by default (configurable per business) and is deleted
+        after that — call this API within that window and download the audio
+        via the returned presigned URL. Presigned URLs also expire — fetch a
+        fresh URL when needed, don't store it.
+      tags:
+        - sessions
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+      responses:
+        "200":
+          description: Presigned URL for the combined session audio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionAudioResponse"
+              example:
+                session_id: ses_abc123def456
+                status: success
+                audio_url: "https://<bucket>.s3.ap-south-1.amazonaws.com/<key>?X-Amz-Expires=86400&..."
+                expires_in: 86400
+                expires_at: 1753162800
+        "403":
+          description: Full-audio access is not enabled for this business (`audio_not_enabled`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: >
+            Session not found (`resource_not_found`), or the combined audio is
+            not ready yet (`audio_not_available`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /voice/v1/sessions/{session_id}:
     patch:
       summary: Update Session
@@ -1306,6 +1360,27 @@ components:
                 type: string
             auto_detection:
               type: boolean
+    SessionAudioResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          example: ses_abc123def456
+        status:
+          type: string
+          example: success
+        audio_url:
+          type: string
+          description: Presigned URL of the combined session audio (MP3).
+        expires_in:
+          type: integer
+          description: URL validity in seconds.
+          example: 86400
+        expires_at:
+          type: integer
+          description: Unix epoch (seconds) when the URL expires.
+          example: 1753162800
+
     ErrorResponse:
       type: object
       properties:
