@@ -1,0 +1,4725 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Eka API Suite",
+    "description": "Eka care API suite built with Fastify + TypeScript.",
+    "version": "0.1.0"
+  },
+  "components": {
+    "schemas": {}
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Liveness probe",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/v1/{id}/reschedule": {
+      "patch": {
+        "summary": "Reschedule an appointment",
+        "tags": [
+          "Appointments"
+        ],
+        "description": "Reschedules an appointment to a new time window via @orbi/product-sdk. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "start_time",
+                  "end_time"
+                ],
+                "properties": {
+                  "start_time": {
+                    "minimum": 0,
+                    "description": "New start time as a Unix epoch in seconds (no milliseconds).",
+                    "type": "integer"
+                  },
+                  "end_time": {
+                    "minimum": 0,
+                    "description": "New end time as a Unix epoch in seconds (no milliseconds). Must be after start_time.",
+                    "type": "integer"
+                  },
+                  "partner_appointment_id": {
+                    "minLength": 1,
+                    "description": "Optional caller-supplied id fragment. When provided, the new appointment id becomes `api-<business_table_id>-<partner_appointment_id>` (business_table_id is resolved from `b-id`) and the `:id` path param is treated as a partner fragment resolved to `api-<business_table_id>-<:id>`. When omitted, the server generates the new id as `api-<uuid>` and uses `:id` as-is.",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Existing appointment id (aid) to reschedule."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "appointment_id",
+                    "patient_id",
+                    "doctor_id",
+                    "clinic_id",
+                    "status",
+                    "mode",
+                    "start_time",
+                    "end_time",
+                    "created_at",
+                    "prev_aids"
+                  ],
+                  "properties": {
+                    "appointment_id": {
+                      "type": "string"
+                    },
+                    "patient_id": {
+                      "type": "string"
+                    },
+                    "doctor_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "clinic_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "mode": {
+                      "type": "string"
+                    },
+                    "start_time": {
+                      "type": "number"
+                    },
+                    "end_time": {
+                      "type": "number"
+                    },
+                    "created_at": {
+                      "type": "number"
+                    },
+                    "prev_aids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "next_aid": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/v1/ipd/admission/{admission_id}": {
+      "get": {
+        "summary": "Get an IPD admission by id",
+        "tags": [
+          "IPD"
+        ],
+        "description": "Fetches an IPD admission via @orbi/ipd-admission-sdk (`getAdmissionById`), scoped to the caller's business. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "path",
+            "name": "admission_id",
+            "required": true,
+            "description": "Id of the IPD admission to fetch (document id under `ipd/{b-id}/admissions`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "bid",
+                    "admission_date",
+                    "ipid",
+                    "attendee",
+                    "patient",
+                    "refer",
+                    "doc",
+                    "stage",
+                    "status",
+                    "duration",
+                    "bed",
+                    "rateplan",
+                    "docid",
+                    "category",
+                    "date",
+                    "department",
+                    "pid",
+                    "created_at",
+                    "updated_at",
+                    "facility",
+                    "facilityid",
+                    "totalbilled",
+                    "totalpaid",
+                    "totalbilled_updated_at",
+                    "totalpaid_updated_at"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "bid": {
+                      "type": "string"
+                    },
+                    "admission_date": {
+                      "description": "ISO date-time.",
+                      "type": "string"
+                    },
+                    "discharge_date": {
+                      "type": "string"
+                    },
+                    "ipid": {
+                      "description": "Patient IPD case number.",
+                      "type": "string"
+                    },
+                    "attendee": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "phone",
+                        "relation"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "properties": {
+                            "c": {
+                              "type": "string"
+                            },
+                            "n": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "relation": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "label"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "patient": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "uuid",
+                        "poid",
+                        "formData",
+                        "profile"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "uuid": {
+                          "type": "string"
+                        },
+                        "poid": {
+                          "type": "string"
+                        },
+                        "formData": {
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": true,
+                            "type": "object",
+                            "required": [
+                              "label",
+                              "type",
+                              "key",
+                              "value"
+                            ],
+                            "properties": {
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "key": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "profile": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "required": [
+                            "personal"
+                          ],
+                          "properties": {
+                            "personal": {
+                              "additionalProperties": true,
+                              "type": "object",
+                              "required": [
+                                "gender",
+                                "name"
+                              ],
+                              "properties": {
+                                "gender": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "phone": {
+                                  "additionalProperties": true,
+                                  "type": "object",
+                                  "properties": {
+                                    "c": {
+                                      "type": "string"
+                                    },
+                                    "n": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "age": {
+                                  "additionalProperties": true,
+                                  "type": "object",
+                                  "properties": {
+                                    "dob": {
+                                      "type": "string"
+                                    },
+                                    "value": {
+                                      "type": "string"
+                                    },
+                                    "month": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "procedures": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "notes": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "refer": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "doc": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "notes": {
+                      "type": "string"
+                    },
+                    "medico_legal_case": {
+                      "type": "boolean"
+                    },
+                    "stage": {
+                      "description": "Coarse lifecycle stage (`IN`/`AD`/`DC`) — replaced the legacy coarse `status`.",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "IN"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "AD"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DC"
+                          ]
+                        }
+                      ]
+                    },
+                    "status": {
+                      "description": "Granular lifecycle status within the current `stage`.",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_RECOMMENDED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_ON_HOLD"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_CONFIRMED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_CANCELLED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "BED_ASSIGNED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "UNDER_CARE"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "NOT_RECEIVED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "FIT_FOR_DISCHARGE"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DISCHARGE_INITIATED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "REFERRAL_INITIATED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "LAMA_IN_PROGRESS"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DAMA_IN_PROGRESS"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DEATH_BEING_RECORDED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "PATIENT_MISSING"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DISCHARGED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "LAMA_COMPLETED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DAMA_COMPLETED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "REFERRED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DECEASED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ABSCONDED"
+                          ]
+                        }
+                      ]
+                    },
+                    "duration": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "bed": {
+                      "type": "string"
+                    },
+                    "rateplan": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "inclusions"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "inclusions": {
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": true,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name",
+                              "rate"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "rate": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "docid": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "department": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "pid": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "facility": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "facilityid": {
+                      "type": "string"
+                    },
+                    "totalbilled": {
+                      "type": "number"
+                    },
+                    "totalpaid": {
+                      "type": "number"
+                    },
+                    "totalbilled_updated_at": {
+                      "type": "string"
+                    },
+                    "totalpaid_updated_at": {
+                      "type": "string"
+                    },
+                    "custom_attributes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "clearances_summary": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "statuses",
+                        "completed_count",
+                        "total",
+                        "all_complete"
+                      ],
+                      "properties": {
+                        "statuses": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "PENDING"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "COMPLETED"
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "completed_count": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "all_complete": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "archived": {
+                      "type": "boolean"
+                    },
+                    "actor_oid": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/v1/ipd/admission": {
+      "post": {
+        "summary": "Create an IPD admission",
+        "tags": [
+          "IPD"
+        ],
+        "description": "Creates an IPD admission via @orbi/ipd-admission-sdk (`createAdmission`), scoped to the caller's business. The admission id is server-generated and the acting `oid` is recorded as `actor_oid`. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "ipid",
+                  "patient",
+                  "attendee",
+                  "doc",
+                  "facility",
+                  "bed",
+                  "duration",
+                  "rateplan",
+                  "pid",
+                  "refer",
+                  "docid",
+                  "category",
+                  "department",
+                  "facilityid"
+                ],
+                "properties": {
+                  "ipid": {
+                    "minLength": 1,
+                    "description": "Patient IPD case number.",
+                    "type": "string"
+                  },
+                  "patient": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "uuid",
+                      "poid",
+                      "formData",
+                      "profile"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "uuid": {
+                        "type": "string"
+                      },
+                      "poid": {
+                        "type": "string"
+                      },
+                      "formData": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "required": [
+                            "label",
+                            "type",
+                            "key",
+                            "value"
+                          ],
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "key": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "profile": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "required": [
+                          "personal"
+                        ],
+                        "properties": {
+                          "personal": {
+                            "additionalProperties": true,
+                            "type": "object",
+                            "required": [
+                              "gender",
+                              "name"
+                            ],
+                            "properties": {
+                              "gender": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "phone": {
+                                "additionalProperties": true,
+                                "type": "object",
+                                "properties": {
+                                  "c": {
+                                    "type": "string"
+                                  },
+                                  "n": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "age": {
+                                "additionalProperties": true,
+                                "type": "object",
+                                "properties": {
+                                  "dob": {
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": "string"
+                                  },
+                                  "month": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "attendee": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "phone",
+                      "relation"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "required": [
+                          "c",
+                          "n"
+                        ],
+                        "properties": {
+                          "c": {
+                            "type": "string"
+                          },
+                          "n": {
+                            "minLength": 1,
+                            "description": "Attendee mobile number.",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "relation": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "label"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "doc": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "facility": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "bed": {
+                    "type": "string"
+                  },
+                  "duration": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "required": [
+                      "value",
+                      "unit"
+                    ],
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "unit": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "rateplan": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "inclusions"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "inclusions": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name",
+                            "rate"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "rate": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "pid": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "insurance": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "properties": {
+                      "pre_approved_id": {
+                        "type": "string"
+                      },
+                      "pre_approved_amount": {
+                        "type": "number"
+                      },
+                      "pre_approved": {
+                        "type": "boolean"
+                      },
+                      "number": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "payment_type": {
+                        "type": "string"
+                      },
+                      "insurance_provider": {
+                        "type": "string"
+                      },
+                      "insurance_name": {
+                        "type": "string"
+                      },
+                      "policy_id_picture": {
+                        "type": "string"
+                      },
+                      "medical_claim": {
+                        "type": "string"
+                      },
+                      "coverage_type": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "sum_insured": {
+                        "type": "string"
+                      },
+                      "tpa": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "procedures": {
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "date": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "refer": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "docid": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "department": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "facilityid": {
+                    "type": "string"
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "medico_legal_case": {
+                    "type": "boolean"
+                  },
+                  "custom_attributes": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "stage": {
+                    "description": "Lifecycle stage; defaults to the active inpatient stage (`AD`).",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "IN"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "AD"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "DC"
+                        ]
+                      }
+                    ]
+                  },
+                  "status": {
+                    "description": "Granular lifecycle status; defaults to `BED_ASSIGNED`.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "ADMISSION_RECOMMENDED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "ADMISSION_ON_HOLD"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "ADMISSION_CONFIRMED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "ADMISSION_CANCELLED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "BED_ASSIGNED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "UNDER_CARE"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "NOT_RECEIVED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "FIT_FOR_DISCHARGE"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "DISCHARGE_INITIATED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "REFERRAL_INITIATED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "LAMA_IN_PROGRESS"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "DAMA_IN_PROGRESS"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "DEATH_BEING_RECORDED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "PATIENT_MISSING"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "DISCHARGED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "LAMA_COMPLETED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "DAMA_COMPLETED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "REFERRED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "DECEASED"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "ABSCONDED"
+                        ]
+                      }
+                    ]
+                  },
+                  "admission_date": {
+                    "description": "ISO date-time; defaults to the server now.",
+                    "type": "string"
+                  },
+                  "date": {
+                    "description": "ISO date-time; defaults to the server now.",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "bid",
+                    "admission_date",
+                    "ipid",
+                    "attendee",
+                    "patient",
+                    "refer",
+                    "doc",
+                    "stage",
+                    "status",
+                    "duration",
+                    "bed",
+                    "rateplan",
+                    "docid",
+                    "category",
+                    "date",
+                    "department",
+                    "pid",
+                    "created_at",
+                    "updated_at",
+                    "facility",
+                    "facilityid",
+                    "totalbilled",
+                    "totalpaid",
+                    "totalbilled_updated_at",
+                    "totalpaid_updated_at"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "bid": {
+                      "type": "string"
+                    },
+                    "admission_date": {
+                      "description": "ISO date-time.",
+                      "type": "string"
+                    },
+                    "discharge_date": {
+                      "type": "string"
+                    },
+                    "ipid": {
+                      "description": "Patient IPD case number.",
+                      "type": "string"
+                    },
+                    "attendee": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "phone",
+                        "relation"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "properties": {
+                            "c": {
+                              "type": "string"
+                            },
+                            "n": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "relation": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "label"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "patient": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "uuid",
+                        "poid",
+                        "formData",
+                        "profile"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "uuid": {
+                          "type": "string"
+                        },
+                        "poid": {
+                          "type": "string"
+                        },
+                        "formData": {
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": true,
+                            "type": "object",
+                            "required": [
+                              "label",
+                              "type",
+                              "key",
+                              "value"
+                            ],
+                            "properties": {
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "key": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "profile": {
+                          "additionalProperties": true,
+                          "type": "object",
+                          "required": [
+                            "personal"
+                          ],
+                          "properties": {
+                            "personal": {
+                              "additionalProperties": true,
+                              "type": "object",
+                              "required": [
+                                "gender",
+                                "name"
+                              ],
+                              "properties": {
+                                "gender": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "phone": {
+                                  "additionalProperties": true,
+                                  "type": "object",
+                                  "properties": {
+                                    "c": {
+                                      "type": "string"
+                                    },
+                                    "n": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "age": {
+                                  "additionalProperties": true,
+                                  "type": "object",
+                                  "properties": {
+                                    "dob": {
+                                      "type": "string"
+                                    },
+                                    "value": {
+                                      "type": "string"
+                                    },
+                                    "month": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "procedures": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "notes": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "refer": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "doc": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "notes": {
+                      "type": "string"
+                    },
+                    "medico_legal_case": {
+                      "type": "boolean"
+                    },
+                    "stage": {
+                      "description": "Coarse lifecycle stage (`IN`/`AD`/`DC`) — replaced the legacy coarse `status`.",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "IN"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "AD"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DC"
+                          ]
+                        }
+                      ]
+                    },
+                    "status": {
+                      "description": "Granular lifecycle status within the current `stage`.",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_RECOMMENDED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_ON_HOLD"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_CONFIRMED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ADMISSION_CANCELLED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "BED_ASSIGNED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "UNDER_CARE"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "NOT_RECEIVED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "FIT_FOR_DISCHARGE"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DISCHARGE_INITIATED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "REFERRAL_INITIATED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "LAMA_IN_PROGRESS"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DAMA_IN_PROGRESS"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DEATH_BEING_RECORDED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "PATIENT_MISSING"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DISCHARGED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "LAMA_COMPLETED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DAMA_COMPLETED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "REFERRED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DECEASED"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ABSCONDED"
+                          ]
+                        }
+                      ]
+                    },
+                    "duration": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "bed": {
+                      "type": "string"
+                    },
+                    "rateplan": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "inclusions"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "inclusions": {
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": true,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name",
+                              "rate"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "rate": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "docid": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "department": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "pid": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "facility": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "facilityid": {
+                      "type": "string"
+                    },
+                    "totalbilled": {
+                      "type": "number"
+                    },
+                    "totalpaid": {
+                      "type": "number"
+                    },
+                    "totalbilled_updated_at": {
+                      "type": "string"
+                    },
+                    "totalpaid_updated_at": {
+                      "type": "string"
+                    },
+                    "custom_attributes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "clearances_summary": {
+                      "additionalProperties": true,
+                      "type": "object",
+                      "required": [
+                        "statuses",
+                        "completed_count",
+                        "total",
+                        "all_complete"
+                      ],
+                      "properties": {
+                        "statuses": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "PENDING"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "COMPLETED"
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "completed_count": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "all_complete": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "archived": {
+                      "type": "boolean"
+                    },
+                    "actor_oid": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/medical-history/v1/{patient_id}": {
+      "get": {
+        "summary": "Get a patient's medical history",
+        "tags": [
+          "Medical History"
+        ],
+        "description": "Reads the patient's medical history from setu (S3-backed FHIR store), scoped to the caller's business, and returns it grouped by category. A patient with nothing recorded yields `version: 0` and empty categories. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "description": "Patient identifier (eka patient oid). Medical history is scoped to this patient within the caller's business."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "required": [
+                    "patient_id",
+                    "version",
+                    "no_known_history",
+                    "categories"
+                  ],
+                  "properties": {
+                    "patient_id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "description": "Head version this snapshot was read from (0 = nothing recorded yet).",
+                      "type": "integer"
+                    },
+                    "no_known_history": {
+                      "type": "boolean"
+                    },
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "required": [
+                          "category",
+                          "none_known",
+                          "items"
+                        ],
+                        "properties": {
+                          "category": {
+                            "description": "Category key.",
+                            "type": "string",
+                            "example": "conditions"
+                          },
+                          "none_known": {
+                            "description": "True when this category was explicitly asserted empty.",
+                            "type": "boolean"
+                          },
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": true,
+                              "type": "object",
+                              "required": [
+                                "resource_type",
+                                "resource_id",
+                                "code"
+                              ],
+                              "properties": {
+                                "resource_type": {
+                                  "description": "FHIR resource type this line projects to (e.g. Condition).",
+                                  "type": "string"
+                                },
+                                "resource_id": {
+                                  "description": "Stable line id (setu-derived); pass its `code` again to update it.",
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "type": "string",
+                                      "example": "http://eka.care/mdb"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "type": "string",
+                                      "example": "mdb-cond-diabetes"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "type": "string",
+                                      "example": "Type 2 Diabetes"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only.",
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only.",
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only.",
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only.",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only.",
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Set a patient's medical history",
+        "tags": [
+          "Medical History"
+        ],
+        "description": "Writes the patient's medical history to setu. Each category is optional: send an array to **assert** its final state, or `{ merge: [...] }` to **upsert** without removing other lines; `no_known_history: true` asserts every category empty. Line ids are derived by setu from the coding, so re-posting the same `code` updates that line (idempotent). The acting `oid` is recorded as the author. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "description": "Each category is optional: omit a category to leave it untouched. Send an array to assert its final state, or `{ merge: [...] }` to upsert without removing existing lines.",
+                "type": "object",
+                "properties": {
+                  "conditions": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "other": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "family_history": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "drug_allergies": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "food_other_allergies": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "current_medications": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "past_procedures": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "lifestyle": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "travel_history": {
+                    "description": "Array = assert final state; { merge: [...] } = upsert without removing others.",
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code"
+                          ],
+                          "properties": {
+                            "code": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "system",
+                                "code"
+                              ],
+                              "properties": {
+                                "system": {
+                                  "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                  "examples": [
+                                    "http://eka.care/mdb"
+                                  ],
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "description": "Code within the system.",
+                                  "examples": [
+                                    "mdb-cond-diabetes"
+                                  ],
+                                  "type": "string"
+                                },
+                                "display": {
+                                  "description": "Human-readable label.",
+                                  "examples": [
+                                    "Type 2 Diabetes"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "status": {
+                              "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                              "type": "string"
+                            },
+                            "notes": {
+                              "description": "Free-text note for this line.",
+                              "type": "string"
+                            },
+                            "since": {
+                              "description": "Onset / “since” — free text or ISO date.",
+                              "examples": [
+                                "2 years",
+                                "2022-03-01"
+                              ],
+                              "type": "string"
+                            },
+                            "reported_at": {
+                              "description": "When this line was last reported/edited (ISO date-time).",
+                              "type": "string"
+                            },
+                            "relation": {
+                              "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                              "examples": [
+                                "Father",
+                                "Mother"
+                              ],
+                              "type": "string"
+                            },
+                            "criticality": {
+                              "description": "allergy categories only — reaction criticality.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "low"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "high"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "unable-to-assess"
+                                  ]
+                                }
+                              ]
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dosage.",
+                              "examples": [
+                                "1-0-1 after food"
+                              ],
+                              "type": "string"
+                            },
+                            "performed_on": {
+                              "description": "past_procedures only — when the procedure was performed (ISO date).",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "lifestyle / travel_history only — free-text value.",
+                              "examples": [
+                                "10 cigarettes/day"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "merge"
+                        ],
+                        "properties": {
+                          "merge": {
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "system",
+                                    "code"
+                                  ],
+                                  "properties": {
+                                    "system": {
+                                      "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
+                                      "examples": [
+                                        "http://eka.care/mdb"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "description": "Code within the system.",
+                                      "examples": [
+                                        "mdb-cond-diabetes"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "display": {
+                                      "description": "Human-readable label.",
+                                      "examples": [
+                                        "Type 2 Diabetes"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "status": {
+                                  "description": "Category-normalised status, e.g. a condition's `active`/`inactive`/`resolved`.",
+                                  "type": "string"
+                                },
+                                "notes": {
+                                  "description": "Free-text note for this line.",
+                                  "type": "string"
+                                },
+                                "since": {
+                                  "description": "Onset / “since” — free text or ISO date.",
+                                  "examples": [
+                                    "2 years",
+                                    "2022-03-01"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reported_at": {
+                                  "description": "When this line was last reported/edited (ISO date-time).",
+                                  "type": "string"
+                                },
+                                "relation": {
+                                  "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
+                                  "examples": [
+                                    "Father",
+                                    "Mother"
+                                  ],
+                                  "type": "string"
+                                },
+                                "criticality": {
+                                  "description": "allergy categories only — reaction criticality.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "low"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "high"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "unable-to-assess"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dosage.",
+                                  "examples": [
+                                    "1-0-1 after food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "performed_on": {
+                                  "description": "past_procedures only — when the procedure was performed (ISO date).",
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "description": "lifestyle / travel_history only — free-text value.",
+                                  "examples": [
+                                    "10 cigarettes/day"
+                                  ],
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "no_known_history": {
+                    "description": "When true, asserts every category empty (a whole-MH “nothing known”). Overrides any sections sent.",
+                    "type": "boolean"
+                  },
+                  "recorded_at": {
+                    "description": "Snapshot timestamp (ISO date-time). Defaults to now.",
+                    "type": "string"
+                  }
+                }
+              },
+              "examples": {
+                "no_known_history": {
+                  "summary": "No known history",
+                  "value": {
+                    "no_known_history": true
+                  }
+                },
+                "merge_upsert": {
+                  "summary": "Merge (upsert) one medication, leaving other sections untouched",
+                  "value": {
+                    "current_medications": {
+                      "merge": [
+                        {
+                          "code": {
+                            "system": "http://eka.care/mdb",
+                            "code": "mdb-med-metformin",
+                            "display": "Metformin 500mg"
+                          },
+                          "status": "active",
+                          "dosage_text": "1-0-1 after food"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "full_assert": {
+                  "summary": "Assert a full multi-category medical history",
+                  "value": {
+                    "conditions": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-cond-diabetes",
+                          "display": "Type 2 Diabetes"
+                        },
+                        "status": "active",
+                        "since": "2 years"
+                      },
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-cond-htn",
+                          "display": "Hypertension"
+                        },
+                        "status": "active"
+                      }
+                    ],
+                    "drug_allergies": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-allergy-penicillin",
+                          "display": "Penicillin"
+                        },
+                        "criticality": "high"
+                      }
+                    ],
+                    "family_history": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-cond-htn",
+                          "display": "Hypertension"
+                        },
+                        "relation": "Father"
+                      }
+                    ],
+                    "past_procedures": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-proc-appendectomy",
+                          "display": "Appendectomy"
+                        },
+                        "performed_on": "2019-05-12"
+                      }
+                    ],
+                    "lifestyle": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-life-smoking",
+                          "display": "Smoking"
+                        },
+                        "value": "10 cigarettes/day"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "description": "Each category is optional: omit a category to leave it untouched. Send an array to assert its final state, or `{ merge: [...] }` to upsert without removing existing lines."
+        },
+        "parameters": [
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "description": "Patient identifier (eka patient oid). Medical history is scoped to this patient within the caller's business."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "version",
+                    "txn_id"
+                  ],
+                  "properties": {
+                    "version": {
+                      "description": "New head version after the save.",
+                      "type": "integer"
+                    },
+                    "txn_id": {
+                      "description": "Transaction id stamped on every line written by this save.",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current host"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Appointments",
+      "description": "Appointment lifecycle operations"
+    },
+    {
+      "name": "Medical History",
+      "description": "Patient medical history (setu-backed)"
+    }
+  ]
+}
