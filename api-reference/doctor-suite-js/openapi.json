@@ -2280,6 +2280,10 @@
                                 "reported_at": {
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Upstream row id (any category).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only.",
                                   "type": "string"
@@ -2288,7 +2292,43 @@
                                   "description": "allergy categories only.",
                                   "type": "string"
                                 },
+                                "allergy_type": {
+                                  "description": "allergy categories only.",
+                                  "type": "string"
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication.",
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication.",
+                                  "type": "string"
+                                },
                                 "dosage_text": {
+                                  "description": "current_medications only.",
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only.",
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only.",
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only.",
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only.",
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only.",
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
                                   "description": "current_medications only.",
                                   "type": "string"
                                 },
@@ -2427,6 +2467,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -2458,10 +2502,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -2546,6 +2668,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -2577,10 +2703,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -2665,6 +2869,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -2696,10 +2904,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -2784,6 +3070,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -2815,10 +3105,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -2903,6 +3271,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -2934,10 +3306,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -3022,6 +3472,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -3053,10 +3507,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -3141,6 +3673,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -3172,10 +3708,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -3260,6 +3874,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -3291,10 +3909,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -3379,6 +4075,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -3410,10 +4110,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -3498,6 +4276,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -3529,10 +4311,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -3617,6 +4477,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -3648,10 +4512,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -3736,6 +4678,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -3767,10 +4713,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -3855,6 +4879,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -3886,10 +4914,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -3974,6 +5080,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -4005,10 +5115,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -4093,6 +5281,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -4124,10 +5316,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -4212,6 +5482,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -4243,10 +5517,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -4331,6 +5683,10 @@
                               "description": "When this line was last reported/edited (ISO date-time).",
                               "type": "string"
                             },
+                            "entity_id": {
+                              "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                              "type": "string"
+                            },
                             "relation": {
                               "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                               "examples": [
@@ -4362,10 +5718,88 @@
                                 }
                               ]
                             },
-                            "dosage_text": {
-                              "description": "current_medications only — free-text dosage.",
+                            "allergy_type": {
+                              "description": "allergy categories only — allergy vs intolerance.",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "allergy"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "intolerance"
+                                  ]
+                                }
+                              ]
+                            },
+                            "generic_id": {
+                              "description": "allergy / medication — generic (molecule) id.",
                               "examples": [
-                                "1-0-1 after food"
+                                "mdb-gen-amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "generic_name": {
+                              "description": "allergy / medication — generic (molecule) name.",
+                              "examples": [
+                                "Amoxicillin"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_text": {
+                              "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                              "examples": [
+                                "3 tablet"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_value": {
+                              "description": "current_medications only — numeric dose magnitude.",
+                              "examples": [
+                                "3",
+                                "500"
+                              ],
+                              "type": "string"
+                            },
+                            "dose_unit": {
+                              "description": "current_medications only — dose unit.",
+                              "examples": [
+                                "tablet",
+                                "mg"
+                              ],
+                              "type": "string"
+                            },
+                            "frequency_text": {
+                              "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                              "examples": [
+                                "1-0-1",
+                                "twice a day"
+                              ],
+                              "type": "string"
+                            },
+                            "timing_text": {
+                              "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                              "examples": [
+                                "Before Meal",
+                                "After Food"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form": {
+                              "description": "current_medications only — dosage form label.",
+                              "examples": [
+                                "tablet",
+                                "syrup"
+                              ],
+                              "type": "string"
+                            },
+                            "dosage_form_id": {
+                              "description": "current_medications only — dosage form id.",
+                              "examples": [
+                                "mdb-df-tablet"
                               ],
                               "type": "string"
                             },
@@ -4450,6 +5884,10 @@
                                   "description": "When this line was last reported/edited (ISO date-time).",
                                   "type": "string"
                                 },
+                                "entity_id": {
+                                  "description": "Any category — upstream row id from the source system (stored as a FHIR identifier).",
+                                  "type": "string"
+                                },
                                 "relation": {
                                   "description": "family_history only — the family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
                                   "examples": [
@@ -4481,10 +5919,88 @@
                                     }
                                   ]
                                 },
-                                "dosage_text": {
-                                  "description": "current_medications only — free-text dosage.",
+                                "allergy_type": {
+                                  "description": "allergy categories only — allergy vs intolerance.",
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "allergy"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "intolerance"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "generic_id": {
+                                  "description": "allergy / medication — generic (molecule) id.",
                                   "examples": [
-                                    "1-0-1 after food"
+                                    "mdb-gen-amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "generic_name": {
+                                  "description": "allergy / medication — generic (molecule) name.",
+                                  "examples": [
+                                    "Amoxicillin"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_text": {
+                                  "description": "current_medications only — free-text dose (e.g. `3 tablet`).",
+                                  "examples": [
+                                    "3 tablet"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_value": {
+                                  "description": "current_medications only — numeric dose magnitude.",
+                                  "examples": [
+                                    "3",
+                                    "500"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dose_unit": {
+                                  "description": "current_medications only — dose unit.",
+                                  "examples": [
+                                    "tablet",
+                                    "mg"
+                                  ],
+                                  "type": "string"
+                                },
+                                "frequency_text": {
+                                  "description": "current_medications only — how often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing and keeps the phrase.",
+                                  "examples": [
+                                    "1-0-1",
+                                    "twice a day"
+                                  ],
+                                  "type": "string"
+                                },
+                                "timing_text": {
+                                  "description": "current_medications only — timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
+                                  "examples": [
+                                    "Before Meal",
+                                    "After Food"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form": {
+                                  "description": "current_medications only — dosage form label.",
+                                  "examples": [
+                                    "tablet",
+                                    "syrup"
+                                  ],
+                                  "type": "string"
+                                },
+                                "dosage_form_id": {
+                                  "description": "current_medications only — dosage form id.",
+                                  "examples": [
+                                    "mdb-df-tablet"
                                   ],
                                   "type": "string"
                                 },
@@ -4601,6 +6117,127 @@
                           "display": "Smoking"
                         },
                         "value": "10 cigarettes/day"
+                      }
+                    ]
+                  }
+                },
+                "all_fields": {
+                  "summary": "Every category and every field (full reference payload)",
+                  "value": {
+                    "conditions": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-cond-diabetes",
+                          "display": "Type 2 Diabetes"
+                        },
+                        "status": "active",
+                        "since": "2 years",
+                        "reported_at": "2026-07-24T09:30:00Z",
+                        "notes": "on oral hypoglycaemics",
+                        "entity_id": "row-cond-1"
+                      }
+                    ],
+                    "other": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-cond-migraine",
+                          "display": "Migraine"
+                        },
+                        "status": "inactive",
+                        "notes": "episodic"
+                      }
+                    ],
+                    "family_history": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-cond-htn",
+                          "display": "Hypertension"
+                        },
+                        "relation": "Father",
+                        "entity_id": "row-fam-1",
+                        "notes": "diagnosed at 50"
+                      }
+                    ],
+                    "drug_allergies": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-allergy-augmentin",
+                          "display": "Augmentin"
+                        },
+                        "criticality": "high",
+                        "allergy_type": "allergy",
+                        "generic_id": "mdb-gen-amoxicillin",
+                        "generic_name": "Amoxicillin",
+                        "since": "5 years",
+                        "notes": "rash + swelling"
+                      }
+                    ],
+                    "food_other_allergies": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-allergy-peanut",
+                          "display": "Peanuts"
+                        },
+                        "criticality": "unable-to-assess",
+                        "allergy_type": "intolerance"
+                      }
+                    ],
+                    "current_medications": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-brand-dolo650",
+                          "display": "Dolo 650"
+                        },
+                        "status": "active",
+                        "generic_id": "mdb-gen-paracetamol",
+                        "generic_name": "Paracetamol 650",
+                        "dosage_form": "tablet",
+                        "dosage_form_id": "mdb-df-tablet",
+                        "dose_value": "1",
+                        "dose_unit": "tablet",
+                        "dosage_text": "1 tablet",
+                        "frequency_text": "1-0-1",
+                        "timing_text": "After Food",
+                        "since": "3 days"
+                      }
+                    ],
+                    "past_procedures": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-proc-appendectomy",
+                          "display": "Appendectomy"
+                        },
+                        "performed_on": "2019-05-12",
+                        "status": "completed",
+                        "notes": "laparoscopic"
+                      }
+                    ],
+                    "lifestyle": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-life-smoking",
+                          "display": "Smoking"
+                        },
+                        "value": "10 cigarettes/day",
+                        "since": "8 years"
+                      }
+                    ],
+                    "travel_history": [
+                      {
+                        "code": {
+                          "system": "http://eka.care/mdb",
+                          "code": "mdb-travel-kerala",
+                          "display": "Kerala"
+                        },
+                        "notes": "monsoon season"
                       }
                     ]
                   }
