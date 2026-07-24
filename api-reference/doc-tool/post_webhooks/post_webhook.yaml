@@ -1660,8 +1660,152 @@ paths:
                       example: "doctor"
                       description: "Who performed the action or update"
       deprecated: false
-  
-  
+
+  /registered_url_for_receipt_payment_requested_events:
+    post:
+      tags:
+        - Receipt Webhooks
+      summary: Payment Link Requested
+      description: >-
+        When a payment link is requested against an appointment, a webhook event is sent to the registered endpoint containing the appointment ID, doctor ID, patient ID, net amount and the payment checkout URL.
+
+
+        The receiving system can share the `url` with the patient to let them complete the payment, or use the other identifiers to reconcile the request in their own system.
+
+
+        **Field Definitions**
+
+
+        • **service**: string - The type of service. For this event, this will be `appointment`.
+
+
+        • **event**: string - The type of event. For a payment link request, this will be `receipt_payment.requested`.
+
+
+        • **event_time**: integer - Event occurrence timestamp in milliseconds.
+
+
+        • **transaction_id**: string - Unique transaction identifier for the event.
+
+
+        • **timestamp**: integer - Timestamp of the event.
+
+
+        • **business_id**: string - The eka ID of the business.
+
+
+        • **client_id**: string - Client ID associated with the event.
+
+
+        • **data**: object - Contains detailed information about the payment request.
+
+
+        • **appointment_id**: string - Unique identifier for the appointment.
+
+
+        • **doctor_id**: string - Unique identifier for the doctor.
+
+
+        • **patient_id**: string - Unique identifier for the patient.
+
+
+        • **net_amount**: number - Net payable amount for which the payment link is generated.
+
+
+        • **url**: string - Payment checkout URL to be shared with the patient to complete the payment.
+
+
+        **Example Webhook Request**
+
+
+        **Endpoint:**
+        [https://your-registered-webhook-url.com](https://your-registered-webhook-url.com)
+
+
+        **Method:** POST
+      operationId: ReceiptPaymentRequestedWebhook
+      parameters: []
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service
+                - event
+                - event_time
+                - transaction_id
+                - timestamp
+                - business_id
+                - data
+              properties:
+                service:
+                  type: string
+                  example: "appointment"
+                  description: "Type of service"
+                event:
+                  type: string
+                  enum:
+                    - "receipt_payment.requested"
+                  example: "receipt_payment.requested"
+                  description: "Type of event"
+                event_time:
+                  type: integer
+                  example: 1784875356443
+                  description: "Event occurrence timestamp in milliseconds"
+                transaction_id:
+                  type: string
+                  example: "d-486ddbf4-a22b-4266-8420-167191b7d370:receipt_payment.requested:1784875356443"
+                  description: "Unique transaction identifier for the event"
+                timestamp:
+                  type: integer
+                  example: 0
+                  description: "Timestamp of the event"
+                business_id:
+                  type: string
+                  example: "7178133497043052"
+                  description: "Business ID for the payment request"
+                client_id:
+                  type: string
+                  example: ""
+                  description: "Client ID for the payment request"
+                data:
+                  type: object
+                  required:
+                    - appointment_id
+                    - doctor_id
+                    - patient_id
+                    - net_amount
+                    - url
+                  properties:
+                    appointment_id:
+                      type: string
+                      example: "d-486ddbf4-a22b-4266-8420-167191b7d370"
+                      description: "Unique identifier for the appointment"
+                    doctor_id:
+                      type: string
+                      example: "do1783067124676"
+                      description: "Unique identifier for the doctor"
+                    patient_id:
+                      type: string
+                      example: "178487533949192"
+                      description: "Unique identifier for the patient"
+                    net_amount:
+                      type: number
+                      example: 850
+                      description: "Net payable amount for which the payment link is generated"
+                    url:
+                      type: string
+                      example: "https://payment.eka.care/payment_checkout?transaction_id=345rjeklfsdf"
+                      description: "Payment checkout URL to be shared with the patient to complete the payment"
+      responses:
+        '200':
+          description: ''
+          headers: {}
+      deprecated: false
+
+
   /registered_url_for_appointment_tele_dr_joined_webhook_events:
     post:
       tags:
