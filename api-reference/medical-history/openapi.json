@@ -6,15 +6,21 @@
     "version": "0.1.0"
   },
   "components": {
+    "securitySchemes": {
+      "auth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "auth",
+        "description": "The business auth token. Fetch it from the Authorization APIs."
+      }
+    },
     "schemas": {}
   },
   "paths": {
     "/health": {
       "get": {
         "summary": "Liveness probe",
-        "tags": [
-          "Health"
-        ],
+        "tags": ["Health"],
         "responses": {
           "200": {
             "description": "Default Response",
@@ -22,15 +28,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "status"
-                  ],
+                  "required": ["status"],
                   "properties": {
                     "status": {
                       "type": "string",
-                      "enum": [
-                        "ok"
-                      ]
+                      "enum": ["ok"]
                     }
                   }
                 }
@@ -43,10 +45,8 @@
     "/appointments/v1/{id}/reschedule": {
       "patch": {
         "summary": "Reschedule an appointment",
-        "tags": [
-          "Appointments"
-        ],
-        "description": "Reschedules an appointment to a new time window via @orbi/product-sdk. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "tags": ["Appointments"],
+        "description": "Reschedules an appointment to a new time window.",
         "requestBody": {
           "required": true,
           "content": {
@@ -54,10 +54,7 @@
               "schema": {
                 "additionalProperties": false,
                 "type": "object",
-                "required": [
-                  "start_time",
-                  "end_time"
-                ],
+                "required": ["start_time", "end_time"],
                 "properties": {
                   "start_time": {
                     "minimum": 0,
@@ -71,7 +68,7 @@
                   },
                   "partner_appointment_id": {
                     "minLength": 1,
-                    "description": "Optional caller-supplied id fragment. When provided, the new appointment id becomes `api-<business_table_id>-<partner_appointment_id>` (business_table_id is resolved from `b-id`) and the `:id` path param is treated as a partner fragment resolved to `api-<business_table_id>-<:id>`. When omitted, the server generates the new id as `api-<uuid>` and uses `:id` as-is.",
+                    "description": "Optional caller-supplied id fragment. When provided, the new appointment id becomes `api-<business_table_id>-<partner_appointment_id>` (business_table_id is derived from your business) and the `:id` path param is treated as a partner fragment resolved to `api-<business_table_id>-<:id>`. When omitted, the server generates the new id as `api-<uuid>` and uses `:id` as-is.",
                     "type": "string"
                   }
                 }
@@ -165,9 +162,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -183,9 +178,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -201,9 +194,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -219,9 +210,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -237,10 +226,8 @@
     "/appointments/v1/ipd/admission/{admission_id}": {
       "get": {
         "summary": "Get an IPD admission by id",
-        "tags": [
-          "IPD"
-        ],
-        "description": "Fetches an IPD admission via @orbi/ipd-admission-sdk (`getAdmissionById`), scoped to the caller's business. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "tags": ["IPD"],
+        "description": "Fetches an IPD admission, scoped to the caller's business.",
         "parameters": [
           {
             "schema": {
@@ -250,7 +237,7 @@
             "in": "path",
             "name": "admission_id",
             "required": true,
-            "description": "Id of the IPD admission to fetch (document id under `ipd/{b-id}/admissions`)."
+            "description": "Id of the IPD admission to fetch."
           }
         ],
         "responses": {
@@ -310,12 +297,7 @@
                     "attendee": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name",
-                        "phone",
-                        "relation"
-                      ],
+                      "required": ["id", "name", "phone", "relation"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -338,10 +320,7 @@
                         "relation": {
                           "additionalProperties": true,
                           "type": "object",
-                          "required": [
-                            "id",
-                            "label"
-                          ],
+                          "required": ["id", "label"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -356,13 +335,7 @@
                     "patient": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "id",
-                        "uuid",
-                        "poid",
-                        "formData",
-                        "profile"
-                      ],
+                      "required": ["id", "uuid", "poid", "formData", "profile"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -378,12 +351,7 @@
                           "items": {
                             "additionalProperties": true,
                             "type": "object",
-                            "required": [
-                              "label",
-                              "type",
-                              "key",
-                              "value"
-                            ],
+                            "required": ["label", "type", "key", "value"],
                             "properties": {
                               "label": {
                                 "type": "string"
@@ -416,17 +384,12 @@
                         "profile": {
                           "additionalProperties": true,
                           "type": "object",
-                          "required": [
-                            "personal"
-                          ],
+                          "required": ["personal"],
                           "properties": {
                             "personal": {
                               "additionalProperties": true,
                               "type": "object",
-                              "required": [
-                                "gender",
-                                "name"
-                              ],
+                              "required": ["gender", "name"],
                               "properties": {
                                 "gender": {
                                   "type": "string"
@@ -472,10 +435,7 @@
                       "items": {
                         "additionalProperties": true,
                         "type": "object",
-                        "required": [
-                          "id",
-                          "name"
-                        ],
+                        "required": ["id", "name"],
                         "properties": {
                           "id": {
                             "type": "string"
@@ -494,10 +454,7 @@
                     },
                     "refer": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -509,10 +466,7 @@
                     },
                     "doc": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -533,21 +487,15 @@
                       "anyOf": [
                         {
                           "type": "string",
-                          "enum": [
-                            "IN"
-                          ]
+                          "enum": ["IN"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "AD"
-                          ]
+                          "enum": ["AD"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DC"
-                          ]
+                          "enum": ["DC"]
                         }
                       ]
                     },
@@ -556,133 +504,90 @@
                       "anyOf": [
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_RECOMMENDED"
-                          ]
+                          "enum": ["ADMISSION_RECOMMENDED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_ON_HOLD"
-                          ]
+                          "enum": ["ADMISSION_ON_HOLD"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_CONFIRMED"
-                          ]
+                          "enum": ["ADMISSION_CONFIRMED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_CANCELLED"
-                          ]
+                          "enum": ["ADMISSION_CANCELLED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "BED_ASSIGNED"
-                          ]
+                          "enum": ["BED_ASSIGNED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "UNDER_CARE"
-                          ]
+                          "enum": ["UNDER_CARE"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "NOT_RECEIVED"
-                          ]
+                          "enum": ["NOT_RECEIVED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "FIT_FOR_DISCHARGE"
-                          ]
+                          "enum": ["FIT_FOR_DISCHARGE"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DISCHARGE_INITIATED"
-                          ]
+                          "enum": ["DISCHARGE_INITIATED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "REFERRAL_INITIATED"
-                          ]
+                          "enum": ["REFERRAL_INITIATED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "LAMA_IN_PROGRESS"
-                          ]
+                          "enum": ["LAMA_IN_PROGRESS"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DAMA_IN_PROGRESS"
-                          ]
+                          "enum": ["DAMA_IN_PROGRESS"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DEATH_BEING_RECORDED"
-                          ]
+                          "enum": ["DEATH_BEING_RECORDED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "PATIENT_MISSING"
-                          ]
+                          "enum": ["PATIENT_MISSING"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DISCHARGED"
-                          ]
+                          "enum": ["DISCHARGED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "LAMA_COMPLETED"
-                          ]
+                          "enum": ["LAMA_COMPLETED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DAMA_COMPLETED"
-                          ]
+                          "enum": ["DAMA_COMPLETED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "REFERRED"
-                          ]
+                          "enum": ["REFERRED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DECEASED"
-                          ]
+                          "enum": ["DECEASED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ABSCONDED"
-                          ]
+                          "enum": ["ABSCONDED"]
                         }
                       ]
                     },
                     "duration": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "value",
-                        "unit"
-                      ],
+                      "required": ["value", "unit"],
                       "properties": {
                         "value": {
                           "type": "number"
@@ -698,11 +603,7 @@
                     "rateplan": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name",
-                        "inclusions"
-                      ],
+                      "required": ["id", "name", "inclusions"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -715,11 +616,7 @@
                           "items": {
                             "additionalProperties": true,
                             "type": "object",
-                            "required": [
-                              "id",
-                              "name",
-                              "rate"
-                            ],
+                            "required": ["id", "name", "rate"],
                             "properties": {
                               "id": {
                                 "type": "string"
@@ -740,10 +637,7 @@
                     },
                     "category": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -758,10 +652,7 @@
                     },
                     "department": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -782,10 +673,7 @@
                     },
                     "facility": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -822,12 +710,7 @@
                     "clearances_summary": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "statuses",
-                        "completed_count",
-                        "total",
-                        "all_complete"
-                      ],
+                      "required": ["statuses", "completed_count", "total", "all_complete"],
                       "properties": {
                         "statuses": {
                           "type": "object",
@@ -835,15 +718,11 @@
                             "anyOf": [
                               {
                                 "type": "string",
-                                "enum": [
-                                  "PENDING"
-                                ]
+                                "enum": ["PENDING"]
                               },
                               {
                                 "type": "string",
-                                "enum": [
-                                  "COMPLETED"
-                                ]
+                                "enum": ["COMPLETED"]
                               }
                             ]
                           }
@@ -876,9 +755,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -894,9 +771,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -912,10 +787,8 @@
     "/appointments/v1/ipd/admission": {
       "post": {
         "summary": "Create an IPD admission",
-        "tags": [
-          "IPD"
-        ],
-        "description": "Creates an IPD admission via @orbi/ipd-admission-sdk (`createAdmission`), scoped to the caller's business. The admission id is server-generated and the acting `oid` is recorded as `actor_oid`. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "tags": ["IPD"],
+        "description": "Creates an IPD admission, scoped to the caller's business. The admission id is server-generated and the authenticated user is recorded as the actor.",
         "requestBody": {
           "required": true,
           "content": {
@@ -948,13 +821,7 @@
                   "patient": {
                     "additionalProperties": true,
                     "type": "object",
-                    "required": [
-                      "id",
-                      "uuid",
-                      "poid",
-                      "formData",
-                      "profile"
-                    ],
+                    "required": ["id", "uuid", "poid", "formData", "profile"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -970,12 +837,7 @@
                         "items": {
                           "additionalProperties": true,
                           "type": "object",
-                          "required": [
-                            "label",
-                            "type",
-                            "key",
-                            "value"
-                          ],
+                          "required": ["label", "type", "key", "value"],
                           "properties": {
                             "label": {
                               "type": "string"
@@ -1008,17 +870,12 @@
                       "profile": {
                         "additionalProperties": true,
                         "type": "object",
-                        "required": [
-                          "personal"
-                        ],
+                        "required": ["personal"],
                         "properties": {
                           "personal": {
                             "additionalProperties": true,
                             "type": "object",
-                            "required": [
-                              "gender",
-                              "name"
-                            ],
+                            "required": ["gender", "name"],
                             "properties": {
                               "gender": {
                                 "type": "string"
@@ -1062,12 +919,7 @@
                   "attendee": {
                     "additionalProperties": true,
                     "type": "object",
-                    "required": [
-                      "id",
-                      "name",
-                      "phone",
-                      "relation"
-                    ],
+                    "required": ["id", "name", "phone", "relation"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -1078,10 +930,7 @@
                       "phone": {
                         "additionalProperties": true,
                         "type": "object",
-                        "required": [
-                          "c",
-                          "n"
-                        ],
+                        "required": ["c", "n"],
                         "properties": {
                           "c": {
                             "type": "string"
@@ -1096,10 +945,7 @@
                       "relation": {
                         "additionalProperties": true,
                         "type": "object",
-                        "required": [
-                          "id",
-                          "label"
-                        ],
+                        "required": ["id", "label"],
                         "properties": {
                           "id": {
                             "type": "string"
@@ -1113,10 +959,7 @@
                   },
                   "doc": {
                     "type": "object",
-                    "required": [
-                      "id",
-                      "name"
-                    ],
+                    "required": ["id", "name"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -1128,10 +971,7 @@
                   },
                   "facility": {
                     "type": "object",
-                    "required": [
-                      "id",
-                      "name"
-                    ],
+                    "required": ["id", "name"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -1147,10 +987,7 @@
                   "duration": {
                     "additionalProperties": true,
                     "type": "object",
-                    "required": [
-                      "value",
-                      "unit"
-                    ],
+                    "required": ["value", "unit"],
                     "properties": {
                       "value": {
                         "type": "number"
@@ -1163,11 +1000,7 @@
                   "rateplan": {
                     "additionalProperties": true,
                     "type": "object",
-                    "required": [
-                      "id",
-                      "name",
-                      "inclusions"
-                    ],
+                    "required": ["id", "name", "inclusions"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -1180,11 +1013,7 @@
                         "items": {
                           "additionalProperties": true,
                           "type": "object",
-                          "required": [
-                            "id",
-                            "name",
-                            "rate"
-                          ],
+                          "required": ["id", "name", "rate"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -1257,10 +1086,7 @@
                     "items": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -1279,10 +1105,7 @@
                   },
                   "refer": {
                     "type": "object",
-                    "required": [
-                      "id",
-                      "name"
-                    ],
+                    "required": ["id", "name"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -1297,10 +1120,7 @@
                   },
                   "category": {
                     "type": "object",
-                    "required": [
-                      "id",
-                      "name"
-                    ],
+                    "required": ["id", "name"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -1312,10 +1132,7 @@
                   },
                   "department": {
                     "type": "object",
-                    "required": [
-                      "id",
-                      "name"
-                    ],
+                    "required": ["id", "name"],
                     "properties": {
                       "id": {
                         "type": "string"
@@ -1348,21 +1165,15 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          "IN"
-                        ]
+                        "enum": ["IN"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "AD"
-                        ]
+                        "enum": ["AD"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "DC"
-                        ]
+                        "enum": ["DC"]
                       }
                     ]
                   },
@@ -1371,123 +1182,83 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          "ADMISSION_RECOMMENDED"
-                        ]
+                        "enum": ["ADMISSION_RECOMMENDED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "ADMISSION_ON_HOLD"
-                        ]
+                        "enum": ["ADMISSION_ON_HOLD"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "ADMISSION_CONFIRMED"
-                        ]
+                        "enum": ["ADMISSION_CONFIRMED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "ADMISSION_CANCELLED"
-                        ]
+                        "enum": ["ADMISSION_CANCELLED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "BED_ASSIGNED"
-                        ]
+                        "enum": ["BED_ASSIGNED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "UNDER_CARE"
-                        ]
+                        "enum": ["UNDER_CARE"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "NOT_RECEIVED"
-                        ]
+                        "enum": ["NOT_RECEIVED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "FIT_FOR_DISCHARGE"
-                        ]
+                        "enum": ["FIT_FOR_DISCHARGE"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "DISCHARGE_INITIATED"
-                        ]
+                        "enum": ["DISCHARGE_INITIATED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "REFERRAL_INITIATED"
-                        ]
+                        "enum": ["REFERRAL_INITIATED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "LAMA_IN_PROGRESS"
-                        ]
+                        "enum": ["LAMA_IN_PROGRESS"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "DAMA_IN_PROGRESS"
-                        ]
+                        "enum": ["DAMA_IN_PROGRESS"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "DEATH_BEING_RECORDED"
-                        ]
+                        "enum": ["DEATH_BEING_RECORDED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "PATIENT_MISSING"
-                        ]
+                        "enum": ["PATIENT_MISSING"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "DISCHARGED"
-                        ]
+                        "enum": ["DISCHARGED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "LAMA_COMPLETED"
-                        ]
+                        "enum": ["LAMA_COMPLETED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "DAMA_COMPLETED"
-                        ]
+                        "enum": ["DAMA_COMPLETED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "REFERRED"
-                        ]
+                        "enum": ["REFERRED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "DECEASED"
-                        ]
+                        "enum": ["DECEASED"]
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          "ABSCONDED"
-                        ]
+                        "enum": ["ABSCONDED"]
                       }
                     ]
                   },
@@ -1561,12 +1332,7 @@
                     "attendee": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name",
-                        "phone",
-                        "relation"
-                      ],
+                      "required": ["id", "name", "phone", "relation"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -1589,10 +1355,7 @@
                         "relation": {
                           "additionalProperties": true,
                           "type": "object",
-                          "required": [
-                            "id",
-                            "label"
-                          ],
+                          "required": ["id", "label"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -1607,13 +1370,7 @@
                     "patient": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "id",
-                        "uuid",
-                        "poid",
-                        "formData",
-                        "profile"
-                      ],
+                      "required": ["id", "uuid", "poid", "formData", "profile"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -1629,12 +1386,7 @@
                           "items": {
                             "additionalProperties": true,
                             "type": "object",
-                            "required": [
-                              "label",
-                              "type",
-                              "key",
-                              "value"
-                            ],
+                            "required": ["label", "type", "key", "value"],
                             "properties": {
                               "label": {
                                 "type": "string"
@@ -1667,17 +1419,12 @@
                         "profile": {
                           "additionalProperties": true,
                           "type": "object",
-                          "required": [
-                            "personal"
-                          ],
+                          "required": ["personal"],
                           "properties": {
                             "personal": {
                               "additionalProperties": true,
                               "type": "object",
-                              "required": [
-                                "gender",
-                                "name"
-                              ],
+                              "required": ["gender", "name"],
                               "properties": {
                                 "gender": {
                                   "type": "string"
@@ -1723,10 +1470,7 @@
                       "items": {
                         "additionalProperties": true,
                         "type": "object",
-                        "required": [
-                          "id",
-                          "name"
-                        ],
+                        "required": ["id", "name"],
                         "properties": {
                           "id": {
                             "type": "string"
@@ -1745,10 +1489,7 @@
                     },
                     "refer": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -1760,10 +1501,7 @@
                     },
                     "doc": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -1784,21 +1522,15 @@
                       "anyOf": [
                         {
                           "type": "string",
-                          "enum": [
-                            "IN"
-                          ]
+                          "enum": ["IN"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "AD"
-                          ]
+                          "enum": ["AD"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DC"
-                          ]
+                          "enum": ["DC"]
                         }
                       ]
                     },
@@ -1807,133 +1539,90 @@
                       "anyOf": [
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_RECOMMENDED"
-                          ]
+                          "enum": ["ADMISSION_RECOMMENDED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_ON_HOLD"
-                          ]
+                          "enum": ["ADMISSION_ON_HOLD"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_CONFIRMED"
-                          ]
+                          "enum": ["ADMISSION_CONFIRMED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ADMISSION_CANCELLED"
-                          ]
+                          "enum": ["ADMISSION_CANCELLED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "BED_ASSIGNED"
-                          ]
+                          "enum": ["BED_ASSIGNED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "UNDER_CARE"
-                          ]
+                          "enum": ["UNDER_CARE"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "NOT_RECEIVED"
-                          ]
+                          "enum": ["NOT_RECEIVED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "FIT_FOR_DISCHARGE"
-                          ]
+                          "enum": ["FIT_FOR_DISCHARGE"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DISCHARGE_INITIATED"
-                          ]
+                          "enum": ["DISCHARGE_INITIATED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "REFERRAL_INITIATED"
-                          ]
+                          "enum": ["REFERRAL_INITIATED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "LAMA_IN_PROGRESS"
-                          ]
+                          "enum": ["LAMA_IN_PROGRESS"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DAMA_IN_PROGRESS"
-                          ]
+                          "enum": ["DAMA_IN_PROGRESS"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DEATH_BEING_RECORDED"
-                          ]
+                          "enum": ["DEATH_BEING_RECORDED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "PATIENT_MISSING"
-                          ]
+                          "enum": ["PATIENT_MISSING"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DISCHARGED"
-                          ]
+                          "enum": ["DISCHARGED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "LAMA_COMPLETED"
-                          ]
+                          "enum": ["LAMA_COMPLETED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DAMA_COMPLETED"
-                          ]
+                          "enum": ["DAMA_COMPLETED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "REFERRED"
-                          ]
+                          "enum": ["REFERRED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "DECEASED"
-                          ]
+                          "enum": ["DECEASED"]
                         },
                         {
                           "type": "string",
-                          "enum": [
-                            "ABSCONDED"
-                          ]
+                          "enum": ["ABSCONDED"]
                         }
                       ]
                     },
                     "duration": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "value",
-                        "unit"
-                      ],
+                      "required": ["value", "unit"],
                       "properties": {
                         "value": {
                           "type": "number"
@@ -1949,11 +1638,7 @@
                     "rateplan": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name",
-                        "inclusions"
-                      ],
+                      "required": ["id", "name", "inclusions"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -1966,11 +1651,7 @@
                           "items": {
                             "additionalProperties": true,
                             "type": "object",
-                            "required": [
-                              "id",
-                              "name",
-                              "rate"
-                            ],
+                            "required": ["id", "name", "rate"],
                             "properties": {
                               "id": {
                                 "type": "string"
@@ -1991,10 +1672,7 @@
                     },
                     "category": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -2009,10 +1687,7 @@
                     },
                     "department": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -2033,10 +1708,7 @@
                     },
                     "facility": {
                       "type": "object",
-                      "required": [
-                        "id",
-                        "name"
-                      ],
+                      "required": ["id", "name"],
                       "properties": {
                         "id": {
                           "type": "string"
@@ -2073,12 +1745,7 @@
                     "clearances_summary": {
                       "additionalProperties": true,
                       "type": "object",
-                      "required": [
-                        "statuses",
-                        "completed_count",
-                        "total",
-                        "all_complete"
-                      ],
+                      "required": ["statuses", "completed_count", "total", "all_complete"],
                       "properties": {
                         "statuses": {
                           "type": "object",
@@ -2086,15 +1753,11 @@
                             "anyOf": [
                               {
                                 "type": "string",
-                                "enum": [
-                                  "PENDING"
-                                ]
+                                "enum": ["PENDING"]
                               },
                               {
                                 "type": "string",
-                                "enum": [
-                                  "COMPLETED"
-                                ]
+                                "enum": ["COMPLETED"]
                               }
                             ]
                           }
@@ -2127,9 +1790,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -2145,9 +1806,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -2163,10 +1822,8 @@
     "/medical-history/v1/{patient_id}": {
       "get": {
         "summary": "Get a patient's medical history",
-        "tags": [
-          "Medical History"
-        ],
-        "description": "Reads the patient's medical history from setu (S3-backed FHIR store), scoped to the caller's business, and returns it grouped by category. A patient with nothing recorded yields `version: 0` and empty categories. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "tags": ["Medical History"],
+        "description": "Returns the patient's medical history, scoped to the caller's business, grouped by category. A patient with nothing recorded yields `version: 0` and empty categories.",
         "parameters": [
           {
             "schema": {
@@ -2187,12 +1844,7 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
-                  "required": [
-                    "patient_id",
-                    "version",
-                    "no_known_history",
-                    "categories"
-                  ],
+                  "required": ["patient_id", "version", "no_known_history", "categories"],
                   "properties": {
                     "patient_id": {
                       "type": "string"
@@ -2209,11 +1861,7 @@
                       "items": {
                         "additionalProperties": true,
                         "type": "object",
-                        "required": [
-                          "category",
-                          "none_known",
-                          "items"
-                        ],
+                        "required": ["category", "none_known", "items"],
                         "properties": {
                           "category": {
                             "description": "Category key.",
@@ -2229,27 +1877,20 @@
                             "items": {
                               "additionalProperties": true,
                               "type": "object",
-                              "required": [
-                                "resource_type",
-                                "resource_id",
-                                "code"
-                              ],
+                              "required": ["resource_type", "resource_id", "code"],
                               "properties": {
                                 "resource_type": {
-                                  "description": "FHIR resource type this line projects to (e.g. Condition).",
+                                  "description": "Record type (e.g. Condition, AllergyIntolerance, MedicationStatement).",
                                   "type": "string"
                                 },
                                 "resource_id": {
-                                  "description": "Stable line id (setu-derived); pass its `code` again to update it.",
+                                  "description": "Stable line id; pass its `code` again to update it.",
                                   "type": "string"
                                 },
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
@@ -2541,9 +2182,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -2559,9 +2198,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -2575,10 +2212,8 @@
       },
       "post": {
         "summary": "Set a patient's medical history",
-        "tags": [
-          "Medical History"
-        ],
-        "description": "Writes the patient's medical history to setu. Each category is optional: send an array to **assert** its final state, or `{ merge: [...] }` to **upsert** without removing other lines; `no_known_history: true` asserts every category empty. Line ids are derived by setu from the coding, so re-posting the same `code` updates that line (idempotent). The acting `oid` is recorded as the author. Requires a `jwt-payload` header containing `b-id` and `oid`.",
+        "tags": ["Medical History"],
+        "description": "Records the patient's medical history. Each category is optional: send an array to **assert** its final state, or `{ merge: [...] }` to **upsert** without removing other lines; `no_known_history: true` asserts every category empty. Re-posting the same `code` in a category updates that line (idempotent). The authenticated user is recorded as the author.",
         "requestBody": {
           "required": true,
           "content": {
@@ -2596,37 +2231,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -2637,10 +2261,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -2656,39 +2277,27 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "active"
-                                  ]
+                                  "enum": ["active"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "recurrence"
-                                  ]
+                                  "enum": ["recurrence"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "relapse"
-                                  ]
+                                  "enum": ["relapse"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "inactive"
-                                  ]
+                                  "enum": ["inactive"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "remission"
-                                  ]
+                                  "enum": ["remission"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "resolved"
-                                  ]
+                                  "enum": ["resolved"]
                                 }
                               ]
                             }
@@ -2698,46 +2307,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -2748,10 +2344,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -2767,39 +2360,27 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "active"
-                                      ]
+                                      "enum": ["active"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "recurrence"
-                                      ]
+                                      "enum": ["recurrence"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "relapse"
-                                      ]
+                                      "enum": ["relapse"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "inactive"
-                                      ]
+                                      "enum": ["inactive"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "remission"
-                                      ]
+                                      "enum": ["remission"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "resolved"
-                                      ]
+                                      "enum": ["resolved"]
                                     }
                                   ]
                                 }
@@ -2818,37 +2399,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -2859,10 +2429,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -2878,39 +2445,27 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "active"
-                                  ]
+                                  "enum": ["active"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "recurrence"
-                                  ]
+                                  "enum": ["recurrence"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "relapse"
-                                  ]
+                                  "enum": ["relapse"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "inactive"
-                                  ]
+                                  "enum": ["inactive"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "remission"
-                                  ]
+                                  "enum": ["remission"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "resolved"
-                                  ]
+                                  "enum": ["resolved"]
                                 }
                               ]
                             }
@@ -2920,46 +2475,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -2970,10 +2512,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -2989,39 +2528,27 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "active"
-                                      ]
+                                      "enum": ["active"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "recurrence"
-                                      ]
+                                      "enum": ["recurrence"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "relapse"
-                                      ]
+                                      "enum": ["relapse"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "inactive"
-                                      ]
+                                      "enum": ["inactive"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "remission"
-                                      ]
+                                      "enum": ["remission"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "resolved"
-                                      ]
+                                      "enum": ["resolved"]
                                     }
                                   ]
                                 }
@@ -3040,37 +2567,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -3081,10 +2597,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -3100,36 +2613,25 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "partial"
-                                  ]
+                                  "enum": ["partial"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "completed"
-                                  ]
+                                  "enum": ["completed"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "entered-in-error"
-                                  ]
+                                  "enum": ["entered-in-error"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "health-unknown"
-                                  ]
+                                  "enum": ["health-unknown"]
                                 }
                               ]
                             },
                             "relation": {
                               "description": "The family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
-                              "examples": [
-                                "Father",
-                                "Mother"
-                              ],
+                              "examples": ["Father", "Mother"],
                               "type": "string"
                             }
                           }
@@ -3138,46 +2640,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -3188,10 +2677,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -3207,36 +2693,25 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "partial"
-                                      ]
+                                      "enum": ["partial"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "completed"
-                                      ]
+                                      "enum": ["completed"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "entered-in-error"
-                                      ]
+                                      "enum": ["entered-in-error"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "health-unknown"
-                                      ]
+                                      "enum": ["health-unknown"]
                                     }
                                   ]
                                 },
                                 "relation": {
                                   "description": "The family member (free text, e.g. `Father`); mapped to a FHIR relationship code.",
-                                  "examples": [
-                                    "Father",
-                                    "Mother"
-                                  ],
+                                  "examples": ["Father", "Mother"],
                                   "type": "string"
                                 }
                               }
@@ -3254,37 +2729,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -3295,10 +2759,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -3314,21 +2775,15 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "active"
-                                  ]
+                                  "enum": ["active"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "inactive"
-                                  ]
+                                  "enum": ["inactive"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "resolved"
-                                  ]
+                                  "enum": ["resolved"]
                                 }
                               ]
                             },
@@ -3337,21 +2792,15 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "low"
-                                  ]
+                                  "enum": ["low"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "high"
-                                  ]
+                                  "enum": ["high"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "unable-to-assess"
-                                  ]
+                                  "enum": ["unable-to-assess"]
                                 }
                               ]
                             },
@@ -3360,30 +2809,22 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "allergy"
-                                  ]
+                                  "enum": ["allergy"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "intolerance"
-                                  ]
+                                  "enum": ["intolerance"]
                                 }
                               ]
                             },
                             "generic_id": {
                               "description": "Generic (molecule) id.",
-                              "examples": [
-                                "mdb-gen-amoxicillin"
-                              ],
+                              "examples": ["mdb-gen-amoxicillin"],
                               "type": "string"
                             },
                             "generic_name": {
                               "description": "Generic (molecule) name.",
-                              "examples": [
-                                "Amoxicillin"
-                              ],
+                              "examples": ["Amoxicillin"],
                               "type": "string"
                             }
                           }
@@ -3392,46 +2833,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -3442,10 +2870,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -3461,21 +2886,15 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "active"
-                                      ]
+                                      "enum": ["active"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "inactive"
-                                      ]
+                                      "enum": ["inactive"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "resolved"
-                                      ]
+                                      "enum": ["resolved"]
                                     }
                                   ]
                                 },
@@ -3484,21 +2903,15 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "low"
-                                      ]
+                                      "enum": ["low"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "high"
-                                      ]
+                                      "enum": ["high"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "unable-to-assess"
-                                      ]
+                                      "enum": ["unable-to-assess"]
                                     }
                                   ]
                                 },
@@ -3507,30 +2920,22 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "allergy"
-                                      ]
+                                      "enum": ["allergy"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "intolerance"
-                                      ]
+                                      "enum": ["intolerance"]
                                     }
                                   ]
                                 },
                                 "generic_id": {
                                   "description": "Generic (molecule) id.",
-                                  "examples": [
-                                    "mdb-gen-amoxicillin"
-                                  ],
+                                  "examples": ["mdb-gen-amoxicillin"],
                                   "type": "string"
                                 },
                                 "generic_name": {
                                   "description": "Generic (molecule) name.",
-                                  "examples": [
-                                    "Amoxicillin"
-                                  ],
+                                  "examples": ["Amoxicillin"],
                                   "type": "string"
                                 }
                               }
@@ -3548,37 +2953,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -3589,10 +2983,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -3608,21 +2999,15 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "active"
-                                  ]
+                                  "enum": ["active"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "inactive"
-                                  ]
+                                  "enum": ["inactive"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "resolved"
-                                  ]
+                                  "enum": ["resolved"]
                                 }
                               ]
                             },
@@ -3631,21 +3016,15 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "low"
-                                  ]
+                                  "enum": ["low"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "high"
-                                  ]
+                                  "enum": ["high"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "unable-to-assess"
-                                  ]
+                                  "enum": ["unable-to-assess"]
                                 }
                               ]
                             },
@@ -3654,30 +3033,22 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "allergy"
-                                  ]
+                                  "enum": ["allergy"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "intolerance"
-                                  ]
+                                  "enum": ["intolerance"]
                                 }
                               ]
                             },
                             "generic_id": {
                               "description": "Generic (molecule) id.",
-                              "examples": [
-                                "mdb-gen-amoxicillin"
-                              ],
+                              "examples": ["mdb-gen-amoxicillin"],
                               "type": "string"
                             },
                             "generic_name": {
                               "description": "Generic (molecule) name.",
-                              "examples": [
-                                "Amoxicillin"
-                              ],
+                              "examples": ["Amoxicillin"],
                               "type": "string"
                             }
                           }
@@ -3686,46 +3057,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -3736,10 +3094,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -3755,21 +3110,15 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "active"
-                                      ]
+                                      "enum": ["active"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "inactive"
-                                      ]
+                                      "enum": ["inactive"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "resolved"
-                                      ]
+                                      "enum": ["resolved"]
                                     }
                                   ]
                                 },
@@ -3778,21 +3127,15 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "low"
-                                      ]
+                                      "enum": ["low"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "high"
-                                      ]
+                                      "enum": ["high"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "unable-to-assess"
-                                      ]
+                                      "enum": ["unable-to-assess"]
                                     }
                                   ]
                                 },
@@ -3801,30 +3144,22 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "allergy"
-                                      ]
+                                      "enum": ["allergy"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "intolerance"
-                                      ]
+                                      "enum": ["intolerance"]
                                     }
                                   ]
                                 },
                                 "generic_id": {
                                   "description": "Generic (molecule) id.",
-                                  "examples": [
-                                    "mdb-gen-amoxicillin"
-                                  ],
+                                  "examples": ["mdb-gen-amoxicillin"],
                                   "type": "string"
                                 },
                                 "generic_name": {
                                   "description": "Generic (molecule) name.",
-                                  "examples": [
-                                    "Amoxicillin"
-                                  ],
+                                  "examples": ["Amoxicillin"],
                                   "type": "string"
                                 }
                               }
@@ -3842,37 +3177,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -3883,10 +3207,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -3902,120 +3223,81 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "active"
-                                  ]
+                                  "enum": ["active"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "completed"
-                                  ]
+                                  "enum": ["completed"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "entered-in-error"
-                                  ]
+                                  "enum": ["entered-in-error"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "intended"
-                                  ]
+                                  "enum": ["intended"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "stopped"
-                                  ]
+                                  "enum": ["stopped"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "on-hold"
-                                  ]
+                                  "enum": ["on-hold"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "unknown"
-                                  ]
+                                  "enum": ["unknown"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "not-taken"
-                                  ]
+                                  "enum": ["not-taken"]
                                 }
                               ]
                             },
                             "generic_id": {
                               "description": "Generic (molecule) id.",
-                              "examples": [
-                                "mdb-gen-amoxicillin"
-                              ],
+                              "examples": ["mdb-gen-amoxicillin"],
                               "type": "string"
                             },
                             "generic_name": {
                               "description": "Generic (molecule) name.",
-                              "examples": [
-                                "Amoxicillin"
-                              ],
+                              "examples": ["Amoxicillin"],
                               "type": "string"
                             },
                             "dosage_text": {
                               "description": "Free-text dose (e.g. `3 tablet`).",
-                              "examples": [
-                                "3 tablet"
-                              ],
+                              "examples": ["3 tablet"],
                               "type": "string"
                             },
                             "dose_value": {
                               "description": "Numeric dose magnitude.",
-                              "examples": [
-                                "3",
-                                "500"
-                              ],
+                              "examples": ["3", "500"],
                               "type": "string"
                             },
                             "dose_unit": {
                               "description": "Dose unit.",
-                              "examples": [
-                                "tablet",
-                                "mg"
-                              ],
+                              "examples": ["tablet", "mg"],
                               "type": "string"
                             },
                             "frequency_text": {
-                              "description": "How often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing.",
-                              "examples": [
-                                "1-0-1",
-                                "twice a day"
-                              ],
+                              "description": "How often, as typed (`1-0-1`, `twice a day`); normalised to a structured schedule.",
+                              "examples": ["1-0-1", "twice a day"],
                               "type": "string"
                             },
                             "timing_text": {
-                              "description": "Timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
-                              "examples": [
-                                "Before Meal",
-                                "After Food"
-                              ],
+                              "description": "Timing phrase (`Before Meal`, `After Food`); mapped to a standard timing code.",
+                              "examples": ["Before Meal", "After Food"],
                               "type": "string"
                             },
                             "dosage_form": {
                               "description": "Dosage form label.",
-                              "examples": [
-                                "tablet",
-                                "syrup"
-                              ],
+                              "examples": ["tablet", "syrup"],
                               "type": "string"
                             },
                             "dosage_form_id": {
                               "description": "Dosage form id.",
-                              "examples": [
-                                "mdb-df-tablet"
-                              ],
+                              "examples": ["mdb-df-tablet"],
                               "type": "string"
                             }
                           }
@@ -4024,46 +3306,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -4074,10 +3343,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -4093,120 +3359,81 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "active"
-                                      ]
+                                      "enum": ["active"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "completed"
-                                      ]
+                                      "enum": ["completed"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "entered-in-error"
-                                      ]
+                                      "enum": ["entered-in-error"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "intended"
-                                      ]
+                                      "enum": ["intended"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "stopped"
-                                      ]
+                                      "enum": ["stopped"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "on-hold"
-                                      ]
+                                      "enum": ["on-hold"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "unknown"
-                                      ]
+                                      "enum": ["unknown"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "not-taken"
-                                      ]
+                                      "enum": ["not-taken"]
                                     }
                                   ]
                                 },
                                 "generic_id": {
                                   "description": "Generic (molecule) id.",
-                                  "examples": [
-                                    "mdb-gen-amoxicillin"
-                                  ],
+                                  "examples": ["mdb-gen-amoxicillin"],
                                   "type": "string"
                                 },
                                 "generic_name": {
                                   "description": "Generic (molecule) name.",
-                                  "examples": [
-                                    "Amoxicillin"
-                                  ],
+                                  "examples": ["Amoxicillin"],
                                   "type": "string"
                                 },
                                 "dosage_text": {
                                   "description": "Free-text dose (e.g. `3 tablet`).",
-                                  "examples": [
-                                    "3 tablet"
-                                  ],
+                                  "examples": ["3 tablet"],
                                   "type": "string"
                                 },
                                 "dose_value": {
                                   "description": "Numeric dose magnitude.",
-                                  "examples": [
-                                    "3",
-                                    "500"
-                                  ],
+                                  "examples": ["3", "500"],
                                   "type": "string"
                                 },
                                 "dose_unit": {
                                   "description": "Dose unit.",
-                                  "examples": [
-                                    "tablet",
-                                    "mg"
-                                  ],
+                                  "examples": ["tablet", "mg"],
                                   "type": "string"
                                 },
                                 "frequency_text": {
-                                  "description": "How often, as typed (`1-0-1`, `twice a day`); setu parses it to structured timing.",
-                                  "examples": [
-                                    "1-0-1",
-                                    "twice a day"
-                                  ],
+                                  "description": "How often, as typed (`1-0-1`, `twice a day`); normalised to a structured schedule.",
+                                  "examples": ["1-0-1", "twice a day"],
                                   "type": "string"
                                 },
                                 "timing_text": {
-                                  "description": "Timing phrase (`Before Meal`, `After Food`); setu maps it to the HL7 timing event code.",
-                                  "examples": [
-                                    "Before Meal",
-                                    "After Food"
-                                  ],
+                                  "description": "Timing phrase (`Before Meal`, `After Food`); mapped to a standard timing code.",
+                                  "examples": ["Before Meal", "After Food"],
                                   "type": "string"
                                 },
                                 "dosage_form": {
                                   "description": "Dosage form label.",
-                                  "examples": [
-                                    "tablet",
-                                    "syrup"
-                                  ],
+                                  "examples": ["tablet", "syrup"],
                                   "type": "string"
                                 },
                                 "dosage_form_id": {
                                   "description": "Dosage form id.",
-                                  "examples": [
-                                    "mdb-df-tablet"
-                                  ],
+                                  "examples": ["mdb-df-tablet"],
                                   "type": "string"
                                 }
                               }
@@ -4224,37 +3451,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -4265,10 +3481,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -4284,51 +3497,35 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "preparation"
-                                  ]
+                                  "enum": ["preparation"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "in-progress"
-                                  ]
+                                  "enum": ["in-progress"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "not-done"
-                                  ]
+                                  "enum": ["not-done"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "on-hold"
-                                  ]
+                                  "enum": ["on-hold"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "stopped"
-                                  ]
+                                  "enum": ["stopped"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "completed"
-                                  ]
+                                  "enum": ["completed"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "entered-in-error"
-                                  ]
+                                  "enum": ["entered-in-error"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "unknown"
-                                  ]
+                                  "enum": ["unknown"]
                                 }
                               ]
                             },
@@ -4342,46 +3539,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -4392,10 +3576,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -4411,51 +3592,35 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "preparation"
-                                      ]
+                                      "enum": ["preparation"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "in-progress"
-                                      ]
+                                      "enum": ["in-progress"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "not-done"
-                                      ]
+                                      "enum": ["not-done"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "on-hold"
-                                      ]
+                                      "enum": ["on-hold"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "stopped"
-                                      ]
+                                      "enum": ["stopped"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "completed"
-                                      ]
+                                      "enum": ["completed"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "entered-in-error"
-                                      ]
+                                      "enum": ["entered-in-error"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "unknown"
-                                      ]
+                                      "enum": ["unknown"]
                                     }
                                   ]
                                 },
@@ -4478,37 +3643,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -4519,10 +3673,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -4538,59 +3689,41 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "registered"
-                                  ]
+                                  "enum": ["registered"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "preliminary"
-                                  ]
+                                  "enum": ["preliminary"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "final"
-                                  ]
+                                  "enum": ["final"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "amended"
-                                  ]
+                                  "enum": ["amended"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "corrected"
-                                  ]
+                                  "enum": ["corrected"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "cancelled"
-                                  ]
+                                  "enum": ["cancelled"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "entered-in-error"
-                                  ]
+                                  "enum": ["entered-in-error"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "unknown"
-                                  ]
+                                  "enum": ["unknown"]
                                 }
                               ]
                             },
                             "value": {
                               "description": "Free-text value.",
-                              "examples": [
-                                "10 cigarettes/day"
-                              ],
+                              "examples": ["10 cigarettes/day"],
                               "type": "string"
                             }
                           }
@@ -4599,46 +3732,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -4649,10 +3769,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -4668,59 +3785,41 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "registered"
-                                      ]
+                                      "enum": ["registered"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "preliminary"
-                                      ]
+                                      "enum": ["preliminary"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "final"
-                                      ]
+                                      "enum": ["final"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "amended"
-                                      ]
+                                      "enum": ["amended"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "corrected"
-                                      ]
+                                      "enum": ["corrected"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "cancelled"
-                                      ]
+                                      "enum": ["cancelled"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "entered-in-error"
-                                      ]
+                                      "enum": ["entered-in-error"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "unknown"
-                                      ]
+                                      "enum": ["unknown"]
                                     }
                                   ]
                                 },
                                 "value": {
                                   "description": "Free-text value.",
-                                  "examples": [
-                                    "10 cigarettes/day"
-                                  ],
+                                  "examples": ["10 cigarettes/day"],
                                   "type": "string"
                                 }
                               }
@@ -4738,37 +3837,26 @@
                         "items": {
                           "additionalProperties": false,
                           "type": "object",
-                          "required": [
-                            "code"
-                          ],
+                          "required": ["code"],
                           "properties": {
                             "code": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "system",
-                                "code"
-                              ],
+                              "required": ["system", "code"],
                               "properties": {
                                 "system": {
                                   "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                  "examples": [
-                                    "http://eka.care/mdb"
-                                  ],
+                                  "examples": ["http://eka.care/mdb"],
                                   "type": "string"
                                 },
                                 "code": {
                                   "description": "Code within the system.",
-                                  "examples": [
-                                    "mdb-cond-diabetes"
-                                  ],
+                                  "examples": ["mdb-cond-diabetes"],
                                   "type": "string"
                                 },
                                 "display": {
                                   "description": "Human-readable label.",
-                                  "examples": [
-                                    "Type 2 Diabetes"
-                                  ],
+                                  "examples": ["Type 2 Diabetes"],
                                   "type": "string"
                                 }
                               }
@@ -4779,10 +3867,7 @@
                             },
                             "since": {
                               "description": "Onset / “since” — free text or ISO date.",
-                              "examples": [
-                                "2 years",
-                                "2022-03-01"
-                              ],
+                              "examples": ["2 years", "2022-03-01"],
                               "type": "string"
                             },
                             "reported_at": {
@@ -4798,59 +3883,41 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "registered"
-                                  ]
+                                  "enum": ["registered"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "preliminary"
-                                  ]
+                                  "enum": ["preliminary"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "final"
-                                  ]
+                                  "enum": ["final"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "amended"
-                                  ]
+                                  "enum": ["amended"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "corrected"
-                                  ]
+                                  "enum": ["corrected"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "cancelled"
-                                  ]
+                                  "enum": ["cancelled"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "entered-in-error"
-                                  ]
+                                  "enum": ["entered-in-error"]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": [
-                                    "unknown"
-                                  ]
+                                  "enum": ["unknown"]
                                 }
                               ]
                             },
                             "value": {
                               "description": "Free-text value.",
-                              "examples": [
-                                "10 cigarettes/day"
-                              ],
+                              "examples": ["10 cigarettes/day"],
                               "type": "string"
                             }
                           }
@@ -4859,46 +3926,33 @@
                       {
                         "additionalProperties": false,
                         "type": "object",
-                        "required": [
-                          "merge"
-                        ],
+                        "required": ["merge"],
                         "properties": {
                           "merge": {
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
                               "type": "object",
-                              "required": [
-                                "code"
-                              ],
+                              "required": ["code"],
                               "properties": {
                                 "code": {
                                   "additionalProperties": false,
                                   "type": "object",
-                                  "required": [
-                                    "system",
-                                    "code"
-                                  ],
+                                  "required": ["system", "code"],
                                   "properties": {
                                     "system": {
                                       "description": "Coding system URI — the MDB catalog (`http://eka.care/mdb`) or a locale system for free text.",
-                                      "examples": [
-                                        "http://eka.care/mdb"
-                                      ],
+                                      "examples": ["http://eka.care/mdb"],
                                       "type": "string"
                                     },
                                     "code": {
                                       "description": "Code within the system.",
-                                      "examples": [
-                                        "mdb-cond-diabetes"
-                                      ],
+                                      "examples": ["mdb-cond-diabetes"],
                                       "type": "string"
                                     },
                                     "display": {
                                       "description": "Human-readable label.",
-                                      "examples": [
-                                        "Type 2 Diabetes"
-                                      ],
+                                      "examples": ["Type 2 Diabetes"],
                                       "type": "string"
                                     }
                                   }
@@ -4909,10 +3963,7 @@
                                 },
                                 "since": {
                                   "description": "Onset / “since” — free text or ISO date.",
-                                  "examples": [
-                                    "2 years",
-                                    "2022-03-01"
-                                  ],
+                                  "examples": ["2 years", "2022-03-01"],
                                   "type": "string"
                                 },
                                 "reported_at": {
@@ -4928,59 +3979,41 @@
                                   "anyOf": [
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "registered"
-                                      ]
+                                      "enum": ["registered"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "preliminary"
-                                      ]
+                                      "enum": ["preliminary"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "final"
-                                      ]
+                                      "enum": ["final"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "amended"
-                                      ]
+                                      "enum": ["amended"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "corrected"
-                                      ]
+                                      "enum": ["corrected"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "cancelled"
-                                      ]
+                                      "enum": ["cancelled"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "entered-in-error"
-                                      ]
+                                      "enum": ["entered-in-error"]
                                     },
                                     {
                                       "type": "string",
-                                      "enum": [
-                                        "unknown"
-                                      ]
+                                      "enum": ["unknown"]
                                     }
                                   ]
                                 },
                                 "value": {
                                   "description": "Free-text value.",
-                                  "examples": [
-                                    "10 cigarettes/day"
-                                  ],
+                                  "examples": ["10 cigarettes/day"],
                                   "type": "string"
                                 }
                               }
@@ -5235,10 +4268,7 @@
                 "schema": {
                   "additionalProperties": false,
                   "type": "object",
-                  "required": [
-                    "version",
-                    "txn_id"
-                  ],
+                  "required": ["version", "txn_id"],
                   "properties": {
                     "version": {
                       "description": "New head version after the save.",
@@ -5268,9 +4298,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -5286,9 +4314,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -5304,9 +4330,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "message"
-                  ],
+                  "required": ["message"],
                   "properties": {
                     "message": {
                       "type": "string"
@@ -5326,6 +4350,11 @@
       "description": "Current host"
     }
   ],
+  "security": [
+    {
+      "auth": []
+    }
+  ],
   "tags": [
     {
       "name": "Appointments",
@@ -5333,7 +4362,7 @@
     },
     {
       "name": "Medical History",
-      "description": "Patient medical history (setu-backed)"
+      "description": "Patient medical history"
     }
   ]
 }
