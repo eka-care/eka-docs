@@ -1,0 +1,67 @@
+---
+title: "7 · PHR Webhooks"
+description: "Every asynchronous event a PHR app's cloud must handle, in one list."
+---
+
+ABDM is asynchronous. Discovery results, consent decisions and new-record notifications never come back on the request you made — they arrive later, on your webhook endpoint. A PHR app that only does request/response will silently miss records.
+
+<Note>
+  There is no self-service API to register an ABDM webhook URL. Share your endpoint with EKA (console or support) before you begin sandbox testing.
+</Note>
+
+Every payload is signed. Verify the `Eka-Webhook-Signature` header before trusting it — see [Webhook Signature](/api-reference/connect/webhooks/webhook-signature).
+
+## Identity
+
+| Event | What it means | Reference |
+| --- | --- | --- |
+| `abha.created` | An ABHA address was successfully created. Provision the patient in your database from here rather than the client response. | [ABHA Address Created](/api-reference/user-app/abdm-connect/webhooks/abha-created) |
+
+## Locker & subscriptions
+
+| Event | What it means | Reference |
+| --- | --- | --- |
+| `abha.locker_created` | Health locker set up. Carries `auto_approval_id` and `subscription_id` — store both. | [Locker Created](/api-reference/user-app/abdm-connect/webhooks/locker-created) |
+| `abha.subscription_modified` | Subscription period, categories or status changed. | [Subscription Updated](/api-reference/user-app/abdm-connect/webhooks/subscription-modify) |
+| `abha.subscription_notify` | A HIP linked a new care context for this patient. Metadata only — raise consent to read it. | [New Care Context Linked](/api-reference/user-app/abdm-connect/webhooks/subscription-notify) |
+
+## Consent & data
+
+| Event | What it means | Reference |
+| --- | --- | --- |
+| `abha.consent_update` | A consent request changed state (granted, denied, expired, revoked). | [Consent Update](/api-reference/user-app/abdm-connect/webhooks/consent-update) |
+| `abha.hiu_data_push` | A HIP pushed the encrypted FHIR bundle you asked for. Only if you manage data yourself. | [Health Data Received from HIP](/api-reference/user-app/abdm-connect/webhooks/hiu-data-push) |
+
+## Records you store yourself
+
+| Event | What it means | Reference |
+| --- | --- | --- |
+| `rec.uploaded` | A patient-uploaded document finished processing. | [Record Uploaded](/api-reference/user-app/records/record-uploaded-webhook) |
+| `rec.refresh` | The patient's record list changed and should be refetched. | [Record Refresh](/api-reference/user-app/records/record-refresh-webhook) |
+
+## Turning events into patient notifications
+
+Most of these events are only useful if the patient hears about them. Register the patient's device once, and push from your cloud when a webhook lands.
+
+| Purpose | API |
+| --- | --- |
+| Register a device for push | [Add Device](/api-reference/user-app/notifications/add-device) |
+| Remove a device | [Delete Device](/api-reference/user-app/notifications/delete-device) |
+| Configure your FCM credentials | [FCM Credentials](/api-reference/user-app/notifications/fcm-creds) |
+
+## Also HIP? Then add these
+
+A PHR app that stores patient-uploaded records is a HIP, and if you serve that data yourself rather than letting EKA serve it, you must handle the HIP-side events too.
+
+| Event | Reference |
+| --- | --- |
+| `abha.link_care_context` | [Care Context Linking Status](/api-reference/user-app/abdm-connect/webhooks/link-care-context) |
+| `abha.hip_data_fetch` | [Health Data Requested by HIU](/api-reference/user-app/abdm-connect/webhooks/hip-data-fetch) |
+| Discovery request received | [Discovery Request Received](/api-reference/user-app/abdm-connect/webhooks/discover-care-context) |
+| Link initiation — generate OTP | [Link Initiation](/api-reference/user-app/abdm-connect/webhooks/discover-link-init) |
+| Link confirmation — verify OTP | [Link Confirmation](/api-reference/user-app/abdm-connect/webhooks/discover-link-confirm) |
+| Scan & Share token received | [Scan and Share Token Received](/api-reference/user-app/abdm-connect/webhooks/hip-scan-and-share) |
+
+<Note>
+  If you pass FHIR data in the `data` field of the [Link API](/api-reference/user-app/abdm-connect/care-contexts/link/hip-linking), or upload via the [Upload API](/api-reference/user-app/records/obtain-authorization), EKA serves the data on your behalf and `abha.hip_data_fetch` is never sent to you.
+</Note>
