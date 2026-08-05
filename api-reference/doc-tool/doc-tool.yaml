@@ -8408,6 +8408,127 @@ paths:
                 message: "unauthenticated"
       deprecated: false
 
+  /ipd/v1/admissions/{admission_id}/discharge/initiate:
+    post:
+      tags:
+        - IPD API
+      summary: Initiate a Discharge
+      description: >-
+
+        ### Overview
+
+
+        Starts a patient's discharge. This is the **whole flow**, not a status field write — in one
+        call it moves the admission to `DISCHARGE_INITIATED`, records the transition on the
+        admission's audit trail, and notifies every pharmacy the admission ordered from so they can
+        close unreturned medicines and dues.
+
+
+        Use this rather than calling the pharmacy notification on its own. Firing the notification
+        standalone tells chemists a patient is leaving while the admission is still `UNDER_CARE`.
+
+
+        ### The status commits before any pharmacy is contacted
+
+
+        That ordering is guaranteed, and it is why a pharmacy failure is never fatal: by the time
+        anyone is contacted, the discharge has already happened. A chemist can therefore never be
+        told about a discharge that did not occur.
+
+
+        ### A pharmacy failure is a warning, not an error
+
+
+        If one or more pharmacies could not be reached you still get `200`, with `pharmacy_warning`
+        set and the per-pharmacy detail in `pharmacy.targets`. Retry just those with
+        `/pharmacy-clearance-notify/retry`. The discharge stands either way.
+
+
+        `pharmacy.skipped` marks a deliberate no-op — `no-ipid` when the admission has no IPD case
+        number to send, `no-targets` when it never ordered from a pharmacy. Neither is a problem.
+
+      operationId: InitiateIpdDischarge
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission to discharge.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpdInitiateDischargeRequest'
+            example:
+              by:
+                id: op-8842
+                name: Dr. Kim Sarkar
+                role: DOCTOR
+      responses:
+        '200':
+          description: >-
+            OK — the discharge was initiated. Check `pharmacy_warning` / `pharmacy.targets` for how
+            the notifications went.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdInitiateDischargeResponse'
+              example:
+                admission:
+                  id: adm-3f9c2b18
+                  ipid: IPD1001
+                  stage: AD
+                  status: DISCHARGE_INITIATED
+                pharmacy_warning: "Couldn't notify one pharmacy. You can resend from the clearance screen."
+                pharmacy:
+                  state: failed
+                  targets:
+                    evital:CH1023:
+                      provider: evital
+                      pharmacy_id: CH1023
+                      pharmacy_name: Apollo Chemist, Sec 44
+                      status: NOTIFIED
+                      attempts: 1
+                    evital:CH2044:
+                      provider: evital
+                      pharmacy_id: CH2044
+                      status: FAILED
+                      attempts: 1
+                      last_error: connect ETIMEDOUT
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found — no such admission for this business.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Admission \"adm-3f9c2b18\" was not found"
+      deprecated: false
+
   /ipd/v1/admissions/{admission_id}/pharmacy-clearance-notify:
     post:
       tags:
@@ -10011,6 +10132,44 @@ paths:
 
 components:
   schemas:
+    IpdInitiateDischargeRequest:
+      title: IpdInitiateDischargeRequest
+      type: object
+      description: >-
+        Optional body. The target status, the transition event and which pharmacies to notify are
+        all decided by the flow — none of them are caller-supplied.
+      properties:
+        by:
+          type: object
+          description: >-
+            Actor recorded on the transition and against each pharmacy attempt. Defaults to the
+            authenticated operator.
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            role:
+              type: string
+          required:
+            - id
+      additionalProperties: false
+    IpdInitiateDischargeResponse:
+      title: IpdInitiateDischargeResponse
+      type: object
+      properties:
+        admission:
+          type: object
+          description: The admission after the transition, with `status` now `DISCHARGE_INITIATED`.
+          additionalProperties: true
+        pharmacy_warning:
+          type: string
+          description: >-
+            Present when a pharmacy could not be notified. The discharge still happened — retry the
+            failed pharmacies rather than re-running the discharge.
+        pharmacy:
+          $ref: '#/components/schemas/IpdPharmacyClearanceResponse'
+      additionalProperties: true
     IpdPharmacyClearanceRequest:
       title: IpdPharmacyClearanceRequest
       type: object
