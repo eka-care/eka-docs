@@ -35,7 +35,9 @@ yarn add @eka-care/ekascribe-ts-sdk
 
 The SDK uses a **singleton pattern** — `getEkaScribeInstance()` always returns the same instance for a given `env` + `clientId` combination.
 
-`allianceConfig.baseUrl` is **required** — omitting it throws `[EkaScribe] allianceConfig.baseUrl is required` at runtime. To use Eka Care's hosted scribe service, use:
+`flavour` and `allianceConfig.baseUrl` are both **required**. `flavour` identifies your app variant on every request — Eka Care issues the value to use. Omitting `baseUrl` throws `[EkaScribe] allianceConfig.baseUrl is required` at runtime.
+
+To use Eka Care's hosted scribe service, set `baseUrl` to:
 
 | Environment | `baseUrl` |
 |---|---|
@@ -49,6 +51,7 @@ import type { EkaScribeConfig } from '@eka-care/ekascribe-ts-sdk';
 const config: EkaScribeConfig = {
   access_token: '<your_access_token>',
   env: 'PROD',                             // 'PROD' | 'DEV'
+  flavour: '<your_client_identifier>',               // required — app variant identifier
   clientId: '<your_client_id>',            // optional
   allianceConfig: {
     baseUrl: 'https://api.eka.care/voice/v1',  // required — PROD; see table above
@@ -226,6 +229,7 @@ import {
 const ekascribe = getEkaScribeInstance({
   access_token: token,
   env: 'PROD',
+  flavour: '<your_client_identifier>',
   allianceConfig: { baseUrl: 'https://api.eka.care/voice/v1' },
 });
 
@@ -264,6 +268,7 @@ await ekascribe.resetInstance();
 
 ## Important Notes
 
+- **`flavour` is required.** It identifies your app variant on every request. Eka Care issues the value to use.
 - **`allianceConfig.baseUrl` is the root for all API calls.** Session creation, audio upload, status polling — everything uses this URL. It is required; omitting it throws at runtime.
 - **`access_token` must be a valid Bearer token.** All API requests include `Authorization: Bearer <token>`. If it expires, register `onTokenRequired` to auto-refresh.
 - **Register callbacks before `startRecordingV2()`.** Events fire immediately once recording starts — if callbacks aren't registered, you'll miss upload progress and errors.
@@ -320,6 +325,7 @@ The SDK provides an optional pre-built recording UI injected via Shadow DOM — 
 const ekascribe = getEkaScribeInstance({
   access_token: token,
   env: 'PROD',
+  flavour: '<your_client_identifier>',
   allianceConfig: { baseUrl: '...' },
   widget: {
     enabled: true,
@@ -576,11 +582,11 @@ ekascribe.updateAuthTokens({ access_token: 'new-token' });
 interface EkaScribeConfig {
   access_token?: string;          // Bearer token for authentication
   env: 'PROD' | 'DEV';           // Environment
+  flavour: string;                // Required — app variant identifier issued by Eka Care
   clientId?: string;              // Your client identifier
   mode?: 'http' | 'ipc';         // Transport mode (default: 'http')
   ipcBridge?: IpcBridge;          // Required when mode is 'ipc' (Electron apps)
   enableTracking?: boolean;       // Enable internal analytics tracking
-  flavour?: string;               // Client flavour identifier
   sharedWorkerUrl?: string;       // URL to worker.bundle.js for background uploads
   allianceConfig?: {
     baseUrl?: string;             // Scribe service URL (required)
