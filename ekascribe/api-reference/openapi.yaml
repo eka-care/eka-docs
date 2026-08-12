@@ -958,6 +958,73 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /voice/api/v2/transaction/history:
+    get:
+      summary: Get Sessions
+      description: >
+        List past sessions for the authenticated user, newest first. Cancelled
+        and archived sessions are excluded. Pass `count` to cap the number of
+        sessions returned. Pass `oid` to fetch sessions of a specific patient
+        instead (up to 10 by default — override with `count`).
+      tags:
+        - sessions
+      security:
+        - auth: []
+      parameters:
+        - name: count
+          in: query
+          required: false
+          description: Number of latest sessions to fetch.
+          schema:
+            type: integer
+            minimum: 1
+        - name: oid
+          in: query
+          required: false
+          description: >
+            Patient OID. When provided, returns that patient's sessions
+            (default 10) instead of the user's full history.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sessions retrieved, newest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionHistoryResponse"
+              example:
+                status: success
+                data:
+                  - txn_id: ses_abc123def456
+                    b_id: "161467756044203"
+                    oid: "PAT-12345"
+                    mode: consultation
+                    flavour: v2rx
+                    model_type: pro
+                    processing_status: success
+                    user_status: commit
+                    patient_details:
+                      oid: "PAT-12345"
+                      name: John Doe
+                    created_at: "2026-06-06T14:21:07Z"
+                  - txn_id: ses_789ghi012jkl
+                    b_id: "161467756044203"
+                    mode: dictation
+                    flavour: v2rx
+                    model_type: lite
+                    processing_status: in-progress
+                    patient_details: {}
+                    created_at: "2026-06-05T09:12:44Z"
+                retrieved_count: 2
+        "404":
+          description: No sessions found
+          content:
+            application/json:
+              example:
+                status: failed
+                error: No transactions found
+
 components:
   securitySchemes:
     auth:
@@ -1553,7 +1620,7 @@ components:
           description: Template the document is associated with, if any.
         type:
           type: string
-          enum: [context, transcript, custom, notes, integration]
+          enum: [context, custom, notes, integration]
           default: custom
           description: Document category.
         document_name:
@@ -1701,3 +1768,56 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/SessionDocument"
+    SessionHistoryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          description: Sessions, newest first.
+          items:
+            $ref: "#/components/schemas/SessionHistoryItem"
+        retrieved_count:
+          type: integer
+          description: Number of sessions returned.
+          example: 2
+    SessionHistoryItem:
+      type: object
+      properties:
+        txn_id:
+          type: string
+          description: Session ID — use it with the session APIs (Get Session, Get Session Audio, List Session Documents).
+          example: ses_abc123def456
+        b_id:
+          type: string
+          description: Business ID the session belongs to.
+        oid:
+          type: string
+          description: Patient OID, if patient details were provided at session creation.
+        mode:
+          type: string
+          description: Capture mode used for the session (e.g. `consultation`, `dictation`).
+        flavour:
+          type: string
+          description: Client the session was created from.
+        model_type:
+          type: string
+          enum: [pro, lite]
+          description: Model used for the session.
+        processing_status:
+          type: string
+          enum: [success, in-progress, system_failure, request_failure]
+          description: Processing state of the session.
+        user_status:
+          type: string
+          description: User workflow status — `commit` once the session has been ended/committed.
+        patient_details:
+          type: object
+          additionalProperties: true
+          description: Patient metadata provided at session creation.
+        created_at:
+          type: string
+          description: Session creation time.
+          example: "2026-06-06T14:21:07Z"
