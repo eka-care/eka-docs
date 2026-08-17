@@ -452,17 +452,51 @@ if (doc?.presigned_url) {
 }
 ```
 
-> Presigned URLs are temporary — check `presigned_url_expires_at` (epoch) before using. Call `getDocument(documentId)` for a fresh URL if expired.
+> Presigned URLs are temporary — check `presigned_url_expires_at` (epoch) before using. Call `getDocument({ documentId })` for a fresh URL if expired.
 
-### `getDocument(documentId)`
+### `getDocument(request)`
 
 Fetch a single document by ID (and a fresh presigned URL).
 
 ```ts
-const doc = await ekascribe.documents.getDocument('document-id');
+const doc = await ekascribe.documents.getDocument({ documentId: 'document-id' });
 if (doc.data?.presigned_url) {
-  const response = await fetch(doc.presigned_url);
+  const response = await fetch(doc.data.presigned_url);
   const content = await response.json();
+}
+```
+
+### `convertToTemplate(request)`
+
+Re-run a finished session's transcript through a different template to generate an additional output document. Useful when the clinician wants the same consultation rendered as, say, a prescription after it was first generated as clinical notes.
+
+```ts
+const result = await ekascribe.documents.convertToTemplate({
+  txn_id: 'session-id',        // the session/transaction to re-process
+  template_id: 'template-id',  // a template_id from sessions.getConfig().my_templates
+});
+
+if (result.success) {
+  console.log(result.data.status, result.data.message);
+} else {
+  console.error(result.error);
+}
+```
+
+Processing is asynchronous — the call returns once the request is accepted. Poll `sessions.getSessionDetails({ session_id, presigned: true })` to pick up the new document once it is ready.
+
+Response: `SDKResult<ProcessTemplateResponse>`
+
+```ts
+type SDKResult<T> =
+  | { success: true; data: T; httpStatus?: number }
+  | { success: false; error: ScribeError };
+
+interface ProcessTemplateResponse {
+  session_id: string;
+  template_id: string;
+  status: string;
+  message: string;
 }
 ```
 
@@ -653,7 +687,8 @@ interface StartRecordingV2Options {
 
 | Method | Returns | Description |
 |---|---|---|
-| `documents.getDocument(documentId)` | — | Fetch a document by ID with a fresh presigned URL. |
+| `documents.getDocument(request)` | `TPostV1DocumentResponse` | Fetch a document by ID with a fresh presigned URL. |
+| `documents.convertToTemplate(request)` | `SDKResult<ProcessTemplateResponse>` | Re-process a session's transcript with another template. |
 
 ### Widget
 
