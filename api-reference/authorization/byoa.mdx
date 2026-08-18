@@ -1,23 +1,72 @@
 ---
 title: Bring Your Own Auth (BYOA)
 sidebarTitle: BYOA
-description: Authenticate your own users to EkaCare agents with an encrypted JWE token signed by your shared secret
+description: Authenticate your own users to EkaCare agents with a short-lived JWT signed by your shared secret (JWE optional)
 ---
 
 ## Overview
 
 **Bring Your Own Auth (BYOA)** lets you authenticate your own users to EkaCare agents without an OIDC
-flow. Your backend builds a short-lived **encrypted token (JWE)** containing the user's identity,
-encrypts it with your shared secret, and sends it to EkaCare — which looks up your secret by its
-**Key ID**, decrypts the token, verifies it, and trusts the claims inside.
+flow. Your backend builds a short-lived token containing the user's identity, secures it with your
+shared secret, and sends it to EkaCare — which looks up your secret by its **Key ID**, verifies the
+token, and trusts the claims inside.
+
+BYOA supports two token formats:
+
+- **Signed JWT (JWS)** — **the default**. The claims are signed (HS256) with your shared secret. The
+  payload is readable but tamper-proof. Lighter and simpler — use this unless you have a specific
+  reason not to.
+- **Encrypted JWE** — an optional, heavier alternative where the claims are *encrypted*. Use it only
+  when the token travels somewhere it could be logged or inspected (e.g. a URL query parameter) **and**
+  carries genuinely sensitive data. See [Encrypted Token (JWE)](#encrypted-token-jwe).
 
 <Note>
-The token is a **JWE** (encrypted), not a signed JWT (JWS). Your shared secret both identifies you
-(via its Key ID) and decrypts the payload.
+Both formats use the **same shared secret and Key ID** from the same BYOA credential. The `kid` header
+tells EkaCare which secret to use; the token format (signed vs encrypted) is detected automatically.
 </Note>
 
-**Use it when** your client has no OIDC/OAuth flow and you want to pass user data (mobile, name, etc.)
-to EkaCare in encrypted form.
+**Use BYOA when** your client has no OIDC/OAuth flow and you want to pass user data (mobile, name, etc.)
+to EkaCare from your own backend.
+
+---
+
+## JWT or JWE?
+
+<Tip>
+**Default to a signed JWT.** Reach for JWE only when **both** of these are true:
+
+1. The token is sent somewhere observable — most commonly a **URL query parameter** (which can be
+   logged by proxies, servers, and browser history), rather than a header or request body, **and**
+2. The payload contains **highly sensitive information** that must not be readable in transit.
+
+If you're passing the token in a header, request body, or the widget's `auth-token` attribute — which
+is the normal case — **use a JWT**. It's lighter, easier to debug, and just as secure against
+tampering.
+</Tip>
+
+|                     | Signed JWT (JWS) — default | Encrypted JWE |
+| ------------------- | -------------------------- | ------------- |
+| Claims visibility   | Readable (base64), signed  | Encrypted     |
+| Weight / complexity | Lighter, simpler           | Heavier       |
+| Tamper protection   | Yes                        | Yes           |
+| When to use         | Almost always              | Sensitive data on query params |
+
+---
+
+## Before You Begin
+
+Create a BYOA credential in the [Eka Developer Console](https://console.eka.care). You will need:
+
+- **Key ID** — the public identifier for your credential (e.g. `byoa_xxxxxxxxxxxxxxxx`); goes in the
+  token's `kid` header.
+- **Shared secret** — used to sign (JWT) or encrypt (JWE) the token. Shown only once at creation.
+- **Issuer** — the issuer URL you registered on the credential; the token's `iss` claim must match it
+  exactly.
+
+<Warning>
+The shared secret is shown only once. Store it securely on your backend and never expose it in
+client-side code. If it is lost or leaked, revoke the credential and create a new one.
+</Warning>
 
 ---
 
@@ -31,52 +80,35 @@ to EkaCare in encrypted form.
   <Step title="Build the claims">
     On your backend, assemble the user's identity claims (see [Token Structure](#token-structure)).
   </Step>
-  <Step title="Encrypt as a JWE">
-    Encrypt the claims using your shared secret: `alg: dir`, `enc: A256GCM`, with the protected header
-    `kid` set to your Key ID.
+  <Step title="Sign as a JWT">
+    Sign the claims with your shared secret using **HS256**, with the protected header `kid` set to your
+    Key ID. (Or, for the sensitive-query-param case, [encrypt as a JWE](#encrypted-token-jwe).)
   </Step>
   <Step title="Send it">
     Hand the token to your embedded MedAssist widget — via the `auth-token` attribute or
     `EkaMedAssist.init({ authToken })`. See [Send the Token](#send-the-token).
   </Step>
   <Step title="EkaCare verifies">
-    EkaCare looks up your secret and registered issuer by the `kid`, decrypts the token, and trusts the
-    verified claims.
+    EkaCare looks up your secret and registered issuer by the `kid`, verifies the signature, and trusts
+    the verified claims.
   </Step>
 </Steps>
 
 ---
 
-## Before You Begin
-
-Create a BYOA credential in the [Eka Developer Console](https://console.eka.care). You will need:
-
-- **Key ID** — the public identifier for your credential (e.g. `byoa_xxxxxxxxxxxxxxxx`); goes in the
-  token's `kid` header.
-- **Shared secret** — used to encrypt the token. Shown only once at creation.
-- **Issuer** — the issuer URL you registered on the credential; the token's `iss` claim must match it
-  exactly.
-
-<Warning>
-The shared secret is shown only once. Store it securely on your backend and never expose it in
-client-side code. If it is lost or leaked, revoke the credential and create a new one.
-</Warning>
-
----
-
 ## Token Structure
 
-The `x-auth-token` is a compact **JWE** with a protected header and an encrypted payload of claims.
+The `x-auth-token` is a compact **JWT** (JWS) with a signed header and a payload of claims.
 
 ### Header
 
 ```json
-{ "kid": "byoa_xxxxxxxxxxxxxxxx", "alg": "dir", "enc": "A256GCM" }
+{ "kid": "byoa_xxxxxxxxxxxxxxxx", "alg": "HS256", "typ": "JWT" }
 ```
 
 - `kid` — your credential's Key ID.
-- `alg` — `dir` (the shared secret is used directly as the encryption key).
-- `enc` — `A256GCM` (content encryption).
+- `alg` — `HS256` (HMAC-SHA256; the shared secret is the signing key).
+- `typ` — `JWT`.
 
 ### Payload claims
 
@@ -88,11 +120,12 @@ The `x-auth-token` is a compact **JWE** with a protected header and an encrypted
   Intended audience. Always `https://eka.care`.
 </ParamField>
 
-<ParamField body="sub" type="string" required>
-  Subject — the user identifier (for example, the mobile number with country code).
+<ParamField body="sub" type="string">
+  Subject — your stable user identifier (partner user id). Leave it empty (`""`) if you identify users
+  only by mobile number (e.g. WhatsApp), where the `mobile` claim is the identifier instead.
 </ParamField>
 
-<ParamField body="mobile_number" type="string">
+<ParamField body="mobile" type="string">
   The user's mobile number, with country code.
 </ParamField>
 
@@ -114,21 +147,279 @@ Example payload:
 {
   "iss": "https://partner.example.com",
   "aud": "https://eka.care",
-  "sub": "+919876543210",
-  "mobile_number": "+919876543210",
+  "sub": "partner_user_12345",
+  "mobile": "+919876543210",
   "iat": 1749600000,
-  "exp": 1749600300
+  "exp": 1749600300,
+  "jti": "b3f1c2a4-9e5d-4c8b-a1f2-0d7e6c5b4a39"
 }
 ```
+
+<Note>
+The shared secret is a base64url-encoded 32-byte key. Decode it to 32 raw bytes before using it as the
+HS256 HMAC signing key.
+</Note>
+
+---
+
+## Generate the Token
+
+Build the claims and sign them as a JWT with your shared secret (`HS256`, header `kid`). The shared
+secret is base64url-decoded to a 32-byte key.
+
+<CodeGroup>
+```python Python
+import base64
+import time
+import uuid
+import jwt  # PyJWT
+
+
+def mint_partner_token() -> str:
+    # Provided by Eka
+    kid    = "byoa_xxxxxxxxxxxxxxxx"
+    secret = "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk"
+
+    # base64url-decode the secret to 32 raw bytes (the HMAC key)
+    raw = base64.urlsafe_b64decode(secret + "==")
+
+    # Your values
+    now = int(time.time())
+    claims = {
+        "iss":    "https://partner.example.com",
+        "aud":    "https://eka.care",
+        "sub":    "partner_user_12345",  # leave "" if you only have mobile
+        "mobile": "+919876543210",
+        "iat":    now,
+        "exp":    now + 300,
+        "jti":    str(uuid.uuid4()),
+    }
+
+    return jwt.encode(claims, raw, algorithm="HS256", headers={"kid": kid})
+
+
+token = mint_partner_token()
+print(token)
+```
+
+```javascript Node.js
+import { SignJWT } from 'jose';
+import { randomUUID } from 'crypto';
+
+async function mintPartnerToken() {
+    const kid = "byoa_xxxxxxxxxxxxxxxx";
+    const secret = "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk";
+
+    // base64url-decode the secret to 32 raw bytes (the HMAC key)
+    const key = Buffer.from(secret, "base64url");
+
+    const now = Math.floor(Date.now() / 1000);
+
+    return await new SignJWT({
+        sub: "partner_user_12345",  // leave "" if you only have mobile
+        mobile: "+919876543210",
+    })
+        .setProtectedHeader({ alg: "HS256", kid })
+        .setIssuer("https://partner.example.com")
+        .setAudience("https://eka.care")
+        .setIssuedAt(now)
+        .setExpirationTime(now + 300)
+        .setJti(randomUUID())
+        .sign(key);
+}
+
+mintPartnerToken()
+    .then(token => {
+        console.log("\nGenerated JWT:\n");
+        console.log(token);
+    })
+    .catch(console.error);
+```
+
+```go Go
+package main
+
+import (
+	"encoding/base64"
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+func mintPartnerToken() (string, error) {
+	kid := "byoa_xxxxxxxxxxxxxxxx"
+	secret := "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk"
+
+	// base64url-decode the secret to 32 raw bytes (the HMAC key)
+	key, err := base64.RawURLEncoding.DecodeString(secret)
+	if err != nil {
+		return "", err
+	}
+
+	now := time.Now().Unix()
+	claims := jwt.MapClaims{
+		"iss":    "https://partner.example.com",
+		"aud":    "https://eka.care",
+		"sub":    "partner_user_12345", // leave "" if you only have mobile
+		"mobile": "+919876543210",
+		"iat":    now,
+		"exp":    now + 300,
+		"jti":    uuid.NewString(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token.Header["kid"] = kid
+	return token.SignedString(key)
+}
+
+func main() {
+	token, err := mintPartnerToken()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(token)
+}
+```
+
+```java Java
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.keys.HmacKey;
+
+import java.util.Base64;
+
+public class GenerateJWT {
+
+    public static void main(String[] args) throws Exception {
+
+        String kid = "byoa_xxxxxxxxxxxxxxxx";
+        String secret = "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk";
+
+        // base64url-decode the secret to 32 raw bytes (the HMAC key)
+        byte[] keyBytes = Base64.getUrlDecoder().decode(secret);
+
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer("https://partner.example.com");
+        claims.setAudience("https://eka.care");
+        claims.setSubject("partner_user_12345"); // leave "" if you only have mobile
+        claims.setClaim("mobile", "+919876543210");
+        claims.setIssuedAtToNow();
+        claims.setExpirationTimeMinutesInTheFuture(5);
+        claims.setGeneratedJwtId();
+
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(claims.toJson());
+        jws.setKey(new HmacKey(keyBytes));
+        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.HMAC_SHA256);
+        jws.setKeyIdHeaderValue(kid);
+
+        System.out.println(jws.getCompactSerialization());
+    }
+}
+```
+</CodeGroup>
+
+---
+
+## Send the Token
+
+The **MedAssist widget** is EkaCare's embeddable chat widget. Copy its embed snippet from your agent's
+**Widget** tab in the [Developer Console](https://console.eka.care) (or see the
+[widget quickstart](/ai-tools/synapse/embed/quickstart)), then add the token to it.
+
+<img
+  src="/images/widget-tab.png"
+  alt="The Widget tab in the EkaCare Developer Console, showing the embed code to copy"
+  data-zoomable
+/>
+
+There are two ways to pass the token:
+
+<CodeGroup>
+```html Custom element
+<eka-medassist-widget
+  agent-id="YOUR_AGENT_ID"
+  auth-token="COMPACT_JWT">
+</eka-medassist-widget>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
+  async
+></script>
+```
+
+```html JavaScript
+<eka-medassist-widget agent-id="YOUR_AGENT_ID"></eka-medassist-widget>
+<script
+  src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
+  async
+></script>
+
+<script>
+  window.EkaMedAssist.init({
+    agentId: "YOUR_AGENT_ID",
+    authToken: "COMPACT_JWT",
+  });
+</script>
+```
+</CodeGroup>
+
+- **Custom element** — set the `auth-token` attribute on the `<eka-medassist-widget>` element. Best
+  when you can render the token into the page server-side. See the
+  [widget quickstart](/ai-tools/synapse/embed/quickstart).
+- **JavaScript** — pass `authToken` to `EkaMedAssist.init()`. Best when the token is dynamic (e.g.
+  minted per logged-in user at runtime). See the
+  [JavaScript API](/ai-tools/synapse/embed/javascript-api).
+
+---
+
+## How EkaCare Verifies
+
+When EkaCare receives the token, it:
+
+1. Reads the `kid` from the token header and looks up the matching **shared secret** and registered
+   **issuer**.
+2. Verifies the JWT signature with your secret (or decrypts it, if it's a JWE).
+3. Verifies the claims — `iss` matches the registered issuer, `aud` is `https://eka.care`, and `iat`
+   and `exp` are within the allowed window. If you include a `jti`, it must not have been seen before
+   (replay protection).
+
+If any check fails, the request is rejected.
+
+---
+
+## Encrypted Token (JWE)
+
+<Info>
+JWE is an **optional alternative to the default signed JWT**. It's heavier than a JWT. Only use it when
+the token is sent somewhere observable — most commonly a **URL query parameter** (which can be logged
+by proxies, servers, and browser history) — **and** its payload holds highly sensitive information that
+must not be readable in transit. Otherwise, use a [signed JWT](#generate-the-token).
+</Info>
+
+A JWE carries the **same claims** as the JWT above ([Token Structure](#token-structure)) and uses the
+**same Key ID and shared secret** — the payload is *encrypted* instead of signed.
+
+### Header
+
+```json
+{ "kid": "byoa_xxxxxxxxxxxxxxxx", "alg": "dir", "enc": "A256GCM" }
+```
+
+- `kid` — your credential's Key ID.
+- `alg` — `dir` (the shared secret is used directly as the encryption key).
+- `enc` — `A256GCM` (content encryption).
 
 <Note>
 The shared secret is a base64url-encoded 32-byte key. Decode it to 32 raw bytes before using it as the
 `A256GCM` content-encryption key.
 </Note>
 
----
-
-## Generate the Token
+### Generate the JWE
 
 Build the claims, encrypt them as a JWE with your shared secret (`alg: dir`, `enc: A256GCM`, header
 `kid`), and serialize to compact form. The shared secret is base64url-decoded to a 32-byte key.
@@ -142,18 +433,18 @@ from jwcrypto import jwe, jwk
 
 def mint_partner_token() -> str:
     # Provided by Eka
-    kid    = "kid_v1"
+    kid    = "byoa_xxxxxxxxxxxxxxxx"
     secret = "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk"
 
     # Your values
     now = int(time.time())
     claims = {
-        "iss":           "https://partner.example.com",
-        "aud":           "https://eka.care",
-        "sub":           "+919876543210",
-        "mobile_number": "+919876543210",
-        "iat":           now,
-        "exp":           now + 300,
+        "iss":    "https://partner.example.com",
+        "aud":    "https://eka.care",
+        "sub":    "partner_user_12345",
+        "mobile": "+919876543210",
+        "iat":    now,
+        "exp":    now + 300,
     }
 
     # Build key
@@ -179,7 +470,7 @@ print(token)
 import { CompactEncrypt } from 'jose';
 
 async function mintPartnerToken() {
-    const kid = "kid_v1";
+    const kid = "byoa_xxxxxxxxxxxxxxxx";
     const secret = "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk";
 
     const now = Math.floor(Date.now() / 1000);
@@ -187,8 +478,8 @@ async function mintPartnerToken() {
     const claims = {
         iss: "https://partner.example.com",
         aud: "https://eka.care",
-        sub: "+919876543210",
-        mobile_number: "+919876543210",
+        sub: "partner_user_12345",
+        mobile: "+919876543210",
         iat: now,
         exp: now + 300,
     };
@@ -229,18 +520,18 @@ import (
 )
 
 func mintPartnerToken() (string, error) {
-	kid := "kid_v1"
+	kid := "byoa_xxxxxxxxxxxxxxxx"
 	secret := "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk"
 
 	now := time.Now().Unix()
 
 	claims := map[string]interface{}{
-		"iss":           "https://partner.example.com",
-		"aud":           "https://eka.care",
-		"sub":           "+919876543210",
-		"mobile_number": "+919876543210",
-		"iat":           now,
-		"exp":           now + 300,
+		"iss":    "https://partner.example.com",
+		"aud":    "https://eka.care",
+		"sub":    "partner_user_12345",
+		"mobile": "+919876543210",
+		"iat":    now,
+		"exp":    now + 300,
 	}
 
 	payload, err := json.Marshal(claims)
@@ -295,7 +586,7 @@ public class GenerateJWE {
 
     public static void main(String[] args) throws Exception {
 
-        String kid = "kid_v1";
+        String kid = "byoa_xxxxxxxxxxxxxxxx";
         String secret = "dGVzdHNlY3JldGtleWZvcmp3ZXRlc3QxMjM0NTY3ODk";
 
         long now = System.currentTimeMillis() / 1000;
@@ -304,8 +595,8 @@ public class GenerateJWE {
         {
           "iss":"https://partner.example.com",
           "aud":"https://eka.care",
-          "sub":"+919876543210",
-          "mobile_number":"+919876543210",
+          "sub":"partner_user_12345",
+          "mobile":"+919876543210",
           "iat":%d,
           "exp":%d
         }
@@ -334,72 +625,8 @@ public class GenerateJWE {
 ```
 </CodeGroup>
 
----
-
-## Send the Token
-
-The **MedAssist widget** is EkaCare's embeddable chat widget. Copy its embed snippet from your agent's
-**Widget** tab in the [Developer Console](https://console.eka.care) (or see the
-[widget quickstart](/ai-tools/synapse/embed/quickstart)), then add the token to it.
-
-<img
-  src="/images/widget-tab.png"
-  alt="The Widget tab in the EkaCare Developer Console, showing the embed code to copy"
-  data-zoomable
-/>
-
-There are two ways to pass the token:
-
-<CodeGroup>
-```html Custom element
-<eka-medassist-widget
-  agent-id="YOUR_AGENT_ID"
-  auth-token="COMPACT_JWE">
-</eka-medassist-widget>
-
-<script
-  src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
-  async
-></script>
-```
-
-```html JavaScript
-<eka-medassist-widget agent-id="YOUR_AGENT_ID"></eka-medassist-widget>
-<script
-  src="https://cdn.jsdelivr.net/npm/@eka-care/medassist-widget-embed@latest/dist/index.js"
-  async
-></script>
-
-<script>
-  window.EkaMedAssist.init({
-    agentId: "YOUR_AGENT_ID",
-    authToken: "COMPACT_JWE",
-  });
-</script>
-```
-</CodeGroup>
-
-- **Custom element** — set the `auth-token` attribute on the `<eka-medassist-widget>` element. Best
-  when you can render the token into the page server-side. See the
-  [widget quickstart](/ai-tools/synapse/embed/quickstart).
-- **JavaScript** — pass `authToken` to `EkaMedAssist.init()`. Best when the token is dynamic (e.g.
-  minted per logged-in user at runtime). See the
-  [JavaScript API](/ai-tools/synapse/embed/javascript-api).
-
----
-
-## How EkaCare Verifies
-
-When EkaCare receives the token, it:
-
-1. Reads the `kid` from the token header and looks up the matching **shared secret** and registered
-   **issuer**.
-2. Decrypts the JWE with your secret.
-3. Verifies the claims — `iss` matches the registered issuer, `aud` is `https://eka.care`, and `iat`
-   and `exp` are within the allowed window. If you include a `jti`, it must not have been seen before
-   (replay protection).
-
-If any check fails, the request is rejected.
+EkaCare detects the JWE format automatically, looks up your secret by `kid`, decrypts it, and verifies
+the same claims as a JWT.
 
 ---
 
@@ -407,6 +634,7 @@ If any check fails, the request is rejected.
 
 <Warning>
 - Generate tokens **server-side only** — never ship the shared secret to a browser or mobile app.
+- Prefer a **signed JWT**; reach for JWE only for sensitive data on query parameters.
 - Keep `exp` short (~5 minutes) and use a fresh `jti` for every request.
 - Rotate by revoking the credential and creating a new one, then update your agents to the new Key ID.
 </Warning>
