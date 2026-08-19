@@ -577,6 +577,82 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /voice/api/v1/transaction/{session_id}/convert-to-template:
+    post:
+      summary: Upload Transcript
+      description: >
+        **Optional.** Use this only if you already have the transcript and do not
+        want EkaScribe to transcribe audio for you. Instead of uploading audio
+        files, create a session, POST your transcript here along with the
+        `template_id` you want it structured into, then poll Get Session for the
+        structured result.
+
+
+        The call is asynchronous: it returns `202` with a `document_id` and
+        `status: in-progress`. Fetch the structured note with
+        `GET /voice/v1/sessions/{session_id}` (optionally
+        `?document_id=<document_id>`) or Get Document once its status is
+        `success`.
+
+
+        You may also omit `template_id` and send `target_language` instead to
+        translate the transcript (or the session's stored transcript) into
+        another language.
+      tags:
+        - sessions
+      security:
+        - auth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Session ID returned by Create Session
+          schema:
+            type: string
+            example: ses_abc123def456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadTranscriptRequest"
+            example:
+              transcript: |
+                Doctor: What brings you in today?
+                Patient: I've had a dry cough and mild fever for the last three days.
+                Doctor: Any breathlessness or chest pain?
+                Patient: No, just the cough and I feel tired.
+              template_id: clinical_notes_template
+      responses:
+        "202":
+          description: Transcript accepted, template generation started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadTranscriptResponse"
+              example:
+                status: in-progress
+                message: Template generation started in background
+                txn_id: ses_abc123def456
+                b_id: "123456"
+                template_id: clinical_notes_template
+                document_id: doc_9f8e7d6c
+                templates:
+                  - template_id: clinical_notes_template
+                    document_id: doc_9f8e7d6c
+        "400":
+          description: Neither `transcript` nor `target_language` was provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /voice/api/v1/template:
     post:
       summary: Create Template
@@ -1530,6 +1606,69 @@ components:
         message:
           type: string
           example: Template generation in progress
+    UploadTranscriptRequest:
+      type: object
+      description: >
+        Send at least one of `transcript` or `target_language`. If both are
+        omitted the request is rejected with `400`.
+      properties:
+        transcript:
+          type: string
+          description: >
+            The plain-text transcript of the consultation. This replaces
+            EkaScribe's own transcription — no audio upload is needed for the
+            session.
+          example: |
+            Doctor: What brings you in today?
+            Patient: I've had a dry cough and mild fever for the last three days.
+        template_id:
+          type: string
+          description: >
+            Template to structure the transcript into (from List Templates). If
+            omitted, the template requested in Create Session (`templates`) is
+            used.
+          example: clinical_notes_template
+        target_language:
+          type: string
+          description: >
+            Translate the transcript into this language instead of structuring
+            it into a template. One of `eng`, `hi`, `ta`, `te`, `bn`, `mr`,
+            `gu`, `kn`, `ml`, `pa`, `as`.
+          example: hi
+    UploadTranscriptResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: in-progress
+        message:
+          type: string
+          example: Template generation started in background
+        txn_id:
+          type: string
+          description: The session ID the transcript was uploaded to.
+          example: ses_abc123def456
+        b_id:
+          type: string
+          description: Business ID resolved from your access token.
+          example: "123456"
+        template_id:
+          type: string
+          example: clinical_notes_template
+        document_id:
+          type: string
+          description: ID of the document being generated. Poll Get Session or Get Document until its status is `success`.
+          example: doc_9f8e7d6c
+        templates:
+          type: array
+          description: Documents created for this request.
+          items:
+            type: object
+            properties:
+              template_id:
+                type: string
+              document_id:
+                type: string
     TemplateCreateRequest:
       type: object
       required: [title, section_ids]
