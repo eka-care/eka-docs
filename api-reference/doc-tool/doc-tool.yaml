@@ -7175,7 +7175,7 @@ paths:
                 message: "Appointment \"api-3f9c2b18\" already exists"
       deprecated: false
 
-  /appointments/v1/ipd/admission/{admission_id}:
+  /ipd/v1/admissions/{admission_id}:
     get:
       tags:
         - IPD API
@@ -7603,7 +7603,7 @@ paths:
                 message: "Admission \"adm-3f9c2b18\" was not found"
       deprecated: false
 
-  /appointments/v1/ipd/admission:
+  /ipd/v1/admissions:
     post:
       tags:
         - IPD API
@@ -8406,6 +8406,425 @@ paths:
                     type: string
               example:
                 message: "unauthenticated"
+      deprecated: false
+
+  /ipd/v1/admissions/{admission_id}/discharge/initiate:
+    post:
+      tags:
+        - IPD API
+      summary: Initiate a Discharge
+      description: >-
+
+        ### Overview
+
+
+        Starts a patient's discharge. This is the **whole flow**, not a status field write — in one
+        call it moves the admission to `DISCHARGE_INITIATED`, records the transition on the
+        admission's audit trail, and notifies every pharmacy the admission ordered from so they can
+        close unreturned medicines and dues.
+
+
+        Use this rather than calling the pharmacy notification on its own. Firing the notification
+        standalone tells chemists a patient is leaving while the admission is still `UNDER_CARE`.
+
+
+        ### The status commits before any pharmacy is contacted
+
+
+        That ordering is guaranteed, and it is why a pharmacy failure is never fatal: by the time
+        anyone is contacted, the discharge has already happened. A chemist can therefore never be
+        told about a discharge that did not occur.
+
+
+        ### A pharmacy failure is a warning, not an error
+
+
+        If one or more pharmacies could not be reached you still get `200`, with `pharmacy_warning`
+        set and the per-pharmacy detail in `pharmacy.targets`. Retry just those with
+        `/pharmacy-clearance-notify/retry`. The discharge stands either way.
+
+
+        `pharmacy.skipped` marks a deliberate no-op — `no-ipid` when the admission has no IPD case
+        number to send, `no-targets` when it never ordered from a pharmacy. Neither is a problem.
+
+      operationId: InitiateIpdDischarge
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission to discharge.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpdInitiateDischargeRequest'
+            example:
+              by:
+                id: op-8842
+                name: Dr. Kim Sarkar
+                role: DOCTOR
+      responses:
+        '200':
+          description: >-
+            OK — the discharge was initiated. Check `pharmacy_warning` / `pharmacy.targets` for how
+            the notifications went.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdInitiateDischargeResponse'
+              example:
+                admission:
+                  id: adm-3f9c2b18
+                  ipid: IPD1001
+                  stage: AD
+                  status: DISCHARGE_INITIATED
+                pharmacy_warning: "Couldn't notify one pharmacy. You can resend from the clearance screen."
+                pharmacy:
+                  state: failed
+                  targets:
+                    evital:CH1023:
+                      provider: evital
+                      pharmacy_id: CH1023
+                      pharmacy_name: Apollo Chemist, Sec 44
+                      status: NOTIFIED
+                      attempts: 1
+                    evital:CH2044:
+                      provider: evital
+                      pharmacy_id: CH2044
+                      status: FAILED
+                      attempts: 1
+                      last_error: connect ETIMEDOUT
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found — no such admission for this business.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Admission \"adm-3f9c2b18\" was not found"
+      deprecated: false
+
+  /ipd/v1/admissions/{admission_id}/pharmacy-clearance-notify:
+    post:
+      tags:
+        - IPD API
+      summary: Notify Pharmacies of a Discharge
+      description: >-
+
+        ### Overview
+
+
+        When a patient's discharge is initiated, this API tells every pharmacy the
+        admission actually ordered from that the patient is leaving, so they can close
+        out unreturned medicines and any outstanding dues.
+
+
+        **You do not choose the recipients.** They are resolved server-side from the
+        admission's own orders — a chemist the patient never used has nothing to clear.
+        An admission that ordered from two eVital chemists and the in-house pharmacy
+        notifies all three; one that ordered six times from one chemist notifies it once.
+
+
+        ### A pharmacy failing is not a request failure
+
+
+        This returns `200` even when a pharmacy could not be reached. The round did run,
+        and reporting an error would discard the results for the pharmacies that
+        succeeded. Each pharmacy's outcome is carried in `targets`, keyed by
+        `"{provider}:{pharmacyId}"`; retry only the failed ones with the `/retry` call.
+
+
+        Notification is never a gate on discharge — the clearance can always be
+        completed by hand, whatever happened here.
+
+
+        ### Skips
+
+
+        `skipped` marks a deliberate no-op, not an error: `no-ipid` when the admission
+        has no IPD case number to send, `no-targets` when it never ordered from a
+        pharmacy.
+
+      operationId: NotifyIpdPharmacyClearance
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission being discharged (document id under `ipd/{b-id}/admissions`).'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpdPharmacyClearanceRequest'
+            example:
+              by:
+                id: op-8842
+                name: Dr. Kim Sarkar
+                role: DOCTOR
+      responses:
+        '200':
+          description: OK — the round ran. Check `targets` for each pharmacy's outcome.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdPharmacyClearanceResponse'
+              example:
+                state: partial
+                targets:
+                  evital:CH1023:
+                    provider: evital
+                    pharmacy_id: CH1023
+                    pharmacy_name: Apollo Chemist, Sec 44
+                    status: NOTIFIED
+                    attempts: 1
+                    notified_at: '2026-08-04T16:02:11.000Z'
+                    last_attempt_at: '2026-08-04T16:02:11.000Z'
+                  evital:CH2044:
+                    provider: evital
+                    pharmacy_id: CH2044
+                    pharmacy_name: MedPlus, Golf Course Rd
+                    status: FAILED
+                    attempts: 1
+                    last_attempt_at: '2026-08-04T16:02:11.000Z'
+                    last_error: connect ETIMEDOUT
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found — no such admission for this business.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Admission \"adm-3f9c2b18\" was not found"
+      deprecated: false
+
+  /ipd/v1/admissions/{admission_id}/pharmacy-clearance-notify/retry:
+    post:
+      tags:
+        - IPD API
+      summary: Resend to Pharmacies That Failed
+      description: >-
+
+        ### Overview
+
+
+        Retries **only** the pharmacies whose last notification attempt failed — what
+        the "Resend" action on the discharge clearance screen calls.
+
+
+        Safe to call unconditionally: when nothing failed it is a no-op reporting
+        `skipped: "no-targets"`, so the caller need not check first. Each attempt
+        increments that pharmacy's `attempts` counter, which is what drives the
+        "Sent twice / 4 times" copy in the product.
+
+      operationId: RetryIpdPharmacyClearance
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission whose failed pharmacies should be retried.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpdPharmacyClearanceRequest'
+      responses:
+        '200':
+          description: OK — retried the failed pharmacies, or a no-op when none had failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdPharmacyClearanceResponse'
+              example:
+                state: partial
+                targets:
+                  evital:CH2044:
+                    provider: evital
+                    pharmacy_id: CH2044
+                    pharmacy_name: MedPlus, Golf Course Rd
+                    status: NOTIFIED
+                    attempts: 2
+                    notified_at: '2026-08-04T16:11:40.000Z'
+                    last_attempt_at: '2026-08-04T16:11:40.000Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found — no such admission for this business.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Admission \"adm-3f9c2b18\" was not found"
+      deprecated: false
+
+  /ipd/v1/admissions/{admission_id}/pharmacy-clearance-notify/cancel:
+    post:
+      tags:
+        - IPD API
+      summary: Withdraw a Discharge Notification
+      description: >-
+
+        ### Overview
+
+
+        Withdraws a previous notification because the discharge was cancelled.
+
+
+        ### Call this before resetting the discharge
+
+
+        The list of which pharmacies were told lives on the admission's pharmacy
+        clearance document. Resetting the discharge workflow deletes that document, so
+        calling this afterwards leaves nobody to tell — always withdraw first, then reset.
+
+
+        Providers with no cancel API of their own come back `UNSUPPORTED` rather than
+        failed: nothing was attempted and there is nothing for an operator to retry. The
+        chemist simply finds the dues still open when they next look.
+
+      operationId: CancelIpdPharmacyClearance
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission whose notification should be withdrawn.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IpdPharmacyClearanceRequest'
+      responses:
+        '200':
+          description: OK — the withdrawal round ran.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdPharmacyClearanceResponse'
+              example:
+                state: partial
+                targets:
+                  evital:CH1023:
+                    provider: evital
+                    pharmacy_id: CH1023
+                    pharmacy_name: Apollo Chemist, Sec 44
+                    status: UNSUPPORTED
+                    attempts: 2
+                    notified_at: '2026-08-04T16:02:11.000Z'
+                    last_attempt_at: '2026-08-04T16:20:03.000Z'
+                  dawakhana:dawakhana:
+                    provider: dawakhana
+                    pharmacy_id: dawakhana
+                    pharmacy_name: In-house Pharmacy
+                    status: CANCELLED
+                    attempts: 2
+                    cancelled_at: '2026-08-04T16:20:03.000Z'
+                    last_attempt_at: '2026-08-04T16:20:03.000Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "unauthenticated"
+        '404':
+          description: Not Found — no such admission for this business.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Admission \"adm-3f9c2b18\" was not found"
       deprecated: false
 
   /dr/v1/appointment/{appointment_id}/change-status:
@@ -9713,6 +10132,152 @@ paths:
 
 components:
   schemas:
+    IpdInitiateDischargeRequest:
+      title: IpdInitiateDischargeRequest
+      type: object
+      description: >-
+        Optional body. The target status, the transition event and which pharmacies to notify are
+        all decided by the flow — none of them are caller-supplied.
+      properties:
+        by:
+          type: object
+          description: >-
+            Actor recorded on the transition and against each pharmacy attempt. Defaults to the
+            authenticated operator.
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            role:
+              type: string
+          required:
+            - id
+      additionalProperties: false
+    IpdInitiateDischargeResponse:
+      title: IpdInitiateDischargeResponse
+      type: object
+      properties:
+        admission:
+          type: object
+          description: The admission after the transition, with `status` now `DISCHARGE_INITIATED`.
+          additionalProperties: true
+        pharmacy_warning:
+          type: string
+          description: >-
+            Present when a pharmacy could not be notified. The discharge still happened — retry the
+            failed pharmacies rather than re-running the discharge.
+        pharmacy:
+          $ref: '#/components/schemas/IpdPharmacyClearanceResponse'
+      additionalProperties: true
+    IpdPharmacyClearanceRequest:
+      title: IpdPharmacyClearanceRequest
+      type: object
+      description: >-
+        Optional body. Which pharmacies are contacted is resolved server-side from the
+        admission's orders, so the caller cannot pick the recipients.
+      properties:
+        by:
+          type: object
+          description: >-
+            Actor recorded against the attempt. Defaults to the authenticated operator.
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            role:
+              type: string
+          required:
+            - id
+      additionalProperties: false
+    IpdPharmacyNotifyTarget:
+      title: IpdPharmacyNotifyTarget
+      type: object
+      description: One pharmacy's state for this discharge.
+      properties:
+        provider:
+          type: string
+          description: '`evital` for an eVital chemist, `dawakhana` for the in-house pharmacy.'
+          example: evital
+        pharmacy_id:
+          type: string
+          example: CH1023
+        pharmacy_name:
+          type: string
+          example: Apollo Chemist, Sec 44
+        status:
+          type: string
+          description: >-
+            `NOTIFIED` — accepted, awaiting clearance. `FAILED` — retryable, see
+            `last_error`. `CLEARED` — dues closed. `CANCELLED` — withdrawal accepted.
+            `UNSUPPORTED` — the provider has no such API, so nothing was attempted and
+            nothing needs fixing.
+          enum:
+            - NOTIFIED
+            - FAILED
+            - CLEARED
+            - CANCELLED
+            - UNSUPPORTED
+        attempts:
+          type: integer
+          description: Total attempts against this pharmacy, across the initial send and any resends.
+          example: 2
+        notified_at:
+          type: string
+          format: date-time
+          description: >-
+            When this pharmacy last accepted a notification. Retained even if a later
+            attempt fails — a failure does not undo having once reached them.
+        last_attempt_at:
+          type: string
+          format: date-time
+          description: When we last tried, successful or not.
+        last_error:
+          type: string
+          example: connect ETIMEDOUT
+        cancelled_at:
+          type: string
+          format: date-time
+        cleared_at:
+          type: string
+          format: date-time
+        cleared_via:
+          type: string
+          enum:
+            - operator
+            - webhook
+      additionalProperties: true
+    IpdPharmacyClearanceResponse:
+      title: IpdPharmacyClearanceResponse
+      type: object
+      properties:
+        skipped:
+          type: string
+          description: >-
+            Present when the round was a deliberate no-op. `no-ipid` — the admission has
+            no IPD case number to send. `no-targets` — it never ordered from a pharmacy,
+            or (on retry) nothing had failed. Neither is an error.
+          enum:
+            - no-ipid
+            - no-targets
+        state:
+          type: string
+          description: >-
+            Rolled up across every pharmacy. `failed` outranks `partial` deliberately:
+            a failed pharmacy needs the operator to resend, where `partial` just means
+            we are waiting.
+          enum:
+            - none
+            - partial
+            - all
+            - failed
+        targets:
+          type: object
+          description: 'Per-pharmacy state, keyed by `"{provider}:{pharmacyId}"` (e.g. `evital:CH1023`).'
+          additionalProperties:
+            $ref: '#/components/schemas/IpdPharmacyNotifyTarget'
+      additionalProperties: true
     AuthLoginRequest:
       title: AuthLoginRequest
       required:
