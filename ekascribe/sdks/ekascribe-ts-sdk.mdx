@@ -549,14 +549,17 @@ type TPostV1ConvertToTemplateResponse = {
 
 ### `addSessionContext(request)`
 
-Attach context to a session so generation can draw on prior visits and uploaded files. Context is either `past_sessions` (session IDs) or `attachments` (record IDs, each optionally scoped to a `patient_oid`).
+Attach reference material to a session so note generation can draw on it. Both context keys are optional and can be sent together:
+
+- `past_sessions` — IDs of earlier sessions to carry forward.
+- `attachments` — document IDs to pull in. `patient_oid` is optional; pass it to scope the document to a specific patient.
 
 ```ts
 await ekascribe.sessions.addSessionContext({
   txn_id: 'session-id',
   context: {
     past_sessions: ['previous-session-id'],
-    attachments: [{ id: 'record-id', patient_oid: 'patient-oid' }],
+    attachments: [{ id: 'document-id' }],   // patient_oid optional
   },
 });
 ```
