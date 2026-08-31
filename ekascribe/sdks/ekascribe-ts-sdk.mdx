@@ -500,6 +500,124 @@ interface ProcessTemplateResponse {
 }
 ```
 
+### `convertTranscriptionToTemplate(request)`
+
+Generate a document from a transcript against a template. Unlike `convertToTemplate`, which re-processes a session's own stored transcript server-side, this variant lets you pass a `transcript` string explicitly and pick a `target_language` for the output.
+
+```ts
+const result = await ekascribe.documents.convertTranscriptionToTemplate({
+  txn_id: 'session-id',              // required
+  template_id: 'template-id',        // optional: defaults to the session's template
+  transcript: 'Doctor: ...',         // optional: omit to use the stored transcript
+  target_language: 'en',             // optional: output language
+});
+
+if (result.status === 'success') {
+  console.log(result.document_id);
+} else {
+  console.error(result.error?.display_message ?? result.message);
+}
+```
+
+Request: `TPostV1ConvertToTemplateRequest`
+
+```ts
+type TPostV1ConvertToTemplateRequest = {
+  txn_id: string;
+  template_id?: string;
+  transcript?: string;
+  target_language?: string;
+};
+```
+
+Response: `TPostV1ConvertToTemplateResponse`
+
+```ts
+type TPostV1ConvertToTemplateResponse = {
+  status: 'success' | 'failed';
+  message: string;
+  txn_id: string;
+  template_id: string;
+  document_id: string;
+  b_id: string;
+  status_code: number;
+  msg: string;
+  error_code?: ERROR_CODE;
+  error?: { code: string; message: string; display_message: string };
+};
+```
+
+### `addSessionContext(request)`
+
+Attach context to a session so generation can draw on prior visits and uploaded files. Context is either `past_sessions` (session IDs) or `attachments` (record IDs, each optionally scoped to a `patient_oid`).
+
+```ts
+await ekascribe.sessions.addSessionContext({
+  txn_id: 'session-id',
+  context: {
+    past_sessions: ['previous-session-id'],
+    attachments: [{ id: 'record-id', patient_oid: 'patient-oid' }],
+  },
+});
+```
+
+Request: `TPatchSessionContextRequest`
+
+```ts
+type TPatchSessionContextRequest = {
+  txn_id: string;
+  context: {
+    past_sessions?: string[];
+    attachments?: { id: string; patient_oid?: string }[];
+  };
+};
+```
+
+Response: `TPatchSessionContextResponse` — `{ status_code, message?, error_code? }`.
+
+### `removeSessionContext(request)`
+
+Detach context previously added with `addSessionContext`. Takes the same shape; list only the entries you want removed.
+
+```ts
+await ekascribe.sessions.removeSessionContext({
+  txn_id: 'session-id',
+  context: {
+    past_sessions: ['previous-session-id'],
+  },
+});
+```
+
+Request and response types match `addSessionContext`.
+
+### `deleteSession(request)`
+
+Permanently delete a session and its associated data.
+
+```ts
+const result = await ekascribe.sessions.deleteSession({ txn_id: 'session-id' });
+if (result.status_code === 200) {
+  console.log('deleted', result.txn_id);
+}
+```
+
+<Warning>
+Deletion is irreversible — the session's audio, transcript, and generated documents are removed. Use `cancelSession(sessionId)` instead when you only want to stop an in-flight recording without discarding data.
+</Warning>
+
+Response: `TDeleteTransactionResponse`
+
+```ts
+type TDeleteTransactionResponse = {
+  status_code: number;
+  status?: string;
+  txn_id?: string;
+  message?: string;
+  error_code?: ERROR_CODE;
+  error?: { code: string; message: string; display_message?: string };
+};
+```
+
 ### `patchSessionStatus(request, sessionId?)`
 
 Update session properties.
@@ -681,6 +799,9 @@ interface StartRecordingV2Options {
 | `sessions.getSessionDetails(request)` | — | Session metadata, documents, presigned URLs. |
 | `sessions.patchSessionStatus(request, sessionId?)` | — | Patch session (patient details, templates, etc.). |
 | `sessions.getConfig()` | `TGetConfigV2Response` | Account config, including `my_templates`. |
+| `sessions.deleteSession(request)` | `TDeleteTransactionResponse` | Permanently delete a session and its data. |
+| `sessions.addSessionContext(request)` | `TPatchSessionContextResponse` | Attach past sessions / attachments as context. |
+| `sessions.removeSessionContext(request)` | `TPatchSessionContextResponse` | Detach previously added context. |
 | `sessions.getDiscoveryDocument()` | — | Server capabilities (models, languages, upload methods). |
 
 ### Documents
@@ -689,6 +810,7 @@ interface StartRecordingV2Options {
 |---|---|---|
 | `documents.getDocument(request)` | `TPostV1DocumentResponse` | Fetch a document by ID with a fresh presigned URL. |
 | `documents.convertToTemplate(request)` | `SDKResult<ProcessTemplateResponse>` | Re-process a session's transcript with another template. |
+| `documents.convertTranscriptionToTemplate(request)` | `TPostV1ConvertToTemplateResponse` | Generate a document from a supplied transcript, with optional target language. |
 
 ### Widget
 
