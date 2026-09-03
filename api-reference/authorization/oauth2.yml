@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: Eka OIDC Provider
+  version: 1.0.0
+  description: OAuth 2.0 and OpenID Connect endpoints for signing users in with Eka.
+servers:
+  - description: Production
+    url: https://accounts.eka.care
+  - description: Stage/Sandbox
+    url: https://aortago.dev.eka.care
+tags:
+  - name: Eka OIDC Provider
+paths:
+  /oauth2/authorize:
+    get:
+      operationId: authorize
+      summary: Authorize a user
+      description: |
+        Starts the OAuth 2.0 Authorization Code flow.
+
+        Open this endpoint in the user's browser. Eka authenticates the user when
+        required and redirects the browser to the registered `redirect_uri`.
+        A successful redirect contains a short-lived, single-use authorization
+        `code` that your backend exchanges at `/oauth2/token`.
+
+        Eka grants a fixed scope set on this endpoint. Include it as the OAuth
+        `scope` query parameter:
+        `openid profile email offline_access`.
+
+        PKCE is optional. When using PKCE, use the `S256` challenge method and
+        generate a new verifier for every authorization request.
+      tags:
+        - Eka OIDC Provider
+      parameters:
+        - name: response_type
+          in: query
+          required: true
+          description: Use `code` for the Authorization Code flow.
+          schema:
+            type: string
+            enum:
+              - code
+          example: code
+        - name: client_id
+          in: query
+          required: true
+          description: Client identifier issued by Eka.
+          schema:
+            type: string
+          example: EC_178843954824934
+        - name: redirect_uri
+          in: query
+          required: true
+          description: |
+            Callback URL that receives the authorization response. It must
+            exactly match a redirect URI registered for the client.
+          schema:
+            type: string
+            format: uri
+          example: http://localhost:50515/auth-success
+        - name: scope
+          in: query
+          required: true
+          description: |
+            Fixed scope set for this endpoint:
+            `openid profile email offline_access`.
+          schema:
+            type: string
+            default: openid profile email offline_access
+            enum:
+              - openid profile email offline_access
+        - name: state
+          in: query
+          required: true
+          description: |
+            Unpredictable value used by the client to prevent CSRF. Verify that
+            the same value is returned to the callback. Use at least 8 characters.
+          schema:
+            type: string
+            minLength: 8
+          example: 1f0c7c8d2f7741b8
+        - name: nonce
+          in: query
+          required: false
+          description: |
+            Unpredictable value that binds the client session to the ID token.
+            Verify the returned ID token contains the same value.
+          schema:
+            type: string
+          example: e85f0c29a1bb49c9
+        - name: code_challenge
+          in: query
+          required: false
+          description: |
+            Base64url-encoded SHA-256 digest of the PKCE `code_verifier`.
+            Required only when using PKCE.
+          schema:
+            type: string
+          example: 6GcavjuHpQj-Z2MxhtG12eF1KDMeaJ1a5xxyh8z1leY
+        - name: code_challenge_method
+          in: query
+          required: false
+          description: PKCE transformation method. Use `S256`.
+          schema:
+            type: string
+            enum:
+              - S256
+          example: S256
+        - name: prompt
+          in: query
+          required: false
+          description: Set to `login` to require the user to authenticate again.
+          schema:
+            type: string
+            enum:
+              - login
+          example: login
+        - name: max_age
+          in: query
+          required: false
+          description: |
+            Maximum allowed age of the user's Eka authentication session, in
+            seconds. Eka requires authentication again when the session is older.
+            A value of `0` always requires authentication.
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+          example: 3600
+      responses:
+        "303":
+          description: |
+            The browser is redirected to `redirect_uri`. On success, the query
+            contains `code`, `state`, and the granted `scope`. On an OAuth error,
+            it contains `error`, `error_description`, and `state`.
+          headers:
+            Location:
+              description: Client callback URL containing the authorization response.
+              schema:
+                type: string
+                format: uri
+              example: http://localhost:50515/auth-success?code=ory_ac_example&state=1f0c7c8d2f7741b8
+        "307":
+          description: The browser is redirected to Eka login when authentication is required.
+          headers:
+            Location:
+              description: Eka login URL.
+              schema:
+                type: string
+                format: uri
+        "400":
+          description: Invalid request when a safe client redirect cannot be performed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthError"
+  /oauth2/token:
+    post:
+      operationId: exchangeToken
+      summary: Exchange or refresh tokens
+      description: |
+        Exchanges a single-use authorization code for tokens, or exchanges a
+        refresh token for a new token set.
+
+        Send parameters as `application/x-www-form-urlencoded`, including
+        `client_id` and `client_secret` in the form body.
+      tags:
+        - Eka OIDC Provider
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/AuthorizationCodeTokenRequest"
+                - $ref: "#/components/schemas/RefreshTokenRequest"
+            examples:
+              authorization_code:
+                summary: Exchange an authorization code
+                value:
+                  grant_type: authorization_code
+                  code: ory_ac_example
+                  redirect_uri: http://localhost:50515/auth-success
+                  client_id: EC_178843954824934
+                  client_secret: your_client_secret
+                  code_verifier: your_original_pkce_code_verifier
+              refresh_token:
+                summary: Refresh tokens
+                value:
+                  grant_type: refresh_token
+                  refresh_token: ory_rt_example
+                  client_id: EC_178843954824934
+                  client_secret: your_client_secret
+      responses:
+        "200":
+          description: Token response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+              example:
+                access_token: ory_at_example
+                token_type: bearer
+                expires_in: 3600
+                scope: openid profile email offline_access
+                refresh_token: ory_rt_example
+                id_token: eyJhbGciOiJSUzI1NiIsImtpZCI6ImVrYS1lbXIifQ.example
+        "400":
+          description: |
+            Invalid request or grant. Common causes include an expired or reused
+            authorization code, a mismatched `redirect_uri`, an invalid PKCE
+            verifier, or an expired or reused refresh token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthError"
+        "401":
+          description: Client authentication failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthError"
+components:
+  schemas:
+    AuthorizationCodeTokenRequest:
+      type: object
+      required:
+        - grant_type
+        - code
+        - redirect_uri
+        - client_id
+        - client_secret
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - authorization_code
+        code:
+          type: string
+          description: Short-lived, single-use code returned by `/oauth2/authorize`.
+        redirect_uri:
+          type: string
+          format: uri
+          description: Must exactly match the URI used in the authorization request.
+        client_id:
+          type: string
+          description: Client identifier issued by Eka.
+        client_secret:
+          type: string
+          format: password
+          description: Client secret issued by Eka.
+        code_verifier:
+          type: string
+          minLength: 43
+          maxLength: 128
+          description: Original PKCE verifier. Required when the authorization request used PKCE.
+    RefreshTokenRequest:
+      type: object
+      required:
+        - grant_type
+        - refresh_token
+        - client_id
+        - client_secret
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - refresh_token
+        refresh_token:
+          type: string
+          description: Refresh token previously issued by this endpoint.
+        client_id:
+          type: string
+          description: Must identify the client to which the refresh token was issued.
+        client_secret:
+          type: string
+          format: password
+          description: Client secret issued by Eka.
+    TokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: Bearer token used to authorize Eka API requests.
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          format: int64
+          description: Access-token lifetime in seconds.
+        scope:
+          type: string
+          description: Space-separated scopes granted to the token.
+        refresh_token:
+          type: string
+          description: Token used to obtain a new token set.
+        id_token:
+          type: string
+          description: OpenID Connect ID token returned when `openid` was granted.
+    OAuthError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: invalid_grant
+        error_description:
+          type: string
+          example: The provided authorization grant is invalid, expired, or already used.
