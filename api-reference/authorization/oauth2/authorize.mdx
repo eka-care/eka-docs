@@ -1,0 +1,22 @@
+---
+openapi: get /oauth2/authorize
+title: Authorize User
+---
+
+<Note>
+  Open this endpoint in the user's browser. Do not call it as a backend API.
+</Note>
+
+Use the Authorization Code flow. PKCE is optional. If you use PKCE, use
+`code_challenge_method=S256` and generate a new verifier for every authorization request.
+After authentication, Eka redirects the browser to your registered `redirect_uri` with a
+single-use authorization code.
+
+Your client application should verify `state` before exchanging the code. If your authorization
+request includes a `nonce`, your client should verify it when validating the returned ID token.
+
+<Info>
+  Eka always grants this fixed scope set. Include it as the `scope` query parameter:
+  `openid profile email offline_access`.
+</Info>
+
