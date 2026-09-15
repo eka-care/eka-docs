@@ -4164,35 +4164,50 @@ paths:
 
               oneOf:
                 - title: PartnerIds
+                  description: >-
+                    Identify the clinic, doctor and patient by your own (partner) identifiers.
+                    `partner_doctor_id` is optional — omit it to create a clinic-level
+                    appointment with no doctor assigned.
                   properties:
                     partner_clinic_id:
                       type: string
                       description: 'Identifier for the partner’s clinic. Please ensure the clinic is registered on the hub'
                     partner_doctor_id:
                       type: string
-                      description: 'Identifier for the partner’s doctor. Please ensure the doctor is registered on the hub'
+                      description: >-
+                        Optional. Identifier for the partner’s doctor. Please ensure the doctor
+                        is registered on the hub. Omit this key entirely to book a clinic-level
+                        appointment against `partner_clinic_id` with no doctor assigned; sending it
+                        as `null` or an empty string is rejected. A doctor can be assigned later
+                        through `PATCH /dr/v2/appointment/{appointment_id}`.
                     partner_patient_id:
                       type: string
                       description: 'Identifier for the partner’s patient. Please ensure the patient is registered beforehand using the "Add Patient" API.'
                   required:
                     - partner_clinic_id
-                    - partner_doctor_id
                     - partner_patient_id
 
                 - title: EkaIds
+                  description: >-
+                    Identify the clinic, doctor and patient by their Eka identifiers.
+                    `doctor_id` is optional — omit it to create a clinic-level appointment
+                    with no doctor assigned.
                   properties:
                     clinic_id:
                       type: string
                       description: 'Identifier for the clinic in Eka.'
                     doctor_id:
                       type: string
-                      description: 'Identifier for the doctor in Eka.'
+                      description: >-
+                        Optional. Identifier for the doctor in Eka. Omit this key entirely to book
+                        a clinic-level appointment against `clinic_id` with no doctor assigned;
+                        sending it as `null` or an empty string is rejected. A doctor can be
+                        assigned later through `PATCH /dr/v2/appointment/{appointment_id}`.
                     patient_id:
                       type: string
                       description: 'Identifier for the patient in Eka.'
                   required:
                     - clinic_id
-                    - doctor_id
                     - patient_id
 
               required:
