@@ -162,6 +162,11 @@ paths:
         Exchanges a single-use authorization code for tokens, or exchanges a
         refresh token for a new token set.
 
+        Refresh tokens are rotated on every refresh: each successful
+        `refresh_token` grant returns a new `refresh_token` and invalidates the
+        one that was sent. Always persist the latest refresh token from the
+        response.
+
         Send parameters as `application/x-www-form-urlencoded`, including
         `client_id` and `client_secret` in the form body.
       tags:
@@ -298,7 +303,10 @@ components:
           description: Space-separated scopes granted to the token.
         refresh_token:
           type: string
-          description: Token used to obtain a new token set.
+          description: |
+            Token used to obtain a new token set. A new refresh token is issued
+            on every refresh and the previous one is invalidated, so replace the
+            stored value with this one after each call.
         id_token:
           type: string
           description: OpenID Connect ID token returned when `openid` was granted.
