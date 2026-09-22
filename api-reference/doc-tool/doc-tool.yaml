@@ -9733,17 +9733,46 @@ paths:
       description: >-
         ### Overview
 
-        Creates a schedule for the caller's business. A schedule holds
-        booking config (overbooking limit, slot-duration mode) and,
-        optionally, its timebounds (weekly / daily / repeat-weekly /
-        repeat-daily / block rules) and a product assignment map, all in one
-        call.
+        Creates a schedule for an `entity_id` in a `location_id` —
+        `entity_id` is your doctor id, `location_id` is your clinic id. A
+        schedule holds booking config (overbooking limit, slot-duration
+        mode) and, optionally, its timebounds (weekly / daily /
+        repeat-weekly / repeat-daily / block rules) and a product assignment
+        map, all in one call. This endpoint is primarily for setting the
+        timebounds — the `s`/`e` windows a doctor is available in, and (for
+        service-based schedules) the `conf_ids` bookable in each window.
 
 
-        `config.schedule_slot_config_enabled: true` requires at least one
-        entry in `config.slot_durations`. `product-widget` can only be
-        assigned to one schedule per `(entity_id, location_id)` pair — a
-        second assignment returns `409`.
+        ### Duration-based vs. service-based schedules
+
+        `config.schedule_slot_config_enabled` decides how every bound's
+        slots get sliced, and whether that bound may carry `conf_ids`:
+
+
+        - **Duration-based** (`schedule_slot_config_enabled: true`): requires
+        at least one entry in `config.slot_durations`. Slots are sliced at a
+        fixed length picked from `slot_durations`. Bounds in `timebounds`
+        must **not** include `conf_ids` — sending any is rejected with `400`.
+
+        - **Service-based** (`schedule_slot_config_enabled` false or
+        omitted): every bound must include `conf_ids` — the services
+        bookable in that window. Valid ids come from the Service
+        Configuration APIs (`Get Service Conf List`, `Get Service Conf
+        Details`) for the schedule's `entity_id`; an id the entity doesn't
+        own, or an empty list, is rejected with `400`. There is no schedule-
+        level slot duration here — each slot is sliced using the `duration`
+        stored on the attached service (`conf_id`), so different services in
+        the same bound can produce differently-sized slots.
+
+
+        `product-widget` can only be assigned to one schedule per
+        `(entity_id, location_id)` pair — a second assignment returns `409`.
+
+
+        ### Notes & Considerations
+
+
+        Read more : ([API Reference - Get Appointment Slots](/api-reference/doc-tool/appointment-api/get-appointment-slots)) section — this API returns schedules assigned to `product-widget`.
       operationId: CreateSchedule
       parameters:
         - name: auth
@@ -10488,7 +10517,7 @@ paths:
     get:
       tags:
         - Appointment API
-      summary: Get Business Resolved Schedule
+      summary: Get Resolved Schedule
       description: >-
         ### Overview
 
@@ -10663,6 +10692,43 @@ paths:
                           rules:
                             type: object
                             description: 'Only present when `include_rules=true`. Raw stored rule rows: `weekly`, `daily`, `repeat-weekly`, `repeat-daily`, `block`. Only "live" recurring rows are included (no `end_date`, or `end_date` in the future).'
+              example:
+                success: true
+                status: 200
+                data:
+                  doc_12345:
+                    - schedule_id: "651f0c2b8e4a2d1a2c3b4d5e"
+                      name: "Dr. Sharma - OPD"
+                      schedule_slot_config_enabled: false
+                      slot_durations: []
+                      schedule:
+                        "2026-09-22":
+                          bounds:
+                            - s: "2026-09-22T09:00:00.000+05:30"
+                              e: "2026-09-22T13:00:00.000+05:30"
+                              source: "weekly"
+                              services:
+                                - conf_id: "conf_abc123"
+                                  name: "OPD Consultation"
+                                  modes: ["clinic"]
+                                  duration: 15
+                          blocks: []
+                      config:
+                        overbooking_limit: 2
+                        schedule_slot_config_enabled: false
+                        slot_durations: []
+                      rules:
+                        weekly:
+                          "1":
+                            is_enabled: true
+                            bounds:
+                              - s: 900
+                                e: 1300
+                                conf_ids: ["conf_abc123"]
+                        daily: {}
+                        repeat-weekly: []
+                        repeat-daily: []
+                        block: []
         '400':
           description: Bad Request — missing/invalid `entity_id`, `location_id`, `product_id`, date range, or range exceeding 400 days
           content:
