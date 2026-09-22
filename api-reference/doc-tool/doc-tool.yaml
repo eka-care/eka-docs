@@ -9725,6 +9725,1179 @@ paths:
                   message:
                     type: string
                     example: "An unexpected error occurred on the server"
+  /schedule:
+    post:
+      tags:
+        - Appointment API
+      summary: Create Schedule
+      description: >-
+        ### Overview
+
+        Creates a schedule for the caller's business. A schedule holds
+        booking config (overbooking limit, slot-duration mode) and,
+        optionally, its timebounds (weekly / daily / repeat-weekly /
+        repeat-daily / block rules) and a product assignment map, all in one
+        call.
+
+
+        `config.schedule_slot_config_enabled: true` requires at least one
+        entry in `config.slot_durations`. `product-widget` can only be
+        assigned to one schedule per `(entity_id, location_id)` pair — a
+        second assignment returns `409`.
+      operationId: CreateSchedule
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: 'Schedule name. Required, non-empty.'
+                entity_id:
+                  type: string
+                  description: 'Doctor/entity id this schedule is scoped to.'
+                location_id:
+                  type: string
+                  description: 'Clinic/location id this schedule is scoped to.'
+                config:
+                  type: object
+                  properties:
+                    overbooking_limit:
+                      type: integer
+                      minimum: 1
+                    block_over_existing_bookings:
+                      type: boolean
+                    schedule_slot_config_enabled:
+                      type: boolean
+                      description: 'If true, `slot_durations` must be non-empty.'
+                    slot_durations:
+                      type: array
+                      items:
+                        type: integer
+                        minimum: 1
+                        maximum: 1440
+                      maxItems: 10
+                      description: 'Allowed slot durations in minutes (deduplicated and sorted).'
+                timebounds:
+                  type: object
+                  description: 'Availability rules to create alongside the schedule. Each block below is independent — include only the rule types you need.'
+                  properties:
+                    weekly:
+                      type: object
+                      description: 'Map keyed by weekday, `0`(Sunday)–`6`(Saturday), to that day''s bounds.'
+                      additionalProperties:
+                        type: object
+                        properties:
+                          is_enabled:
+                            type: boolean
+                          bounds:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                s:
+                                  type: integer
+                                  description: 'Start time, military format (e.g. `900` = 09:00).'
+                                e:
+                                  type: integer
+                                  description: 'End time, military format (e.g. `1300` = 13:00).'
+                                conf_ids:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: 'service-conf ids bookable in this window.'
+                    daily:
+                      type: object
+                      description: 'One-off, date-specific bounds. Keyed by ISO date (`YYYY-MM-DD`).'
+                      additionalProperties:
+                        type: object
+                        properties:
+                          is_enabled:
+                            type: boolean
+                          bounds:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                s:
+                                  type: integer
+                                e:
+                                  type: integer
+                                conf_ids:
+                                  type: array
+                                  items:
+                                    type: string
+                    repeat-weekly:
+                      type: array
+                      description: 'Recurring weekly rules — a cycle of `repeat_every` weeks, each with its own bounds via `phases`.'
+                      items:
+                        type: object
+                        properties:
+                          repeat_every:
+                            type: integer
+                            description: 'Cycle length in weeks. `phases` must have this many entries.'
+                          anchor_date:
+                            type: string
+                            description: 'ISO date the cycle is anchored to (phase 0 starts here).'
+                          start_date:
+                            type: string
+                          end_date:
+                            type: string
+                            description: 'Optional. Omit for an indefinitely recurring rule.'
+                          phases:
+                            type: array
+                            description: 'One weekly schedule per cycle week, same shape as `weekly`.'
+                            items:
+                              type: object
+                    repeat-daily:
+                      type: array
+                      description: 'Recurring daily rules — a cycle of `repeat_every` days where phase `phase_index` is active.'
+                      items:
+                        type: object
+                        properties:
+                          phase_index:
+                            type: integer
+                          repeat_every:
+                            type: integer
+                          anchor_date:
+                            type: string
+                          start_date:
+                            type: string
+                          end_date:
+                            type: string
+                          is_enabled:
+                            type: boolean
+                          bounds:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                s:
+                                  type: integer
+                                e:
+                                  type: integer
+                                conf_ids:
+                                  type: array
+                                  items:
+                                    type: string
+                    block:
+                      type: array
+                      description: 'Blackout windows — no slots are resolved inside these.'
+                      items:
+                        type: object
+                        properties:
+                          start_date:
+                            type: string
+                            description: 'ISO date.'
+                          end_date:
+                            type: string
+                            description: 'ISO date.'
+                          start_time:
+                            type: string
+                            description: '`HH:mm`, 24h.'
+                          end_time:
+                            type: string
+                            description: '`HH:mm`, 24h.'
+                productMap:
+                  type: object
+                  description: 'Assigns/unassigns this schedule to products. Keys are `product-emr` or `product-widget`, values are `true` to assign, `false` to unassign. `product-widget` allows only one active schedule per `(entity_id, location_id)`.'
+                  additionalProperties:
+                    type: boolean
+              example:
+                name: "Dr. Sharma - OPD"
+                entity_id: "doc_12345"
+                location_id: "c-98765"
+                config:
+                  overbooking_limit: 2
+                  schedule_slot_config_enabled: true
+                  slot_durations: [15, 30]
+                timebounds:
+                  weekly:
+                    "1":
+                      is_enabled: true
+                      bounds:
+                        - s: 900
+                          e: 1300
+                          conf_ids: ["conf_abc123"]
+                        - s: 1400
+                          e: 1800
+                          conf_ids: ["conf_abc123"]
+                    "2":
+                      is_enabled: true
+                      bounds:
+                        - s: 900
+                          e: 1300
+                          conf_ids: ["conf_abc123"]
+                  daily:
+                    "2026-10-15":
+                      is_enabled: true
+                      bounds:
+                        - s: 1000
+                          e: 1200
+                          conf_ids: ["conf_abc123"]
+                  repeat-weekly:
+                    - repeat_every: 2
+                      anchor_date: "2026-09-21"
+                      start_date: "2026-09-21"
+                      end_date: "2027-03-21"
+                      phases:
+                        - "3":
+                            is_enabled: true
+                            bounds:
+                              - s: 1600
+                                e: 1900
+                                conf_ids: ["conf_abc123"]
+                        - "3":
+                            is_enabled: false
+                            bounds: []
+                  repeat-daily:
+                    - phase_index: 0
+                      repeat_every: 3
+                      anchor_date: "2026-09-21"
+                      start_date: "2026-09-21"
+                      end_date: "2026-12-31"
+                      is_enabled: true
+                      bounds:
+                        - s: 900
+                          e: 1100
+                          conf_ids: ["conf_abc123"]
+                  block:
+                    - start_date: "2026-10-20"
+                      end_date: "2026-10-22"
+                      start_time: "09:00"
+                      end_time: "18:00"
+                productMap:
+                  product-emr: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      schedule_id:
+                        type: string
+                      business_id:
+                        type: string
+                      name:
+                        type: string
+                      archive:
+                        type: boolean
+                      default:
+                        type: boolean
+                      userCreatedDefault:
+                        type: boolean
+                      config:
+                        type: object
+                        properties:
+                          overbooking_limit:
+                            type: integer
+                          block_over_existing_bookings:
+                            type: boolean
+                          schedule_slot_config_enabled:
+                            type: boolean
+                          slot_durations:
+                            type: array
+                            items:
+                              type: integer
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                      timebounds:
+                        type: object
+                        description: 'Report of timebound rows created, keyed by rule type.'
+                      assignment:
+                        type: object
+                        properties:
+                          products:
+                            type: array
+                            items:
+                              type: string
+                          error:
+                            type: string
+                      confs_created:
+                        type: array
+                        items:
+                          type: string
+                        description: 'service-conf ids created as part of the product assignment, if any.'
+        '400':
+          description: Bad Request — validation failure (e.g. missing `name`, invalid `config`/`timebounds`)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "name is required"
+        '409':
+          description: Conflict — `product-widget` already assigned to another schedule for this `(entity_id, location_id)`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+      deprecated: false
+  /schedule/{scheduleId}:
+    patch:
+      tags:
+        - Appointment API
+      summary: Update Schedule
+      description: >-
+        ### Overview
+
+        Edits an existing schedule's config, name, archive state, and/or its
+        timebounds, in one call. Ownership is checked against the caller's
+        business — a schedule belonging to another business returns `401`,
+        and an unknown `scheduleId` returns `404`.
+
+
+        Archiving a schedule cannot be combined with timebound
+        additions/deletions or a product assignment in the same request
+        (`409`). Mutating an already-archived schedule also returns `409`.
+        The same `booking_id` cannot appear in both `timebounds` and
+        `deleteTimebounds` (`400`).
+      operationId: UpdateSchedule
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: scheduleId
+          in: path
+          description: 'Id of the schedule to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 'At least one field must be provided.'
+              properties:
+                name:
+                  type: string
+                  description: 'New schedule name. If provided, must be non-empty.'
+                archive:
+                  type: boolean
+                  description: 'Archive/unarchive the schedule. Cannot be combined with `timebounds`, `deleteTimebounds`, or a `productMap` assignment.'
+                entity_id:
+                  type: string
+                location_id:
+                  type: string
+                config:
+                  type: object
+                  properties:
+                    overbooking_limit:
+                      type: integer
+                      minimum: 1
+                    block_over_existing_bookings:
+                      type: boolean
+                    schedule_slot_config_enabled:
+                      type: boolean
+                    slot_durations:
+                      type: array
+                      items:
+                        type: integer
+                        minimum: 1
+                        maximum: 1440
+                      maxItems: 10
+                timebounds:
+                  type: object
+                  description: 'Rows to create or update. Same shape as on `POST /schedule`, except `daily`/`repeat-weekly`/`repeat-daily`/`block` entries may include a `booking_id` to update that existing row in place instead of creating a new one.'
+                  properties:
+                    weekly:
+                      type: object
+                      description: 'Map keyed by weekday, `0`(Sunday)–`6`(Saturday). Always replaces the day''s bounds outright (no `booking_id` — weekly is a single doc per schedule).'
+                      additionalProperties:
+                        type: object
+                        properties:
+                          is_enabled:
+                            type: boolean
+                          bounds:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                s:
+                                  type: integer
+                                e:
+                                  type: integer
+                                conf_ids:
+                                  type: array
+                                  items:
+                                    type: string
+                    daily:
+                      type: object
+                      description: 'Keyed by ISO date. Include `booking_id` to update an existing row for that date instead of creating a new one.'
+                      additionalProperties:
+                        type: object
+                        properties:
+                          booking_id:
+                            type: string
+                          is_enabled:
+                            type: boolean
+                          bounds:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                s:
+                                  type: integer
+                                e:
+                                  type: integer
+                                conf_ids:
+                                  type: array
+                                  items:
+                                    type: string
+                    repeat-weekly:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          booking_id:
+                            type: string
+                          repeat_every:
+                            type: integer
+                          anchor_date:
+                            type: string
+                          start_date:
+                            type: string
+                          end_date:
+                            type: string
+                          phases:
+                            type: array
+                            items:
+                              type: object
+                    repeat-daily:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          booking_id:
+                            type: string
+                          phase_index:
+                            type: integer
+                          repeat_every:
+                            type: integer
+                          anchor_date:
+                            type: string
+                          start_date:
+                            type: string
+                          end_date:
+                            type: string
+                          is_enabled:
+                            type: boolean
+                          bounds:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                s:
+                                  type: integer
+                                e:
+                                  type: integer
+                                conf_ids:
+                                  type: array
+                                  items:
+                                    type: string
+                    block:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          booking_id:
+                            type: string
+                          start_date:
+                            type: string
+                          end_date:
+                            type: string
+                          start_time:
+                            type: string
+                          end_time:
+                            type: string
+                deleteTimebounds:
+                  type: object
+                  description: 'booking_ids to delete, keyed by rule type. A booking_id used here cannot also appear in `timebounds` in the same request.'
+                  properties:
+                    daily:
+                      type: array
+                      items:
+                        type: string
+                    repeat-weekly:
+                      type: array
+                      items:
+                        type: string
+                    repeat-daily:
+                      type: array
+                      items:
+                        type: string
+                    block:
+                      type: array
+                      items:
+                        type: string
+                productMap:
+                  type: object
+                  description: 'Assigns/unassigns this schedule to products. Keys are `product-emr` or `product-widget`, values are `true`/`false`. Requires `entity_id` and `location_id` to also be present in the request.'
+                  additionalProperties:
+                    type: boolean
+              example:
+                config:
+                  overbooking_limit: 3
+                timebounds:
+                  daily:
+                    "2026-10-16":
+                      booking_id: "bk_9f31c2"
+                      is_enabled: true
+                      bounds:
+                        - s: 1000
+                          e: 1300
+                          conf_ids: ["conf_abc123"]
+                deleteTimebounds:
+                  block: ["bk_5a01e7"]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      schedule_id:
+                        type: string
+                      business_id:
+                        type: string
+                      name:
+                        type: string
+                      archive:
+                        type: boolean
+                      config:
+                        type: object
+                        properties:
+                          overbooking_limit:
+                            type: integer
+                          block_over_existing_bookings:
+                            type: boolean
+                          schedule_slot_config_enabled:
+                            type: boolean
+                          slot_durations:
+                            type: array
+                            items:
+                              type: integer
+                      timebounds:
+                        type: object
+                        description: 'Report of timebound rows created/updated, keyed by rule type.'
+                      deleted:
+                        type: object
+                        description: 'Report of timebound rows deleted, keyed by rule type.'
+                      assignment:
+                        type: object
+                        properties:
+                          products:
+                            type: array
+                            items:
+                              type: string
+                          error:
+                            type: string
+                      confs_created:
+                        type: array
+                        items:
+                          type: string
+                      failed_tasks:
+                        type: array
+                        items:
+                          type: string
+                        description: 'Present only if a sub-task (e.g. one timebound write) failed. The overall request still returns 200 — this reports partial failure.'
+        '400':
+          description: Bad Request — nothing to update, or invalid/conflicting fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+        '401':
+          description: Unauthorised — schedule does not belong to the caller's business
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Unauthorised"
+        '404':
+          description: Not Found — unknown scheduleId
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "schedule not found"
+        '409':
+          description: Conflict — archiving combined with other mutations, mutating an archived schedule, duration-mode vs product-widget conflict, or widget already assigned elsewhere
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+      deprecated: false
+    delete:
+      tags:
+        - Appointment API
+      summary: Delete Schedule
+      description: >-
+        ### Overview
+
+        Tears down a schedule: hard-deletes the schedule head, its config
+        document, every product assignment row, and all v2 timebounds/blocks
+        (weekly, daily, repeat-weekly, repeat-daily) for it. Any
+        widget-assigned targets are cleaned up on the axon side
+        fire-and-forget.
+
+
+        This is irreversible. Ownership is checked the same way as
+        `PATCH /schedule/{scheduleId}`.
+      operationId: DeleteSchedule
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: scheduleId
+          in: path
+          description: 'Id of the schedule to delete.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: Bad Request — unexpected error while deleting
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+        '401':
+          description: Unauthorised — schedule does not belong to the caller's business
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Unauthorised"
+        '404':
+          description: Not Found — unknown scheduleId
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "schedule not found"
+      deprecated: false
+  /schedule/resolved:
+    get:
+      tags:
+        - Appointment API
+      summary: Get Business Resolved Schedule
+      description: >-
+        ### Overview
+
+        Resolves one or more entities' schedules over a date range into
+        concrete daily availability windows (`bounds`), any blackout
+        `blocks`, and — when `include_rules=true` — the raw underlying rules
+        and config each schedule was resolved from. Also returns each
+        entity's `schedule_id`.
+      operationId: GetBusinessResolvedSchedule
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: time-zone
+          in: header
+          description: 'IANA timezone for the returned ISO timestamps. Defaults to `Asia/Kolkata`.'
+          required: false
+          style: simple
+          schema:
+            type: string
+            example: 'Asia/Kolkata'
+        - name: entity_id
+          in: query
+          description: 'Comma-separated entity ids to resolve. Deduplicated; max 20 values.'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: 'doc_12345,doc_67890'
+        - name: location_id
+          in: query
+          description: 'Location/clinic id to resolve against.'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: 'c-98765'
+        - name: product_id
+          in: query
+          description: 'One of `product-emr`, `product-widget`. Defaults to `product-emr`.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum: [product-emr, product-widget]
+        - name: startTime
+          in: query
+          description: 'Range start, ISO datetime. Must be before `endTime`; range capped at 400 days.'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '2026-09-22T00:00:00.000Z'
+        - name: endTime
+          in: query
+          description: 'Range end, ISO datetime.'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '2026-09-29T00:00:00.000Z'
+        - name: applyBlock
+          in: query
+          description: 'Whether to apply blackout blocks when resolving bounds.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum: ['true', 'false']
+        - name: include_rules
+          in: query
+          description: 'When `true`, includes `rules` and `config` per schedule alongside the resolved bounds.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum: ['true', 'false']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    description: 'Keyed by `entity_id`; each value is a list because an entity may resolve to more than one schedule (e.g. across products).'
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          schedule_id:
+                            type: string
+                          name:
+                            type: string
+                          schedule_slot_config_enabled:
+                            type: boolean
+                          slot_durations:
+                            type: array
+                            items:
+                              type: integer
+                          schedule:
+                            type: object
+                            description: 'Keyed by ISO date. Each value has the resolved `bounds` for that day and any `blocks`.'
+                            additionalProperties:
+                              type: object
+                              properties:
+                                bounds:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      s:
+                                        type: string
+                                        description: 'Window start, ISO.'
+                                      e:
+                                        type: string
+                                        description: 'Window end, ISO.'
+                                      source:
+                                        type: string
+                                        description: 'Which rule type this window was resolved from (weekly/daily/repeat-weekly/repeat-daily).'
+                                      services:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            conf_id:
+                                              type: string
+                                            name:
+                                              type: string
+                                            modes:
+                                              type: array
+                                              items:
+                                                type: string
+                                            duration:
+                                              type: integer
+                                              nullable: true
+                                blocks:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      block_id:
+                                        type: string
+                                      s:
+                                        type: string
+                                      e:
+                                        type: string
+                          config:
+                            type: object
+                            description: 'Only present when `include_rules=true`.'
+                          rules:
+                            type: object
+                            description: 'Only present when `include_rules=true`. Raw stored rule rows: `weekly`, `daily`, `repeat-weekly`, `repeat-daily`, `block`. Only "live" recurring rows are included (no `end_date`, or `end_date` in the future).'
+        '400':
+          description: Bad Request — missing/invalid `entity_id`, `location_id`, `product_id`, date range, or range exceeding 400 days
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "failed to resolve schedules"
+      deprecated: false
+  /schedule/service-conf/{entityId}:
+    get:
+      tags:
+        - Appointment API
+      summary: Get Service Conf List
+      description: >-
+        ### Overview
+
+        Lists the non-archived service configurations (`service-conf`) for
+        an entity. `entityId` accepts either a doctor id or a clinic id.
+      operationId: GetServiceConfList
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: entityId
+          in: path
+          description: 'Doctor id or clinic id to list service-conf for.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        owner_id:
+                          type: string
+                        business_id:
+                          type: string
+                        conf_id:
+                          type: string
+                        service_id:
+                          type: integer
+                        duration:
+                          type: integer
+                        price:
+                          type: number
+                        eka_fee:
+                          type: number
+                        conv_fee:
+                          type: number
+                        currency:
+                          type: string
+                          example: 'INR'
+                        post_pay:
+                          type: boolean
+                        pre_pay:
+                          type: boolean
+                        archive:
+                          type: boolean
+                        service_name:
+                          type: string
+                        book_ahead_days:
+                          type: integer
+                        allow_patient_booking:
+                          type: boolean
+                        nickname:
+                          type: string
+                        followup_validity:
+                          type: integer
+                          nullable: true
+                        appointment_type:
+                          type: string
+                        mode:
+                          type: array
+                          items:
+                            type: string
+                            enum: ['in-clinic', 'tele']
+                        book_before_mins:
+                          type: integer
+                        discount:
+                          type: number
+                        c_at:
+                          type: string
+                  paymentsMeta:
+                    type: object
+                    properties:
+                      is_elgibile_for_payments:
+                        type: boolean
+                      error:
+                        type: string
+      deprecated: false
+  /schedule/service-conf/{entityId}/{conf_id}:
+    get:
+      tags:
+        - Appointment API
+      summary: Get Service Conf Details
+      description: >-
+        ### Overview
+
+        Fetches a single service configuration by id. `entityId` accepts
+        either a doctor id or a clinic id. Unlike the list endpoint, this
+        does not filter out archived records.
+      operationId: GetServiceConfDetails
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: entityId
+          in: path
+          description: 'Doctor id or clinic id the conf belongs to.'
+          required: true
+          style: simple
+          schema:
+            type: string
+        - name: conf_id
+          in: path
+          description: 'Id of the service configuration to fetch.'
+          required: true
+          style: simple
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      owner_id:
+                        type: string
+                      business_id:
+                        type: string
+                      conf_id:
+                        type: string
+                      service_id:
+                        type: integer
+                      duration:
+                        type: integer
+                      price:
+                        type: number
+                      eka_fee:
+                        type: number
+                      conv_fee:
+                        type: number
+                      currency:
+                        type: string
+                        example: 'INR'
+                      post_pay:
+                        type: boolean
+                      pre_pay:
+                        type: boolean
+                      archive:
+                        type: boolean
+                      service_name:
+                        type: string
+                      book_ahead_days:
+                        type: integer
+                      allow_patient_booking:
+                        type: boolean
+                      nickname:
+                        type: string
+                      followup_validity:
+                        type: integer
+                        nullable: true
+                      appointment_type:
+                        type: string
+                      mode:
+                        type: array
+                        items:
+                          type: string
+                          enum: ['in-clinic', 'tele']
+                      book_before_mins:
+                        type: integer
+                      discount:
+                        type: number
+                      c_at:
+                        type: string
+        '404':
+          description: Not Found — no service-conf with this id for this entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+      deprecated: false
 
 components:
   schemas:
