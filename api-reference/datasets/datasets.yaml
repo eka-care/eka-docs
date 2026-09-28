@@ -21,7 +21,7 @@ security:
 tags:
   - name: datasets
 paths:
-  /datasets/v1/:
+  /admin/datasets/v1/:
     get:
       summary: List dataset records
       description: >-
@@ -228,7 +228,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
-  /datasets/v1/{entity_id}/:
+  /admin/datasets/v1/{entity_id}/:
     get:
       summary: Get a record
       description: Fetches one record by your own id for it.
@@ -281,7 +281,7 @@ paths:
               example:
                 success: false
                 message: "no symptom with id 'SYM9999'"
-  /datasets/v1/delete/:
+  /admin/datasets/v1/delete/:
     post:
       summary: Deactivate records
       description: >-
@@ -336,7 +336,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /datasets/v1/delete-all/:
+  /admin/datasets/v1/delete-all/:
     post:
       summary: Delete the whole catalog
       description: >-
@@ -377,7 +377,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /datasets/v1/search-status/:
+  /admin/datasets/v1/search-status/:
     get:
       summary: Get partner search status
       description: >-
@@ -448,49 +448,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /datasets/v1/reference/forms/:
-    get:
-      summary: List accepted drug forms
-      description: >-
-        The dosage forms a medication's `form_name` may take. A medication
-        whose `form_name` is not in this list fails validation. Takes no
-        `type`.
-      operationId: listDrugForms
-      tags: [datasets]
-      responses:
-        '200':
-          description: Accepted forms.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          forms:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                form_name:
-                                  type: string
-                                form_id:
-                                  type: string
-              example:
-                success: true
-                message: accepted drug forms
-                data:
-                  forms:
-                    - form_name: capsule
-                      form_id: df-9555626637
-                    - form_name: tablet
-                      form_id: df-2929601942
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-  /datasets/v1/batches/:
+  /admin/datasets/v1/batches/:
     get:
       summary: List CSV import batches
       description: >-
@@ -536,7 +494,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /datasets/v1/export.csv:
+  /admin/datasets/v1/export.csv:
     get:
       summary: Export the catalog as CSV
       description: >-
@@ -830,7 +788,7 @@ components:
         form_name:
           type: string
           maxLength: 64
-          description: Dosage form. Must be one of the accepted drug forms.
+          description: Dosage form. Matched case-insensitively against the [accepted drug forms](/api-reference/datasets/forms); a match links the drug to Eka's form, and any other value is stored as text without that link.
         sku:
           type: string
           maxLength: 64

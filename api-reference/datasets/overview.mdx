@@ -9,7 +9,7 @@ Every request acts only on the workspace your access token belongs to. You canno
 
 ## Dataset types
 
-Every endpoint except [List accepted drug forms](/api-reference/datasets/forms) takes a `type` query parameter:
+Every endpoint takes a `type` query parameter:
 
 | `type` | Catalog | Your id field |
 |---|---|---|
@@ -29,7 +29,8 @@ Records are identified by **your** id. Writing a record whose id already exists 
 - **[Deactivate records](/api-reference/datasets/delete)**: remove records reversibly
 - **[Delete the whole catalog](/api-reference/datasets/delete-all)**: remove every record permanently
 - **[Get](/api-reference/datasets/search-status-get)** and **[set](/api-reference/datasets/search-status-set)** partner search status: switch medical search over to your catalog
-- **[List accepted drug forms](/api-reference/datasets/forms)**: the values a medication's `form_name` may take
+
+For medications, use a `form_name` from the [accepted drug forms](/api-reference/datasets/forms) so the drug is linked to Eka's dosage form.
 
 ## Keeping a catalog in sync
 
@@ -37,16 +38,16 @@ To mirror a catalog from your system on a schedule, send the **whole** catalog e
 
 <Steps>
   <Step title="Dry run">
-    `POST /datasets/v1/?type=medication&mode=reconcile&dry_run=true` with the full catalog. Nothing is written; the response shows how many records would be inserted, updated, reactivated and deactivated.
+    `POST /admin/datasets/v1/?type=medication&mode=reconcile&dry_run=true` with the full catalog. Nothing is written; the response shows how many records would be inserted, updated, reactivated and deactivated.
   </Step>
   <Step title="Commit">
     If the counts look right, send the same request without `dry_run`. If more than half of your catalog would be deactivated, the request is rejected with a `shrink_guard` error, the usual sign of a truncated export. Pass `confirm_shrink=true` only if you really mean it.
   </Step>
   <Step title="Verify">
-    For CSV uploads, `GET /datasets/v1/batches/?type=medication` shows the latest batch and its row counts.
+    For CSV uploads, `GET /admin/datasets/v1/batches/?type=medication` shows the latest batch and its row counts.
   </Step>
   <Step title="Enable search (first sync only)">
-    `POST /datasets/v1/search-status/?type=medication` with `{"enabled": true}`. Later syncs don't need to repeat this. Set it back to `false` to roll back.
+    `POST /admin/datasets/v1/search-status/?type=medication` with `{"enabled": true}`. Later syncs don't need to repeat this. Set it back to `false` to roll back.
   </Step>
 </Steps>
 
