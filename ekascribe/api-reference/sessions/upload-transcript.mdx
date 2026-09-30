@@ -1,0 +1,36 @@
+---
+title: "Upload Transcript"
+openapi: "POST /voice/api/v1/transaction/{session_id}/convert-to-template"
+---
+
+**This API is optional.** Use it only when you already have the transcript and don't need EkaScribe to transcribe audio for you. Instead of uploading audio, you post the transcript text plus the `template_id` you want it structured into, and EkaScribe returns the structured note.
+
+The flow is three calls — no audio upload, no [End Session](/ekascribe/api-reference/sessions/end-session):
+
+```
+1. Create Session     POST /voice/v1/sessions                                     → session_id
+2. Upload Transcript  POST /voice/api/v1/transaction/{session_id}/convert-to-template
+                      { "transcript": "...", "template_id": "..." }               → 202, document_id
+3. Get Session        GET  /voice/v1/sessions/{session_id}                        (poll ~1s until ≠202)
+                      → structured note for that template
+```
+
+```bash
+curl -X POST "https://api.eka.care/voice/api/v1/transaction/{session_id}/convert-to-template" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transcript": "Doctor: What brings you in today?\nPatient: I have had a dry cough and mild fever for three days.",
+    "template_id": "clinical_notes_template"
+  }'
+```
+
+<Info>
+The call is asynchronous — it returns `202` with a `document_id`. Poll [Get Session](/ekascribe/api-reference/sessions/get-session) (optionally `?document_id=<id>`) or [Get Document](/ekascribe/api-reference/documents/get-document) until the document's status is `success`.
+</Info>
+
+<Note>
+If you omit `template_id`, the template requested in [Create Session](/ekascribe/api-reference/sessions/create-session) (`templates`) is used. To structure the same transcript into more templates later, call [Process Template](/ekascribe/api-reference/sessions/process-template) — each one creates its own document.
+</Note>
+
+Sending `target_language` instead of `template_id` translates the transcript into that language (`eng`, `hi`, `ta`, `te`, `bn`, `mr`, `gu`, `kn`, `ml`, `pa`, `as`) rather than structuring it into a template.

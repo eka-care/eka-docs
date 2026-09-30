@@ -13,6 +13,20 @@ const BID = 'your-business-id';
 const OID = 'logged-in-user-oid';
 ```
 
+## Linked profiles
+
+`patientId` is the **primary OID** — the profile that owns writes. Add, edit and delete always use it (sent as the `X-Pt-Id` header). To also surface records and cases belonging to other profiles (e.g. dependents or family members), pass `linkedPatientIds`. Read, list and group methods then return the **union** across `[patientId, ...linkedPatientIds]`, and the background sync fans out one fetch per OID. Omit `linkedPatientIds` for single-profile behavior — nothing changes.
+
+```typescript
+const docs = await sdk.listDocuments({
+  bid: BID,
+  patientId: OID,                                           // primary — owns writes
+  linkedPatientIds: ['dependent-oid-1', 'dependent-oid-2'], // also read these
+});
+```
+
+Supported on `listDocuments`, `listLocalDocuments`, `groupDocuments`, `getAllTags`, `listCases` and `listLocalCases`. Writes (`addDocument`, `editDocument`, `deleteDocument`, `createCase`, …) always use the primary `patientId`.
+
 ## List Documents
 
 `listDocuments` is **cache-first**: it gives you local data instantly, then updates it from the server.
@@ -61,6 +75,8 @@ const docs = await sdk.listDocuments({
 });
 setDocs(docs);
 
+// Force a full refresh — ignore the local watermark and re-fetch every record
+const docs = await sdk.listDocuments({ bid: BID, patientId: OID, forceRefresh: true });
 ```
 
 **`ListDocumentsFilter` fields:**
@@ -70,7 +86,29 @@ setDocs(docs);
 | `documentType` | `string` | Filter by document type code (`'lr'`, `'ps'` etc.) — client-side |
 | `caseId` | `string` | Filter to records belonging to a case — client-side |
 | `fileType` | `string` | Filter by file type (`'IMG'`, `'PDF'`, `'HTML'`) — client-side |
+| `tags` | `string[]` | Only records that have **all** of these tags — client-side |
+| `maxFileTypeFetch` | `number` | Max documents to collect when `fileType` is set. Default: `3` |
 | `updatedAfter` | `number` | Only records updated after this epoch (seconds) — sent to the server |
+
+### The document object
+
+Each item returned by `listDocuments` / `listLocalDocuments` is a `DocumentItem`. The most commonly used fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `document_id` | `string` | Server-assigned document UUID |
+| `document_type` | `string` | Document type code (e.g. `'lr'`, `'ps'`) |
+| `patient_id` | `string` | Profile OID that owns the document (primary or a linked profile) |
+| `cases` | `string[]` | Case IDs this document is linked to |
+| `upload_date` | `number` | Upload timestamp (epoch seconds) |
+| `metadata` | `object` | `thumbnail`, `document_date`, `title`, `tags`, `auto_tags`, `abha` |
+| `file_type` | `string` | Preferred file format for this call (`'PDF'`, `'IMG'`, `'HTML'`) |
+| `file_types` | `string[]` | All known file formats (served from local DB) |
+| `is_smart` | `boolean` | A smart (AI-extracted) report is available |
+| `is_analyzing` | `boolean` | AI analysis is currently in progress |
+| `total_vitals` | `number` | Count of vitals/parameters extracted from the document |
+| `out_of_range_vitals` | `number` | How many of those vitals fall outside their normal reference range |
+| `sync_state` | `SyncState` | Local sync state — present when served from IndexedDB cache |
 
 ## Group Documents
 
@@ -184,6 +222,45 @@ if (report) {
 // null = document has no smart report
 ```
 
+## Vital & Lab Parameter Trends
+
+`getParameterTrend` returns every logged reading for a single vital or lab parameter (e.g. Hemoglobin) across all of a patient's reports, so you can plot a trend graph. The `parameterId` comes from a smart report item's `eka_id` (or `vital_id`).
+
+<Note>
+  This is **network-only** — it hits the vault host and is not cached. Scope it to the profile
+  that owns the vital (the document's `patient_id`).
+</Note>
+
+```typescript
+import { VitalResultFilter } from '@eka-care/medical-records-ts-sdk';
+
+const trend = await sdk.getParameterTrend({
+  bid: BID,
+  patientId: OID,                    // profile that owns the vital
+  parameterId: 'lb-2139115007',      // eka_id / vital_id from a smart report item
+  filter: VitalResultFilter.All,     // All (default) | High | Low | Normal — filters vitals_info
+});
+
+console.log(trend.name);   // "Hemoglobin (Hb)"
+console.log(trend.unit);   // "g/dL"
+
+for (const log of trend.vitals_info) {
+  console.log(log.val, log.display_result, log.display_time); // 13.1, "Normal", "03 Jan'26"
+  console.log(log.range?.display_text);                       // "12.0 - 15.0"
+  // log.document_id — pass to describeDocument to open the source report
+}
+```
+
+**`ParameterTrendResponse` fields:**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Display name of the parameter (e.g. `'Hemoglobin (Hb)'`) |
+| `eka_id` | `string` | Eka id of the parameter |
+| `unit` | `string` | Unit label (e.g. `'g/dL'`) |
+| `unit_eka_id` | `string` | Eka unit id |
+| `vitals_info` | `VitalLog[]` | All logged readings, newest first — each with `val`, `date`, `display_result`, `range` and the source `document_id` |
+
 ## Describe a Document
 
 Returns the full details of a document. Cache-first — served from IndexedDB if the document's files were previously fetched, otherwise fetched from the API.
@@ -231,3 +308,17 @@ Soft-deletes locally (hidden immediately), hard-deletes after the server confirm
 ```typescript
 await sdk.deleteDocument({ bid: BID, patientId: OID, documentId: 'abc-uuid' });
 ```
+
+## Tags
+
+Tags are set on a document via `editDocument` (`data.tags` — see [Edit a Document](#edit-a-document)). Two read helpers query them from the local DB — no network call:
+
+```typescript
+// Every unique tag across all documents — sorted alphabetically (e.g. for a filter dropdown)
+const allTags = await sdk.getAllTags({ bid: BID, patientId: OID });
+
+// Tags on a single document
+const tags = await sdk.getDocumentTags({ bid: BID, patientId: OID, documentId: 'abc-uuid' });
+```
+
+`getAllTags` also accepts `linkedPatientIds` to span [linked profiles](#linked-profiles).

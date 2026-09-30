@@ -1,0 +1,72 @@
+---
+title: "Overview"
+description: "Upload and manage your own formulary catalogs, then use them in Eka's medical search."
+---
+
+A dataset is your own catalog of one kind of clinical item: your drug formulary, your lab test menu, or your lists of symptoms and diagnoses. The Datasets API lets you load these catalogs into Eka, keep them in sync with your system, and switch Eka's [Medical Database search](/api-reference/medical-db/drugs-and-labs) over to them.
+
+Every request acts only on the workspace your access token belongs to. You cannot read or change another workspace's data.
+
+## Dataset types
+
+Every endpoint takes a `type` query parameter:
+
+| `type` | Catalog | Your id field |
+|---|---|---|
+| `medication` | Drugs | `medication_id` |
+| `lab_test` | Lab tests, imaging, panels and packages | `lab_test_id` |
+| `symptom` | Symptoms | `symptom_id` |
+| `diagnosis` | Diagnoses | `diagnosis_id` |
+
+Records are identified by **your** id. Writing a record whose id already exists updates it.
+
+## Endpoints
+
+- **[Create or update records](/api-reference/datasets/write)**: send a JSON list or a CSV file, in `upsert` or `reconcile` mode, with an optional dry run
+- **[List records](/api-reference/datasets/list)** and **[Get a record](/api-reference/datasets/get)**: read your catalog back
+- **[Export the catalog as CSV](/api-reference/datasets/export)**: download it in the same format the write endpoint accepts
+- **[List CSV import batches](/api-reference/datasets/batches)**: check that an upload landed
+- **[Deactivate records](/api-reference/datasets/delete)**: remove records reversibly
+- **[Delete the whole catalog](/api-reference/datasets/delete-all)**: remove every record permanently
+- **[Get](/api-reference/datasets/search-status-get)** and **[set](/api-reference/datasets/search-status-set)** partner search status: switch medical search over to your catalog
+
+For medications, use a `form_name` from the [accepted drug forms](/api-reference/datasets/forms) so the drug is linked to Eka's dosage form.
+
+## Keeping a catalog in sync
+
+To mirror a catalog from your system on a schedule, send the **whole** catalog each time in `reconcile` mode. Records you no longer send are deactivated, not deleted, so sending them again restores them.
+
+<Steps>
+  <Step title="Dry run">
+    `POST /admin/datasets/v1/?type=medication&mode=reconcile&dry_run=true` with the full catalog. Nothing is written; the response shows how many records would be inserted, updated, reactivated and deactivated.
+  </Step>
+  <Step title="Commit">
+    If the counts look right, send the same request without `dry_run`. If more than half of your catalog would be deactivated, the request is rejected with a `shrink_guard` error, the usual sign of a truncated export. Pass `confirm_shrink=true` only if you really mean it.
+  </Step>
+  <Step title="Verify">
+    For CSV uploads, `GET /admin/datasets/v1/batches/?type=medication` shows the latest batch and its row counts.
+  </Step>
+  <Step title="Enable search (first sync only)">
+    `POST /admin/datasets/v1/search-status/?type=medication` with `{"enabled": true}`. Later syncs don't need to repeat this. Set it back to `false` to roll back.
+  </Step>
+</Steps>
+
+## Writes are all-or-nothing
+
+If any record or CSV row fails validation, nothing in the request is written. The `errors` list in the response names every failing record, field and value, so you can fix them all at once.
+
+## Limits
+
+- Request bodies are limited to **10 MB**. For a larger catalog, send it as several `upsert` requests (a `reconcile` must contain the whole catalog in one request).
+- A request must finish within **29 seconds**.
+- List and batch pages return at most 1000 items (`limit`, default 100).
+
+## Authentication
+
+All endpoints require an access token in the `Authorization` header:
+
+```
+Authorization: Bearer <access_token>
+```
+
+See [Authorization](/api-reference/authorization/getting-started) for how to get one.

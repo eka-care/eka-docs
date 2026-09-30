@@ -1,0 +1,172 @@
+---
+title: "Get Conversation"
+api: "GET https://console.eka.care/conversations/"
+description: "Returns the conversations (sessions) for a MedAssist agent as an HTML page, with optional filters."
+authMethod: "bearer"
+---
+
+Use this endpoint to list the conversations your MedAssist agent has had. Filter by date range, channel, tool usage, feedback, or message count, and page through results.
+
+To read the full transcript of a conversation, pass its session ID to [Get Messages](/api-reference/health-ai/medassist/get-messages).
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token. Format: `Bearer <token>`
+</ParamField>
+
+## Query parameters
+
+<ParamField query="agent_id" type="string" required>
+  ID of the agent whose conversations you want to list.
+</ParamField>
+
+All other parameters are optional filters.
+
+### Date
+
+<ParamField query="date_preset" type="string" default="7d">
+  Preset date range. One of `today`, `7d`, `30d`, `month`, `custom`, `all`.
+  Use `custom` together with `date_from` and `date_to`.
+</ParamField>
+
+<ParamField query="date_from" type="string">
+  Start date (inclusive), format `YYYY-MM-DD`. Used when `date_preset=custom`.
+</ParamField>
+
+<ParamField query="date_to" type="string">
+  End date (inclusive), format `YYYY-MM-DD`. Used when `date_preset=custom`.
+</ParamField>
+
+### Lookup
+
+<ParamField query="filter_session_id" type="string">
+  Return only the conversation with this session ID. Other filters are ignored when this is set.
+</ParamField>
+
+### Tool usage
+
+<ParamField query="filter_tool_name" type="string">
+  Return only conversations in which the agent called this tool.
+</ParamField>
+
+<ParamField query="filter_tool_param_name" type="string">
+  Narrow `filter_tool_name` to calls where this input parameter was set. Requires `filter_tool_name`.
+</ParamField>
+
+<ParamField query="filter_tool_param_value" type="string">
+  Value that `filter_tool_param_name` must equal. Requires `filter_tool_name`.
+</ParamField>
+
+### Feedback
+
+<ParamField query="filter_user_feedback" type="string">
+  `1` = only conversations with end-user feedback, `0` = only conversations without it. Omit for all.
+</ParamField>
+
+<ParamField query="filter_has_feedback" type="string">
+  `1` = only conversations with annotation feedback, `0` = only conversations without it. Omit for all.
+</ParamField>
+
+<ParamField query="filter_annotator_oid" type="string">
+  Return only conversations annotated by this user ID.
+</ParamField>
+
+### Channel
+
+<ParamField query="filter_channel" type="string">
+  One of `web`, `whatsapp`, `voice`. Repeat the parameter to include several channels,
+  for example `filter_channel=web&filter_channel=whatsapp`.
+</ParamField>
+
+### Message count
+
+<ParamField query="filter_min_msgs" type="integer">
+  Minimum total number of messages in the conversation.
+</ParamField>
+
+<ParamField query="filter_max_msgs" type="integer">
+  Maximum total number of messages in the conversation.
+</ParamField>
+
+<ParamField query="filter_min_user_msgs" type="integer">
+  Minimum number of messages sent by the user.
+</ParamField>
+
+<ParamField query="filter_max_user_msgs" type="integer">
+  Maximum number of messages sent by the user.
+</ParamField>
+
+### Pagination
+
+<ParamField query="page" type="integer" default="1">
+  Page number.
+</ParamField>
+
+<ParamField query="page_size" type="integer" default="50">
+  Results per page. One of `25`, `50`, `100`.
+</ParamField>
+
+## Response
+
+This endpoint returns an **HTML page** (`Content-Type: text/html`), not JSON. It lists matching conversations newest first, 50 per page by default.
+
+Each conversation is a table row (`<tr>`) with a `data-session-id` attribute. That value is the conversation ID to pass to [Get Messages](/api-reference/health-ai/medassist/get-messages).
+
+<Note>
+  A JSON response is planned. Until then, extract the session IDs from the `data-session-id` attributes, as shown below.
+</Note>
+
+### Extracting session IDs
+
+<CodeGroup>
+```python Python
+import re
+import requests
+
+resp = requests.get(
+    "https://console.eka.care/conversations/",
+    headers={"Authorization": "Bearer <token>"},
+    params={"agent_id": "<agent-id>", "date_preset": "7d", "page_size": 50},
+)
+session_ids = re.findall(r'data-session-id="([0-9a-f-]{36})"', resp.text)
+print(session_ids)
+```
+
+```javascript JavaScript
+const res = await fetch(
+  "https://console.eka.care/conversations/?agent_id=<agent-id>&date_preset=7d&page_size=50",
+  { headers: { Authorization: "Bearer <token>" } }
+);
+const html = await res.text();
+const sessionIds = [...html.matchAll(/data-session-id="([0-9a-f-]{36})"/g)].map(m => m[1]);
+console.log(sessionIds);
+```
+</CodeGroup>
+
+To get the next set of conversations, repeat the request with `page=2`, `page=3`, and so on until no session IDs are returned.
+
+<RequestExample>
+```bash cURL
+curl --request GET \
+  --url 'https://console.eka.care/conversations/?agent_id=<agent-id>&date_preset=7d&filter_channel=web&page=1&page_size=50' \
+  --header 'Authorization: Bearer <token>'
+```
+</RequestExample>
+
+<ResponseExample>
+```html 200
+<!-- Simplified: the full page contains more markup -->
+<table>
+  <tbody>
+    <tr data-session-id="3f2b1c9a-7d4e-4a61-9b2f-5c8e1d0a6b7c">
+      <td>3f2b…6b7c</td>
+      <td data-utc="2026-09-19T14:07:09+00:00">Sep 19, 2026, 2:07 PM UTC</td>
+      <td>6</td>   <!-- messages -->
+      <td>2</td>   <!-- tool calls -->
+      <td>web</td> <!-- channel -->
+    </tr>
+  </tbody>
+</table>
+```
+</ResponseExample>
