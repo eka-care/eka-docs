@@ -14152,6 +14152,132 @@ paths:
                 $ref: '#/components/schemas/IpdServiceError'
       deprecated: false
 
+  /ipd/v1/service/ipd:
+    get:
+      tags:
+        - IPD API
+      summary: Get IPD Setup Data
+      description: >-
+
+        ### Overview
+
+
+        This API returns your workspace's **IPD setup data in one call**: beds,
+        rooms, categories, rate plans, rate plan inclusions, and the bed and
+        rate plan links to clinics. Only active (not deleted) items are
+        returned.
+
+
+        Both query parameters are optional:
+
+
+        - `keys` — comma-separated list of the collections to return (for
+        example `beds,rooms`). Unknown keys are ignored. When omitted, all
+        collections are returned.
+
+        - `from` — return only items updated after this date-time, to sync
+        changes since your last call.
+
+
+        > **Deletions are not returned.** Deleted items are left out of every response, including with `from`. To detect deletions, compare against a full fetch without `from`.
+
+
+      operationId: GetIpdSetupData
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: keys
+          in: query
+          description: 'Comma-separated collections to return: `beds`, `bedclinicrelations`, `rooms`, `categories`, `rateplans`, `rateplaninclusions`, `rateplanclinicrelations`. All when omitted.'
+          required: false
+          schema:
+            type: string
+          example: "beds,rooms,categories"
+        - name: from
+          in: query
+          description: 'Only items updated after this date-time (ISO-8601).'
+          required: false
+          schema:
+            type: string
+          example: "2026-10-01T00:00:00.000Z"
+      responses:
+        '200':
+          description: OK — the requested setup data. Only the requested collections are present.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      beds:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/IpdBed'
+                      bedclinicrelations:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/IpdBedClinicRelation'
+                      rooms:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/IpdRoom'
+                      categories:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/IpdCategory'
+                      rateplans:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/IpdRatePlan'
+                      rateplaninclusions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/IpdRatePlanInclusion'
+                      rateplanclinicrelations:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/IpdRatePlanClinicRelation'
+              example:
+                success: true
+                data:
+                  beds:
+                    - id: "66f1c4d2e4b0a1b2c3d4e702"
+                      name: "ICU-04"
+                      room: "66f1c3b7e4b0a1b2c3d4e601"
+                      updatedAt: "2026-10-07T09:50:00.000Z"
+                  rooms:
+                    - id: "66f1c3b7e4b0a1b2c3d4e601"
+                      name: "ICU Room 1"
+                      category: "66f1c2a9e4b0a1b2c3d4e5f6"
+                      updatedAt: "2026-10-07T09:45:00.000Z"
+                  categories:
+                    - id: "66f1c2a9e4b0a1b2c3d4e5f6"
+                      name: "ICU"
+                      description: "Intensive Care Unit"
+                      updatedAt: "2026-10-07T09:30:00.000Z"
+        '400':
+          description: Bad Request — the data could not be loaded (for example `from` is not a valid date).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
