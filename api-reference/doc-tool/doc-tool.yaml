@@ -8625,15 +8625,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      success:
-                        type: boolean
+                $ref: '#/components/schemas/IpdDeleteResponse'
               example:
                 success: true
                 data:
@@ -8646,6 +8638,650 @@ paths:
                 $ref: '#/components/schemas/IpdServiceError'
               example:
                 message: "Category not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/rooms:
+    post:
+      tags:
+        - IPD API
+      summary: Create Room
+      description: >-
+
+        ### Overview
+
+
+        This API creates a new **IPD room** for your workspace. A room belongs
+        to a category (for example *ICU*) and holds beds; beds are created under
+        a room.
+
+
+        Only `name` is required. Pass `category` with a category id from
+        [Create Category](/api-reference/doc-tool/ipd-api/categories/create-category)
+        to place the room under that category. The room `id` and `updatedAt`
+        are server-generated. Fields not listed in the request body are
+        rejected.
+
+
+      operationId: CreateIpdRoom
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The room to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: 'Display name of the room.'
+                category:
+                  type: string
+                  description: 'Id of the category this room belongs to.'
+            example:
+              name: "ICU Room 1"
+              category: "66f1c2a9e4b0a1b2c3d4e5f6"
+      responses:
+        '200':
+          description: OK — the created room.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdRoomResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c3b7e4b0a1b2c3d4e601"
+                  name: "ICU Room 1"
+                  category: "66f1c2a9e4b0a1b2c3d4e5f6"
+                  updatedAt: "2026-10-07T09:45:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (for example `name` is missing or empty, `category` is not a valid id, or an unknown field was sent). Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/rooms/{room_id}:
+    post:
+      tags:
+        - IPD API
+      summary: Update Room
+      description: >-
+
+        ### Overview
+
+
+        This API updates an existing **IPD room** of your workspace. It is a
+        partial update: only the fields sent in the request body are changed,
+        and fields that are omitted keep their current value. Send `category`
+        to move the room to another category.
+
+
+        Returns `400` with `Room not found` when the `room_id` does not exist or
+        belongs to another workspace.
+
+
+      operationId: UpdateIpdRoom
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: room_id
+          in: path
+          description: 'Id of the room to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c3b7e4b0a1b2c3d4e601"
+      requestBody:
+        description: 'The room fields to change. Send only the fields you want to update.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  description: 'New display name of the room.'
+                category:
+                  type: string
+                  description: 'Id of the category to move the room to.'
+            example:
+              name: "ICU Room 1A"
+      responses:
+        '200':
+          description: OK — the updated room.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdRoomResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c3b7e4b0a1b2c3d4e601"
+                  name: "ICU Room 1A"
+                  category: "66f1c2a9e4b0a1b2c3d4e5f6"
+                  updatedAt: "2026-10-07T10:20:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (an unknown field was sent), the `room_id` or `category` is not a valid id, or the room was not found. Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Room not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    delete:
+      tags:
+        - IPD API
+      summary: Delete Room
+      description: >-
+
+        ### Overview
+
+
+        This API deletes an **IPD room** of your workspace. The delete is a soft
+        delete: the room is archived, not removed.
+
+
+        > **Cascading archive:** deleting a room also archives **every bed in that room**. Archived rooms and beds are no longer returned in listings.
+
+
+        Returns `400` with `Room not found` when the `room_id` does not exist or
+        belongs to another workspace.
+
+
+      operationId: DeleteIpdRoom
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: room_id
+          in: path
+          description: 'Id of the room to delete.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c3b7e4b0a1b2c3d4e601"
+      responses:
+        '200':
+          description: OK — the room (and its beds) were archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDeleteResponse'
+              example:
+                success: true
+                data:
+                  success: true
+        '400':
+          description: Bad Request — the `room_id` is not a valid id, or the room was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Room not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/beds:
+    post:
+      tags:
+        - IPD API
+      summary: Create Bed
+      description: >-
+
+        ### Overview
+
+
+        This API creates a new **IPD bed** for your workspace. A bed belongs to
+        a room; pass `room` with a room id from
+        [Create Room](/api-reference/doc-tool/ipd-api/rooms/create-room) to
+        place the bed in that room.
+
+
+        Only `name` is required. The bed `id` and `updatedAt` are
+        server-generated. Fields not listed in the request body are rejected.
+
+
+      operationId: CreateIpdBed
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The bed to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: 'Display name of the bed.'
+                room:
+                  type: string
+                  description: 'Id of the room this bed belongs to.'
+            example:
+              name: "ICU-04"
+              room: "66f1c3b7e4b0a1b2c3d4e601"
+      responses:
+        '200':
+          description: OK — the created bed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdBedResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c4d2e4b0a1b2c3d4e702"
+                  name: "ICU-04"
+                  room: "66f1c3b7e4b0a1b2c3d4e601"
+                  updatedAt: "2026-10-07T09:50:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the bed could
+            not be saved (for example `name` is empty or `room` is not a valid
+            id), or `{ message }` when the request body failed schema validation
+            (for example `name` is missing or an unknown field was sent; the
+            `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/beds/{bed_id}:
+    post:
+      tags:
+        - IPD API
+      summary: Update Bed
+      description: >-
+
+        ### Overview
+
+
+        This API renames an existing **IPD bed** of your workspace. Only the
+        bed `name` can be changed; the bed's room cannot be changed with this
+        API.
+
+
+        Returns `400` with `Bed not found` when the `bed_id` does not exist or
+        belongs to another workspace.
+
+
+      operationId: UpdateIpdBed
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: bed_id
+          in: path
+          description: 'Id of the bed to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c4d2e4b0a1b2c3d4e702"
+      requestBody:
+        description: 'The new bed name.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: 'New display name of the bed.'
+            example:
+              name: "ICU-04A"
+      responses:
+        '200':
+          description: OK — the updated bed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdBedResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c4d2e4b0a1b2c3d4e702"
+                  name: "ICU-04A"
+                  room: "66f1c3b7e4b0a1b2c3d4e601"
+                  updatedAt: "2026-10-07T10:25:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `bed_id` is
+            not a valid id or the bed was not found, or `{ message }` when the
+            request body failed schema validation (for example `name` is missing
+            or an unknown field was sent; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Bed not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    delete:
+      tags:
+        - IPD API
+      summary: Delete Bed
+      description: >-
+
+        ### Overview
+
+
+        This API deletes an **IPD bed** of your workspace. The delete is a soft
+        delete: the bed is archived, not removed, and is no longer returned in
+        listings.
+
+
+        Returns `400` with `Bed not found` when the `bed_id` does not exist or
+        belongs to another workspace.
+
+
+      operationId: DeleteIpdBed
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: bed_id
+          in: path
+          description: 'Id of the bed to delete.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c4d2e4b0a1b2c3d4e702"
+      responses:
+        '200':
+          description: OK — the bed was archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDeleteResponse'
+              example:
+                success: true
+                data:
+                  success: true
+        '400':
+          description: Bad Request — the `bed_id` is not a valid id, or the bed was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Bed not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/bed-clinic-relations:
+    post:
+      tags:
+        - IPD API
+      summary: Link Bed to Clinic
+      description: >-
+
+        ### Overview
+
+
+        This API links an **IPD bed** to a **clinic** of your workspace, so the
+        bed is available at that clinic. A bed can be linked to more than one
+        clinic.
+
+
+        The link is unique per `bed` and `clinic_id`: calling this API again for
+        the same pair updates the existing link instead of creating a new one.
+        `archived` defaults to `false`, so calling it for a previously removed
+        link makes it active again.
+
+
+        Returns `400` with `Bed not found` when the `bed` does not exist or
+        belongs to another workspace.
+
+
+      operationId: CreateIpdBedClinicRelation
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The bed and clinic to link.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - bed
+                - clinic_id
+              properties:
+                bed:
+                  type: string
+                  description: 'Id of the bed to link.'
+                clinic_id:
+                  type: string
+                  description: 'Id of the clinic to link the bed to.'
+                archived:
+                  type: boolean
+                  default: false
+                  description: 'Set to `true` to store the link as removed. Defaults to `false`.'
+            example:
+              bed: "66f1c4d2e4b0a1b2c3d4e702"
+              clinic_id: "clinic-01"
+      responses:
+        '200':
+          description: OK — the bed-clinic link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdBedClinicRelationResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c5e8e4b0a1b2c3d4e803"
+                  bed: "66f1c4d2e4b0a1b2c3d4e702"
+                  clinic_id: "clinic-01"
+                  archived: false
+                  updatedAt: "2026-10-07T09:55:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `bed` is
+            not a valid id or the bed was not found, or `{ message }` when the
+            request body failed schema validation (for example `bed` or
+            `clinic_id` is missing, or an unknown field was sent; the `message`
+            is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Bed not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    delete:
+      tags:
+        - IPD API
+      summary: Unlink Bed from Clinic
+      description: >-
+
+        ### Overview
+
+
+        This API removes the link between an **IPD bed** and a **clinic** of
+        your workspace. The link is archived, not removed, and can be made
+        active again with
+        [Link Bed to Clinic](/api-reference/doc-tool/ipd-api/beds/link-bed-to-clinic).
+
+
+        The bed and clinic are sent in the **request body**, not in the path.
+
+
+        Returns `400` with `Bed clinic relation not found` when no link exists
+        for the given `bed` and `clinic_id` in your workspace.
+
+
+      operationId: DeleteIpdBedClinicRelation
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The bed and clinic to unlink.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - bed
+                - clinic_id
+              properties:
+                bed:
+                  type: string
+                  description: 'Id of the bed.'
+                clinic_id:
+                  type: string
+                  description: 'Id of the clinic.'
+            example:
+              bed: "66f1c4d2e4b0a1b2c3d4e702"
+              clinic_id: "clinic-01"
+      responses:
+        '200':
+          description: OK — the bed-clinic link was archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDeleteResponse'
+              example:
+                success: true
+                data:
+                  success: true
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `bed` is
+            not a valid id or no link was found, or `{ message }` when the
+            request body failed schema validation (the `message` is currently
+            empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Bed clinic relation not found"
         '401':
           description: Unauthorized
           content:
@@ -11222,6 +11858,102 @@ components:
           type: boolean
         data:
           $ref: '#/components/schemas/IpdCategory'
+    IpdRoom:
+      title: IpdRoom
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Room id.'
+        name:
+          type: string
+          description: 'Display name of the room.'
+        category:
+          type: string
+          description: 'Id of the category the room belongs to. Absent when not set.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdRoomResponse:
+      title: IpdRoomResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdRoom'
+    IpdBed:
+      title: IpdBed
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Bed id.'
+        name:
+          type: string
+          description: 'Display name of the bed.'
+        room:
+          type: string
+          description: 'Id of the room the bed belongs to. Absent when not set.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdBedResponse:
+      title: IpdBedResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdBed'
+    IpdBedClinicRelation:
+      title: IpdBedClinicRelation
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Bed-clinic link id.'
+        bed:
+          type: string
+          description: 'Id of the linked bed.'
+        clinic_id:
+          type: string
+          description: 'Id of the linked clinic.'
+        archived:
+          type: boolean
+          description: '`true` when the link has been removed.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdBedClinicRelationResponse:
+      title: IpdBedClinicRelationResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdBedClinicRelation'
+    IpdServiceFailure:
+      title: IpdServiceFailure
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 'Always `false`.'
+        error:
+          type: string
+          description: 'Human-readable error message.'
+    IpdDeleteResponse:
+      title: IpdDeleteResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            success:
+              type: boolean
     IpdServiceError:
       title: IpdServiceError
       type: object
