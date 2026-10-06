@@ -11498,6 +11498,1079 @@ paths:
                 error: "Order not found"
       deprecated: false
 
+  /ipd/v1/service/dawakhana/orders:
+    get:
+      tags:
+        - IPD API
+      summary: List Dawakhana Orders
+      description: >-
+
+        ### Overview
+
+
+        This API lists the **in-house pharmacy (Dawakhana) orders** of your
+        workspace, newest first, each with its order lines. It is the
+        pharmacist's work list: lines carry the ordered quantity and, once
+        dispatched, the fulfilled quantity and rate.
+
+
+        All filters are optional:
+
+
+        - `status` — repeat the parameter to match several statuses (for
+        example `status=RETURNED&status=PARTIALLY_RETURNED`).
+
+        - `from` / `to` — creation date range, as an ISO-8601 date or epoch
+        milliseconds. **Ignored when `admissionId` is set**, so all orders of
+        an admission are returned regardless of date.
+
+
+        Results are paged with `limit` (default `50`) and `skip` (default `0`).
+
+
+      operationId: ListIpdDawakhanaOrders
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: status
+          in: query
+          description: 'Only orders in these statuses. Repeat the parameter for more than one.'
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: ['CREATED', 'DISPATCHED', 'CANCELLED', 'RETURNED', 'PARTIALLY_RETURNED']
+          style: form
+          explode: true
+        - name: from
+          in: query
+          description: 'Only orders created on or after this time (ISO-8601 date or epoch milliseconds). Ignored with `admissionId`.'
+          required: false
+          schema:
+            type: string
+          example: "2026-10-07T00:00:00.000Z"
+        - name: to
+          in: query
+          description: 'Only orders created on or before this time (ISO-8601 date or epoch milliseconds). Ignored with `admissionId`.'
+          required: false
+          schema:
+            type: string
+          example: "2026-10-07T23:59:59.999Z"
+        - name: admissionId
+          in: query
+          description: 'Only orders of this IPD admission (all dates).'
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 'Maximum number of orders to return. Defaults to `50`.'
+          required: false
+          schema:
+            type: number
+            default: 50
+        - name: skip
+          in: query
+          description: 'Number of orders to skip (for paging). Defaults to `0`.'
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        '200':
+          description: OK — the matching Dawakhana orders with their lines.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdDawakhanaOrder'
+              example:
+                success: true
+                data:
+                  - id: "66f1cd07e4b0a1b2c3d4ef0a"
+                    admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    kind: "order"
+                    orderNumber: "DW-7Q2K9F3M"
+                    ipdId: "IPD-2026-0042"
+                    status: "CREATED"
+                    createdBy: "161467756044203"
+                    createdByName: "Vivek Sharma"
+                    isCollected: false
+                    provider: "dawakhana"
+                    patientName: "Ravi Kumar"
+                    createdAt: "2026-10-07T12:10:00.000Z"
+                    updatedAt: "2026-10-07T12:10:00.000Z"
+                    lines:
+                      - id: "66f1cd07e4b0a1b2c3d4ef0b"
+                        medicineId: "med-paracetamol-500"
+                        name: "Paracetamol 500mg Tablet"
+                        genericName: "Paracetamol"
+                        orderedQty: 10
+                        directions: "1 tablet every 6 hours"
+                        lineStatus: "PENDING"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when `from` or `to`
+            is not a valid date, or `{ message }` when a query parameter failed
+            validation (for example an unknown `status`; the `message` is
+            currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: 'Invalid "from" date: yesterday'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/orders/count:
+    get:
+      tags:
+        - IPD API
+      summary: Count Dawakhana Orders
+      description: >-
+
+        ### Overview
+
+
+        This API returns the number of **Dawakhana orders** of your workspace in
+        each status, for dashboard counters. The counts cover every matching
+        order, regardless of paging.
+
+
+        `from`, `to` and `admissionId` filter the status counts the same way as
+        [List Dawakhana Orders](/api-reference/doc-tool/ipd-api/dawakhana/list-dawakhana-orders).
+        `clearancePending` is the number of admissions still waiting for the
+        in-house pharmacy's discharge clearance, and is not affected by the
+        filters.
+
+
+      operationId: CountIpdDawakhanaOrders
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: from
+          in: query
+          description: 'Only orders created on or after this time (ISO-8601 date or epoch milliseconds). Ignored with `admissionId`.'
+          required: false
+          schema:
+            type: string
+        - name: to
+          in: query
+          description: 'Only orders created on or before this time (ISO-8601 date or epoch milliseconds). Ignored with `admissionId`.'
+          required: false
+          schema:
+            type: string
+        - name: admissionId
+          in: query
+          description: 'Only orders of this IPD admission (all dates).'
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK — the order counts.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/IpdDawakhanaCounts'
+              example:
+                success: true
+                data:
+                  CREATED: 4
+                  DISPATCHED: 12
+                  CANCELLED: 1
+                  RETURNED: 2
+                  PARTIALLY_RETURNED: 1
+                  clearancePending: 3
+        '400':
+          description: Bad Request — `from` or `to` is not a valid date.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/orders/clearances:
+    get:
+      tags:
+        - IPD API
+      summary: List Dawakhana Pending Clearances
+      description: >-
+
+        ### Overview
+
+
+        This API lists the **admissions waiting for the in-house pharmacy's
+        discharge clearance** in your workspace — patients being discharged
+        whose pharmacy dues the in-house pharmacy still has to close. The
+        oldest request comes first.
+
+
+      operationId: ListIpdDawakhanaClearances
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the pending clearance requests.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdDawakhanaClearanceRequest'
+              example:
+                success: true
+                data:
+                  - admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    pharmacyId: "dawakhana"
+                    ipdId: "IPD-2026-0042"
+                    patientName: "Ravi Kumar"
+                    bed: "ICU-04"
+                    requestedAt: "2026-10-07T14:00:00.000Z"
+        '400':
+          description: Bad Request — the clearance requests could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/orders/returns:
+    post:
+      tags:
+        - IPD API
+      summary: Create Dawakhana Standalone Return
+      description: >-
+
+        ### Overview
+
+
+        This API records a **standalone return** to the in-house pharmacy for an
+        IPD admission of your workspace — medicines taken back that are not tied
+        to a dispatched order. For a return against a dispatched order, use
+        [Return Dawakhana Order](/api-reference/doc-tool/ipd-api/dawakhana/return-dawakhana-order)
+        instead.
+
+
+        Each line's `qty × rate` is **deducted from the admission's bill**. The
+        return is saved as a return order (`kind: return`, with no
+        `parentOrderId`) and is listed in List Orders and List Dawakhana Orders.
+        The patient details are taken from the admission's existing orders.
+
+
+        At least one line is required. The user making the request is recorded
+        as the creator.
+
+
+      operationId: CreateIpdDawakhanaReturn
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The return to record.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - admissionId
+                - lines
+              properties:
+                admissionId:
+                  type: string
+                  description: 'Id of the IPD admission the return is for.'
+                ipdId:
+                  type: string
+                  description: 'Patient IPD case number.'
+                reason:
+                  type: string
+                  description: 'Reason for the return.'
+                lines:
+                  type: array
+                  description: 'Medicines being returned.'
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - name
+                      - qty
+                      - rate
+                    properties:
+                      medicineId:
+                        type: string
+                        description: 'Id of the medicine.'
+                      name:
+                        type: string
+                        description: 'Name of the medicine.'
+                      genericName:
+                        type: string
+                        description: 'Generic (molecule) name of the medicine.'
+                      qty:
+                        type: number
+                        description: 'Quantity being returned.'
+                      rate:
+                        type: number
+                        description: 'Price per unit to deduct from the bill.'
+            example:
+              admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              ipdId: "IPD-2026-0042"
+              reason: "Unused medicines"
+              lines:
+                - medicineId: "med-paracetamol-500"
+                  name: "Paracetamol 500mg Tablet"
+                  genericName: "Paracetamol"
+                  qty: 4
+                  rate: 4.5
+      responses:
+        '200':
+          description: OK — the created return order, in the Get Order detail shape.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/IpdOrderDetail'
+              example:
+                success: true
+                data:
+                  id: "66f1ce18e4b0a1b2c3d4f00c"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "return"
+                  orderNumber: "DW-K3M8P2QX"
+                  ipdId: "IPD-2026-0042"
+                  status: "RETURNED"
+                  createdBy: "161467756044204"
+                  createdByName: "Meena Iyer"
+                  isCollected: false
+                  provider: "dawakhana"
+                  patientName: "Ravi Kumar"
+                  returnReason: "Unused medicines"
+                  returnedTotal: 18
+                  createdAt: "2026-10-07T15:00:00.000Z"
+                  updatedAt: "2026-10-07T15:00:00.000Z"
+                  lineItems:
+                    - name: "Paracetamol 500mg Tablet"
+                      genericName: "Paracetamol"
+                      medicineId: "med-paracetamol-500"
+                      orderedQty: 4
+                      fulfilledQty: 4
+                      rate: 4.5
+                      amount: 18
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the return
+            could not be recorded (for example `lines` is empty), or
+            `{ message }` when the request body failed schema validation (for
+            example a required field is missing or an unknown field was sent;
+            the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "At least one return line is required"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/orders/{order_id}:
+    get:
+      tags:
+        - IPD API
+      summary: Get Dawakhana Order
+      description: >-
+
+        ### Overview
+
+
+        This API returns a single **Dawakhana order** of your workspace with its
+        order lines. Use the line `id`s with
+        [Dispatch Dawakhana Order](/api-reference/doc-tool/ipd-api/dawakhana/dispatch-dawakhana-order)
+        and
+        [Return Dawakhana Order](/api-reference/doc-tool/ipd-api/dawakhana/return-dawakhana-order).
+
+
+        Returns `404` with `Order not found` when the `order_id` does not exist
+        or belongs to another workspace.
+
+
+      operationId: GetIpdDawakhanaOrder
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: order_id
+          in: path
+          description: 'Id of the Dawakhana order.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cd07e4b0a1b2c3d4ef0a"
+      responses:
+        '200':
+          description: OK — the Dawakhana order with its lines.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDawakhanaOrderResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  ipdId: "IPD-2026-0042"
+                  status: "CREATED"
+                  createdBy: "161467756044203"
+                  createdByName: "Vivek Sharma"
+                  isCollected: false
+                  provider: "dawakhana"
+                  patientName: "Ravi Kumar"
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T12:10:00.000Z"
+                  lines:
+                    - id: "66f1cd07e4b0a1b2c3d4ef0b"
+                      medicineId: "med-paracetamol-500"
+                      name: "Paracetamol 500mg Tablet"
+                      genericName: "Paracetamol"
+                      orderedQty: 10
+                      directions: "1 tablet every 6 hours"
+                      lineStatus: "PENDING"
+        '400':
+          description: Bad Request — the `order_id` is not a valid id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Order not found"
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/orders/{order_id}/dispatch:
+    post:
+      tags:
+        - IPD API
+      summary: Dispatch Dawakhana Order
+      description: >-
+
+        ### Overview
+
+
+        This API **dispatches** a pending Dawakhana order of your workspace:
+        for each order line, send the quantity actually given (`fulfilledQty`)
+        and the price per unit (`rate`). Only an order in status `CREATED` can
+        be dispatched.
+
+
+        For each line sent, `amount` is `fulfilledQty × rate` and the line
+        status becomes `FULFILLED` (full quantity), `PARTIAL` (less than
+        ordered) or `UNAVAILABLE` (`fulfilledQty` of `0`). Lines are matched by
+        their `id` from
+        [Get Dawakhana Order](/api-reference/doc-tool/ipd-api/dawakhana/get-dawakhana-order);
+        lines that are not sent stay `PENDING`.
+
+
+        The order moves to `DISPATCHED`, with `billedTotal` set to the sum of
+        line amounts and `fulfilmentType` set to `FULL` only when every line is
+        `FULFILLED` (otherwise `PARTIAL`). The fulfilled medicines are **added
+        to the admission's bill**. The user making the request is recorded in
+        `dispatchedBy`, `dispatchedByName` and `dispatchedAt`.
+
+
+      operationId: DispatchIpdDawakhanaOrder
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: order_id
+          in: path
+          description: 'Id of the Dawakhana order to dispatch.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cd07e4b0a1b2c3d4ef0a"
+      requestBody:
+        description: 'The fulfilled quantity and rate per line.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - lines
+              properties:
+                lines:
+                  type: array
+                  description: 'One entry per order line being dispatched.'
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - itemId
+                      - fulfilledQty
+                      - rate
+                    properties:
+                      itemId:
+                        type: string
+                        description: 'Id of the order line.'
+                      fulfilledQty:
+                        type: number
+                        description: 'Quantity given. `0` marks the line unavailable.'
+                      rate:
+                        type: number
+                        description: 'Price per unit.'
+                note:
+                  type: string
+                  description: 'Optional dispatch note.'
+            example:
+              lines:
+                - itemId: "66f1cd07e4b0a1b2c3d4ef0b"
+                  fulfilledQty: 10
+                  rate: 4.5
+              note: "Handed over at nursing station"
+      responses:
+        '200':
+          description: OK — the dispatched order with its lines.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDawakhanaOrderResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  status: "DISPATCHED"
+                  createdBy: "161467756044203"
+                  isCollected: false
+                  provider: "dawakhana"
+                  billedTotal: 45
+                  fulfilmentType: "FULL"
+                  dispatchNote: "Handed over at nursing station"
+                  dispatchedBy: "161467756044204"
+                  dispatchedByName: "Meena Iyer"
+                  dispatchedAt: "2026-10-07T12:40:00.000Z"
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T12:40:00.000Z"
+                  lines:
+                    - id: "66f1cd07e4b0a1b2c3d4ef0b"
+                      medicineId: "med-paracetamol-500"
+                      name: "Paracetamol 500mg Tablet"
+                      orderedQty: 10
+                      fulfilledQty: 10
+                      rate: 4.5
+                      amount: 45
+                      lineStatus: "FULFILLED"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the order is
+            not in status `CREATED` or the `order_id` is not a valid id, or
+            `{ message }` when the request body failed schema validation (the
+            `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Only a pending order can be dispatched"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Order not found"
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/orders/{order_id}/cancel:
+    post:
+      tags:
+        - IPD API
+      summary: Cancel Dawakhana Order
+      description: >-
+
+        ### Overview
+
+
+        This API **cancels** a pending Dawakhana order of your workspace. Only
+        an order in status `CREATED` can be cancelled; nothing is billed.
+
+
+        The order moves to `CANCELLED`, and the user making the request is
+        recorded in `cancelledBy`, `cancelledByName` and `cancelledAt`.
+
+
+      operationId: CancelIpdDawakhanaOrder
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: order_id
+          in: path
+          description: 'Id of the Dawakhana order to cancel.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cd07e4b0a1b2c3d4ef0a"
+      requestBody:
+        description: 'Optional cancellation reason.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                reason:
+                  type: string
+                  description: 'Reason for cancelling the order.'
+            example:
+              reason: "Medicine discontinued by doctor"
+      responses:
+        '200':
+          description: OK — the cancelled order with its lines.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDawakhanaOrderResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  status: "CANCELLED"
+                  createdBy: "161467756044203"
+                  isCollected: false
+                  provider: "dawakhana"
+                  cancelledBy: "161467756044204"
+                  cancelledByName: "Meena Iyer"
+                  cancelledAt: "2026-10-07T12:30:00.000Z"
+                  cancelReason: "Medicine discontinued by doctor"
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T12:30:00.000Z"
+                  lines:
+                    - id: "66f1cd07e4b0a1b2c3d4ef0b"
+                      name: "Paracetamol 500mg Tablet"
+                      orderedQty: 10
+                      lineStatus: "PENDING"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the order is
+            not in status `CREATED` or the `order_id` is not a valid id, or
+            `{ message }` when the request body failed schema validation (the
+            `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Only a pending order can be cancelled"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Order not found"
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/orders/{order_id}/return:
+    post:
+      tags:
+        - IPD API
+      summary: Return Dawakhana Order
+      description: >-
+
+        ### Overview
+
+
+        This API **returns medicines** against a dispatched Dawakhana order of
+        your workspace. Only an order in status `DISPATCHED` or
+        `PARTIALLY_RETURNED` can be returned, so an order can be returned in
+        several steps.
+
+
+        For each line sent, `returnQty` is capped at the quantity still
+        outstanding (fulfilled minus already returned); lines with nothing left
+        to return are skipped. A line whose whole fulfilled quantity is back
+        becomes `RETURNED`. The order moves to `RETURNED` when every fulfilled
+        line is fully returned, otherwise to `PARTIALLY_RETURNED`.
+
+
+        The returned amount (`returnQty × rate`) is **deducted from the
+        admission's bill** and added to the order's `returnedTotal`. A return
+        order (`kind: return`, with `parentOrderId` set to this order) is also
+        created. The response is the original order with its updated lines.
+
+
+      operationId: ReturnIpdDawakhanaOrder
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: order_id
+          in: path
+          description: 'Id of the dispatched Dawakhana order.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cd07e4b0a1b2c3d4ef0a"
+      requestBody:
+        description: 'The quantity being returned per line.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - lines
+              properties:
+                lines:
+                  type: array
+                  description: 'One entry per order line being returned.'
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - itemId
+                      - returnQty
+                    properties:
+                      itemId:
+                        type: string
+                        description: 'Id of the order line.'
+                      returnQty:
+                        type: number
+                        description: 'Quantity being returned. Capped at the quantity still outstanding.'
+                reason:
+                  type: string
+                  description: 'Reason for the return.'
+            example:
+              lines:
+                - itemId: "66f1cd07e4b0a1b2c3d4ef0b"
+                  returnQty: 4
+              reason: "Patient discharged early"
+      responses:
+        '200':
+          description: OK — the original order with its updated lines.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDawakhanaOrderResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  status: "PARTIALLY_RETURNED"
+                  createdBy: "161467756044203"
+                  isCollected: false
+                  provider: "dawakhana"
+                  billedTotal: 45
+                  fulfilmentType: "FULL"
+                  returnedBy: "161467756044204"
+                  returnedByName: "Meena Iyer"
+                  returnedAt: "2026-10-07T16:00:00.000Z"
+                  returnReason: "Patient discharged early"
+                  returnedTotal: 18
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T16:00:00.000Z"
+                  lines:
+                    - id: "66f1cd07e4b0a1b2c3d4ef0b"
+                      name: "Paracetamol 500mg Tablet"
+                      orderedQty: 10
+                      fulfilledQty: 10
+                      rate: 4.5
+                      amount: 45
+                      returnedQty: 4
+                      lineStatus: "FULFILLED"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the order is
+            not in status `DISPATCHED` or `PARTIALLY_RETURNED` or the `order_id`
+            is not a valid id, or `{ message }` when the request body failed
+            schema validation (the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Only a dispatched order can be returned"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Order not found"
+      deprecated: false
+
+  /ipd/v1/service/dawakhana/config:
+    get:
+      tags:
+        - IPD API
+      summary: Get Dawakhana Config
+      description: >-
+
+        ### Overview
+
+
+        This API returns whether the **in-house pharmacy (Dawakhana)** is
+        enabled for your workspace. When enabled, Dawakhana is listed as a
+        pharmacy and orders can be placed with it.
+
+
+        Dawakhana is **enabled by default**: a workspace that has never changed
+        the setting returns `enabled: true`.
+
+
+      operationId: GetIpdDawakhanaConfig
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the Dawakhana setting.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDawakhanaConfigResponse'
+              example:
+                success: true
+                data:
+                  enabled: true
+        '400':
+          description: Bad Request — the setting could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    put:
+      tags:
+        - IPD API
+      summary: Update Dawakhana Config
+      description: >-
+
+        ### Overview
+
+
+        This API turns the **in-house pharmacy (Dawakhana)** on or off for your
+        workspace. When turned off, Dawakhana is no longer listed as a pharmacy.
+
+
+      operationId: UpdateIpdDawakhanaConfig
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The new Dawakhana setting.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+                  description: '`true` to turn the in-house pharmacy on, `false` to turn it off.'
+            example:
+              enabled: false
+      responses:
+        '200':
+          description: OK — the updated Dawakhana setting.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDawakhanaConfigResponse'
+              example:
+                success: true
+                data:
+                  enabled: false
+        '400':
+          description: >-
+            Bad Request. Returns `{ message }` when the request body failed
+            schema validation (for example `enabled` is missing or not a
+            boolean; the `message` is currently empty), or
+            `{ success: false, error }` when the setting could not be saved.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
@@ -14603,6 +15676,119 @@ components:
               description: 'For an order, the return orders placed against it.'
               items:
                 $ref: '#/components/schemas/IpdOrder'
+    IpdDawakhanaLine:
+      title: IpdDawakhanaLine
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Order line id. Use it as `itemId` when dispatching or returning.'
+        medicineId:
+          type: string
+          description: 'Id of the medicine.'
+        name:
+          type: string
+          description: 'Name of the medicine.'
+        genericName:
+          type: string
+          description: 'Generic (molecule) name of the medicine.'
+        orderedQty:
+          type: number
+          description: 'Quantity ordered.'
+        directions:
+          type: string
+          description: 'Dosage directions.'
+        fulfilledQty:
+          type: number
+          description: 'Quantity given, set at dispatch.'
+        rate:
+          type: number
+          description: 'Price per unit, set at dispatch.'
+        amount:
+          type: number
+          description: 'Line total (`fulfilledQty × rate`), set at dispatch.'
+        returnedQty:
+          type: number
+          description: 'Total quantity returned against this line.'
+        lineStatus:
+          type: string
+          enum: ['PENDING', 'FULFILLED', 'PARTIAL', 'UNAVAILABLE', 'SUBSTITUTED', 'RETURNED']
+          description: 'Status of the line.'
+    IpdDawakhanaOrder:
+      title: IpdDawakhanaOrder
+      allOf:
+        - $ref: '#/components/schemas/IpdOrder'
+        - type: object
+          properties:
+            lines:
+              type: array
+              description: 'The order lines.'
+              items:
+                $ref: '#/components/schemas/IpdDawakhanaLine'
+    IpdDawakhanaOrderResponse:
+      title: IpdDawakhanaOrderResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdDawakhanaOrder'
+    IpdDawakhanaCounts:
+      title: IpdDawakhanaCounts
+      type: object
+      properties:
+        CREATED:
+          type: number
+          description: 'Orders waiting to be dispatched.'
+        DISPATCHED:
+          type: number
+          description: 'Dispatched orders.'
+        CANCELLED:
+          type: number
+          description: 'Cancelled orders.'
+        RETURNED:
+          type: number
+          description: 'Fully returned orders.'
+        PARTIALLY_RETURNED:
+          type: number
+          description: 'Partially returned orders.'
+        clearancePending:
+          type: number
+          description: 'Admissions waiting for the in-house pharmacy''s discharge clearance.'
+    IpdDawakhanaClearanceRequest:
+      title: IpdDawakhanaClearanceRequest
+      type: object
+      properties:
+        admissionId:
+          type: string
+          description: 'Id of the IPD admission being discharged.'
+        pharmacyId:
+          type: string
+          description: 'Id of the pharmacy asked for clearance (`dawakhana` for the in-house pharmacy).'
+        ipdId:
+          type: string
+          description: 'Patient IPD case number.'
+        patientName:
+          type: string
+          description: 'Name of the patient.'
+        bed:
+          type: string
+          description: 'Bed of the patient.'
+        requestedAt:
+          type: string
+          description: 'Date-time clearance was requested, as an ISO-8601 string.'
+    IpdDawakhanaConfigResponse:
+      title: IpdDawakhanaConfigResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              description: '`true` when the in-house pharmacy is enabled.'
     IpdServiceFailure:
       title: IpdServiceFailure
       type: object
