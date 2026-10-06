@@ -5769,10 +5769,27 @@
                 "type": "object",
                 "properties": {
                   "only": {
-                    "description": "Restrict the round to these \"provider:pharmacyId\" target keys — how \"Resend\" retries only the pharmacies that failed. Omit to address every pharmacy the admission ordered from.",
+                    "description": "Notify only these pharmacies (as `provider` + `pharmacy_id`, the same values as in `targets`) — for example to resend to one pharmacy. Omit to notify every pharmacy the admission ordered from.",
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "provider",
+                        "pharmacy_id"
+                      ],
+                      "properties": {
+                        "provider": {
+                          "minLength": 1,
+                          "description": "Pharmacy provider, for example `evital`.",
+                          "type": "string"
+                        },
+                        "pharmacy_id": {
+                          "minLength": 1,
+                          "description": "The provider's pharmacy id.",
+                          "type": "string"
+                        }
+                      }
                     }
                   },
                   "by": {
@@ -6005,13 +6022,6 @@
                 "additionalProperties": false,
                 "type": "object",
                 "properties": {
-                  "only": {
-                    "description": "Restrict the round to these \"provider:pharmacyId\" target keys — how \"Resend\" retries only the pharmacies that failed. Omit to address every pharmacy the admission ordered from.",
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
                   "by": {
                     "description": "Actor recorded against the attempt; defaults to the authenticated operator.",
                     "additionalProperties": true,
@@ -6242,13 +6252,6 @@
                 "additionalProperties": false,
                 "type": "object",
                 "properties": {
-                  "only": {
-                    "description": "Restrict the round to these \"provider:pharmacyId\" target keys — how \"Resend\" retries only the pharmacies that failed. Omit to address every pharmacy the admission ordered from.",
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
                   "by": {
                     "description": "Actor recorded against the attempt; defaults to the authenticated operator.",
                     "additionalProperties": true,
@@ -10107,6 +10110,18 @@
                         "occurredAt": {
                           "description": "When the service happened (ISO date or date-time).",
                           "type": "string"
+                        },
+                        "priceSource": {
+                          "description": "Send `\"override\"` to make `unitPrice` a deliberate manual rate that wins over price lists and rules. Without it, billing re-resolves the price and treats `unitPrice` as a preview.",
+                          "type": "string"
+                        },
+                        "priceOverrideReason": {
+                          "description": "Why an open-priced item's rate is outside its allowed range. Required for an out-of-range rate; the charge then waits for approval.",
+                          "type": "string"
+                        },
+                        "remark": {
+                          "description": "Free-text note on the line.",
+                          "type": "string"
                         }
                       }
                     }
@@ -10340,6 +10355,18 @@
                   "occurredAt": {
                     "description": "New service date (ISO).",
                     "type": "string"
+                  },
+                  "priceSource": {
+                    "description": "Send `\"override\"` to make `unitPrice` a deliberate manual rate that wins over price lists and rules. Without it, billing re-resolves the price and treats `unitPrice` as a preview.",
+                    "type": "string"
+                  },
+                  "priceOverrideReason": {
+                    "description": "Why an open-priced item's rate is outside its allowed range. Required for an out-of-range rate; the charge then waits for approval.",
+                    "type": "string"
+                  },
+                  "remark": {
+                    "description": "New note on the line; an empty string clears it.",
+                    "type": "string"
                   }
                 }
               }
@@ -10520,7 +10547,7 @@
         "tags": [
           "IPD API"
         ],
-        "description": "Voids a charge so it is no longer billed.\n\nThe admission must be on new billing (`use_new_billing`); otherwise this returns 409. Returns 503 when billing is not configured on the server, and 502 when the billing service fails.",
+        "description": "Voids a charge so it is no longer billed. `voidType` records why: `cancelled` (valid, but no longer applies) or `entered_in_error` (a mistake).\n\nThe admission must be on new billing (`use_new_billing`); otherwise this returns 409. Returns 503 when billing is not configured on the server, and 502 when the billing service fails.",
         "requestBody": {
           "required": true,
           "content": {
@@ -10532,6 +10559,23 @@
                   "reason": {
                     "description": "Why — kept on the audit trail.",
                     "type": "string"
+                  },
+                  "voidType": {
+                    "description": "`cancelled` (default): the charge was valid but no longer applies. `entered_in_error`: it should never have existed.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "cancelled"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "entered_in_error"
+                        ]
+                      }
+                    ]
                   }
                 }
               }
@@ -11305,6 +11349,18 @@
                         "occurredAt": {
                           "description": "When the service happened (ISO date or date-time).",
                           "type": "string"
+                        },
+                        "priceSource": {
+                          "description": "Send `\"override\"` to make `unitPrice` a deliberate manual rate that wins over price lists and rules. Without it, billing re-resolves the price and treats `unitPrice` as a preview.",
+                          "type": "string"
+                        },
+                        "priceOverrideReason": {
+                          "description": "Why an open-priced item's rate is outside its allowed range. Required for an out-of-range rate; the charge then waits for approval.",
+                          "type": "string"
+                        },
+                        "remark": {
+                          "description": "Free-text note on the line.",
+                          "type": "string"
                         }
                       }
                     }
@@ -11368,6 +11424,14 @@
                           "type": "string"
                         },
                         "occurredAt": {
+                          "type": "string"
+                        },
+                        "priceSource": {
+                          "description": "Send `\"override\"` to make `unitPrice` a deliberate manual rate that wins over price lists and rules. Without it, billing re-resolves the price and treats `unitPrice` as a preview.",
+                          "type": "string"
+                        },
+                        "priceOverrideReason": {
+                          "description": "Why an open-priced item's rate is outside its allowed range. Required for an out-of-range rate; the charge then waits for approval.",
                           "type": "string"
                         }
                       }
@@ -12154,6 +12218,206 @@
           }
         },
         "operationId": "IpdSdkVoidAPayment"
+      }
+    },
+    "/ipd/v1/sdk/admissions/{admission_id}/billing/payments/{payment_id}/allocate": {
+      "post": {
+        "summary": "Apply a payment to an invoice",
+        "tags": [
+          "IPD API"
+        ],
+        "description": "Applies part of a payment's unapplied balance — for example money freed when a paid invoice was cancelled — to an invoice.\n\nThe admission must be on new billing (`use_new_billing`); otherwise this returns 409. Returns 503 when billing is not configured on the server, and 502 when the billing service fails.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "amount",
+                  "invoiceId"
+                ],
+                "properties": {
+                  "amount": {
+                    "pattern": "^-?\\d+(\\.\\d+)?$",
+                    "description": "Amount of the payment's unapplied balance to apply. Decimal string, for example \"1500.00\".",
+                    "type": "string"
+                  },
+                  "invoiceId": {
+                    "minLength": 1,
+                    "description": "Invoice to apply it to.",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "auth",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM"
+          },
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "path",
+            "name": "admission_id",
+            "required": true,
+            "description": "Id of the IPD admission."
+          },
+          {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "description": "Id of the payment."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A payment: `id`, `amount`, `mode`, `referenceNumber`, `status`, `receiptNumber`, `createdAt`, …",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "description": "A payment: `id`, `amount`, `mode`, `referenceNumber`, `status`, `receiptNumber`, `createdAt`, …",
+                  "example": {
+                    "id": "pay-301",
+                    "amount": "5000.00",
+                    "mode": "upi",
+                    "referenceNumber": "UPI-88213",
+                    "status": "recorded",
+                    "receiptNumber": "RCPT-000301",
+                    "createdAt": "2026-10-07T11:00:00.000Z"
+                  },
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request — the request failed validation or was rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found — the admission (or the addressed record) does not exist in your workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict — the admission is not on new billing, or the request conflicts with the account's current state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway — the billing service failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable — billing or pharmacy notification is not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "IpdSdkApplyAPaymentToAnInvoice"
       }
     },
     "/ipd/v1/sdk/admissions/{admission_id}/billing/invoices/{invoice_id}/pay": {
@@ -15655,7 +15919,24 @@
         "tags": [
           "IPD API"
         ],
-        "description": "The final stop at clearance: stops every open room meter and posts the accrued nights as charges. Returns the ids of the charges posted.\n\nThe admission must be on new billing (`use_new_billing`); otherwise this returns 409. Returns 503 when billing is not configured on the server, and 502 when the billing service fails.",
+        "description": "The final stop at clearance or discharge: stops every open room meter and posts the accrued nights as charges. Pass `endedAt` to bill up to a past time (for example the discharge time) and stop there. Returns the ids of the charges posted.\n\nThe admission must be on new billing (`use_new_billing`); otherwise this returns 409. Returns 503 when billing is not configured on the server, and 502 when the billing service fails.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "endedAt": {
+                    "description": "When the stay ended (ISO date-time); defaults to now.",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "name": "auth",
