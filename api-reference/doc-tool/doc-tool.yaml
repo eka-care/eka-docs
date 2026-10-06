@@ -10870,6 +10870,634 @@ paths:
                 error: "Discharge summary not found"
       deprecated: false
 
+  /ipd/v1/service/orders:
+    post:
+      tags:
+        - IPD API
+      summary: Create Order
+      description: >-
+
+        ### Overview
+
+
+        This API places a **medicine order** for an IPD admission of your
+        workspace. The order is sent to a pharmacy provider: `evital` (an
+        external pharmacy on eVital) or `dawakhana` (your in-house pharmacy).
+
+
+        **Choosing the provider:** pass `provider` to pick one. When it is
+        omitted, the order goes to eVital if eVital is set up for your
+        workspace, otherwise to Dawakhana; if neither is set up the request
+        fails with `400`.
+
+
+        **eVital orders** require `pharmacyId` (the `id` of a pharmacy from the
+        pharmacies list). Each item's `quantity` must already be in that
+        pharmacy's order unit (loose or strip), and items are matched by
+        `medicine_id`.
+
+
+        **Dawakhana orders** get a server-generated `orderNumber`. An item's
+        `name` is used as the line name (falling back to `medicine_id`).
+
+
+        The order starts in status `CREATED`. The user making the request is
+        recorded in `createdBy` and `createdByName`. Fields not listed in the
+        request body are rejected.
+
+
+      operationId: CreateIpdOrder
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The order to place.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - admissionId
+                - items
+              properties:
+                admissionId:
+                  type: string
+                  description: 'Id of the IPD admission the order is for (a UUID or a 24-character hex id).'
+                ipd_id:
+                  type: string
+                  description: 'Patient IPD case number.'
+                rxId:
+                  type: string
+                  description: 'Id of the prescription the order is based on.'
+                rxPdfUrl:
+                  type: string
+                  description: 'URL of the prescription PDF.'
+                provider:
+                  type: string
+                  enum: ['evital', 'dawakhana']
+                  description: 'Pharmacy provider to send the order to. See the overview for the default.'
+                pharmacyId:
+                  type: string
+                  description: 'Id of the pharmacy to fulfil the order. Required for `evital` orders.'
+                patient_id:
+                  type: string
+                  description: 'Id of the patient.'
+                patient_name:
+                  type: string
+                  description: 'Name of the patient.'
+                mobile:
+                  type: string
+                  description: 'Mobile number of the patient.'
+                doctor_name:
+                  type: string
+                  description: 'Name of the prescribing doctor.'
+                delivery_type:
+                  type: string
+                  enum: ['pickup', 'delivery']
+                  description: 'How the medicines reach the patient.'
+                notes:
+                  type: string
+                  description: 'Order-level remarks.'
+                custom_fields:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: 'Extra key-value fields passed to the provider (used by eVital).'
+                items:
+                  type: array
+                  description: 'Medicines to order.'
+                  items:
+                    $ref: '#/components/schemas/IpdOrderItemInput'
+            example:
+              admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              ipd_id: "IPD-2026-0042"
+              provider: "dawakhana"
+              patient_id: "pid-321"
+              patient_name: "Ravi Kumar"
+              mobile: "9876543210"
+              doctor_name: "Dr. Vivek Sharma"
+              delivery_type: "pickup"
+              items:
+                - medicine_id: "med-paracetamol-500"
+                  name: "Paracetamol 500mg Tablet"
+                  generic_name: "Paracetamol"
+                  quantity: 10
+                  directions: "1 tablet every 6 hours"
+      responses:
+        '200':
+          description: OK — the created order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdOrderResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  ipdId: "IPD-2026-0042"
+                  status: "CREATED"
+                  createdBy: "161467756044203"
+                  createdByName: "Vivek Sharma"
+                  isCollected: false
+                  provider: "dawakhana"
+                  patientName: "Ravi Kumar"
+                  mobile: "9876543210"
+                  patientId: "pid-321"
+                  doctorName: "Dr. Vivek Sharma"
+                  deliveryType: "pickup"
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T12:10:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the order could
+            not be placed (for example no pharmacy provider is set up,
+            `pharmacyId` is missing for an eVital order, eVital rejected the
+            order, or `admissionId` is not a valid id), or `{ message }` when
+            the request body failed schema validation (for example `admissionId`
+            or `items` is missing, an item has no `quantity`, or an unknown field
+            was sent; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "pharmacyId is required for eVital orders"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    get:
+      tags:
+        - IPD API
+      summary: List Orders
+      description: >-
+
+        ### Overview
+
+
+        This API lists the **medicine orders** of your workspace, newest first.
+        Orders and **return orders** are listed together: use `kind` to tell
+        them apart (or to filter), and `parentOrderId` to find the returns
+        placed against an order.
+
+
+        All filters are optional. Results are paged with `limit` (default `50`)
+        and `skip` (default `0`).
+
+
+      operationId: ListIpdOrders
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admissionId
+          in: query
+          description: 'Only orders of this IPD admission.'
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: 'Only orders in this status.'
+          required: false
+          schema:
+            type: string
+            enum: ['CREATED', 'DISPATCHED', 'CANCELLED', 'RETURNED', 'PARTIALLY_RETURNED']
+        - name: provider
+          in: query
+          description: 'Only orders sent to this provider.'
+          required: false
+          schema:
+            type: string
+            enum: ['evital', 'dawakhana']
+        - name: kind
+          in: query
+          description: 'Only orders (`order`) or only return orders (`return`).'
+          required: false
+          schema:
+            type: string
+            enum: ['order', 'return']
+        - name: parentOrderId
+          in: query
+          description: 'Only return orders placed against this order.'
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 'Maximum number of orders to return. Defaults to `50`.'
+          required: false
+          schema:
+            type: number
+            default: 50
+        - name: skip
+          in: query
+          description: 'Number of orders to skip (for paging). Defaults to `0`.'
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        '200':
+          description: OK — the matching orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdOrder'
+              example:
+                success: true
+                data:
+                  - id: "66f1cd07e4b0a1b2c3d4ef0a"
+                    admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    kind: "order"
+                    orderNumber: "DW-7Q2K9F3M"
+                    ipdId: "IPD-2026-0042"
+                    status: "DISPATCHED"
+                    createdBy: "161467756044203"
+                    createdByName: "Vivek Sharma"
+                    isCollected: false
+                    provider: "dawakhana"
+                    patientName: "Ravi Kumar"
+                    billedTotal: 45
+                    fulfilmentType: "FULL"
+                    dispatchedBy: "161467756044204"
+                    dispatchedByName: "Meena Iyer"
+                    dispatchedAt: "2026-10-07T12:40:00.000Z"
+                    createdAt: "2026-10-07T12:10:00.000Z"
+                    updatedAt: "2026-10-07T12:40:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ message }` when a query parameter is invalid
+            (for example an unknown `status` or a non-numeric `limit`; the
+            `message` is currently empty), or `{ success: false, error }` when
+            the orders could not be loaded.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/orders/{order_id}:
+    get:
+      tags:
+        - IPD API
+      summary: Get Order
+      description: >-
+
+        ### Overview
+
+
+        This API returns a single **medicine order** of your workspace with its
+        full detail. On top of the fields returned by List Orders it includes:
+
+
+        - `lineItems` — the ordered medicines, in the same shape for every
+        provider (for eVital orders these are fetched live from eVital).
+
+        - `pharmacyName` — the name of the fulfilling pharmacy.
+
+        - `returns` — for an order (`kind: order`), the return orders placed
+        against it.
+
+
+        For a return order (`kind: return`), `lineItems` lists the returned
+        medicines.
+
+
+        Returns `404` with `Order not found` when the `order_id` does not exist
+        or belongs to another workspace.
+
+
+      operationId: GetIpdOrder
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: order_id
+          in: path
+          description: 'Id of the order.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cd07e4b0a1b2c3d4ef0a"
+      responses:
+        '200':
+          description: OK — the order with its detail.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/IpdOrderDetail'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  ipdId: "IPD-2026-0042"
+                  status: "DISPATCHED"
+                  createdBy: "161467756044203"
+                  createdByName: "Vivek Sharma"
+                  isCollected: false
+                  provider: "dawakhana"
+                  patientName: "Ravi Kumar"
+                  billedTotal: 45
+                  fulfilmentType: "FULL"
+                  dispatchedAt: "2026-10-07T12:40:00.000Z"
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T12:40:00.000Z"
+                  pharmacyName: "Eka In-house Pharmacy"
+                  lineItems:
+                    - name: "Paracetamol 500mg Tablet"
+                      genericName: "Paracetamol"
+                      medicineId: "med-paracetamol-500"
+                      orderedQty: 10
+                      fulfilledQty: 10
+                      rate: 4.5
+                      amount: 45
+                      directions: "1 tablet every 6 hours"
+                      status: "FULFILLED"
+                  returns: []
+        '400':
+          description: Bad Request — the `order_id` is not a valid id, or the order detail could not be loaded (for example eVital did not respond).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Order not found"
+      deprecated: false
+    patch:
+      tags:
+        - IPD API
+      summary: Mark Order Collected
+      description: >-
+
+        ### Overview
+
+
+        This API marks a **medicine order** of your workspace as collected (or
+        not collected) by the patient.
+
+
+        Sending `isCollected: true` also records the user making the request in
+        `collectedBy`, `collectedByName` and `collectedAt`. Sending
+        `isCollected: false` clears the flag but keeps the earlier collected
+        details.
+
+
+        A return order (`kind: return`) cannot be marked collected and returns
+        `400`. Returns `404` with `Order not found` when the `order_id` does not
+        exist or belongs to another workspace.
+
+
+      operationId: UpdateIpdOrder
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: order_id
+          in: path
+          description: 'Id of the order.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cd07e4b0a1b2c3d4ef0a"
+      requestBody:
+        description: 'The collected flag.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                isCollected:
+                  type: boolean
+                  description: '`true` when the patient has collected the medicines.'
+            example:
+              isCollected: true
+      responses:
+        '200':
+          description: OK — the updated order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdOrderResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  status: "DISPATCHED"
+                  createdBy: "161467756044203"
+                  isCollected: true
+                  collectedBy: "161467756044205"
+                  collectedByName: "Sunil Rao"
+                  collectedAt: "2026-10-07T13:00:00.000Z"
+                  provider: "dawakhana"
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T13:00:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `order_id`
+            is not a valid id or the order is a return order, or `{ message }`
+            when the request body failed schema validation (for example an
+            unknown field was sent; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "A return order cannot be marked collected."
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Order not found"
+      deprecated: false
+
+  /ipd/v1/service/orders/{order_id}/status:
+    patch:
+      tags:
+        - IPD API
+      summary: Update Order Status
+      description: >-
+
+        ### Overview
+
+
+        This API sets the `status` of a **medicine order** of your workspace.
+
+
+        > **Status only.** This API only changes the stored `status`; it does not dispatch, cancel or return the order with the pharmacy, and does not bill anything. To act on a Dawakhana order, use the Dawakhana order APIs instead.
+
+
+        Returns `404` with `Order not found` when the `order_id` does not exist
+        or belongs to another workspace.
+
+
+      operationId: UpdateIpdOrderStatus
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: order_id
+          in: path
+          description: 'Id of the order.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cd07e4b0a1b2c3d4ef0a"
+      requestBody:
+        description: 'The new order status.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: ['CREATED', 'DISPATCHED', 'CANCELLED', 'RETURNED', 'PARTIALLY_RETURNED']
+                  description: 'New status of the order.'
+            example:
+              status: "CANCELLED"
+      responses:
+        '200':
+          description: OK — the updated order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdOrderResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cd07e4b0a1b2c3d4ef0a"
+                  admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  kind: "order"
+                  orderNumber: "DW-7Q2K9F3M"
+                  status: "CANCELLED"
+                  createdBy: "161467756044203"
+                  isCollected: false
+                  provider: "dawakhana"
+                  createdAt: "2026-10-07T12:10:00.000Z"
+                  updatedAt: "2026-10-07T13:05:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `order_id`
+            is not a valid id, or `{ message }` when the request body failed
+            schema validation (for example `status` is missing or not one of the
+            allowed values; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the order was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Order not found"
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
@@ -13754,6 +14382,227 @@ components:
           type: boolean
         data:
           $ref: '#/components/schemas/IpdDischargeSummary'
+    IpdOrderItemInput:
+      title: IpdOrderItemInput
+      type: object
+      additionalProperties: false
+      required:
+        - quantity
+      properties:
+        medicine_id:
+          type: string
+          description: 'Id of the medicine. Used to match the medicine for eVital orders.'
+        name:
+          type: string
+          description: 'Name of the medicine.'
+        generic_name:
+          type: string
+          description: 'Generic (molecule) name of the medicine.'
+        quantity:
+          type: number
+          description: 'Quantity to order. For eVital orders, in the pharmacy''s order unit (loose or strip).'
+        directions:
+          type: string
+          description: 'Dosage directions for the patient.'
+    IpdOrderLineItem:
+      title: IpdOrderLineItem
+      type: object
+      properties:
+        name:
+          type: string
+          description: 'Name of the medicine.'
+        genericName:
+          type: string
+          description: 'Generic (molecule) name of the medicine.'
+        medicineId:
+          type: string
+          description: 'Id of the medicine.'
+        image:
+          type: string
+          description: 'Medicine image URL, when the provider has one.'
+        orderedQty:
+          type: number
+          description: 'Quantity ordered.'
+        fulfilledQty:
+          type: number
+          description: 'Quantity actually fulfilled.'
+        returnedQty:
+          type: number
+          description: 'Quantity returned against this line, when tracked.'
+        rate:
+          type: number
+          description: 'Price per unit.'
+        mrp:
+          type: number
+          description: 'Maximum retail price per unit, when known.'
+        amount:
+          type: number
+          description: 'Line total (rate × fulfilled quantity).'
+        directions:
+          type: string
+          description: 'Dosage directions.'
+        status:
+          type: string
+          description: 'Line status from the provider, when tracked (for example FULFILLED, PARTIAL or UNAVAILABLE).'
+    IpdOrder:
+      title: IpdOrder
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Order id.'
+        admissionId:
+          type: string
+          description: 'Id of the IPD admission the order is for.'
+        kind:
+          type: string
+          enum: ['order', 'return']
+          description: '`order`, or `return` for a return order placed against an order.'
+        parentOrderId:
+          type: string
+          description: 'For a return order, the id of the order it was placed against.'
+        externalReturnId:
+          type: string
+          description: 'For an eVital return order, eVital''s return id.'
+        orderNumber:
+          type: string
+          description: 'Display order number (Dawakhana''s own number, or eVital''s order number).'
+        ipdId:
+          type: string
+          description: 'Patient IPD case number.'
+        status:
+          type: string
+          enum: ['CREATED', 'DISPATCHED', 'CANCELLED', 'RETURNED', 'PARTIALLY_RETURNED']
+          description: 'Order status.'
+        createdBy:
+          type: string
+          description: 'Id of the user who placed the order.'
+        createdByName:
+          type: string
+          description: 'Name of the user who placed the order.'
+        rxId:
+          type: string
+          description: 'Id of the prescription the order is based on.'
+        isCollected:
+          type: boolean
+          description: '`true` when the patient has collected the medicines.'
+        collectedBy:
+          type: string
+          description: 'Id of the user who marked the order collected.'
+        collectedByName:
+          type: string
+          description: 'Name of the user who marked the order collected.'
+        collectedAt:
+          type: string
+          description: 'Date-time the order was marked collected, as an ISO-8601 string.'
+        provider:
+          type: string
+          enum: ['evital', 'dawakhana']
+          description: 'Pharmacy provider fulfilling the order.'
+        pharmacyId:
+          type: string
+          description: 'Id of the fulfilling pharmacy.'
+        patientName:
+          type: string
+          description: 'Name of the patient.'
+        mobile:
+          type: string
+          description: 'Mobile number of the patient.'
+        patientId:
+          type: string
+          description: 'Id of the patient.'
+        doctorName:
+          type: string
+          description: 'Name of the prescribing doctor.'
+        deliveryType:
+          type: string
+          enum: ['pickup', 'delivery']
+          description: 'How the medicines reach the patient.'
+        rxPdfUrl:
+          type: string
+          description: 'URL of the prescription PDF.'
+        notes:
+          type: string
+          description: 'Order-level remarks.'
+        billedTotal:
+          type: number
+          description: 'Amount billed for the order, set when it is dispatched.'
+        fulfilmentType:
+          type: string
+          enum: ['FULL', 'PARTIAL']
+          description: 'Whether the dispatched order was fulfilled fully or partially.'
+        dispatchNote:
+          type: string
+          description: 'Note added when the order was dispatched.'
+        dispatchedBy:
+          type: string
+          description: 'Id of the user who dispatched the order.'
+        dispatchedByName:
+          type: string
+          description: 'Name of the user who dispatched the order.'
+        dispatchedAt:
+          type: string
+          description: 'Date-time the order was dispatched, as an ISO-8601 string.'
+        cancelledBy:
+          type: string
+          description: 'Id of the user who cancelled the order.'
+        cancelledByName:
+          type: string
+          description: 'Name of the user who cancelled the order.'
+        cancelledAt:
+          type: string
+          description: 'Date-time the order was cancelled, as an ISO-8601 string.'
+        cancelReason:
+          type: string
+          description: 'Reason the order was cancelled.'
+        returnedBy:
+          type: string
+          description: 'Id of the user who returned the order.'
+        returnedByName:
+          type: string
+          description: 'Name of the user who returned the order.'
+        returnedAt:
+          type: string
+          description: 'Date-time the order was returned, as an ISO-8601 string.'
+        returnReason:
+          type: string
+          description: 'Reason the order was returned.'
+        returnedTotal:
+          type: number
+          description: 'Total amount returned against the order.'
+        createdAt:
+          type: string
+          description: 'Created date-time as an ISO-8601 string.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdOrderResponse:
+      title: IpdOrderResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdOrder'
+    IpdOrderDetail:
+      title: IpdOrderDetail
+      allOf:
+        - $ref: '#/components/schemas/IpdOrder'
+        - type: object
+          properties:
+            lineItems:
+              type: array
+              description: 'The ordered (or, for a return order, returned) medicines.'
+              items:
+                $ref: '#/components/schemas/IpdOrderLineItem'
+            pharmacyName:
+              type: string
+              description: 'Name of the fulfilling pharmacy.'
+            returns:
+              type: array
+              description: 'For an order, the return orders placed against it.'
+              items:
+                $ref: '#/components/schemas/IpdOrder'
     IpdServiceFailure:
       title: IpdServiceFailure
       type: object
