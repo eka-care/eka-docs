@@ -13036,6 +13036,1122 @@ paths:
                 $ref: '#/components/schemas/IpdServiceError'
       deprecated: false
 
+  /ipd/v1/service/admissions/generate-ipid:
+    post:
+      tags:
+        - IPD API
+      summary: Generate IPID
+      description: >-
+
+        ### Overview
+
+
+        This API generates the **next IPD case number (IPID)** for your
+        workspace, as `prefix` followed by a running number.
+
+
+        Each call **uses up a number**: the running number is increased by one
+        and the new value is returned, so calling it twice returns two
+        different IPIDs. The prefix and running number are set with
+        [Update IPID Config](/api-reference/doc-tool/ipd-api/admissions/update-ipid-config).
+        For a workspace that has never set it, the first IPID is `IPD1`.
+
+
+        `GET` on the same path behaves exactly the same, including using up a
+        number.
+
+
+      operationId: GenerateIpdIpid
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the generated IPID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdIpidResponse'
+              example:
+                success: true
+                data:
+                  ipid: "IPD1043"
+        '400':
+          description: Bad Request — the IPID could not be generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    get:
+      tags:
+        - IPD API
+      summary: Generate IPID (GET)
+      description: >-
+
+        ### Overview
+
+
+        Same as [Generate IPID](/api-reference/doc-tool/ipd-api/admissions/generate-ipid):
+        returns the next IPD case number for your workspace.
+
+
+        > **This GET changes data.** Each call increases the running number by one, exactly like the `POST`. Do not call it just to preview the next IPID — use [Get IPID Config](/api-reference/doc-tool/ipd-api/admissions/get-ipid-config) instead.
+
+
+      operationId: GenerateIpdIpidGet
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the generated IPID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdIpidResponse'
+              example:
+                success: true
+                data:
+                  ipid: "IPD1044"
+        '400':
+          description: Bad Request — the IPID could not be generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/ipid-config:
+    get:
+      tags:
+        - IPD API
+      summary: Get IPID Config
+      description: >-
+
+        ### Overview
+
+
+        This API returns how IPD case numbers (IPIDs) are generated for your
+        workspace: the `prefix`, the running number `startsFrom`, and two
+        settings for the admission form.
+
+
+        `startsFrom` is the **last number used**: the next generated IPID is
+        `prefix` + (`startsFrom` + 1). A workspace that has never set the config
+        returns the defaults (`prefix: IPD`, `startsFrom: 1`, both settings
+        `false`).
+
+
+      operationId: GetIpdIpidConfig
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the IPID config.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdIpidConfigResponse'
+              example:
+                success: true
+                data:
+                  owner: "170142612985588"
+                  prefix: "IPD"
+                  startsFrom: 1044
+                  editable_in_admission: false
+                  auto_generate_in_admission: true
+        '400':
+          description: Bad Request — the config could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    post:
+      tags:
+        - IPD API
+      summary: Update IPID Config
+      description: >-
+
+        ### Overview
+
+
+        This API sets how IPD case numbers (IPIDs) are generated for your
+        workspace.
+
+
+        `prefix` (a non-empty string, trimmed) and `startsFrom` (a whole number,
+        `1` or more) are required. `startsFrom` is the **last number used**, so
+        after setting `startsFrom: 100` the next generated IPID is `prefix101`.
+        The two admission-form settings are optional; when omitted they keep
+        their current value.
+
+
+      operationId: UpdateIpdIpidConfig
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The IPID settings.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - prefix
+                - startsFrom
+              properties:
+                prefix:
+                  type: string
+                  description: 'Text placed before the running number, for example `IPD`.'
+                startsFrom:
+                  type: integer
+                  minimum: 1
+                  description: 'Last number used. The next IPID uses `startsFrom + 1`.'
+                editable_in_admission:
+                  type: boolean
+                  description: 'Allow the IPID to be edited on the admission form.'
+                auto_generate_in_admission:
+                  type: boolean
+                  description: 'Generate the IPID automatically on the admission form.'
+            example:
+              prefix: "IPD"
+              startsFrom: 1000
+              editable_in_admission: false
+              auto_generate_in_admission: true
+      responses:
+        '200':
+          description: OK — the saved IPID config.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdIpidConfigResponse'
+              example:
+                success: true
+                data:
+                  owner: "170142612985588"
+                  prefix: "IPD"
+                  startsFrom: 1000
+                  editable_in_admission: false
+                  auto_generate_in_admission: true
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when a value is not
+            allowed (for example `prefix` is empty or `startsFrom` is not a whole
+            number of at least `1`), or `{ message }` when the request body
+            failed schema validation (for example a required field is missing;
+            the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "startsFrom must be greater than or equal to 1"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/discharge-release-rules:
+    get:
+      tags:
+        - IPD API
+      summary: Get Discharge Release Rules
+      description: >-
+
+        ### Overview
+
+
+        This API returns the **discharge release rules** of your workspace — the
+        departments that must clear a patient before discharge (nursing,
+        billing, pharmacy, labs, doctor and discharge summary).
+
+
+        Every rule is always returned, with your saved settings applied on top
+        of the defaults (all enabled, none mandatory). The `discharge-summary`
+        rule is always enabled and cannot be turned off (`can_disable: false`);
+        it is always listed last.
+
+
+      operationId: GetIpdDischargeReleaseRules
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the discharge release rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDischargeReleaseRulesResponse'
+              example:
+                success: true
+                data:
+                  rules:
+                    - id: "nursing"
+                      name: "Nursing"
+                      description: "Ward handover & belongings returned"
+                      enabled: true
+                      mandatory: false
+                    - id: "billing"
+                      name: "Billing"
+                      description: "Final bill settled · dues cleared"
+                      enabled: true
+                      mandatory: true
+                    - id: "pharmacy"
+                      name: "Pharmacy"
+                      description: "Unused meds returned · pharmacy dues closed"
+                      enabled: true
+                      mandatory: false
+                    - id: "lab"
+                      name: "Labs"
+                      description: "Pending reports delivered or flagged"
+                      enabled: false
+                      mandatory: false
+                    - id: "doctor"
+                      name: "Doctor"
+                      description: "Final review & summary sign-off"
+                      enabled: true
+                      mandatory: false
+                    - id: "discharge-summary"
+                      name: "Discharge Summary"
+                      description: "Discharge summary generated & saved"
+                      enabled: true
+                      mandatory: false
+                      can_disable: false
+        '400':
+          description: Bad Request — the rules could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    put:
+      tags:
+        - IPD API
+      summary: Update Discharge Release Rules
+      description: >-
+
+        ### Overview
+
+
+        This API saves the **discharge release rules** of your workspace. Send
+        each rule's `id` with whether it is `enabled` and `mandatory`.
+
+
+        The saved list **replaces** your previous settings; rules you leave out
+        go back to their defaults (enabled, not mandatory). Unknown rule ids
+        are ignored, and the `discharge-summary` rule is always kept enabled.
+        The response is the full, updated rule list.
+
+
+        Rule ids: `nursing`, `billing`, `pharmacy`, `lab`, `doctor`,
+        `discharge-summary`.
+
+
+      operationId: UpdateIpdDischargeReleaseRules
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The rule settings.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - rules
+              properties:
+                rules:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - id
+                      - enabled
+                      - mandatory
+                    properties:
+                      id:
+                        type: string
+                        enum: ['nursing', 'billing', 'pharmacy', 'lab', 'doctor', 'discharge-summary']
+                        description: 'Id of the rule.'
+                      enabled:
+                        type: boolean
+                        description: 'Whether the rule applies to discharges.'
+                      mandatory:
+                        type: boolean
+                        description: 'Whether the rule must be cleared before discharge.'
+            example:
+              rules:
+                - id: "billing"
+                  enabled: true
+                  mandatory: true
+                - id: "lab"
+                  enabled: false
+                  mandatory: false
+      responses:
+        '200':
+          description: OK — the full, updated rule list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDischargeReleaseRulesResponse'
+        '400':
+          description: >-
+            Bad Request. Returns `{ message }` when the request body failed
+            schema validation (for example a rule is missing `enabled` or
+            `mandatory`; the `message` is currently empty), or
+            `{ success: false, error }` when the rules could not be saved.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/generate-discharge-summary/{admission_id}:
+    get:
+      tags:
+        - IPD API
+      summary: Generate Discharge Summary
+      description: >-
+
+        ### Overview
+
+
+        This API uses AI to **draft a discharge summary** for an IPD admission
+        of your workspace, from the patient's details and the prescriptions of
+        the admission's visits. The draft is **streamed** as it is written, in
+        Markdown. To save it, use
+        [Create Discharge Summary](/api-reference/doc-tool/ipd-api/discharge-summaries/create-discharge-summary).
+
+
+        **Response format:** `text/event-stream`. Each event is one line
+        starting with `data:` followed by JSON:
+
+
+        - `text` — the next piece of the summary (append it to what you have).
+
+        - `is_eof` — `true` on the last event, which has empty `text`.
+
+        - `tokens.index` — the position of the piece in the stream.
+
+
+        Events are separated by a single newline. If the summary cannot be
+        started (for example the admission does not exist), a JSON error is
+        returned instead with status `400`.
+
+
+      operationId: GenerateIpdDischargeSummary
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      responses:
+        '200':
+          description: OK — the discharge summary, streamed as server-sent events (Markdown text).
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                data:{"text":"## Discharge Summary\n","is_eof":false,"tokens":{"input":-1,"index":0}}
+                data:{"text":"Patient was admitted with fever","is_eof":false,"tokens":{"input":-1,"index":1}}
+                data:{"text":"","is_eof":true,"tokens":{"input":-1,"index":2}}
+        '400':
+          description: Bad Request — the discharge summary could not be generated (for example the admission was not found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Admission not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/generate-discharge-summary/{admission_id}/beta:
+    get:
+      tags:
+        - IPD API
+      summary: Generate Discharge Summary (Beta)
+      description: >-
+
+        ### Overview
+
+
+        **Beta** version of
+        [Generate Discharge Summary](/api-reference/doc-tool/ipd-api/admissions/generate-discharge-summary):
+        drafts the discharge summary with a newer prompt and a more compact,
+        date-ordered view of the admission's visits.
+
+
+        The stream has the same event format, but each `text` piece is **HTML**
+        instead of Markdown, sent a line at a time. This API may change.
+
+
+      operationId: GenerateIpdDischargeSummaryBeta
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      responses:
+        '200':
+          description: OK — the discharge summary, streamed as server-sent events (HTML text).
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                data:{"text":"<h2>Discharge Summary</h2>","is_eof":false,"tokens":{"input":-1,"index":0}}
+                data:{"text":"<p>Patient was admitted with fever.</p>","is_eof":false,"tokens":{"input":-1,"index":1}}
+                data:{"text":"","is_eof":true,"tokens":{"input":-1,"index":2}}
+        '400':
+          description: Bad Request — the discharge summary could not be generated (for example the admission was not found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Admission not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/advices/{patient_id}:
+    get:
+      tags:
+        - IPD API
+      summary: List Admission Advices for Patient
+      description: >-
+
+        ### Overview
+
+
+        This API lists the **admission advices** for a patient in your
+        workspace — the times a doctor advised admission in a prescription
+        (the "Admission Advised" section), newest first. Use it to start an
+        admission from a doctor's advice.
+
+
+      operationId: ListIpdAdmissionAdvices
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: patient_id
+          in: path
+          description: 'Id of the patient.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "pid-321"
+      responses:
+        '200':
+          description: OK — the admission advices of the patient.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdAdmissionAdvice'
+              example:
+                success: true
+                data:
+                  - id: "66f1cf29e4b0a1b2c3d4f10d"
+                    advised: true
+                    created_at: "2026-10-05T10:00:00.000Z"
+                    docid: "161467756044203"
+                    include_procedures: true
+                    notes: "Admit for observation"
+                    patientid: "pid-321"
+                    procedures:
+                      - id: "proc-appendectomy"
+                        name: "Appendectomy"
+                    pxid: "px-98765"
+                    visitid: "visit-12345"
+        '400':
+          description: Bad Request — the advices could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/{admission_id}:
+    get:
+      tags:
+        - IPD API
+      summary: Get Admission
+      description: >-
+
+        ### Overview
+
+
+        This API returns a single **IPD admission** of your workspace — the
+        patient, attendee, insurance, bed and rate plan, the doctor,
+        department and facility, billing totals, and the admission's
+        lifecycle state (`stage` and `status`). All timestamps are ISO-8601
+        strings.
+
+
+        When the admission's `bed` is a bed id, the bed is also returned in
+        `bedDetails`.
+
+
+        Returns `400` with `Admission not found` when the admission does not
+        exist in your workspace.
+
+
+      operationId: GetIpdServiceAdmission
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      responses:
+        '200':
+          description: OK — the admission.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/IpdAdmission'
+              example:
+                success: true
+                data:
+                  id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  bid: "170142612985588"
+                  ipid: "IPD1043"
+                  pid: "pid-321"
+                  stage: "AD"
+                  status: "UNDER_CARE"
+                  admission_date: "2026-10-05T10:30:00.000Z"
+                  patient:
+                    id: "pid-321"
+                    profile:
+                      personal:
+                        name: "Ravi Kumar"
+                        gender: "M"
+                  doc:
+                    id: "161467756044203"
+                    name: "Dr. Vivek Sharma"
+                  department:
+                    id: "dept-med"
+                    name: "General Medicine"
+                  category:
+                    id: "66f1c2a9e4b0a1b2c3d4e5f6"
+                    name: "ICU"
+                  bed: "66f1c4d2e4b0a1b2c3d4e702"
+                  bedDetails:
+                    id: "66f1c4d2e4b0a1b2c3d4e702"
+                    name: "ICU-04"
+                    room: "66f1c3b7e4b0a1b2c3d4e601"
+                    updatedAt: "2026-10-07T09:50:00.000Z"
+                  rateplan:
+                    id: "66f1c6f0e4b0a1b2c3d4e904"
+                    name: "Standard ICU"
+                    inclusions:
+                      - id: "66f1c7a1e4b0a1b2c3d4ea05"
+                        name: "Bed charges"
+                        rate: 2500
+                  totalbilled: 7545
+                  totalpaid: 5000
+                  created_at: "2026-10-05T10:30:00.000Z"
+                  updated_at: "2026-10-07T12:40:00.000Z"
+        '400':
+          description: Bad Request — the admission was not found or could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Admission not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/{admission_id}/visits:
+    get:
+      tags:
+        - IPD API
+      summary: Get Admission with Visits
+      description: >-
+
+        ### Overview
+
+
+        This API returns an **IPD admission** of your workspace (same as
+        [Get Admission](/api-reference/doc-tool/ipd-api/admissions/get-admission))
+        together with the **prescriptions of the visits** linked to the
+        admission.
+
+
+        Each prescribed medication and injection gets a `prescribe_dose_id`
+        (`<prescription id>-<medication id>`, with `-<index>` added for each
+        tapering dose), so a dose can be referred to uniquely — for example
+        when recording medicine administration.
+
+
+        Returns `400` with `Admission not found` when the admission does not
+        exist in your workspace.
+
+
+      operationId: GetIpdAdmissionVisits
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      responses:
+        '200':
+          description: OK — the admission and its visits' prescriptions.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      admission:
+                        $ref: '#/components/schemas/IpdAdmission'
+                      visits:
+                        type: array
+                        description: 'Prescriptions of the visits linked to the admission.'
+                        items:
+                          type: object
+                          additionalProperties: true
+              example:
+                success: true
+                data:
+                  admission:
+                    id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    ipid: "IPD1043"
+                    stage: "AD"
+                    status: "UNDER_CARE"
+                  visits:
+                    - id: "rx-55501"
+                      tool:
+                        medications:
+                          - id: "m1"
+                            name: "Paracetamol 500mg Tablet"
+                            prescribe_dose_id: "rx-55501-m1"
+        '400':
+          description: Bad Request — the admission was not found or the visits could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Admission not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/{admission_id}/estimate:
+    get:
+      tags:
+        - IPD API
+      summary: Get Admission Estimate
+      description: >-
+
+        ### Overview
+
+
+        This API returns the **bill estimate** of an IPD admission of your
+        workspace: the estimate lines, the billing totals, and the receipts of
+        the admission's visits.
+
+
+        The **first item is always the rate plan line**: its `rate` is the sum
+        of the rate plan's inclusions (per night), `quantity` is the admission
+        duration (or `1`), and `name` is `<rate plan name>/night`. When the
+        admission has no rate plan, this line is a placeholder with `rate`
+        and `quantity` of `0` and `name` of `-`. The remaining items are the
+        admission's estimate lines.
+
+
+        Estimate line ids are not included in this response.
+
+
+        Returns `400` with `Admission not found` when the admission does not
+        exist in your workspace.
+
+
+      operationId: GetIpdAdmissionEstimate
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      responses:
+        '200':
+          description: OK — the admission's bill estimate.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      totalBilled:
+                        type: number
+                        description: 'Total billed for the admission so far.'
+                      totalPaid:
+                        type: number
+                        description: 'Total paid for the admission so far.'
+                      items:
+                        type: array
+                        description: 'Estimate lines; the first is the rate plan line.'
+                        items:
+                          $ref: '#/components/schemas/IpdEstimateItem'
+                      receipts:
+                        type: array
+                        description: 'Receipts of the visits linked to the admission.'
+                        items:
+                          $ref: '#/components/schemas/IpdVisitReceipt'
+              example:
+                success: true
+                data:
+                  totalBilled: 7545
+                  totalPaid: 5000
+                  items:
+                    - id: "66f1c6f0e4b0a1b2c3d4e904"
+                      name: "Standard ICU/night"
+                      rate: 2500
+                      quantity: 3
+                      date: "2026-10-05T10:30:00.000Z"
+                    - name: "Pharmacy order"
+                      rate: 45
+                      quantity: 1
+                  receipts:
+                    - receipt_id: 90210
+                      receipt_url: "https://example.com/receipts/90210.pdf"
+                      net_amount: 5000
+                      created_at: "2026-10-05T11:00:00.000Z"
+                      remarks: "Advance"
+                      aid: "visit-12345"
+        '400':
+          description: Bad Request — the admission was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Admission not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/admissions/{admission_id}/fs-estimates:
+    post:
+      tags:
+        - IPD API
+      summary: Save Admission Estimates
+      description: >-
+
+        ### Overview
+
+
+        This API adds, changes and removes **estimate lines** of an IPD
+        admission of your workspace in one call, then recalculates the
+        admission's billed total and returns it.
+
+
+        All three lists are optional:
+
+
+        - `creates` — new estimate lines.
+
+        - `updates` — replace an existing line (`estimateId`) with `payload`.
+
+        - `deletes` — ids of lines to remove.
+
+
+      operationId: SaveIpdAdmissionEstimates
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      requestBody:
+        description: 'The estimate changes.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                creates:
+                  type: array
+                  description: 'Estimate lines to add.'
+                  items:
+                    $ref: '#/components/schemas/IpdEstimateInput'
+                updates:
+                  type: array
+                  description: 'Estimate lines to replace.'
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - estimateId
+                      - payload
+                    properties:
+                      estimateId:
+                        type: string
+                        description: 'Id of the estimate line to replace.'
+                      payload:
+                        $ref: '#/components/schemas/IpdEstimateInput'
+                deletes:
+                  type: array
+                  description: 'Ids of the estimate lines to remove.'
+                  items:
+                    type: string
+            example:
+              creates:
+                - name: "X-Ray Chest"
+                  service_id: "svc-xray-chest"
+                  rate: 800
+                  quantity: 1
+                  discount:
+                    category: "percentage"
+                    value: 10
+                  remarks: "PA view"
+      responses:
+        '200':
+          description: OK — the recalculated billed total.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      totalBilled:
+                        type: number
+                        description: 'Billed total of the admission after the changes.'
+              example:
+                success: true
+                data:
+                  totalBilled: 8265
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the changes
+            could not be saved, or `{ message }` when the request body failed
+            schema validation (for example a line is missing `name`,
+            `service_id`, `rate` or `quantity`; the `message` is currently
+            empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
@@ -16332,6 +17448,330 @@ components:
           description: 'Stock of the requested medicines at this pharmacy.'
           items:
             $ref: '#/components/schemas/IpdInventoryItem'
+    IpdIpidResponse:
+      title: IpdIpidResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ipid:
+              type: string
+              description: 'The generated IPD case number.'
+    IpdIpidConfigResponse:
+      title: IpdIpidConfigResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            owner:
+              type: string
+              description: 'Workspace id.'
+            prefix:
+              type: string
+              description: 'Text placed before the running number.'
+            startsFrom:
+              type: integer
+              description: 'Last number used. The next IPID uses `startsFrom + 1`.'
+            editable_in_admission:
+              type: boolean
+              description: 'Whether the IPID can be edited on the admission form.'
+            auto_generate_in_admission:
+              type: boolean
+              description: 'Whether the IPID is generated automatically on the admission form.'
+    IpdDischargeReleaseRulesResponse:
+      title: IpdDischargeReleaseRulesResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            rules:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    enum: ['nursing', 'billing', 'pharmacy', 'lab', 'doctor', 'discharge-summary']
+                    description: 'Id of the rule.'
+                  name:
+                    type: string
+                    description: 'Display name of the rule.'
+                  description:
+                    type: string
+                    description: 'What the rule checks.'
+                  enabled:
+                    type: boolean
+                    description: 'Whether the rule applies to discharges.'
+                  mandatory:
+                    type: boolean
+                    description: 'Whether the rule must be cleared before discharge.'
+                  can_disable:
+                    type: boolean
+                    description: 'Present and `false` for rules that cannot be turned off.'
+    IpdAdmissionAdvice:
+      title: IpdAdmissionAdvice
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Advice id.'
+        advised:
+          type: boolean
+          description: 'Always `true` for listed advices.'
+        created_at:
+          type: string
+          description: 'Date-time the admission was advised, as an ISO-8601 string.'
+        docid:
+          type: string
+          description: 'Id of the doctor who advised admission.'
+        include_procedures:
+          type: boolean
+          description: 'Whether procedures were advised with the admission.'
+        notes:
+          type: string
+          description: 'Notes from the advice.'
+        patientid:
+          type: string
+          description: 'Id of the patient.'
+        procedures:
+          type: array
+          description: 'Advised procedures.'
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+        pxid:
+          type: string
+          description: 'Id of the prescription the advice came from.'
+        visitid:
+          type: string
+          description: 'Id of the visit the advice came from.'
+    IpdNamedRef:
+      title: IpdNamedRef
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    IpdAdmission:
+      title: IpdAdmission
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          description: 'Admission id.'
+        bid:
+          type: string
+          description: 'Workspace id.'
+        ipid:
+          type: string
+          description: 'Patient IPD case number.'
+        pid:
+          type: string
+          description: 'Id of the patient.'
+        stage:
+          type: string
+          enum: ['IN', 'AD', 'DC']
+          description: 'Lifecycle stage: `IN` advised, `AD` admitted, `DC` discharged.'
+        status:
+          type: string
+          description: 'Detailed status within the stage, for example `BED_ASSIGNED`, `UNDER_CARE` or `DISCHARGED`.'
+        admission_date:
+          type: string
+          description: 'Admission date-time as an ISO-8601 string.'
+        discharge_date:
+          type: string
+          description: 'Discharge date-time as an ISO-8601 string. Present once discharged.'
+        patient:
+          type: object
+          additionalProperties: true
+          description: 'Patient details.'
+        attendee:
+          type: object
+          additionalProperties: true
+          description: 'Attendee (relative) details.'
+        insurance:
+          type: object
+          additionalProperties: true
+          description: 'Insurance details.'
+        procedures:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: 'Planned procedures.'
+        doc:
+          $ref: '#/components/schemas/IpdNamedRef'
+        refer:
+          $ref: '#/components/schemas/IpdNamedRef'
+        department:
+          $ref: '#/components/schemas/IpdNamedRef'
+        category:
+          $ref: '#/components/schemas/IpdNamedRef'
+        facility:
+          $ref: '#/components/schemas/IpdNamedRef'
+        bed:
+          type: string
+          description: 'Bed of the admission (usually a bed id).'
+        bedDetails:
+          $ref: '#/components/schemas/IpdBed'
+        rateplan:
+          type: object
+          additionalProperties: true
+          description: 'Rate plan with its inclusions.'
+        duration:
+          type: object
+          properties:
+            value:
+              type: number
+            unit:
+              type: string
+          description: 'Expected length of stay.'
+        notes:
+          type: string
+          description: 'Admission notes.'
+        medico_legal_case:
+          type: boolean
+          description: 'Whether this is a medico-legal case.'
+        totalbilled:
+          type: number
+          description: 'Total billed so far.'
+        totalpaid:
+          type: number
+          description: 'Total paid so far.'
+        created_at:
+          type: string
+          description: 'Created date-time as an ISO-8601 string.'
+        updated_at:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdEstimateItem:
+      title: IpdEstimateItem
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Rate plan id. Present only on the rate plan line.'
+        name:
+          type: string
+          description: 'Name of the line.'
+        service:
+          type: object
+          additionalProperties: true
+          description: 'Service details, when stored on the line.'
+        rate:
+          type: number
+          description: 'Price per unit.'
+        quantity:
+          type: number
+          description: 'Quantity.'
+        discount:
+          type: object
+          properties:
+            category:
+              type: string
+              enum: ['percentage', 'fixed']
+            value:
+              type: number
+          description: 'Discount on the line.'
+        remarks:
+          type: string
+          description: 'Remarks on the line.'
+        date:
+          description: 'Date of the line. On the rate plan line, the admission''s created date-time as an ISO-8601 string.'
+    IpdVisitReceipt:
+      title: IpdVisitReceipt
+      type: object
+      properties:
+        receipt_id:
+          type: number
+          description: 'Receipt id.'
+        receipt_url:
+          type: string
+          description: 'URL of the receipt.'
+        net_amount:
+          type: number
+          description: 'Net amount of the receipt.'
+        created_at:
+          type: string
+          description: 'Date-time the receipt was created.'
+        remarks:
+          type: string
+          description: 'Receipt remarks.'
+        receipt_payment:
+          type: array
+          description: 'Payments on the receipt.'
+          items:
+            type: object
+            properties:
+              paymode:
+                type: string
+              amount:
+                type: number
+        receipt_sku:
+          type: array
+          description: 'Billed items on the receipt.'
+          items:
+            type: object
+            additionalProperties: true
+        aid:
+          type: string
+          description: 'Id of the visit the receipt belongs to.'
+    IpdEstimateInput:
+      title: IpdEstimateInput
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - service_id
+        - rate
+        - quantity
+      properties:
+        name:
+          type: string
+          description: 'Name of the line.'
+        service_id:
+          type: string
+          description: 'Id of the billed service.'
+        rate:
+          type: number
+          description: 'Price per unit.'
+        quantity:
+          type: number
+          description: 'Quantity.'
+        discount:
+          type: object
+          additionalProperties: false
+          required:
+            - category
+            - value
+          properties:
+            category:
+              type: string
+              enum: ['percentage', 'fixed']
+              description: '`percentage` of the line amount, or a `fixed` amount.'
+            value:
+              type: number
+              description: 'Discount value.'
+          description: 'Optional discount on the line.'
+        remarks:
+          type: string
+          description: 'Optional remarks.'
     IpdServiceFailure:
       title: IpdServiceFailure
       type: object
