@@ -8423,6 +8423,237 @@ paths:
                 message: "unauthenticated"
       deprecated: false
 
+  /ipd/v1/service/categories:
+    post:
+      tags:
+        - IPD API
+      summary: Create Category
+      description: >-
+
+        ### Overview
+
+
+        This API creates a new **IPD category** for your workspace. A category
+        groups rooms (for example *ICU*, *General Ward* or
+        *Private Room*); rooms are created under a category and beds under a
+        room.
+
+
+        Only `name` is required. The category `id` and `updatedAt` are
+        server-generated. Fields not listed in the request body are rejected.
+
+
+      operationId: CreateIpdCategory
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The category to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: 'Display name of the category.'
+                description:
+                  type: string
+                  description: 'Optional free-text description of the category.'
+            example:
+              name: "ICU"
+              description: "Intensive Care Unit"
+      responses:
+        '200':
+          description: OK — the created category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdCategoryResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c2a9e4b0a1b2c3d4e5f6"
+                  name: "ICU"
+                  description: "Intensive Care Unit"
+                  updatedAt: "2026-10-07T09:30:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (for example `name` is missing or empty, or an unknown field was sent). Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/categories/{category_id}:
+    post:
+      tags:
+        - IPD API
+      summary: Update Category
+      description: >-
+
+        ### Overview
+
+
+        This API updates an existing **IPD category** of your workspace. It is a
+        partial update: only the fields sent in the request
+        body are changed, and fields that are omitted keep their current value.
+
+
+        Returns `400` with `Category not found` when the `category_id` does not
+        exist or belongs to another workspace.
+
+
+      operationId: UpdateIpdCategory
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: category_id
+          in: path
+          description: 'Id of the category to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c2a9e4b0a1b2c3d4e5f6"
+      requestBody:
+        description: 'The category fields to change. Send only the fields you want to update.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  description: 'New display name of the category.'
+                description:
+                  type: string
+                  description: 'New description of the category.'
+            example:
+              name: "Medical ICU"
+      responses:
+        '200':
+          description: OK — the updated category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdCategoryResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c2a9e4b0a1b2c3d4e5f6"
+                  name: "Medical ICU"
+                  description: "Intensive Care Unit"
+                  updatedAt: "2026-10-07T10:15:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (an unknown field was sent), the `category_id` is not a valid id, or the category was not found. Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Category not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    delete:
+      tags:
+        - IPD API
+      summary: Delete Category
+      description: >-
+
+        ### Overview
+
+
+        This API deletes an **IPD category** of your workspace. The delete is a
+        soft delete: the category is archived, not removed.
+
+
+        > **Cascading archive:** deleting a category also archives **every room under it and every bed in those rooms**. Archived categories, rooms and beds are no longer returned in listings.
+
+
+        Returns `400` with `Category not found` when the `category_id` does not
+        exist or belongs to another workspace.
+
+
+      operationId: DeleteIpdCategory
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: category_id
+          in: path
+          description: 'Id of the category to delete.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c2a9e4b0a1b2c3d4e5f6"
+      responses:
+        '200':
+          description: OK — the category (and its rooms and beds) were archived.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+              example:
+                success: true
+                data:
+                  success: true
+        '400':
+          description: Bad Request — the `category_id` is not a valid id, or the category was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Category not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
@@ -10967,6 +11198,37 @@ paths:
 
 components:
   schemas:
+    IpdCategory:
+      title: IpdCategory
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Category id.'
+        name:
+          type: string
+          description: 'Display name of the category.'
+        description:
+          type: string
+          description: 'Free-text description of the category. Absent when not set.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdCategoryResponse:
+      title: IpdCategoryResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdCategory'
+    IpdServiceError:
+      title: IpdServiceError
+      type: object
+      properties:
+        message:
+          type: string
+          description: 'Human-readable error message.'
     AuthLoginRequest:
       title: AuthLoginRequest
       required:
