@@ -13495,8 +13495,8 @@ paths:
 
         This API uses AI to **draft a discharge summary** for an IPD admission
         of your workspace, from the patient's details and the prescriptions of
-        the admission's visits. The draft is **streamed** as it is written, in
-        Markdown. To save it, use
+        the admission's visits (latest visit first, each dated). The draft is
+        **streamed** as HTML while it is written. To save it, use
         [Create Discharge Summary](/api-reference/doc-tool/ipd-api/discharge-summaries/create-discharge-summary).
 
 
@@ -13504,7 +13504,8 @@ paths:
         starting with `data:` followed by JSON:
 
 
-        - `text` — the next piece of the summary (append it to what you have).
+        - `text` — the next piece of the summary as HTML, sent a line at a
+        time (append it to what you have).
 
         - `is_eof` — `true` on the last event, which has empty `text`.
 
@@ -13517,71 +13518,6 @@ paths:
 
 
       operationId: GenerateIpdDischargeSummary
-      parameters:
-        - name: auth
-          in: header
-          required: true
-          schema:
-            type: string
-          example: >-
-            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
-        - name: admission_id
-          in: path
-          description: 'Id of the IPD admission.'
-          required: true
-          style: simple
-          schema:
-            type: string
-          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
-      responses:
-        '200':
-          description: OK — the discharge summary, streamed as server-sent events (Markdown text).
-          content:
-            text/event-stream:
-              schema:
-                type: string
-              example: |
-                data:{"text":"## Discharge Summary\n","is_eof":false,"tokens":{"input":-1,"index":0}}
-                data:{"text":"Patient was admitted with fever","is_eof":false,"tokens":{"input":-1,"index":1}}
-                data:{"text":"","is_eof":true,"tokens":{"input":-1,"index":2}}
-        '400':
-          description: Bad Request — the discharge summary could not be generated (for example the admission was not found).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IpdServiceFailure'
-              example:
-                success: false
-                error: "Admission not found"
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IpdServiceError'
-      deprecated: false
-
-  /ipd/v1/service/admissions/generate-discharge-summary/{admission_id}/beta:
-    get:
-      tags:
-        - IPD API
-      summary: Generate Discharge Summary (Beta)
-      description: >-
-
-        ### Overview
-
-
-        **Beta** version of
-        [Generate Discharge Summary](/api-reference/doc-tool/ipd-api/admissions/generate-discharge-summary):
-        drafts the discharge summary with a newer prompt and a more compact,
-        date-ordered view of the admission's visits.
-
-
-        The stream has the same event format, but each `text` piece is **HTML**
-        instead of Markdown, sent a line at a time. This API may change.
-
-
-      operationId: GenerateIpdDischargeSummaryBeta
       parameters:
         - name: auth
           in: header
