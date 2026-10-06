@@ -11251,7 +11251,7 @@ paths:
                   dispatchedAt: "2026-10-07T12:40:00.000Z"
                   createdAt: "2026-10-07T12:10:00.000Z"
                   updatedAt: "2026-10-07T12:40:00.000Z"
-                  pharmacyName: "Eka In-house Pharmacy"
+                  pharmacyName: "In-house Pharmacy"
                   lineItems:
                     - name: "Paracetamol 500mg Tablet"
                       genericName: "Paracetamol"
@@ -12556,6 +12556,471 @@ paths:
             Bad Request. Returns `{ message }` when the request body failed
             schema validation (for example `enabled` is missing or not a
             boolean; the `message` is currently empty), or
+            `{ success: false, error }` when the setting could not be saved.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/pharmacies:
+    get:
+      tags:
+        - IPD API
+      summary: List Pharmacies
+      description: >-
+
+        ### Overview
+
+
+        This API lists the **pharmacies** your workspace can order medicines
+        from, across all pharmacy providers set up for it: eVital pharmacies
+        (when eVital is set up) and the in-house pharmacy (`id: dawakhana`,
+        when Dawakhana is enabled).
+
+
+        Use a pharmacy's `id` as `pharmacyId` when placing an order. Check
+        `managesInventory` before ordering: when `true` (eVital), check stock
+        with [Get Inventory Status](/api-reference/doc-tool/ipd-api/pharmacies/get-inventory-status)
+        and send each item's `quantity` in the pharmacy's `orderMode` unit;
+        when `false` (in-house pharmacy), stock and prices are not tracked and
+        the order is priced at dispatch.
+
+
+        If one provider cannot be reached, its pharmacies are left out and the
+        rest are still returned.
+
+
+      operationId: ListIpdPharmacies
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the available pharmacies.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdPharmacy'
+              example:
+                success: true
+                data:
+                  - id: "dawakhana"
+                    name: "In-house Pharmacy"
+                    provider: "dawakhana"
+                    managesInventory: false
+                  - id: "Q2hlbWlzdC0xMjM0"
+                    name: "City Medicals"
+                    provider: "evital"
+                    managesInventory: true
+                    orderMode: "strip"
+        '400':
+          description: Bad Request — the pharmacies could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/pharmacies/inventory-status:
+    post:
+      tags:
+        - IPD API
+      summary: Get Inventory Status
+      description: >-
+
+        ### Overview
+
+
+        This API returns the **stock and price** of the given medicines at each
+        pharmacy that tracks inventory (eVital pharmacies). Each result is one
+        pharmacy with the matching medicines' availability, price and packaging.
+
+
+        The in-house pharmacy does not track stock, so it is not included. If
+        one provider cannot be reached, its results are left out.
+
+
+      operationId: GetIpdInventoryStatus
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The medicines to check.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - medicineIds
+              properties:
+                medicineIds:
+                  type: array
+                  items:
+                    type: string
+                  description: 'Ids of the medicines to check.'
+            example:
+              medicineIds:
+                - "med-paracetamol-500"
+                - "med-amoxicillin-250"
+      responses:
+        '200':
+          description: OK — stock per pharmacy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdInventoryResult'
+              example:
+                success: true
+                data:
+                  - provider: "evital"
+                    pharmacyId: "Q2hlbWlzdC0xMjM0"
+                    pharmacyName: "City Medicals"
+                    inventory:
+                      - medicineId: "med-paracetamol-500"
+                        name: "Paracetamol 500mg Tablet"
+                        availableQty: 120
+                        mrp: 30
+                        price: 27
+                        sellInLoose: true
+                        packing: "Strip"
+                        packSize: "15 Tablet"
+                        packingSize: "1 Strip of 15 Tablet"
+                        size: 15
+        '400':
+          description: >-
+            Bad Request. Returns `{ message }` when the request body failed
+            schema validation (for example `medicineIds` is missing; the
+            `message` is currently empty), or `{ success: false, error }` when
+            the stock could not be loaded.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/pharmacies/clearance-clear:
+    post:
+      tags:
+        - IPD API
+      summary: Mark Pharmacy Clearance Cleared
+      description: >-
+
+        ### Overview
+
+
+        This API records that **one pharmacy has closed its dues** for a patient
+        being discharged from your workspace. The pharmacy must already have
+        been notified about the discharge for this admission; otherwise the
+        request fails with `400`.
+
+
+        When this was the **last pharmacy still pending**, the admission's
+        pharmacy clearance is completed automatically and the response returns
+        `clearanceCompleted: true`.
+
+
+        For the in-house pharmacy (`provider: dawakhana`, `pharmacyId:
+        dawakhana`), the admission is also removed from
+        [List Dawakhana Pending Clearances](/api-reference/doc-tool/ipd-api/dawakhana/list-dawakhana-clearances).
+        The user making the request is recorded as the person who cleared it.
+
+
+      operationId: ClearIpdPharmacyClearance
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The pharmacy that has closed its dues.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - admissionId
+                - provider
+                - pharmacyId
+              properties:
+                admissionId:
+                  type: string
+                  description: 'Id of the IPD admission being discharged.'
+                provider:
+                  type: string
+                  enum: ['evital', 'dawakhana']
+                  description: 'Provider of the pharmacy that cleared.'
+                pharmacyId:
+                  type: string
+                  description: 'Id of the pharmacy that cleared (`dawakhana` for the in-house pharmacy).'
+                note:
+                  type: string
+                  description: 'Optional note stored with the clearance.'
+            example:
+              admissionId: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              provider: "dawakhana"
+              pharmacyId: "dawakhana"
+              note: "All dues settled"
+      responses:
+        '200':
+          description: OK — the pharmacy was marked cleared.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      clearanceCompleted:
+                        type: boolean
+                        description: '`true` when this was the last pending pharmacy and the pharmacy clearance was completed.'
+              example:
+                success: true
+                data:
+                  clearanceCompleted: true
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the pharmacy
+            was not notified for this admission or the clearance could not be
+            saved, or `{ message }` when the request body failed schema
+            validation (for example a required field is missing or `provider` is
+            not allowed; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Unknown pharmacy notify target dawakhana/dawakhana on admission a1b2c3d4-5678-90ab-cdef-1234567890ab"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/pharmacies/billing-config/evital:
+    get:
+      tags:
+        - IPD API
+      summary: Get eVital Billing Config
+      description: >-
+
+        ### Overview
+
+
+        This API returns the **eVital integration's state** for your workspace:
+        whether eVital is set up (`isEnabled`), and how medicines from eVital
+        are priced for a GST-exempt admission (`exemptAdmissionPricing`).
+
+
+        `exemptAdmissionPricing` is `base` (the default) or `mrp`:
+
+
+        - `base` — bill the tax-exclusive rate; the workspace absorbs the
+        pharmacy's GST.
+
+        - `mrp` — bill the GST-inclusive price per unit that the pharmacy
+        charged.
+
+
+        It reads as `base` when it has never been set, or while eVital is not
+        set up.
+
+
+      operationId: GetIpdEvitalBillingConfig
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the eVital billing config.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      isEnabled:
+                        type: boolean
+                        description: '`true` when eVital is set up for your workspace.'
+                      exemptAdmissionPricing:
+                        type: string
+                        enum: ['base', 'mrp']
+                        description: 'How eVital medicines are priced for a GST-exempt admission.'
+              example:
+                success: true
+                data:
+                  isEnabled: true
+                  exemptAdmissionPricing: "base"
+        '400':
+          description: Bad Request — the config could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/pharmacies/billing-config:
+    put:
+      tags:
+        - IPD API
+      summary: Update Pharmacy Billing Config
+      description: >-
+
+        ### Overview
+
+
+        This API sets how one pharmacy provider's medicines are priced for a
+        **GST-exempt admission** in your workspace. Each provider (`evital`,
+        `dawakhana`) is configured separately.
+
+
+        `exemptAdmissionPricing` is `base` (the default) or `mrp`:
+
+
+        - `base` — bill the tax-exclusive rate; the workspace absorbs the
+        pharmacy's GST.
+
+        - `mrp` — bill the GST-inclusive price per unit that the pharmacy
+        charged.
+
+
+      operationId: UpdateIpdPharmacyBillingConfig
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The provider and its pricing setting.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - provider
+                - exemptAdmissionPricing
+              properties:
+                provider:
+                  type: string
+                  enum: ['evital', 'dawakhana']
+                  description: 'Pharmacy provider to configure.'
+                exemptAdmissionPricing:
+                  type: string
+                  enum: ['base', 'mrp']
+                  description: 'How this provider''s medicines are priced for a GST-exempt admission.'
+            example:
+              provider: "evital"
+              exemptAdmissionPricing: "mrp"
+      responses:
+        '200':
+          description: OK — the saved setting.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      provider:
+                        type: string
+                        enum: ['evital', 'dawakhana']
+                      exemptAdmissionPricing:
+                        type: string
+                        enum: ['base', 'mrp']
+              example:
+                success: true
+                data:
+                  provider: "evital"
+                  exemptAdmissionPricing: "mrp"
+        '400':
+          description: >-
+            Bad Request. Returns `{ message }` when the request body failed
+            schema validation (for example a field is missing or not one of the
+            allowed values; the `message` is currently empty), or
             `{ success: false, error }` when the setting could not be saved.
           content:
             application/json:
@@ -15789,6 +16254,84 @@ components:
             enabled:
               type: boolean
               description: '`true` when the in-house pharmacy is enabled.'
+    IpdPharmacy:
+      title: IpdPharmacy
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Pharmacy id. Use it as `pharmacyId` when placing an order.'
+        name:
+          type: string
+          description: 'Display name of the pharmacy.'
+        provider:
+          type: string
+          enum: ['evital', 'dawakhana']
+          description: 'Provider of the pharmacy.'
+        managesInventory:
+          type: boolean
+          description: '`true` when the pharmacy tracks stock and price at order time (eVital); `false` for the in-house pharmacy.'
+        orderMode:
+          type: string
+          enum: ['loose', 'strip']
+          description: 'Unit the pharmacy takes orders in. Send order quantities in this unit. Absent when not set.'
+        meta:
+          type: object
+          additionalProperties: true
+          description: 'Provider-specific extra details.'
+    IpdInventoryItem:
+      title: IpdInventoryItem
+      type: object
+      properties:
+        medicineId:
+          type: string
+          description: 'Id of the medicine.'
+        name:
+          type: string
+          description: 'Name of the medicine.'
+        availableQty:
+          type: number
+          description: 'Stock available.'
+        mrp:
+          type: number
+          description: 'Maximum retail price.'
+        price:
+          type: number
+          description: 'Selling price.'
+        sellInLoose:
+          type: boolean
+          description: '`true` when the medicine can be sold per unit, not only as a full pack.'
+        packing:
+          type: string
+          description: 'Pack type, for example `Strip`.'
+        packSize:
+          type: string
+          description: 'Units per pack as text, for example `15 Tablet`.'
+        packingSize:
+          type: string
+          description: 'Full packaging label, for example `1 Strip of 15 Tablet`.'
+        size:
+          type: number
+          description: 'Units per pack, for converting between loose and strip quantities.'
+    IpdInventoryResult:
+      title: IpdInventoryResult
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: ['evital', 'dawakhana']
+          description: 'Provider of the pharmacy.'
+        pharmacyId:
+          type: string
+          description: 'Id of the pharmacy.'
+        pharmacyName:
+          type: string
+          description: 'Name of the pharmacy.'
+        inventory:
+          type: array
+          description: 'Stock of the requested medicines at this pharmacy.'
+          items:
+            $ref: '#/components/schemas/IpdInventoryItem'
     IpdServiceFailure:
       title: IpdServiceFailure
       type: object
