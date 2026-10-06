@@ -9290,6 +9290,636 @@ paths:
                 $ref: '#/components/schemas/IpdServiceError'
       deprecated: false
 
+  /ipd/v1/service/rateplans:
+    post:
+      tags:
+        - IPD API
+      summary: Create Rate Plan
+      description: >-
+
+        ### Overview
+
+
+        This API creates a new **IPD rate plan** for your workspace. A rate plan
+        is a named set of charges (for example *Standard ICU*); the individual
+        charges are added to it as inclusions with
+        [Create Rate Plan Inclusion](/api-reference/doc-tool/ipd-api/rate-plans/create-rate-plan-inclusion).
+
+
+        Only `name` is accepted. The rate plan `id` and `updatedAt` are
+        server-generated. Fields not listed in the request body are rejected.
+
+
+      operationId: CreateIpdRatePlan
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The rate plan to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: 'Display name of the rate plan.'
+            example:
+              name: "Standard ICU"
+      responses:
+        '200':
+          description: OK — the created rate plan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdRatePlanResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c6f0e4b0a1b2c3d4e904"
+                  name: "Standard ICU"
+                  updatedAt: "2026-10-07T10:00:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (for example `name` is missing or empty, or an unknown field was sent). Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/rateplans/{rate_plan_id}:
+    post:
+      tags:
+        - IPD API
+      summary: Update Rate Plan
+      description: >-
+
+        ### Overview
+
+
+        This API renames an existing **IPD rate plan** of your workspace. When
+        `name` is omitted the rate plan is returned unchanged.
+
+
+        Returns `400` with `Rate plan not found` when the `rate_plan_id` does
+        not exist or belongs to another workspace.
+
+
+      operationId: UpdateIpdRatePlan
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: rate_plan_id
+          in: path
+          description: 'Id of the rate plan to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c6f0e4b0a1b2c3d4e904"
+      requestBody:
+        description: 'The rate plan fields to change.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  description: 'New display name of the rate plan.'
+            example:
+              name: "Standard ICU (2026)"
+      responses:
+        '200':
+          description: OK — the updated rate plan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdRatePlanResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c6f0e4b0a1b2c3d4e904"
+                  name: "Standard ICU (2026)"
+                  updatedAt: "2026-10-07T10:30:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (an unknown field was sent), the `rate_plan_id` is not a valid id, or the rate plan was not found. Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Rate plan not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    delete:
+      tags:
+        - IPD API
+      summary: Delete Rate Plan
+      description: >-
+
+        ### Overview
+
+
+        This API deletes an **IPD rate plan** of your workspace. The delete is a
+        soft delete: the rate plan is archived, not removed.
+
+
+        > **Cascading archive:** deleting a rate plan also archives **every inclusion of that rate plan**. Archived rate plans and inclusions are no longer returned in listings.
+
+
+        Returns `400` with `Rate plan not found` when the `rate_plan_id` does
+        not exist or belongs to another workspace.
+
+
+      operationId: DeleteIpdRatePlan
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: rate_plan_id
+          in: path
+          description: 'Id of the rate plan to delete.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c6f0e4b0a1b2c3d4e904"
+      responses:
+        '200':
+          description: OK — the rate plan (and its inclusions) were archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDeleteResponse'
+              example:
+                success: true
+                data:
+                  success: true
+        '400':
+          description: Bad Request — the `rate_plan_id` is not a valid id, or the rate plan was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Rate plan not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/rateplans/inclusions:
+    post:
+      tags:
+        - IPD API
+      summary: Create Rate Plan Inclusion
+      description: >-
+
+        ### Overview
+
+
+        This API adds an **inclusion** to an IPD rate plan of your workspace. An
+        inclusion is a single charge in the rate plan (for example *Bed charges*
+        or *Nursing charges*) with its `rate`.
+
+
+        `name`, `rate` and `plan` are all required. The inclusion `id` and
+        `updatedAt` are server-generated. Fields not listed in the request body
+        are rejected.
+
+
+      operationId: CreateIpdRatePlanInclusion
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The inclusion to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - rate
+                - plan
+              properties:
+                name:
+                  type: string
+                  description: 'Display name of the inclusion.'
+                rate:
+                  type: number
+                  description: 'Rate (amount) of the inclusion.'
+                plan:
+                  type: string
+                  description: 'Id of the rate plan this inclusion belongs to.'
+            example:
+              name: "Bed charges"
+              rate: 2500
+              plan: "66f1c6f0e4b0a1b2c3d4e904"
+      responses:
+        '200':
+          description: OK — the created inclusion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdRatePlanInclusionResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c7a1e4b0a1b2c3d4ea05"
+                  plan: "66f1c6f0e4b0a1b2c3d4e904"
+                  name: "Bed charges"
+                  rate: 2500
+                  updatedAt: "2026-10-07T10:05:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (for example `name`, `rate` or `plan` is missing, `name` is empty, `rate` is not a number, `plan` is not a valid id, or an unknown field was sent). Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/rateplans/inclusions/{inclusion_id}:
+    post:
+      tags:
+        - IPD API
+      summary: Update Rate Plan Inclusion
+      description: >-
+
+        ### Overview
+
+
+        This API updates an existing **rate plan inclusion** of your workspace.
+        It is a partial update: only the fields sent in the request body are
+        changed, and fields that are omitted keep their current value. Send
+        `plan` to move the inclusion to another rate plan.
+
+
+        Returns `400` with `Rate plan inclusion not found` when the
+        `inclusion_id` does not exist or belongs to another workspace.
+
+
+      operationId: UpdateIpdRatePlanInclusion
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: inclusion_id
+          in: path
+          description: 'Id of the inclusion to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c7a1e4b0a1b2c3d4ea05"
+      requestBody:
+        description: 'The inclusion fields to change. Send only the fields you want to update.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  description: 'New display name of the inclusion.'
+                rate:
+                  type: number
+                  description: 'New rate (amount) of the inclusion.'
+                plan:
+                  type: string
+                  description: 'Id of the rate plan to move the inclusion to.'
+            example:
+              rate: 2800
+      responses:
+        '200':
+          description: OK — the updated inclusion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdRatePlanInclusionResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c7a1e4b0a1b2c3d4ea05"
+                  plan: "66f1c6f0e4b0a1b2c3d4e904"
+                  name: "Bed charges"
+                  rate: 2800
+                  updatedAt: "2026-10-07T10:35:00.000Z"
+        '400':
+          description: Bad Request — the request body failed validation (for example `rate` is not a number or an unknown field was sent), the `inclusion_id` or `plan` is not a valid id, or the inclusion was not found. Schema-validation errors currently return an empty `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Rate plan inclusion not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    delete:
+      tags:
+        - IPD API
+      summary: Delete Rate Plan Inclusion
+      description: >-
+
+        ### Overview
+
+
+        This API deletes an **inclusion** from an IPD rate plan of your
+        workspace. The delete is a soft delete: the inclusion is archived, not
+        removed, and is no longer returned in listings.
+
+
+        Returns `400` with `Rate plan inclusion not found` when the
+        `inclusion_id` does not exist or belongs to another workspace.
+
+
+      operationId: DeleteIpdRatePlanInclusion
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: inclusion_id
+          in: path
+          description: 'Id of the inclusion to delete.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c7a1e4b0a1b2c3d4ea05"
+      responses:
+        '200':
+          description: OK — the inclusion was archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDeleteResponse'
+              example:
+                success: true
+                data:
+                  success: true
+        '400':
+          description: Bad Request — the `inclusion_id` is not a valid id, or the inclusion was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+              example:
+                message: "Rate plan inclusion not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/rate-plan-clinic-relations:
+    post:
+      tags:
+        - IPD API
+      summary: Link Rate Plan to Clinic
+      description: >-
+
+        ### Overview
+
+
+        This API links an **IPD rate plan** to a **clinic** of your workspace,
+        so the rate plan is available at that clinic. A rate plan can be linked
+        to more than one clinic.
+
+
+        The link is unique per `plan` and `clinic_id`: calling this API again
+        for the same pair updates the existing link instead of creating a new
+        one. `archived` defaults to `false`, so calling it for a previously
+        removed link makes it active again.
+
+
+        Returns `400` with `Rate plan not found` when the `plan` does not exist
+        or belongs to another workspace.
+
+
+      operationId: CreateIpdRatePlanClinicRelation
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The rate plan and clinic to link.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - plan
+                - clinic_id
+              properties:
+                plan:
+                  type: string
+                  description: 'Id of the rate plan to link.'
+                clinic_id:
+                  type: string
+                  description: 'Id of the clinic to link the rate plan to.'
+                archived:
+                  type: boolean
+                  default: false
+                  description: 'Set to `true` to store the link as removed. Defaults to `false`.'
+            example:
+              plan: "66f1c6f0e4b0a1b2c3d4e904"
+              clinic_id: "clinic-01"
+      responses:
+        '200':
+          description: OK — the rate plan-clinic link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdRatePlanClinicRelationResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c8b3e4b0a1b2c3d4eb06"
+                  plan: "66f1c6f0e4b0a1b2c3d4e904"
+                  clinic_id: "clinic-01"
+                  archived: false
+                  updatedAt: "2026-10-07T10:10:00.000Z"
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `plan` is
+            not a valid id or the rate plan was not found, or `{ message }` when
+            the request body failed schema validation (for example `plan` or
+            `clinic_id` is missing, or an unknown field was sent; the `message`
+            is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Rate plan not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    delete:
+      tags:
+        - IPD API
+      summary: Unlink Rate Plan from Clinic
+      description: >-
+
+        ### Overview
+
+
+        This API removes the link between an **IPD rate plan** and a **clinic**
+        of your workspace. The link is archived, not removed, and can be made
+        active again with
+        [Link Rate Plan to Clinic](/api-reference/doc-tool/ipd-api/rate-plans/link-rate-plan-to-clinic).
+
+
+        The rate plan and clinic are sent in the **request body**, not in the
+        path.
+
+
+        Returns `400` with `Rate plan clinic relation not found` when no link
+        exists for the given `plan` and `clinic_id` in your workspace.
+
+
+      operationId: DeleteIpdRatePlanClinicRelation
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The rate plan and clinic to unlink.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - plan
+                - clinic_id
+              properties:
+                plan:
+                  type: string
+                  description: 'Id of the rate plan.'
+                clinic_id:
+                  type: string
+                  description: 'Id of the clinic.'
+            example:
+              plan: "66f1c6f0e4b0a1b2c3d4e904"
+              clinic_id: "clinic-01"
+      responses:
+        '200':
+          description: OK — the rate plan-clinic link was archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDeleteResponse'
+              example:
+                success: true
+                data:
+                  success: true
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `plan` is
+            not a valid id or no link was found, or `{ message }` when the
+            request body failed schema validation (the `message` is currently
+            empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+              example:
+                success: false
+                error: "Rate plan clinic relation not found"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
@@ -11933,6 +12563,81 @@ components:
           type: boolean
         data:
           $ref: '#/components/schemas/IpdBedClinicRelation'
+    IpdRatePlan:
+      title: IpdRatePlan
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Rate plan id.'
+        name:
+          type: string
+          description: 'Display name of the rate plan.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdRatePlanResponse:
+      title: IpdRatePlanResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdRatePlan'
+    IpdRatePlanInclusion:
+      title: IpdRatePlanInclusion
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Inclusion id.'
+        plan:
+          type: string
+          description: 'Id of the rate plan the inclusion belongs to.'
+        name:
+          type: string
+          description: 'Display name of the inclusion.'
+        rate:
+          type: number
+          description: 'Rate (amount) of the inclusion.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdRatePlanInclusionResponse:
+      title: IpdRatePlanInclusionResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdRatePlanInclusion'
+    IpdRatePlanClinicRelation:
+      title: IpdRatePlanClinicRelation
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Rate plan-clinic link id.'
+        plan:
+          type: string
+          description: 'Id of the linked rate plan.'
+        clinic_id:
+          type: string
+          description: 'Id of the linked clinic.'
+        archived:
+          type: boolean
+          description: '`true` when the link has been removed.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+    IpdRatePlanClinicRelationResponse:
+      title: IpdRatePlanClinicRelationResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdRatePlanClinicRelation'
     IpdServiceFailure:
       title: IpdServiceFailure
       type: object
