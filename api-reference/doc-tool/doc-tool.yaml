@@ -10563,6 +10563,313 @@ paths:
                 error: "Nursing note template not found"
       deprecated: false
 
+  /ipd/v1/service/discharge-summaries:
+    post:
+      tags:
+        - IPD API
+      summary: Create Discharge Summary
+      description: >-
+
+        ### Overview
+
+
+        This API saves a **discharge summary** for an IPD admission of your
+        workspace. The summary content is sent in two forms: `content_html`
+        (rendered HTML) and `content_json` (the structured form of the same
+        content).
+
+
+        Each call creates a new discharge summary, so an admission can have more
+        than one. To change an existing summary, use
+        [Update Discharge Summary](/api-reference/doc-tool/ipd-api/discharge-summaries/update-discharge-summary).
+
+
+        The summary's author (`actor_name` and `actor_oid`) is recorded from the
+        user making the request. The summary `id` and timestamps are
+        server-generated. Fields not listed in the request body are rejected.
+
+
+      operationId: CreateIpdDischargeSummary
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The discharge summary to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - admission_id
+                - patient_id
+                - content_html
+                - content_json
+              properties:
+                admission_id:
+                  type: string
+                  description: 'Id of the IPD admission the summary belongs to.'
+                patient_id:
+                  type: string
+                  description: 'Id of the patient the summary is about.'
+                content_html:
+                  type: string
+                  description: 'Summary content as HTML.'
+                content_json:
+                  type: array
+                  items: {}
+                  description: 'Summary content in structured (JSON) form.'
+            example:
+              admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              patient_id: "pid-321"
+              content_html: "<h2>Discharge Summary</h2><p>Patient recovered and is fit for discharge.</p>"
+              content_json:
+                - type: "heading"
+                  text: "Discharge Summary"
+                - type: "paragraph"
+                  text: "Patient recovered and is fit for discharge."
+      responses:
+        '200':
+          description: OK — the created discharge summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDischargeSummaryResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cbf6e4b0a1b2c3d4ee09"
+                  admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  patient_id: "pid-321"
+                  actor_name: "Vivek Sharma"
+                  actor_oid: "161467756044203"
+                  content_html: "<h2>Discharge Summary</h2><p>Patient recovered and is fit for discharge.</p>"
+                  content_json:
+                    - type: "heading"
+                      text: "Discharge Summary"
+                    - type: "paragraph"
+                      text: "Patient recovered and is fit for discharge."
+                  createdAt: "2026-10-07T12:00:00.000Z"
+                  updatedAt: "2026-10-07T12:00:00.000Z"
+                  __v: 0
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the summary
+            could not be saved (for example `content_html` is empty), or
+            `{ message }` when the request body failed schema validation (for
+            example a required field is missing or an unknown field was sent;
+            the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/discharge-summaries/admission/{admission_id}:
+    get:
+      tags:
+        - IPD API
+      summary: List Discharge Summaries for Admission
+      description: >-
+
+        ### Overview
+
+
+        This API returns all **discharge summaries** of an IPD admission of your
+        workspace, newest first (by creation time). An admission with no
+        discharge summary returns an empty list.
+
+
+      operationId: ListIpdDischargeSummaries
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      responses:
+        '200':
+          description: OK — the discharge summaries of the admission.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdDischargeSummary'
+              example:
+                success: true
+                data:
+                  - id: "66f1cbf6e4b0a1b2c3d4ee09"
+                    admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    patient_id: "pid-321"
+                    actor_name: "Vivek Sharma"
+                    actor_oid: "161467756044203"
+                    content_html: "<h2>Discharge Summary</h2><p>Patient recovered and is fit for discharge.</p>"
+                    content_json:
+                      - type: "heading"
+                        text: "Discharge Summary"
+                      - type: "paragraph"
+                        text: "Patient recovered and is fit for discharge."
+                    createdAt: "2026-10-07T12:00:00.000Z"
+                    updatedAt: "2026-10-07T12:00:00.000Z"
+                    __v: 0
+        '400':
+          description: Bad Request — the discharge summaries could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/discharge-summaries/{summary_id}:
+    patch:
+      tags:
+        - IPD API
+      summary: Update Discharge Summary
+      description: >-
+
+        ### Overview
+
+
+        This API updates the content of a **discharge summary** of your
+        workspace. It is a partial update: only the fields sent in the request
+        body are changed, and fields that are omitted keep their current value.
+        The original author (`actor_name` and `actor_oid`) is not changed.
+
+
+        Returns `404` with `Discharge summary not found` when the `summary_id`
+        does not exist or belongs to another workspace.
+
+
+      operationId: UpdateIpdDischargeSummary
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: summary_id
+          in: path
+          description: 'Id of the discharge summary to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cbf6e4b0a1b2c3d4ee09"
+      requestBody:
+        description: 'The summary fields to change. Send only the fields you want to update.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                content_html:
+                  type: string
+                  description: 'New summary content as HTML.'
+                content_json:
+                  type: array
+                  items: {}
+                  description: 'New summary content in structured (JSON) form.'
+            example:
+              content_html: "<h2>Discharge Summary</h2><p>Patient recovered. Follow up in 7 days.</p>"
+              content_json:
+                - type: "heading"
+                  text: "Discharge Summary"
+                - type: "paragraph"
+                  text: "Patient recovered. Follow up in 7 days."
+      responses:
+        '200':
+          description: OK — the updated discharge summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdDischargeSummaryResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cbf6e4b0a1b2c3d4ee09"
+                  admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  patient_id: "pid-321"
+                  actor_name: "Vivek Sharma"
+                  actor_oid: "161467756044203"
+                  content_html: "<h2>Discharge Summary</h2><p>Patient recovered. Follow up in 7 days.</p>"
+                  content_json:
+                    - type: "heading"
+                      text: "Discharge Summary"
+                    - type: "paragraph"
+                      text: "Patient recovered. Follow up in 7 days."
+                  createdAt: "2026-10-07T12:00:00.000Z"
+                  updatedAt: "2026-10-07T12:30:00.000Z"
+                  __v: 0
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the
+            `summary_id` is not a valid id or the summary could not be saved
+            (for example `content_html` is empty), or `{ message }` when the
+            request body failed schema validation (for example an unknown field
+            was sent; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the discharge summary was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Discharge summary not found"
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
@@ -13404,6 +13711,49 @@ components:
           type: boolean
         data:
           $ref: '#/components/schemas/IpdNursingNoteTemplate'
+    IpdDischargeSummary:
+      title: IpdDischargeSummary
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Discharge summary id.'
+        admission_id:
+          type: string
+          description: 'Id of the IPD admission the summary belongs to.'
+        patient_id:
+          type: string
+          description: 'Id of the patient the summary is about.'
+        actor_name:
+          type: string
+          description: 'Name of the user who created the summary.'
+        actor_oid:
+          type: string
+          description: 'Id of the user who created the summary.'
+        content_html:
+          type: string
+          description: 'Summary content as HTML.'
+        content_json:
+          type: array
+          items: {}
+          description: 'Summary content in structured (JSON) form.'
+        createdAt:
+          type: string
+          description: 'Created date-time as an ISO-8601 string.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+        __v:
+          type: number
+          description: 'Internal document version.'
+    IpdDischargeSummaryResponse:
+      title: IpdDischargeSummaryResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdDischargeSummary'
     IpdServiceFailure:
       title: IpdServiceFailure
       type: object
