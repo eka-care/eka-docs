@@ -9920,6 +9920,649 @@ paths:
                 $ref: '#/components/schemas/IpdServiceError'
       deprecated: false
 
+  /ipd/v1/service/nursing-notes:
+    post:
+      tags:
+        - IPD API
+      summary: Create Nursing Note
+      description: >-
+
+        ### Overview
+
+
+        This API adds a **nursing note** to an IPD admission of your workspace.
+        The note content is sent in two forms: `content_html` (rendered HTML)
+        and `content_json` (the structured form of the same content).
+
+
+        The note's author (`actor_name` and `actor_oid`) is recorded from the
+        user making the request. The note `id` and timestamps are
+        server-generated. Fields not listed in the request body are rejected.
+
+
+      operationId: CreateIpdNursingNote
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The nursing note to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - admission_id
+                - patient_id
+                - content_html
+                - content_json
+                - date
+              properties:
+                admission_id:
+                  type: string
+                  description: 'Id of the IPD admission the note belongs to.'
+                patient_id:
+                  type: string
+                  description: 'Id of the patient the note is about.'
+                content_html:
+                  type: string
+                  description: 'Note content as HTML.'
+                content_json:
+                  type: array
+                  items: {}
+                  description: 'Note content in structured (JSON) form.'
+                tag:
+                  type: array
+                  items:
+                    type: string
+                  description: 'Optional tags for the note.'
+                date:
+                  type: string
+                  description: 'Date-time the note is recorded for, as an ISO-8601 string.'
+            example:
+              admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              patient_id: "pid-321"
+              content_html: "<p>Patient stable. BP 120/80, pulse 78.</p>"
+              content_json:
+                - type: "paragraph"
+                  text: "Patient stable. BP 120/80, pulse 78."
+              tag:
+                - "vitals"
+              date: "2026-10-07T08:00:00.000Z"
+      responses:
+        '200':
+          description: OK — the created nursing note.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdNursingNoteResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c9d4e4b0a1b2c3d4ec07"
+                  admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  patient_id: "pid-321"
+                  actor_name: "Anita Rao"
+                  actor_oid: "161467756044203"
+                  content_html: "<p>Patient stable. BP 120/80, pulse 78.</p>"
+                  content_json:
+                    - type: "paragraph"
+                      text: "Patient stable. BP 120/80, pulse 78."
+                  tag:
+                    - "vitals"
+                  date: "2026-10-07T08:00:00.000Z"
+                  createdAt: "2026-10-07T08:02:11.000Z"
+                  updatedAt: "2026-10-07T08:02:11.000Z"
+                  __v: 0
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the note could
+            not be saved (for example `content_html` is empty or `date` is not a
+            valid date), or `{ message }` when the request body failed schema
+            validation (for example a required field is missing or an unknown
+            field was sent; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/nursing-notes/admission/{admission_id}:
+    get:
+      tags:
+        - IPD API
+      summary: List Nursing Notes for Admission
+      description: >-
+
+        ### Overview
+
+
+        This API returns all **nursing notes** of an IPD admission of your
+        workspace, newest first (by `date`). An admission with no notes returns
+        an empty list.
+
+
+        > **Archived notes are included.** Notes removed with [Update Nursing Note](/api-reference/doc-tool/ipd-api/nursing-notes/update-nursing-note) are returned with `archived: true`; filter them out if you only want active notes.
+
+
+      operationId: ListIpdNursingNotes
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: admission_id
+          in: path
+          description: 'Id of the IPD admission.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+      responses:
+        '200':
+          description: OK — the nursing notes of the admission.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdNursingNote'
+              example:
+                success: true
+                data:
+                  - id: "66f1c9d4e4b0a1b2c3d4ec07"
+                    admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    patient_id: "pid-321"
+                    actor_name: "Anita Rao"
+                    actor_oid: "161467756044203"
+                    content_html: "<p>Patient stable. BP 120/80, pulse 78.</p>"
+                    content_json:
+                      - type: "paragraph"
+                        text: "Patient stable. BP 120/80, pulse 78."
+                    tag:
+                      - "vitals"
+                    date: "2026-10-07T08:00:00.000Z"
+                    createdAt: "2026-10-07T08:02:11.000Z"
+                    updatedAt: "2026-10-07T08:02:11.000Z"
+                    __v: 0
+        '400':
+          description: Bad Request — the notes could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/nursing-notes/{note_id}:
+    patch:
+      tags:
+        - IPD API
+      summary: Update Nursing Note
+      description: >-
+
+        ### Overview
+
+
+        This API updates a **nursing note** of your workspace. It is a partial
+        update: only the fields sent in the request body are changed, and fields
+        that are omitted keep their current value.
+
+
+        **To delete a note**, send `archived: true`. The note is archived (not
+        removed) and the user making the request is recorded in
+        `archived_by_oid`, `archived_by_name` and `archived_at`. Sending
+        `archived: false` has no effect, so an archived note cannot be restored.
+
+
+        Returns `404` with `Nursing note not found` when the `note_id` does not
+        exist or belongs to another workspace.
+
+
+      operationId: UpdateIpdNursingNote
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: note_id
+          in: path
+          description: 'Id of the nursing note to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1c9d4e4b0a1b2c3d4ec07"
+      requestBody:
+        description: 'The note fields to change. Send only the fields you want to update.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                content_html:
+                  type: string
+                  description: 'New note content as HTML.'
+                content_json:
+                  type: array
+                  items: {}
+                  description: 'New note content in structured (JSON) form.'
+                tag:
+                  type: array
+                  items:
+                    type: string
+                  description: 'New tags for the note (replaces the existing tags).'
+                date:
+                  type: string
+                  description: 'New date-time the note is recorded for, as an ISO-8601 string.'
+                archived:
+                  type: boolean
+                  description: 'Send `true` to archive (delete) the note.'
+            example:
+              archived: true
+      responses:
+        '200':
+          description: OK — the updated nursing note.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdNursingNoteResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1c9d4e4b0a1b2c3d4ec07"
+                  admission_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  patient_id: "pid-321"
+                  actor_name: "Anita Rao"
+                  actor_oid: "161467756044203"
+                  content_html: "<p>Patient stable. BP 120/80, pulse 78.</p>"
+                  content_json:
+                    - type: "paragraph"
+                      text: "Patient stable. BP 120/80, pulse 78."
+                  tag:
+                    - "vitals"
+                  date: "2026-10-07T08:00:00.000Z"
+                  archived: true
+                  archived_by_oid: "161467756044203"
+                  archived_by_name: "Anita Rao"
+                  archived_at: "2026-10-07T11:00:00.000Z"
+                  createdAt: "2026-10-07T08:02:11.000Z"
+                  updatedAt: "2026-10-07T11:00:00.000Z"
+                  __v: 0
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the `note_id`
+            is not a valid id or the note could not be saved, or `{ message }`
+            when the request body failed schema validation (for example an
+            unknown field was sent; the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the nursing note was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Nursing note not found"
+      deprecated: false
+
+  /ipd/v1/service/nursing-notes-templates:
+    post:
+      tags:
+        - IPD API
+      summary: Create Nursing Note Template
+      description: >-
+
+        ### Overview
+
+
+        This API creates a **nursing note template** for your workspace. A
+        template holds reusable note content that can be used to fill in new
+        nursing notes.
+
+
+        The template's author (`actor_name` and `actor_oid`) is recorded from
+        the user making the request. The template `id` and timestamps are
+        server-generated. Fields not listed in the request body are rejected.
+
+
+      operationId: CreateIpdNursingNoteTemplate
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      requestBody:
+        description: 'The template to create.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - content_html
+                - content_json
+              properties:
+                name:
+                  type: string
+                  description: 'Display name of the template.'
+                description:
+                  type: string
+                  description: 'Optional description of the template.'
+                content_html:
+                  type: string
+                  description: 'Template content as HTML.'
+                content_json:
+                  type: array
+                  items: {}
+                  description: 'Template content in structured (JSON) form.'
+                tag:
+                  type: array
+                  items:
+                    type: string
+                  description: 'Optional tags for the template.'
+            example:
+              name: "Vitals check"
+              description: "Routine vitals note"
+              content_html: "<p>BP: __ / __, Pulse: __, Temp: __</p>"
+              content_json:
+                - type: "paragraph"
+                  text: "BP: __ / __, Pulse: __, Temp: __"
+              tag:
+                - "vitals"
+      responses:
+        '200':
+          description: OK — the created template.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdNursingNoteTemplateResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cae5e4b0a1b2c3d4ed08"
+                  name: "Vitals check"
+                  description: "Routine vitals note"
+                  actor_name: "Anita Rao"
+                  actor_oid: "161467756044203"
+                  content_html: "<p>BP: __ / __, Pulse: __, Temp: __</p>"
+                  content_json:
+                    - type: "paragraph"
+                      text: "BP: __ / __, Pulse: __, Temp: __"
+                  tag:
+                    - "vitals"
+                  createdAt: "2026-10-07T08:10:00.000Z"
+                  updatedAt: "2026-10-07T08:10:00.000Z"
+                  __v: 0
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the template
+            could not be saved (for example `name` or `content_html` is empty),
+            or `{ message }` when the request body failed schema validation (for
+            example a required field is missing or an unknown field was sent;
+            the `message` is currently empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+    get:
+      tags:
+        - IPD API
+      summary: List Nursing Note Templates
+      description: >-
+
+        ### Overview
+
+
+        This API returns all **nursing note templates** of your workspace,
+        newest first.
+
+
+        > **Archived templates are included.** Templates removed with [Update Nursing Note Template](/api-reference/doc-tool/ipd-api/nursing-notes/update-nursing-note-template) are returned with `archived: true`; filter them out if you only want active templates.
+
+
+      operationId: ListIpdNursingNoteTemplates
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+      responses:
+        '200':
+          description: OK — the templates of your workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpdNursingNoteTemplate'
+              example:
+                success: true
+                data:
+                  - id: "66f1cae5e4b0a1b2c3d4ed08"
+                    name: "Vitals check"
+                    description: "Routine vitals note"
+                    actor_name: "Anita Rao"
+                    actor_oid: "161467756044203"
+                    content_html: "<p>BP: __ / __, Pulse: __, Temp: __</p>"
+                    content_json:
+                      - type: "paragraph"
+                        text: "BP: __ / __, Pulse: __, Temp: __"
+                    tag:
+                      - "vitals"
+                    createdAt: "2026-10-07T08:10:00.000Z"
+                    updatedAt: "2026-10-07T08:10:00.000Z"
+                    __v: 0
+        '400':
+          description: Bad Request — the templates could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+      deprecated: false
+
+  /ipd/v1/service/nursing-notes-templates/{template_id}:
+    patch:
+      tags:
+        - IPD API
+      summary: Update Nursing Note Template
+      description: >-
+
+        ### Overview
+
+
+        This API updates a **nursing note template** of your workspace. It is a
+        partial update: only the fields sent in the request body are changed,
+        and fields that are omitted keep their current value.
+
+
+        **To delete a template**, send `archived: true`. The template is
+        archived (not removed) and the user making the request is recorded in
+        `archived_by_oid`, `archived_by_name` and `archived_at`. Sending
+        `archived: false` has no effect, so an archived template cannot be
+        restored.
+
+
+        Returns `404` with `Nursing note template not found` when the
+        `template_id` does not exist or belongs to another workspace.
+
+
+      operationId: UpdateIpdNursingNoteTemplate
+      parameters:
+        - name: auth
+          in: header
+          required: true
+          schema:
+            type: string
+          example: >-
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJiX2lkIjoiMTIzNDU2IiwiY2xpZW50X2lkIjoiNzg5MCIsImV4dHJhX2ZpZWxkIjoiZXh0cmFfZmllbGRfZGF0YSJ9.q9KzBI6f4l3OyM_EkB5Quq0l9EEMFh5JS-fx3F_PHUM
+        - name: template_id
+          in: path
+          description: 'Id of the template to update.'
+          required: true
+          style: simple
+          schema:
+            type: string
+          example: "66f1cae5e4b0a1b2c3d4ed08"
+      requestBody:
+        description: 'The template fields to change. Send only the fields you want to update.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  description: 'New display name of the template.'
+                description:
+                  type: string
+                  description: 'New description of the template.'
+                content_html:
+                  type: string
+                  description: 'New template content as HTML.'
+                content_json:
+                  type: array
+                  items: {}
+                  description: 'New template content in structured (JSON) form.'
+                tag:
+                  type: array
+                  items:
+                    type: string
+                  description: 'New tags for the template (replaces the existing tags).'
+                archived:
+                  type: boolean
+                  description: 'Send `true` to archive (delete) the template.'
+            example:
+              name: "Vitals check (4-hourly)"
+      responses:
+        '200':
+          description: OK — the updated template.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdNursingNoteTemplateResponse'
+              example:
+                success: true
+                data:
+                  id: "66f1cae5e4b0a1b2c3d4ed08"
+                  name: "Vitals check (4-hourly)"
+                  description: "Routine vitals note"
+                  actor_name: "Anita Rao"
+                  actor_oid: "161467756044203"
+                  content_html: "<p>BP: __ / __, Pulse: __, Temp: __</p>"
+                  content_json:
+                    - type: "paragraph"
+                      text: "BP: __ / __, Pulse: __, Temp: __"
+                  tag:
+                    - "vitals"
+                  createdAt: "2026-10-07T08:10:00.000Z"
+                  updatedAt: "2026-10-07T09:00:00.000Z"
+                  __v: 0
+        '400':
+          description: >-
+            Bad Request. Returns `{ success: false, error }` when the
+            `template_id` is not a valid id or the template could not be saved,
+            or `{ message }` when the request body failed schema validation (for
+            example an unknown field was sent; the `message` is currently
+            empty).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/IpdServiceFailure'
+                  - $ref: '#/components/schemas/IpdServiceError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceError'
+        '404':
+          description: Not Found — the template was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpdServiceFailure'
+              example:
+                success: false
+                error: "Nursing note template not found"
+      deprecated: false
+
   /dr/v1/appointment/{appointment_id}/change-status:
     post:
       tags:
@@ -12638,6 +13281,129 @@ components:
           type: boolean
         data:
           $ref: '#/components/schemas/IpdRatePlanClinicRelation'
+    IpdNursingNote:
+      title: IpdNursingNote
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Nursing note id.'
+        admission_id:
+          type: string
+          description: 'Id of the IPD admission the note belongs to.'
+        patient_id:
+          type: string
+          description: 'Id of the patient the note is about.'
+        actor_name:
+          type: string
+          description: 'Name of the user who created the note.'
+        actor_oid:
+          type: string
+          description: 'Id of the user who created the note.'
+        content_html:
+          type: string
+          description: 'Note content as HTML.'
+        content_json:
+          type: array
+          items: {}
+          description: 'Note content in structured (JSON) form.'
+        tag:
+          type: array
+          items:
+            type: string
+          description: 'Tags of the note.'
+        date:
+          type: string
+          description: 'Date-time the note is recorded for, as an ISO-8601 string.'
+        archived:
+          type: boolean
+          description: '`true` when the note has been archived (deleted). Absent otherwise.'
+        archived_by_oid:
+          type: string
+          description: 'Id of the user who archived the note. Present only when archived.'
+        archived_by_name:
+          type: string
+          description: 'Name of the user who archived the note. Present only when archived.'
+        archived_at:
+          type: string
+          description: 'Date-time the note was archived, as an ISO-8601 string. Present only when archived.'
+        createdAt:
+          type: string
+          description: 'Created date-time as an ISO-8601 string.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+        __v:
+          type: number
+          description: 'Internal document version.'
+    IpdNursingNoteResponse:
+      title: IpdNursingNoteResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdNursingNote'
+    IpdNursingNoteTemplate:
+      title: IpdNursingNoteTemplate
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Template id.'
+        name:
+          type: string
+          description: 'Display name of the template.'
+        description:
+          type: string
+          description: 'Description of the template. Absent when not set.'
+        actor_name:
+          type: string
+          description: 'Name of the user who created the template.'
+        actor_oid:
+          type: string
+          description: 'Id of the user who created the template.'
+        content_html:
+          type: string
+          description: 'Template content as HTML.'
+        content_json:
+          type: array
+          items: {}
+          description: 'Template content in structured (JSON) form.'
+        tag:
+          type: array
+          items:
+            type: string
+          description: 'Tags of the template.'
+        archived:
+          type: boolean
+          description: '`true` when the template has been archived (deleted). Absent otherwise.'
+        archived_by_oid:
+          type: string
+          description: 'Id of the user who archived the template. Present only when archived.'
+        archived_by_name:
+          type: string
+          description: 'Name of the user who archived the template. Present only when archived.'
+        archived_at:
+          type: string
+          description: 'Date-time the template was archived, as an ISO-8601 string. Present only when archived.'
+        createdAt:
+          type: string
+          description: 'Created date-time as an ISO-8601 string.'
+        updatedAt:
+          type: string
+          description: 'Last-updated date-time as an ISO-8601 string.'
+        __v:
+          type: number
+          description: 'Internal document version.'
+    IpdNursingNoteTemplateResponse:
+      title: IpdNursingNoteTemplateResponse
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/IpdNursingNoteTemplate'
     IpdServiceFailure:
       title: IpdServiceFailure
       type: object
