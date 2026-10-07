@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "4cd037df-60d6-5f89-b326-cc283b43c60d",
     "name": "Eka ABDM Connect",
-    "description": "Every ABDM Connect API and callback, in the order of the docs sidebar (112 requests).\n\n1. Import the sandbox environment and fill in client_id and client_secret.\n2. Run Authentication > Connect Login. It saves access_token for every other request.\n3. Work through a milestone top to bottom. Each response's txn_id, request_id, order_id, provider_id and X-token (token) are saved for the steps after it.\n\nCallback requests post the payload Eka sends to {{webhook_url}}, so you can test your own receiver.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/overview",
+    "description": "Every ABDM Connect API and callback, in the order of the docs sidebar (145 requests).\n\n1. Import the sandbox environment and fill in client_id and client_secret.\n2. Run Authentication > Connect Login. It saves access_token for every other request.\n3. Work through a milestone top to bottom. Each response's txn_id, request_id, order_id, provider_id and X-token (token) are saved for the steps after it.\n\nCallback requests post the payload Eka sends to {{webhook_url}}, so you can test your own receiver.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/overview",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -5994,6 +5994,1832 @@
                   }
                 },
                 "description": "Callback Eka sends to your webhook URL. Send it to your own receiver to test how you handle it.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/webhooks/booking-cancel"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e72204c7-834a-5c83-8de7-18c4017541bd",
+      "name": "NHCX",
+      "item": [
+        {
+          "id": "76905f01-4eef-5c31-9ff0-ac075baa538a",
+          "name": "Policy",
+          "item": [
+            {
+              "id": "961ac4c9-13d2-5974-bdc2-0e68c2fb4e23",
+              "name": "Search Payers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/payers?",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "payers"
+                  ],
+                  "query": [
+                    {
+                      "key": "name",
+                      "value": "<name>",
+                      "description": "Case-insensitive payer name substring",
+                      "disabled": true
+                    },
+                    {
+                      "key": "schemeType",
+                      "value": "<schemeType>",
+                      "description": "Payer scheme type. Defaults to GOVT",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": []
+                },
+                "description": "Lists payers from the NHCX participant registry. The participant_code is the payer_id used by every later call.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/search-payers"
+              }
+            },
+            {
+              "id": "dbed20fc-7a6d-549b-83be-45275445fedb",
+              "name": "Search Policies",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/policies/search",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "policies",
+                    "search"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "description": "Finds a beneficiary's policies by mobile number, ABHA number or member ID. A mobile number can return several family members' policies. When nothing comes back, use Policy Discovery.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/search-policies",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"identifier_type\": \"MobileNo\",\n  \"identifier_value\": \"<identifier_value>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "67fbeaa0-df0b-52f9-9513-ad2ed8d05c9b",
+              "name": "Discover Policy",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/coverage/discovery",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "coverage",
+                    "discovery"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "description": "Asks the payer to find the policy for a member_id and payer_id when Search Policies returns nothing. Poll Policy Discovery Status for the result.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/discover-policy",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"abha_number\": \"<abha_number>\",\n  \"member_id\": \"<member_id>\",\n  \"patient_details\": {\n    \"abha_number\": \"<abha_number>\",\n    \"age\": 0,\n    \"dob\": \"<dob>\",\n    \"email\": \"<email>\",\n    \"gender\": \"<gender>\",\n    \"mobile\": \"<mobile>\",\n    \"name\": \"<name>\",\n    \"relation\": \"<relation>\"\n  },\n  \"payer_id\": \"<payer_id>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "67f8f569-97ce-5c5c-bf59-4dd51b729125",
+              "name": "Policy Discovery Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/coverage/discovery/status?member_id=<member_id>&payer_id=<payer_id>",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "coverage",
+                    "discovery",
+                    "status"
+                  ],
+                  "query": [
+                    {
+                      "key": "member_id",
+                      "value": "<member_id>",
+                      "description": "member_id sent to Discover Policy",
+                      "disabled": false
+                    },
+                    {
+                      "key": "payer_id",
+                      "value": "<payer_id>",
+                      "description": "payer_id sent to Discover Policy",
+                      "disabled": false
+                    }
+                  ],
+                  "variable": []
+                },
+                "description": "Returns status pending until the payer answers, then found with the policy_id and product_id. Branch only on status.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/discovery-status"
+              }
+            },
+            {
+              "id": "3d3ddaa1-7318-5d65-a541-5a4c0893fe63",
+              "name": "Check Eligibility",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/policies/:policyId/eligibility",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "policies",
+                    ":policyId",
+                    "eligibility"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "<policyId>",
+                      "description": "policy_id from Search Policies or Policy Discovery Status"
+                    }
+                  ]
+                },
+                "description": "Checks the policy is in force and returns the wallet balance, without creating a claim. cached true means the answer came from the last check; cached false with a request_id means a fresh check went to the payer, so call again shortly.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/check-eligibility"
+              }
+            },
+            {
+              "id": "441dd486-d45d-541e-b468-72e17fa2b47e",
+              "name": "Refresh Plan",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/policies/:policyId/plan/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "policies",
+                    ":policyId",
+                    "plan",
+                    "refresh"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "<policyId>",
+                      "description": "policy_id from Search Policies or Policy Discovery Status"
+                    }
+                  ]
+                },
+                "description": "Requests a fresh procedure catalogue (InsurancePlan) for the policy's product. Poll List Specialities until it is ready.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/refresh-plan"
+              }
+            }
+          ]
+        },
+        {
+          "id": "5cd29b40-a0f8-576e-8ae0-497045f4825b",
+          "name": "Procedure Catalogue",
+          "item": [
+            {
+              "id": "e9ff91be-d26b-58f6-bb0c-41b75ffbe4d5",
+              "name": "List Specialities",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/policies/:policyId/specialities",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "policies",
+                    ":policyId",
+                    "specialities"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "<policyId>",
+                      "description": "policy_id from Search Policies or Policy Discovery Status"
+                    }
+                  ]
+                },
+                "description": "Lists the specialities in the policy's procedure catalogue.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/list-specialities"
+              }
+            },
+            {
+              "id": "76624cb8-d9ba-51a3-9b25-8d57371e3b54",
+              "name": "List Procedures",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/policies/:policyId/specialities/:specialityCode/procedures",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "policies",
+                    ":policyId",
+                    "specialities",
+                    ":specialityCode",
+                    "procedures"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "<policyId>",
+                      "description": "policy_id from Search Policies or Policy Discovery Status"
+                    },
+                    {
+                      "key": "specialityCode",
+                      "value": "<specialityCode>",
+                      "description": "Speciality code from List Specialities"
+                    }
+                  ]
+                },
+                "description": "Lists the procedures under one speciality of the policy's catalogue.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/list-procedures"
+              }
+            },
+            {
+              "id": "0b92f524-5ef4-5035-a33d-25aa6ce7ae3b",
+              "name": "Get Procedure",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/policies/:policyId/procedures/:procedureCode",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "policies",
+                    ":policyId",
+                    "procedures",
+                    ":procedureCode"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "<policyId>",
+                      "description": "policy_id from Search Policies or Policy Discovery Status"
+                    },
+                    {
+                      "key": "procedureCode",
+                      "value": "<procedureCode>",
+                      "description": "Procedure code from List Procedures"
+                    }
+                  ]
+                },
+                "description": "Full catalogue detail for a procedure: flags, costs, caps, mandatory documents and questionnaires. Check a feature's flag before reading its cap; payers publish non-zero caps on procedures where the feature is off.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/get-procedure"
+              }
+            }
+          ]
+        },
+        {
+          "id": "47823b94-7a83-5542-8ad3-7ae7650fe7bf",
+          "name": "Claims",
+          "item": [
+            {
+              "id": "7488fc34-a88a-5d3c-b807-fb2c3587d758",
+              "name": "Create Claim",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "description": "Creates the claim (the case every later call hangs off) and sends the auth-requirements check for the listed procedures. An open claim for the same policy and beneficiary is reused. The payer's per-procedure documents and questionnaires arrive on the coverage_eligibility request in Get Claim Requests.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/create-claim",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"admission_type\": \"planned\",\n  \"items\": [\n    {\n      \"claim_amount\": 0.0,\n      \"procedure_code\": \"<procedure_code>\",\n      \"procedure_name\": \"<procedure_name>\",\n      \"quantity\": 0,\n      \"questionnaire_answers\": [\n        {\n          \"answer\": \"<answer>\",\n          \"link_id\": \"<link_id>\"\n        }\n      ],\n      \"speciality_code\": \"<speciality_code>\",\n      \"speciality_name\": \"<speciality_name>\",\n      \"strat_code\": \"<strat_code>\",\n      \"supporting_docs\": [\n        {\n          \"category_code\": \"<category_code>\",\n          \"doc_code\": \"<doc_code>\",\n          \"doc_display\": \"<doc_display>\",\n          \"url\": \"<url>\"\n        }\n      ]\n    }\n  ],\n  \"policy_id\": 0,\n  \"registration\": {\n    \"attendant\": {\n      \"mobile\": \"<mobile>\",\n      \"name\": \"<name>\",\n      \"relation\": \"<relation>\"\n    },\n    \"child\": {\n      \"birth_certificate\": {\n        \"content\": \"<content>\",\n        \"content_type\": \"<content_type>\",\n        \"title\": \"<title>\"\n      },\n      \"parent_pmjay_id\": \"<parent_pmjay_id>\"\n    },\n    \"emergency_justification\": {\n      \"content\": \"<content>\",\n      \"content_type\": \"<content_type>\",\n      \"title\": \"<title>\"\n    }\n  },\n  \"visit_date\": \"<visit_date>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "2d6798ff-e0bf-504e-8699-1595b15f5272",
+              "name": "List Claims",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims?",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims"
+                  ],
+                  "query": [
+                    {
+                      "key": "scope",
+                      "value": "<scope>",
+                      "description": "facility (default) lists every claim of the calling facility",
+                      "disabled": true
+                    },
+                    {
+                      "key": "beneficiary_id",
+                      "value": "<beneficiary_id>",
+                      "description": "Lists one beneficiary's claims. Implies scope=beneficiary",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<limit>",
+                      "description": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "offset",
+                      "value": "<offset>",
+                      "description": "",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": []
+                },
+                "description": "Lists claims with their beneficiary.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/list-claims"
+              }
+            },
+            {
+              "id": "44ea1756-fca9-50ac-a521-43373a0e7f44",
+              "name": "Get Claim",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Claim summary: status, payer references, turn-around deadlines, review path, co-payment and the stages with a saved draft.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/get-claim"
+              }
+            },
+            {
+              "id": "69574c07-fbb0-5284-905e-cfd848b69796",
+              "name": "Save Draft",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/draft?stage=<stage>",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "draft"
+                  ],
+                  "query": [
+                    {
+                      "key": "stage",
+                      "value": "<stage>",
+                      "description": "",
+                      "disabled": false
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Saves a partly filled pre-auth or claim form without submitting it. The body is the same one the stage's submit takes, stored as sent. Read it back with Get Claim Request using correlation id draft:Preauth or draft:Claim.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/save-draft",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"base_updated_at\": \"<base_updated_at>\",\n  \"supporting_docs\": [\n    {\n      \"category\": \"<category>\",\n      \"code\": \"<code>\",\n      \"content\": \"<content>\",\n      \"content_type\": \"<content_type>\",\n      \"doc_id\": \"<doc_id>\",\n      \"slot_key\": \"<slot_key>\",\n      \"title\": \"<title>\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "a14d6360-63f7-5c41-a724-c37d9c5af9c2",
+              "name": "Archive Claim",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/archive",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "archive"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Sets a claim aside so it is not reused. It stays readable. Refused with 400 while a pre-auth is live; cancel it first.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/archive-claim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "4c8c756e-c1f6-54f0-845a-942f99e7d4db",
+          "name": "Pre-auth",
+          "item": [
+            {
+              "id": "d7575232-6806-52da-a9d9-45402e147d7b",
+              "name": "Submit Pre-auth",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/preauth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "preauth"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Submits a pre-auth for the claim. request_type picks the workflow: InitialRequest, QueryResponse to answer a payer query, FollowUp to resubmit a rejected pre-auth, Enhancement to raise the approved scope. Everything the claim already knows (payer, policy, facility, patient) is filled in for you. The payer answers asynchronously: a 2xx means the request was sent, not approved. Track it with the returned request_id on Get Claim Request.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/submit-preauth",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"auth_type\": \"<auth_type>\",\n  \"clinical_notes\": \"<clinical_notes>\",\n  \"consent\": {\n    \"answers\": [\n      {\n        \"answer\": \"<answer>\",\n        \"link_id\": \"<link_id>\",\n        \"question\": \"<question>\",\n        \"questionnaire_url\": \"<questionnaire_url>\"\n      }\n    ],\n    \"questionnaire_url\": \"<questionnaire_url>\"\n  },\n  \"diagnosis\": [\n    {\n      \"code\": \"<code>\",\n      \"display\": \"<display>\",\n      \"system\": \"<system>\"\n    }\n  ],\n  \"items\": [\n    {\n      \"claim_amount\": 0.0,\n      \"procedure_code\": \"<procedure_code>\",\n      \"procedure_name\": \"<procedure_name>\",\n      \"quantity\": 0,\n      \"questionnaire_answers\": [\n        {\n          \"answer\": \"<answer>\",\n          \"link_id\": \"<link_id>\",\n          \"question\": \"<question>\",\n          \"questionnaire_url\": \"<questionnaire_url>\"\n        }\n      ],\n      \"speciality_code\": \"<speciality_code>\",\n      \"speciality_name\": \"<speciality_name>\",\n      \"strat_code\": \"<strat_code>\",\n      \"strat_display\": \"<strat_display>\",\n      \"supporting_docs\": [\n        {\n          \"content\": \"<content>\",\n          \"content_type\": \"<content_type>\",\n          \"creation\": \"<creation>\",\n          \"doc_id\": \"<doc_id>\",\n          \"mand_code\": \"<mand_code>\",\n          \"title\": \"<title>\",\n          \"url\": \"<url>\"\n        }\n      ]\n    }\n  ],\n  \"planned_end_date\": \"2026-01-01T00:00:00.000Z\",\n  \"planned_start_date\": \"2026-01-01T00:00:00.000Z\",\n  \"request_type\": \"<request_type>\",\n  \"treating_doctor\": {\n    \"hpr_id\": \"<hpr_id>\",\n    \"name\": \"<name>\",\n    \"qualification\": \"<qualification>\",\n    \"registration_id\": \"<registration_id>\",\n    \"specialty\": \"<specialty>\"\n  },\n  \"user_token\": \"<user_token>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "be5000bd-c3cb-52c2-b7dd-b95781fed4a1",
+              "name": "Cancel Pre-auth",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/preauth/cancel",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "preauth",
+                    "cancel"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Cancels the claim's active pre-auth. The claim stays open and reusable. The body is optional; without a reason the default is used. The payer answers asynchronously: a 2xx means the request was sent, not approved. Track it with the returned request_id on Get Claim Request.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/cancel-preauth",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": {\n    \"code\": \"<code>\",\n    \"display\": \"<display>\",\n    \"system\": \"<system>\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "57b917ae-5865-5783-a708-bf6e1ff94a6f",
+              "name": "Preview Pre-auth Bundle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/preauth/preview",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "preauth",
+                    "preview"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "description": "Builds the pre-auth FHIR bundle from a full request without sending it.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/preview-preauth",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"abha_number\": \"<abha_number>\",\n  \"accident_info\": {\n    \"date\": \"2026-01-01T00:00:00.000Z\",\n    \"description\": \"<description>\",\n    \"type\": \"<type>\"\n  },\n  \"admission_type\": \"<admission_type>\",\n  \"auth_type\": \"<auth_type>\",\n  \"case_number\": \"<case_number>\",\n  \"clinical_notes\": \"<clinical_notes>\",\n  \"consent\": {\n    \"answers\": [\n      {\n        \"answer\": \"<answer>\",\n        \"link_id\": \"<link_id>\",\n        \"question\": \"<question>\",\n        \"questionnaire_url\": \"<questionnaire_url>\"\n      }\n    ],\n    \"questionnaire_url\": \"<questionnaire_url>\"\n  },\n  \"diagnosis\": [\n    {\n      \"code\": \"<code>\",\n      \"display\": \"<display>\",\n      \"system\": \"<system>\"\n    }\n  ],\n  \"documents\": [\n    {\n      \"content\": \"<content>\",\n      \"content_type\": \"<content_type>\",\n      \"creation_date\": \"<creation_date>\",\n      \"description\": \"<description>\",\n      \"title\": \"<title>\",\n      \"type\": \"<type>\",\n      \"url\": \"<url>\"\n    }\n  ],\n  \"estimated_amount\": 0.0,\n  \"hfr_facility_id\": \"<hfr_facility_id>\",\n  \"hospital_address\": \"<hospital_address>\",\n  \"hospital_name\": \"<hospital_name>\",\n  \"items\": [\n    {\n      \"claim_amount\": 0.0,\n      \"procedure_code\": \"<procedure_code>\",\n      \"procedure_name\": \"<procedure_name>\",\n      \"quantity\": 0,\n      \"questionnaire_answers\": [\n        {\n          \"answer\": \"<answer>\",\n          \"link_id\": \"<link_id>\",\n          \"question\": \"<question>\",\n          \"questionnaire_url\": \"<questionnaire_url>\"\n        }\n      ],\n      \"speciality_code\": \"<speciality_code>\",\n      \"speciality_name\": \"<speciality_name>\",\n      \"strat_code\": \"<strat_code>\",\n      \"strat_display\": \"<strat_display>\",\n      \"supporting_docs\": [\n        {\n          \"content\": \"<content>\",\n          \"content_type\": \"<content_type>\",\n          \"creation\": \"<creation>\",\n          \"doc_id\": \"<doc_id>\",\n          \"mand_code\": \"<mand_code>\",\n          \"title\": \"<title>\",\n          \"url\": \"<url>\"\n        }\n      ]\n    }\n  ],\n  \"member_id\": \"<member_id>\",\n  \"participant_id\": \"<participant_id>\",\n  \"patient_details\": {\n    \"abha_number\": \"<abha_number>\",\n    \"age\": 0,\n    \"dob\": \"<dob>\",\n    \"email\": \"<email>\",\n    \"gender\": \"<gender>\",\n    \"mobile\": \"<mobile>\",\n    \"name\": \"<name>\",\n    \"relation\": \"<relation>\"\n  },\n  \"payer_id\": \"<payer_id>\",\n  \"planned_end_date\": \"2026-01-01T00:00:00.000Z\",\n  \"planned_start_date\": \"2026-01-01T00:00:00.000Z\",\n  \"priority\": \"<priority>\",\n  \"procedure_codes\": [\n    \"\"\n  ],\n  \"product_id\": \"<product_id>\",\n  \"product_name\": \"<product_name>\",\n  \"provider_id\": \"{{provider_id}}\",\n  \"provider_name\": \"<provider_name>\",\n  \"remarks\": \"<remarks>\",\n  \"request_type\": \"<request_type>\",\n  \"service_breakdown\": [\n    {\n      \"description\": \"<description>\",\n      \"net_amount\": 0.0,\n      \"quantity\": 0.0,\n      \"service_code\": \"<service_code>\",\n      \"unit_price\": 0.0\n    }\n  ],\n  \"service_codes\": [\n    \"\"\n  ],\n  \"treating_doctor\": {\n    \"hpr_id\": \"<hpr_id>\",\n    \"name\": \"<name>\",\n    \"qualification\": \"<qualification>\",\n    \"registration_id\": \"<registration_id>\",\n    \"specialty\": \"<specialty>\"\n  },\n  \"user_token\": \"<user_token>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "0dc3d228-058a-52b8-a90e-f11e4caffb5b",
+          "name": "Claim Submission",
+          "item": [
+            {
+              "id": "13400479-a589-57dd-bb7e-683f1cffac39",
+              "name": "Submit Claim",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/claim",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "claim"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Submits the final claim after discharge. request_type is empty for the first submit, QueryResponse to answer a payer query, FollowUp to resubmit a rejected claim. The claimed amount is the sum of itemized_billing. The payer answers asynchronously: a 2xx means the request was sent, not approved. Track it with the returned request_id on Get Claim Request.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/submit-claim",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"admission_date\": \"2026-01-01T00:00:00.000Z\",\n  \"auth_type\": \"<auth_type>\",\n  \"care_team_members\": [\n    {\n      \"hpr_id\": \"<hpr_id>\",\n      \"mobile\": \"<mobile>\",\n      \"name\": \"<name>\",\n      \"qualification_code\": \"<qualification_code>\",\n      \"qualification_display\": \"<qualification_display>\",\n      \"registration_id\": \"<registration_id>\"\n    }\n  ],\n  \"consent\": {\n    \"answers\": [\n      {\n        \"answer\": \"<answer>\",\n        \"link_id\": \"<link_id>\",\n        \"question\": \"<question>\",\n        \"questionnaire_url\": \"<questionnaire_url>\"\n      }\n    ],\n    \"questionnaire_url\": \"<questionnaire_url>\"\n  },\n  \"diagnosis\": [\n    {\n      \"code\": \"<code>\",\n      \"display\": \"<display>\",\n      \"system\": \"<system>\"\n    }\n  ],\n  \"discharge_date\": \"2026-01-01T00:00:00.000Z\",\n  \"discharge_stage\": \"<discharge_stage>\",\n  \"discharge_type\": \"<discharge_type>\",\n  \"itemized_billing\": [\n    {\n      \"care_team_sequence\": [\n        0\n      ],\n      \"category\": {\n        \"coding\": [\n          {\n            \"code\": \"<code>\",\n            \"display\": \"<display>\",\n            \"system\": \"<system>\"\n          }\n        ],\n        \"text\": \"<text>\"\n      },\n      \"cycle_dates\": [\n        \"\"\n      ],\n      \"description\": \"<description>\",\n      \"diagnosis_pointer\": [\n        0\n      ],\n      \"information_sequence\": [\n        0\n      ],\n      \"procedure_code\": \"<procedure_code>\",\n      \"procedure_sequence\": [\n        0\n      ],\n      \"quantity\": 0.0,\n      \"service_code\": \"<service_code>\",\n      \"service_date\": \"2026-01-01T00:00:00.000Z\",\n      \"serviced_period_end\": \"<serviced_period_end>\",\n      \"serviced_period_start\": \"<serviced_period_start>\",\n      \"total_amount\": 0.0,\n      \"unit_price\": 0.0\n    }\n  ],\n  \"remarks\": \"<remarks>\",\n  \"request_type\": \"<request_type>\",\n  \"supporting_docs\": [\n    {\n      \"category\": \"<category>\",\n      \"category_display\": \"<category_display>\",\n      \"code\": \"<code>\",\n      \"code_display\": \"<code_display>\",\n      \"content\": \"<content>\",\n      \"content_type\": \"<content_type>\",\n      \"creation\": \"<creation>\",\n      \"doc_id\": \"<doc_id>\",\n      \"title\": \"<title>\"\n    }\n  ],\n  \"user_token\": \"<user_token>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "29822e52-295d-563c-912e-47fedd84b80f",
+              "name": "Preview Claim Bundle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/claim/preview",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "claim",
+                    "preview"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Takes the same body as Submit Claim and returns the exact FHIR bundle it would send. Nothing is sent or stored.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/preview-claim",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"admission_date\": \"2026-01-01T00:00:00.000Z\",\n  \"auth_type\": \"<auth_type>\",\n  \"care_team_members\": [\n    {\n      \"hpr_id\": \"<hpr_id>\",\n      \"mobile\": \"<mobile>\",\n      \"name\": \"<name>\",\n      \"qualification_code\": \"<qualification_code>\",\n      \"qualification_display\": \"<qualification_display>\",\n      \"registration_id\": \"<registration_id>\"\n    }\n  ],\n  \"consent\": {\n    \"answers\": [\n      {\n        \"answer\": \"<answer>\",\n        \"link_id\": \"<link_id>\",\n        \"question\": \"<question>\",\n        \"questionnaire_url\": \"<questionnaire_url>\"\n      }\n    ],\n    \"questionnaire_url\": \"<questionnaire_url>\"\n  },\n  \"diagnosis\": [\n    {\n      \"code\": \"<code>\",\n      \"display\": \"<display>\",\n      \"system\": \"<system>\"\n    }\n  ],\n  \"discharge_date\": \"2026-01-01T00:00:00.000Z\",\n  \"discharge_stage\": \"<discharge_stage>\",\n  \"discharge_type\": \"<discharge_type>\",\n  \"itemized_billing\": [\n    {\n      \"care_team_sequence\": [\n        0\n      ],\n      \"category\": {\n        \"coding\": [\n          {\n            \"code\": \"<code>\",\n            \"display\": \"<display>\",\n            \"system\": \"<system>\"\n          }\n        ],\n        \"text\": \"<text>\"\n      },\n      \"cycle_dates\": [\n        \"\"\n      ],\n      \"description\": \"<description>\",\n      \"diagnosis_pointer\": [\n        0\n      ],\n      \"information_sequence\": [\n        0\n      ],\n      \"procedure_code\": \"<procedure_code>\",\n      \"procedure_sequence\": [\n        0\n      ],\n      \"quantity\": 0.0,\n      \"service_code\": \"<service_code>\",\n      \"service_date\": \"2026-01-01T00:00:00.000Z\",\n      \"serviced_period_end\": \"<serviced_period_end>\",\n      \"serviced_period_start\": \"<serviced_period_start>\",\n      \"total_amount\": 0.0,\n      \"unit_price\": 0.0\n    }\n  ],\n  \"remarks\": \"<remarks>\",\n  \"request_type\": \"<request_type>\",\n  \"supporting_docs\": [\n    {\n      \"category\": \"<category>\",\n      \"category_display\": \"<category_display>\",\n      \"code\": \"<code>\",\n      \"code_display\": \"<code_display>\",\n      \"content\": \"<content>\",\n      \"content_type\": \"<content_type>\",\n      \"creation\": \"<creation>\",\n      \"doc_id\": \"<doc_id>\",\n      \"title\": \"<title>\"\n    }\n  ],\n  \"user_token\": \"<user_token>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "e30040bc-a021-5b7f-ae00-bb9828a80bb5",
+              "name": "Preview Claim Bundle (Full Request)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claim/preview?",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claim",
+                    "preview"
+                  ],
+                  "query": [
+                    {
+                      "key": "claim_id",
+                      "value": "<claim_id>",
+                      "description": "Optional. Applies the claim's catalogue to the items",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": []
+                },
+                "description": "Builds a claim FHIR bundle from a full claim request without sending it. Prefer Preview Claim Bundle once the claim exists.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/preview-claim-full",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"abha_number\": \"<abha_number>\",\n  \"accident_info\": {\n    \"date\": \"2026-01-01T00:00:00.000Z\",\n    \"description\": \"<description>\",\n    \"type\": \"<type>\"\n  },\n  \"admission_date\": \"2026-01-01T00:00:00.000Z\",\n  \"api_call_id\": \"<api_call_id>\",\n  \"auth_type\": \"<auth_type>\",\n  \"bank_details\": {\n    \"account_holder\": \"<account_holder>\",\n    \"account_number\": \"<account_number>\",\n    \"bank_name\": \"<bank_name>\",\n    \"ifsc_code\": \"<ifsc_code>\"\n  },\n  \"care_team_members\": [\n    {\n      \"hpr_id\": \"<hpr_id>\",\n      \"mobile\": \"<mobile>\",\n      \"name\": \"<name>\",\n      \"qualification_code\": \"<qualification_code>\",\n      \"qualification_display\": \"<qualification_display>\",\n      \"registration_id\": \"<registration_id>\"\n    }\n  ],\n  \"claim_type\": \"<claim_type>\",\n  \"claimed_amount\": 0.0,\n  \"clinical_notes\": \"<clinical_notes>\",\n  \"consent\": {\n    \"answers\": [\n      {\n        \"answer\": \"<answer>\",\n        \"link_id\": \"<link_id>\",\n        \"question\": \"<question>\",\n        \"questionnaire_url\": \"<questionnaire_url>\"\n      }\n    ],\n    \"questionnaire_url\": \"<questionnaire_url>\"\n  },\n  \"diagnosis\": [\n    {\n      \"code\": \"<code>\",\n      \"display\": \"<display>\",\n      \"system\": \"<system>\"\n    }\n  ],\n  \"discharge_date\": \"2026-01-01T00:00:00.000Z\",\n  \"discharge_stage\": \"<discharge_stage>\",\n  \"discharge_type\": \"<discharge_type>\",\n  \"documents\": [\n    {\n      \"content\": \"<content>\",\n      \"content_type\": \"<content_type>\",\n      \"creation_date\": \"<creation_date>\",\n      \"description\": \"<description>\",\n      \"title\": \"<title>\",\n      \"type\": \"<type>\",\n      \"url\": \"<url>\"\n    }\n  ],\n  \"hfr_facility_id\": \"<hfr_facility_id>\",\n  \"hospital_address\": \"<hospital_address>\",\n  \"hospital_name\": \"<hospital_name>\",\n  \"itemized_billing\": [\n    {\n      \"care_team_sequence\": [\n        0\n      ],\n      \"category\": {\n        \"coding\": [\n          {\n            \"code\": \"<code>\",\n            \"display\": \"<display>\",\n            \"system\": \"<system>\"\n          }\n        ],\n        \"text\": \"<text>\"\n      },\n      \"cycle_dates\": [\n        \"\"\n      ],\n      \"description\": \"<description>\",\n      \"diagnosis_pointer\": [\n        0\n      ],\n      \"information_sequence\": [\n        0\n      ],\n      \"procedure_code\": \"<procedure_code>\",\n      \"procedure_sequence\": [\n        0\n      ],\n      \"quantity\": 0.0,\n      \"service_code\": \"<service_code>\",\n      \"service_date\": \"2026-01-01T00:00:00.000Z\",\n      \"serviced_period_end\": \"<serviced_period_end>\",\n      \"serviced_period_start\": \"<serviced_period_start>\",\n      \"total_amount\": 0.0,\n      \"unit_price\": 0.0\n    }\n  ],\n  \"member_id\": \"<member_id>\",\n  \"patient_details\": {\n    \"abha_number\": \"<abha_number>\",\n    \"age\": 0,\n    \"dob\": \"<dob>\",\n    \"email\": \"<email>\",\n    \"gender\": \"<gender>\",\n    \"mobile\": \"<mobile>\",\n    \"name\": \"<name>\",\n    \"relation\": \"<relation>\"\n  },\n  \"payer_id\": \"<payer_id>\",\n  \"policy_number\": \"<policy_number>\",\n  \"policy_period_end\": \"<policy_period_end>\",\n  \"policy_period_start\": \"<policy_period_start>\",\n  \"policy_scheme_name\": \"<policy_scheme_name>\",\n  \"preauth_claim_number\": \"<preauth_claim_number>\",\n  \"preauth_number\": \"<preauth_number>\",\n  \"procedure_codes\": [\n    \"\"\n  ],\n  \"provider_id\": \"{{provider_id}}\",\n  \"questionnaire_answers\": [\n    {\n      \"answer\": \"<answer>\",\n      \"link_id\": \"<link_id>\",\n      \"question\": \"<question>\",\n      \"questionnaire_url\": \"<questionnaire_url>\"\n    }\n  ],\n  \"remarks\": \"<remarks>\",\n  \"service_codes\": [\n    \"\"\n  ],\n  \"subscriber_id\": \"<subscriber_id>\",\n  \"supporting_docs\": [\n    {\n      \"category\": \"<category>\",\n      \"category_display\": \"<category_display>\",\n      \"code\": \"<code>\",\n      \"code_display\": \"<code_display>\",\n      \"content\": \"<content>\",\n      \"content_type\": \"<content_type>\",\n      \"creation\": \"<creation>\",\n      \"doc_id\": \"<doc_id>\",\n      \"title\": \"<title>\"\n    }\n  ],\n  \"user_token\": \"<user_token>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "af319379-4bf8-5d4f-9892-62b3d8f294d9",
+              "name": "Reprocess Claim",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/claim/reprocess",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "claim",
+                    "reprocess"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "One-shot appeal of a rejected claim, or dispute of a claim settled with more than 20% deducted. A dispute needs a document; amount defaults to and cannot exceed the deduction. Get Claim's review_path says when this is allowed. The payer answers asynchronously: a 2xx means the request was sent, not approved. Track it with the returned request_id on Get Claim Request.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/reprocess-claim",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": 0.0,\n  \"document\": {\n    \"content\": \"<content>\",\n    \"content_type\": \"<content_type>\",\n    \"title\": \"<title>\"\n  },\n  \"justification\": \"<justification>\",\n  \"reason\": {\n    \"code\": \"<code>\",\n    \"display\": \"<display>\",\n    \"system\": \"<system>\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "10750a25-3924-53a3-b76f-1b105b60fb67",
+          "name": "Biometric Auth",
+          "item": [
+            {
+              "id": "5673176d-a568-5c5b-a387-c2f59c6496af",
+              "name": "Init Biometric Auth",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/biometric-auth/init",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "biometric-auth",
+                    "init"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Starts a biometric authentication of the claim's beneficiary for the pre-auth or claim stage. auth_mode is FINGERPRINT or IRIS. Discharge is accepted for Claim.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/biometric-init",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"auth_mode\": \"<auth_mode>\",\n  \"process\": \"Preauth\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "8818d961-67b5-548d-bf5b-35bb9e5bcc3e",
+              "name": "Verify Biometric Auth",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/biometric-auth/verify",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "biometric-auth",
+                    "verify"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Completes the authentication with the PID block from the RD-service scanner. Send the user_token with auth_type biometric on Submit Pre-auth or Submit Claim. For cyclic procedures send purpose cycle and procedure_code on every treatment visit.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/biometric-verify",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"auth_mode\": \"<auth_mode>\",\n  \"finger_print_auth_pid\": \"<finger_print_auth_pid>\",\n  \"iris_auth_pid\": \"<iris_auth_pid>\",\n  \"procedure_code\": \"<procedure_code>\",\n  \"process\": \"Preauth\",\n  \"purpose\": \"preauth\",\n  \"txn_id\": \"{{txn_id}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "1e19d3f6-c5b7-5657-87d8-3f9efd365b55",
+              "name": "Get Biometric Consent",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/biometric-auth/consent?stage=<stage>",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "biometric-auth",
+                    "consent"
+                  ],
+                  "query": [
+                    {
+                      "key": "stage",
+                      "value": "<stage>",
+                      "description": "",
+                      "disabled": false
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Says whether a captured biometric consent for the stage is still valid, so you can reuse its user_token instead of capturing again.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/biometric-consent"
+              }
+            },
+            {
+              "id": "0eac2068-554b-5195-9d06-d38f1a4d8727",
+              "name": "List Biometric Sessions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/biometric-auth/sessions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "biometric-auth",
+                    "sessions"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Every biometric verify recorded on the claim. Cyclic claims take their cycle_dates from the cycle rows; next_capture_allowed_at is set while the 24 hour gap runs.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/biometric-sessions"
+              }
+            }
+          ]
+        },
+        {
+          "id": "026984cd-bd5a-5907-b370-ea0647813696",
+          "name": "Tracking",
+          "item": [
+            {
+              "id": "4825794f-e7db-5018-9949-61a374ea58d6",
+              "name": "Get Claim Requests",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/requests",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "requests"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Every exchange with the payer on this claim, oldest first: eligibility, pre-auth, claim, communication and more, each with its status and outcome.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/claim-requests"
+              }
+            },
+            {
+              "id": "349a56ca-3520-578c-944c-5d293313ef04",
+              "name": "Get Claim Request",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/requests/:correlationId",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "requests",
+                    ":correlationId"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    },
+                    {
+                      "key": "correlationId",
+                      "value": "<correlationId>",
+                      "description": "request_id from a submit, or correlation_id from Get Claim Requests"
+                    }
+                  ]
+                },
+                "description": "One exchange in full: what was sent (request_meta, documents), the parsed payer answer (response_meta, empty while pending) and the per-item verdicts (items).\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/claim-request"
+              }
+            },
+            {
+              "id": "4abeba8a-d90d-5750-a190-8bb11ff58054",
+              "name": "Get Claim Request Document",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/requests/:correlationId/documents/:docId",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "requests",
+                    ":correlationId",
+                    "documents",
+                    ":docId"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    },
+                    {
+                      "key": "correlationId",
+                      "value": "<correlationId>",
+                      "description": ""
+                    },
+                    {
+                      "key": "docId",
+                      "value": "<docId>",
+                      "description": "doc_id from the request's documents"
+                    }
+                  ]
+                },
+                "description": "Streams a submitted document's bytes with its own content type.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/claim-request-document"
+              }
+            },
+            {
+              "id": "9c22a3b5-ec0b-57e7-90e6-fdb3ddc2fee3",
+              "name": "Get Claim Payments",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/claims/:claimId/payments",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "claims",
+                    ":claimId",
+                    "payments"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "claimId",
+                      "value": "<claimId>",
+                      "description": "claim_id returned by Create Claim"
+                    }
+                  ]
+                },
+                "description": "Every payment notice the payer sent for the claim. Group rows by transaction_ref; a transaction's amount is its latest row's amount, not the sum.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/claim-payments"
+              }
+            }
+          ]
+        },
+        {
+          "id": "aa77fa09-3cab-5c3f-8378-ae4a8748ad22",
+          "name": "Records Adapter",
+          "item": [
+            {
+              "id": "81ed3f60-587d-54c6-9fe3-429cd1ad16e6",
+              "name": "Register Records Adapter",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/records/adapters",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "records",
+                    "adapters"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "description": "Registers where your HIS records API lives and how to call it, for the HIP in X-Hip-Id. Each capability is one templated HTTP call with an extract map; flows chain them. The records APIs read visit_ids and fhir from the finished flow.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/register-adapter",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"active\": false,\n  \"auth_headers\": {},\n  \"base_url\": \"<base_url>\",\n  \"capabilities\": {},\n  \"flows\": {},\n  \"name\": \"<name>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "6ece7647-b71d-5f0e-8072-81b806023a02",
+              "name": "Get Records Adapter",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/records/adapters",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "records",
+                    "adapters"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "description": "Returns the adapter registered for the HIP in X-Hip-Id. Auth headers are never returned.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/get-adapter"
+              }
+            },
+            {
+              "id": "26d51ef9-4f3d-5272-ae8c-03ce92843af2",
+              "name": "Get Admission Visits",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/records/admission/:admissionId",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "records",
+                    "admission",
+                    ":admissionId"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "admissionId",
+                      "value": "<admissionId>",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": "Lists an admission's visit ids through the HIP's registered adapter.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/admission-visits"
+              }
+            },
+            {
+              "id": "1c95205d-cffd-5599-a01d-45324d2c732b",
+              "name": "Get Visit FHIR",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Pt-Id",
+                    "value": "{{oid}}",
+                    "description": "Eka User ID (OID)"
+                  },
+                  {
+                    "key": "X-Partner-Pt-Id",
+                    "value": "{{partner_patient_id}}",
+                    "description": "Partner User ID"
+                  },
+                  {
+                    "key": "X-Hip-Id",
+                    "value": "{{hip_id}}",
+                    "description": "Partner HIP ID"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/abdm/nhcx/v1/records/visits/:visitId",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "abdm",
+                    "nhcx",
+                    "v1",
+                    "records",
+                    "visits",
+                    ":visitId"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "key": "visitId",
+                      "value": "<visitId>",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": "Returns a visit's FHIR bundle through the HIP's registered adapter.\n\nDocs: https://developer.eka.care/api-reference/user-app/abdm-connect/nhcx/visit-fhir"
               }
             }
           ]

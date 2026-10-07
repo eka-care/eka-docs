@@ -979,6 +979,2238 @@ paths:
       security:
       - authApiKey: []
       summary: Suggest Abha Address
+  /abdm/nhcx/v1/claim/preview:
+    post:
+      description: Builds a claim FHIR bundle from a full claim request without sending
+        it. Prefer Preview Claim Bundle once the claim exists.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: Optional. Applies the claim's catalogue to the items
+        in: query
+        name: claim_id
+        schema:
+          description: Optional. Applies the claim's catalogue to the items
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                abha_number:
+                  type: string
+                accident_info:
+                  $ref: '#/components/schemas/ModelsAccidentInfo'
+                admission_date:
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                api_call_id:
+                  type: string
+                auth_type:
+                  description: AuthType "consent" (default) sends the Authentication
+                    Consent Questionnaire response and OMITS the biometric X-Token;
+                    "biometric" sends UserToken as the X-Token.
+                  type: string
+                bank_details:
+                  $ref: '#/components/schemas/ModelsBankDetails'
+                care_team_members:
+                  description: Index 0 → primary/responsible (e.g. operating surgeon)
+                    Index 1 → assisting role (e.g. anaesthesiologist)
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimCareTeamMember'
+                  type: array
+                claim_type:
+                  type: string
+                claimed_amount:
+                  type: number
+                clinical_notes:
+                  type: string
+                consent:
+                  $ref: '#/components/schemas/ModelsPreAuthConsent'
+                diagnosis:
+                  items:
+                    $ref: '#/components/schemas/ModelsDiagnosisCoding'
+                  type:
+                  - array
+                  - "null"
+                discharge_date:
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                discharge_stage:
+                  description: 'DIS valueString: "After surgery"(default) | "Before
+                    surgery" | "During surgery"'
+                  type: string
+                discharge_type:
+                  description: '"home"(default) | "mortuary" | "lama" | "dama"'
+                  type: string
+                documents:
+                  description: Legacy document list (kept for backward compat; prefer
+                    SupportingDocs)
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimDocument'
+                  type: array
+                hfr_facility_id:
+                  description: HFR/registry id → provider Organization NPI
+                  type: string
+                hospital_address:
+                  type: string
+                hospital_name:
+                  type: string
+                itemized_billing:
+                  items:
+                    $ref: '#/components/schemas/ModelsBillingItem'
+                  type: array
+                member_id:
+                  type: string
+                patient_details:
+                  $ref: '#/components/schemas/ModelsPatientDetails'
+                payer_id:
+                  type: string
+                policy_number:
+                  description: Coverage.identifier.value
+                  type: string
+                policy_period_end:
+                  description: '"YYYY-MM-DD"'
+                  type: string
+                policy_period_start:
+                  description: '"YYYY-MM-DD"'
+                  type: string
+                policy_scheme_name:
+                  description: Coverage.class.name e.g. "PM-JAY Health Insurance Scheme"
+                  type: string
+                preauth_claim_number:
+                  type: string
+                preauth_number:
+                  description: 'preauth_number: PMJAY ref ("PMJAY/HP/S/...") → insurance[].preAuthRef[]
+                    preauth_claim_number: CLN UUID from parsed preauth → Claim.related[].claim.identifier
+                    api_call_id: x-hcx-api_call_id from preauth submission → reuse
+                    in claim to link sessions'
+                  type: string
+                procedure_codes:
+                  items:
+                    type: string
+                  type: array
+                provider_id:
+                  type: string
+                questionnaire_answers:
+                  description: STG questionnaire responses carried over onto the claim
+                    (same shape as pre-auth). Each becomes a QuestionnaireResponse
+                    resource referenced from Claim.supportingInfo (category STG).
+                  items:
+                    $ref: '#/components/schemas/ModelsPreAuthQuestionnaireAnswer'
+                  type: array
+                remarks:
+                  type: string
+                service_codes:
+                  description: fallback if no ItemizedBilling
+                  items:
+                    type: string
+                  type: array
+                subscriber_id:
+                  type: string
+                supporting_docs:
+                  description: Embedded as supportingInfo.valueAttachment (NDHM HDS/INV/ATT
+                    category codes).
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimSupportingDoc'
+                  type: array
+                user_token:
+                  type: string
+              required:
+              - payer_id
+              - member_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties: {}
+                type:
+                - "null"
+                - object
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Preview Claim Bundle (Full Request)
+  /abdm/nhcx/v1/claims:
+    get:
+      description: Lists claims with their beneficiary.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: facility (default) lists every claim of the calling facility
+        in: query
+        name: scope
+        schema:
+          description: facility (default) lists every claim of the calling facility
+          enum:
+          - facility
+          - beneficiary
+          type: string
+      - description: Lists one beneficiary's claims. Implies scope=beneficiary
+        in: query
+        name: beneficiary_id
+        schema:
+          description: Lists one beneficiary's claims. Implies scope=beneficiary
+          minimum: 0
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: offset
+        schema:
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ModelsClaimListItem'
+                type:
+                - "null"
+                - array
+          description: OK
+      security:
+      - authApiKey: []
+      summary: List Claims
+    post:
+      description: Creates the claim (the case every later call hangs off) and sends
+        the auth-requirements check for the listed procedures. An open claim for the
+        same policy and beneficiary is reused. The payer's per-procedure documents
+        and questionnaires arrive on the coverage_eligibility request in Get Claim
+        Requests.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                admission_type:
+                  enum:
+                  - planned
+                  - emergency
+                  type: string
+                items:
+                  description: Procedures the case is for
+                  items:
+                    $ref: '#/components/schemas/ModelsCoverageEligibilityItem'
+                  type:
+                  - array
+                  - "null"
+                policy_id:
+                  minimum: 0
+                  type: integer
+                registration:
+                  $ref: '#/components/schemas/ModelsRegistrationDetails'
+                  description: Attendant, emergency justification and child details.
+                    Stored on the claim, not sent to the payer
+                visit_date:
+                  description: Planned date of service, YYYY-MM-DD. Defaults to today
+                  type: string
+              required:
+              - policy_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsClaimModel'
+          description: Created
+      security:
+      - authApiKey: []
+      summary: Create Claim
+  /abdm/nhcx/v1/claims/{claimId}:
+    get:
+      description: 'Claim summary: status, payer references, turn-around deadlines,
+        review path, co-payment and the stages with a saved draft.'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsClaimDetail'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Claim
+  /abdm/nhcx/v1/claims/{claimId}/archive:
+    post:
+      description: Sets a claim aside so it is not reused. It stays readable. Refused
+        with 400 while a pre-auth is live; cancel it first.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsArchiveClaimResult'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Archive Claim
+  /abdm/nhcx/v1/claims/{claimId}/biometric-auth/consent:
+    get:
+      description: Says whether a captured biometric consent for the stage is still
+        valid, so you can reuse its user_token instead of capturing again.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - in: query
+        name: stage
+        required: true
+        schema:
+          enum:
+          - Preauth
+          - Claim
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsBiometricConsentStatus'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Biometric Consent
+  /abdm/nhcx/v1/claims/{claimId}/biometric-auth/init:
+    post:
+      description: Starts a biometric authentication of the claim's beneficiary for
+        the pre-auth or claim stage. auth_mode is FINGERPRINT or IRIS. Discharge is
+        accepted for Claim.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                auth_mode:
+                  type: string
+                process:
+                  enum:
+                  - Preauth
+                  - Claim
+                  - Discharge
+                  type: string
+              required:
+              - process
+              - auth_mode
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsBiometricAuthInitResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Init Biometric Auth
+  /abdm/nhcx/v1/claims/{claimId}/biometric-auth/sessions:
+    get:
+      description: Every biometric verify recorded on the claim. Cyclic claims take
+        their cycle_dates from the cycle rows; next_capture_allowed_at is set while
+        the 24 hour gap runs.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsBiometricSessionList'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: List Biometric Sessions
+  /abdm/nhcx/v1/claims/{claimId}/biometric-auth/verify:
+    post:
+      description: Completes the authentication with the PID block from the RD-service
+        scanner. Send the user_token with auth_type biometric on Submit Pre-auth or
+        Submit Claim. For cyclic procedures send purpose cycle and procedure_code
+        on every treatment visit.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                auth_mode:
+                  type: string
+                finger_print_auth_pid:
+                  type: string
+                iris_auth_pid:
+                  type: string
+                procedure_code:
+                  description: 'Scopes a "cycle" capture to one billed procedure.
+                    Required in practice when the case has more than one cyclic line
+                    (an enhancement can add a second): the payer wants a separate
+                    capture per procedure, and without this two same-day captures
+                    collide.'
+                  type: string
+                process:
+                  enum:
+                  - Preauth
+                  - Claim
+                  - Discharge
+                  type: string
+                purpose:
+                  description: 'Distinguishes the captures a cyclic course needs:
+                    "cycle" for a per-treatment-visit capture, "discharge" for the
+                    final one that authenticates the claim, "preauth" for the one
+                    on the pre-auth. Optional — defaults to "preauth" on the Preauth
+                    stage and "discharge" otherwise, so a non-cyclic flow needs no
+                    change. **Send "cycle" for every treatment visit**: only those
+                    rows carry the 24h re-capture gap, and only they become the claim''s
+                    cycle_dates.'
+                  enum:
+                  - preauth
+                  - cycle
+                  - discharge
+                  type: string
+                txn_id:
+                  type: string
+              required:
+              - process
+              - auth_mode
+              - txn_id
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsBiometricAuthVerifyResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Verify Biometric Auth
+  /abdm/nhcx/v1/claims/{claimId}/claim:
+    post:
+      description: 'Submits the final claim after discharge. request_type is empty
+        for the first submit, QueryResponse to answer a payer query, FollowUp to resubmit
+        a rejected claim. The claimed amount is the sum of itemized_billing. The payer
+        answers asynchronously: a 2xx means the request was sent, not approved. Track
+        it with the returned request_id on Get Claim Request.'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                admission_date:
+                  description: 'Optional: when supplied, each claim item''s servicedPeriod
+                    spans admission..discharge (the full IPD stay). The case does
+                    not currently capture an admission date, so without this the item
+                    falls back to the discharge date alone as its serviced date.'
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                auth_type:
+                  type: string
+                care_team_members:
+                  description: NOT case-derivable — supplied by the caller (HMIS)
+                    per submission.
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimCareTeamMember'
+                  type: array
+                consent:
+                  $ref: '#/components/schemas/ModelsPreAuthConsent'
+                  description: Beneficiary authentication. AuthType "consent" (default)
+                    sends the Authentication Consent Questionnaire response (Consent)
+                    and OMITS the biometric X-Token; "biometric" sends UserToken as
+                    the X-Token.
+                diagnosis:
+                  description: The discharge diagnosis — NOT case-derivable (may differ
+                    from the pre-auth diagnosis), supplied by the caller.
+                  items:
+                    $ref: '#/components/schemas/ModelsDiagnosisCoding'
+                  type:
+                  - array
+                  - "null"
+                discharge_date:
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                discharge_stage:
+                  description: 'DIS valueString: "After surgery"(default) | ...'
+                  type: string
+                discharge_type:
+                  description: '"home"(default) | "mortuary" | "lama" | "dama"'
+                  type: string
+                itemized_billing:
+                  description: 'Carries the client-supplied deltas per line item:
+                    service_code, quantity, unit_price. Category/display are optionally
+                    enriched server-side from the case''s catalog (catalog_md5); TotalAmount
+                    and the overall ClaimedAmount are always server-computed.'
+                  items:
+                    $ref: '#/components/schemas/ModelsBillingItem'
+                  type: array
+                remarks:
+                  description: Free text; mandatory once the claim is submitted >15
+                    days post-discharge. See validateClaimRequest's TAT-band check.
+                  type: string
+                request_type:
+                  description: 'Selects the NHCX workflow for this claim submission,
+                    mirroring preauth: "" / "InitialRequest" → first/final claim submit
+                    (workflow 15) "QueryResponse" → answer a payer query on this claim
+                    (workflow 151) "Resubmission"/"FollowUp" → resubmit a rejected
+                    claim (workflow 16) A QueryResponse/Resubmission reuses the SAME
+                    Claim.identifier (the payer''s CLN, stored on the claim as claim_ref)
+                    so the payer links it to the queried/rejected claim — the correlation
+                    id is fresh per exchange, linkage is CLN + workflow id (NHCX bundle-anatomy).
+                    Empty = initial.'
+                  type: string
+                supporting_docs:
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimSupportingDoc'
+                  type: array
+                user_token:
+                  type: string
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsRequestIdModel'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Submit Claim
+  /abdm/nhcx/v1/claims/{claimId}/claim/preview:
+    post:
+      description: Takes the same body as Submit Claim and returns the exact FHIR
+        bundle it would send. Nothing is sent or stored.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                admission_date:
+                  description: 'Optional: when supplied, each claim item''s servicedPeriod
+                    spans admission..discharge (the full IPD stay). The case does
+                    not currently capture an admission date, so without this the item
+                    falls back to the discharge date alone as its serviced date.'
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                auth_type:
+                  type: string
+                care_team_members:
+                  description: NOT case-derivable — supplied by the caller (HMIS)
+                    per submission.
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimCareTeamMember'
+                  type: array
+                consent:
+                  $ref: '#/components/schemas/ModelsPreAuthConsent'
+                  description: Beneficiary authentication. AuthType "consent" (default)
+                    sends the Authentication Consent Questionnaire response (Consent)
+                    and OMITS the biometric X-Token; "biometric" sends UserToken as
+                    the X-Token.
+                diagnosis:
+                  description: The discharge diagnosis — NOT case-derivable (may differ
+                    from the pre-auth diagnosis), supplied by the caller.
+                  items:
+                    $ref: '#/components/schemas/ModelsDiagnosisCoding'
+                  type:
+                  - array
+                  - "null"
+                discharge_date:
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                discharge_stage:
+                  description: 'DIS valueString: "After surgery"(default) | ...'
+                  type: string
+                discharge_type:
+                  description: '"home"(default) | "mortuary" | "lama" | "dama"'
+                  type: string
+                itemized_billing:
+                  description: 'Carries the client-supplied deltas per line item:
+                    service_code, quantity, unit_price. Category/display are optionally
+                    enriched server-side from the case''s catalog (catalog_md5); TotalAmount
+                    and the overall ClaimedAmount are always server-computed.'
+                  items:
+                    $ref: '#/components/schemas/ModelsBillingItem'
+                  type: array
+                remarks:
+                  description: Free text; mandatory once the claim is submitted >15
+                    days post-discharge. See validateClaimRequest's TAT-band check.
+                  type: string
+                request_type:
+                  description: 'Selects the NHCX workflow for this claim submission,
+                    mirroring preauth: "" / "InitialRequest" → first/final claim submit
+                    (workflow 15) "QueryResponse" → answer a payer query on this claim
+                    (workflow 151) "Resubmission"/"FollowUp" → resubmit a rejected
+                    claim (workflow 16) A QueryResponse/Resubmission reuses the SAME
+                    Claim.identifier (the payer''s CLN, stored on the claim as claim_ref)
+                    so the payer links it to the queried/rejected claim — the correlation
+                    id is fresh per exchange, linkage is CLN + workflow id (NHCX bundle-anatomy).
+                    Empty = initial.'
+                  type: string
+                supporting_docs:
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimSupportingDoc'
+                  type: array
+                user_token:
+                  type: string
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties: {}
+                type:
+                - "null"
+                - object
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Preview Claim Bundle
+  /abdm/nhcx/v1/claims/{claimId}/claim/reprocess:
+    post:
+      description: 'One-shot appeal of a rejected claim, or dispute of a claim settled
+        with more than 20% deducted. A dispute needs a document; amount defaults to
+        and cannot exceed the deduction. Get Claim''s review_path says when this is
+        allowed. The payer answers asynchronously: a 2xx means the request was sent,
+        not approved. Track it with the returned request_id on Get Claim Request.'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount:
+                  description: 'Optionally overrides the disputed amount for an ERRONEOUS
+                    (partial-payment) dispute. Default and maximum: submitted − approved
+                    (the deduction). Ignored for a rejected-claim reprocess — the
+                    payer requires NO amount there.'
+                  type: number
+                document:
+                  $ref: '#/components/schemas/ServiceReprocessDocument'
+                  description: The supporting evidence attached to the dispute Task.
+                    MANDATORY for an erroneous (partial-payment) dispute — the payer
+                    rejects a document-less erroneous; strongly recommended for a
+                    rejected-claim reprocess.
+                justification:
+                  description: The provider's free-text case for reconsideration.
+                    Persisted on the request detail; the wire Task carries the structured
+                    reasonCode (the proven sample sends no free-text beyond description).
+                  type: string
+                reason:
+                  $ref: '#/components/schemas/ModelsCodedReason'
+                  description: Optionally overrides the claim-state-derived Task.reasonCode
+                    with a caller-supplied NDHM code. When nil, the reason is chosen
+                    from claim state (partialpayment / claimrejected).
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsRequestIdModel'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Reprocess Claim
+  /abdm/nhcx/v1/claims/{claimId}/draft:
+    put:
+      description: Saves a partly filled pre-auth or claim form without submitting
+        it. The body is the same one the stage's submit takes, stored as sent. Read
+        it back with Get Claim Request using correlation id draft:Preauth or draft:Claim.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - in: query
+        name: stage
+        required: true
+        schema:
+          enum:
+          - Preauth
+          - Claim
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                base_updated_at:
+                  description: updated_at from your last save. A newer stored draft
+                    is refused with 409
+                  type: string
+                supporting_docs:
+                  description: Send content on first attach, then only the doc_id
+                    the save returned
+                  items:
+                    $ref: '#/components/schemas/ModelsClaimDraftDoc'
+                  type: array
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsClaimDraftSaveResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Save Draft
+  /abdm/nhcx/v1/claims/{claimId}/payments:
+    get:
+      description: Every payment notice the payer sent for the claim. Group rows by
+        transaction_ref; a transaction's amount is its latest row's amount, not the
+        sum.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ModelsPaymentSummary'
+                type:
+                - "null"
+                - array
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Claim Payments
+  /abdm/nhcx/v1/claims/{claimId}/preauth:
+    post:
+      description: 'Submits a pre-auth for the claim. request_type picks the workflow:
+        InitialRequest, QueryResponse to answer a payer query, FollowUp to resubmit
+        a rejected pre-auth, Enhancement to raise the approved scope. Everything the
+        claim already knows (payer, policy, facility, patient) is filled in for you.
+        The payer answers asynchronously: a 2xx means the request was sent, not approved.
+        Track it with the returned request_id on Get Claim Request.'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                auth_type:
+                  type: string
+                clinical_notes:
+                  type: string
+                consent:
+                  $ref: '#/components/schemas/ModelsPreAuthConsent'
+                  description: Beneficiary authentication. AuthType "consent" (default)
+                    sends the Authentication Consent Questionnaire response (Consent)
+                    and OMITS the biometric X-Token; "biometric" sends UserToken as
+                    the X-Token.
+                diagnosis:
+                  items:
+                    $ref: '#/components/schemas/ModelsDiagnosisCoding'
+                  type:
+                  - array
+                  - "null"
+                items:
+                  description: 'Carries the client-supplied deltas per procedure line:
+                    speciality code, procedure code, claim amount, optional stratification
+                    code, supporting docs, and questionnaire answers. Names/costs/mandatory-docs
+                    are enriched server-side from the case''s catalog (catalog_md5).'
+                  items:
+                    $ref: '#/components/schemas/ModelsNHCXPreAuthItem'
+                  type: array
+                planned_end_date:
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                planned_start_date:
+                  format: date-time
+                  type:
+                  - "null"
+                  - string
+                request_type:
+                  type: string
+                treating_doctor:
+                  $ref: '#/components/schemas/ModelsTreatingDoctor'
+                  description: NOT case-derivable — supplied by the caller (HMIS)
+                    per submission.
+                user_token:
+                  type: string
+              required:
+              - request_type
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsRequestIdModel'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Submit Pre-auth
+  /abdm/nhcx/v1/claims/{claimId}/preauth/cancel:
+    post:
+      description: 'Cancels the claim''s active pre-auth. The claim stays open and
+        reusable. The body is optional; without a reason the default is used. The
+        payer answers asynchronously: a 2xx means the request was sent, not approved.
+        Track it with the returned request_id on Get Claim Request.'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                reason:
+                  $ref: '#/components/schemas/ModelsCodedReason'
+              type: object
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsRequestIdModel'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Cancel Pre-auth
+  /abdm/nhcx/v1/claims/{claimId}/requests:
+    get:
+      description: 'Every exchange with the payer on this claim, oldest first: eligibility,
+        pre-auth, claim, communication and more, each with its status and outcome.'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ModelsClaimRequestSummary'
+                type:
+                - "null"
+                - array
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Claim Requests
+  /abdm/nhcx/v1/claims/{claimId}/requests/{correlationId}:
+    get:
+      description: 'One exchange in full: what was sent (request_meta, documents),
+        the parsed payer answer (response_meta, empty while pending) and the per-item
+        verdicts (items).'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      - description: request_id from a submit, or correlation_id from Get Claim Requests
+        in: path
+        name: correlationId
+        required: true
+        schema:
+          description: request_id from a submit, or correlation_id from Get Claim
+            Requests
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsClaimRequestDetail'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Claim Request
+  /abdm/nhcx/v1/claims/{claimId}/requests/{correlationId}/documents/{docId}:
+    get:
+      description: Streams a submitted document's bytes with its own content type.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: claim_id returned by Create Claim
+        in: path
+        name: claimId
+        required: true
+        schema:
+          description: claim_id returned by Create Claim
+          minimum: 0
+          type: integer
+      - in: path
+        name: correlationId
+        required: true
+        schema:
+          type: string
+      - description: doc_id from the request's documents
+        in: path
+        name: docId
+        required: true
+        schema:
+          description: doc_id from the request's documents
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+      security:
+      - authApiKey: []
+      summary: Get Claim Request Document
+  /abdm/nhcx/v1/coverage/discovery:
+    post:
+      description: Asks the payer to find the policy for a member_id and payer_id
+        when Search Policies returns nothing. Poll Policy Discovery Status for the
+        result.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsPolicyDiscoveryRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsRequestIdModel'
+          description: Accepted
+      security:
+      - authApiKey: []
+      summary: Discover Policy
+  /abdm/nhcx/v1/coverage/discovery/status:
+    get:
+      description: Returns status pending until the payer answers, then found with
+        the policy_id and product_id. Branch only on status.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: member_id sent to Discover Policy
+        in: query
+        name: member_id
+        required: true
+        schema:
+          description: member_id sent to Discover Policy
+          type: string
+      - description: payer_id sent to Discover Policy
+        in: query
+        name: payer_id
+        required: true
+        schema:
+          description: payer_id sent to Discover Policy
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsPolicyDiscoveryStatus'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Policy Discovery Status
+  /abdm/nhcx/v1/payers:
+    get:
+      description: Lists payers from the NHCX participant registry. The participant_code
+        is the payer_id used by every later call.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: Case-insensitive payer name substring
+        in: query
+        name: name
+        schema:
+          description: Case-insensitive payer name substring
+          type: string
+      - description: Payer scheme type. Defaults to GOVT
+        in: query
+        name: schemeType
+        schema:
+          description: Payer scheme type. Defaults to GOVT
+          enum:
+          - GOVT
+          - PRIVATE
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ModelsPayer'
+                type:
+                - "null"
+                - array
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Search Payers
+  /abdm/nhcx/v1/policies/{policyId}/eligibility:
+    post:
+      description: Checks the policy is in force and returns the wallet balance, without
+        creating a claim. cached true means the answer came from the last check; cached
+        false with a request_id means a fresh check went to the payer, so call again
+        shortly.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: policy_id from Search Policies or Policy Discovery Status
+        in: path
+        name: policyId
+        required: true
+        schema:
+          description: policy_id from Search Policies or Policy Discovery Status
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsEligibilityResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Check Eligibility
+  /abdm/nhcx/v1/policies/{policyId}/plan/refresh:
+    post:
+      description: Requests a fresh procedure catalogue (InsurancePlan) for the policy's
+        product. Poll List Specialities until it is ready.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: policy_id from Search Policies or Policy Discovery Status
+        in: path
+        name: policyId
+        required: true
+        schema:
+          description: policy_id from Search Policies or Policy Discovery Status
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsRequestIdModel'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Refresh Plan
+  /abdm/nhcx/v1/policies/{policyId}/procedures/{procedureCode}:
+    get:
+      description: 'Full catalogue detail for a procedure: flags, costs, caps, mandatory
+        documents and questionnaires. Check a feature''s flag before reading its cap;
+        payers publish non-zero caps on procedures where the feature is off.'
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: policy_id from Search Policies or Policy Discovery Status
+        in: path
+        name: policyId
+        required: true
+        schema:
+          description: policy_id from Search Policies or Policy Discovery Status
+          minimum: 0
+          type: integer
+      - description: Procedure code from List Procedures
+        in: path
+        name: procedureCode
+        required: true
+        schema:
+          description: Procedure code from List Procedures
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCatalogProcedure'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Procedure
+  /abdm/nhcx/v1/policies/{policyId}/specialities:
+    get:
+      description: Lists the specialities in the policy's procedure catalogue.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: policy_id from Search Policies or Policy Discovery Status
+        in: path
+        name: policyId
+        required: true
+        schema:
+          description: policy_id from Search Policies or Policy Discovery Status
+          minimum: 0
+          type: integer
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  specialities:
+                    items:
+                      $ref: '#/components/schemas/ServiceCatalogSpeciality'
+                    type:
+                    - array
+                    - "null"
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+      summary: List Specialities
+  /abdm/nhcx/v1/policies/{policyId}/specialities/{specialityCode}/procedures:
+    get:
+      description: Lists the procedures under one speciality of the policy's catalogue.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - description: policy_id from Search Policies or Policy Discovery Status
+        in: path
+        name: policyId
+        required: true
+        schema:
+          description: policy_id from Search Policies or Policy Discovery Status
+          minimum: 0
+          type: integer
+      - description: Speciality code from List Specialities
+        in: path
+        name: specialityCode
+        required: true
+        schema:
+          description: Speciality code from List Specialities
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  procedures:
+                    items:
+                      $ref: '#/components/schemas/ServiceCatalogProcedureRef'
+                    type:
+                    - array
+                    - "null"
+                type: object
+          description: OK
+      security:
+      - authApiKey: []
+      summary: List Procedures
+  /abdm/nhcx/v1/policies/search:
+    post:
+      description: Finds a beneficiary's policies by mobile number, ABHA number or
+        member ID. A mobile number can return several family members' policies. When
+        nothing comes back, use Policy Discovery.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsGetPolicyRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ModelsPolicy'
+                type:
+                - "null"
+                - array
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Search Policies
+  /abdm/nhcx/v1/preauth/preview:
+    post:
+      description: Builds the pre-auth FHIR bundle from a full request without sending
+        it.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsPreAuthRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties: {}
+                type:
+                - "null"
+                - object
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Preview Pre-auth Bundle
+  /abdm/nhcx/v1/records/adapters:
+    get:
+      description: Returns the adapter registered for the HIP in X-Hip-Id. Auth headers
+        are never returned.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsAdapterResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Records Adapter
+    post:
+      description: Registers where your HIS records API lives and how to call it,
+        for the HIP in X-Hip-Id. Each capability is one templated HTTP call with an
+        extract map; flows chain them. The records APIs read visit_ids and fhir from
+        the finished flow.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelsRegisterAdapterRequest'
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsAdapterResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Register Records Adapter
+  /abdm/nhcx/v1/records/admission/{admissionId}:
+    get:
+      description: Lists an admission's visit ids through the HIP's registered adapter.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - in: path
+        name: admissionId
+        required: true
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsAdmissionVisitsResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Admission Visits
+  /abdm/nhcx/v1/records/visits/{visitId}:
+    get:
+      description: Returns a visit's FHIR bundle through the HIP's registered adapter.
+      parameters:
+      - description: Eka User ID (OID)
+        in: header
+        name: X-Pt-Id
+        schema:
+          type: string
+      - description: Partner User ID
+        in: header
+        name: X-Partner-Pt-Id
+        schema:
+          type: string
+      - description: Partner HIP ID
+        in: header
+        name: X-Hip-Id
+        schema:
+          type: string
+      - in: path
+        name: visitId
+        required: true
+        schema:
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NhcxError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsVisitFHIRResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      summary: Get Visit FHIR
   /abdm/nhpr/v1/hfr/link:
     post:
       description: Link a facility to the ABDM Bridge
@@ -4064,6 +6296,9 @@ paths:
                 hip_id:
                   description: HIP ID from QR Code
                   type: string
+              required:
+              - counter_id
+              - hip_id
               type: object
       responses:
         4XX:
@@ -5187,6 +7422,9 @@ components:
           examples:
           - "162835406498984"
           type: string
+      required:
+      - oid
+      - health_id
       type: object
     CommonsError:
       properties:
@@ -5258,6 +7496,7 @@ components:
           format: date-time
           type: string
         from:
+          description: Time in UTC in RFC3339 Format
           examples:
           - "2009-11-10T23:00:00Z"
           format: date-time
@@ -5302,6 +7541,9 @@ components:
           type: string
         txn_id:
           type: string
+      required:
+      - txn_id
+      - cc_ref_id
       type: object
     ConsentCareContextDetail:
       properties:
@@ -5373,11 +7615,15 @@ components:
         appointment_id:
           type: string
         care_contexts:
+          description: This is Optional, mostly used in the context of subscription
+            documents and auto approval
           items:
             $ref: '#/components/schemas/CommonsCareContextIdentifier'
           type: array
         hip_identifier:
           $ref: '#/components/schemas/CommonsHipIdentifier'
+          description: This is Optional, mostly used in the context of subscription
+            documents and auto approval
         hiu:
           $ref: '#/components/schemas/ConsentEkaHiuIdentifier'
         patient:
@@ -5415,6 +7661,11 @@ components:
           type:
           - array
           - "null"
+      required:
+      - patient
+      - period
+      - purpose
+      - record_types
       type: object
     ConsentCreateConsentResponse:
       properties:
@@ -5454,6 +7705,9 @@ components:
           $ref: '#/components/schemas/CommonsEkaDocReference'
         patient:
           $ref: '#/components/schemas/CommonsEkaPatientReference'
+      required:
+      - patient
+      - hiu
       type: object
     ConsentListConsentResponse:
       properties:
@@ -5784,6 +8038,8 @@ components:
       properties:
         txn_id:
           type: string
+      required:
+      - txn_id
       type: object
     FaceAuthCapturePIDResponse:
       properties:
@@ -5811,6 +8067,9 @@ components:
           type: string
         txn_id:
           type: string
+      required:
+      - txn_id
+      - aadhaar
       type: object
     FormDataSettingsRequest:
       properties:
@@ -6027,6 +8286,8 @@ components:
         txn_id:
           description: Transaction ID required for the next API call.
           type: string
+      required:
+      - txn_id
       type: object
     InitResponseType5:
       properties:
@@ -6102,6 +8363,10 @@ components:
           type: string
         partner_user_id:
           type: string
+      required:
+      - abha_address
+      - oid
+      - care_contexts
       type: object
     LinkCareContextMeta:
       properties:
@@ -6131,6 +8396,8 @@ components:
           type:
           - array
           - "null"
+      required:
+      - care_context_id
       type: object
     LinkUnlinkedRecordsNotificationRequest:
       properties:
@@ -6413,6 +8680,45 @@ components:
         catalog:
           $ref: '#/components/schemas/ModelCatalogDescriptor'
       type: object
+    ModelsAccidentInfo:
+      properties:
+        date:
+          format: date-time
+          type:
+          - "null"
+          - string
+        description:
+          type: string
+        type:
+          description: MVA, Work, etc.
+          type: string
+      type: object
+    ModelsAdapterResponse:
+      properties:
+        active:
+          type: boolean
+        base_url:
+          type: string
+        capabilities:
+          additionalProperties:
+            $ref: '#/components/schemas/ModelsCapability'
+          type:
+          - object
+          - "null"
+        flows:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          type: object
+        hip_id:
+          type: string
+        name:
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      type: object
     ModelsAddFacilityRequest:
       properties:
         clinic_id:
@@ -6451,6 +8757,17 @@ components:
         state:
           type: string
       type: object
+    ModelsAdmissionVisitsResponse:
+      properties:
+        admission_id:
+          type: string
+        visits:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+      type: object
     ModelsAppointmentSummary:
       properties:
         billing:
@@ -6476,6 +8793,59 @@ components:
           - array
           - "null"
       type: object
+    ModelsArchiveClaimResult:
+      properties:
+        archived:
+          type: boolean
+        claim_id:
+          minimum: 0
+          type: integer
+      type: object
+    ModelsAttendant:
+      properties:
+        mobile:
+          type: string
+        name:
+          type: string
+        relation:
+          type: string
+      type: object
+    ModelsBankDetails:
+      properties:
+        account_holder:
+          type: string
+        account_number:
+          type: string
+        bank_name:
+          type: string
+        ifsc_code:
+          type: string
+      required:
+      - account_number
+      - ifsc_code
+      - bank_name
+      - account_holder
+      type: object
+    ModelsBeneficiarySummary:
+      properties:
+        abha_number:
+          type: string
+        beneficiary_id:
+          minimum: 0
+          type: integer
+        date_of_birth:
+          type: string
+        gender:
+          type: string
+        mobile:
+          type: string
+        name:
+          type: string
+        patient_id:
+          type: string
+        pmjay_id:
+          type: string
+      type: object
     ModelsBilling:
       properties:
         address:
@@ -6486,6 +8856,128 @@ components:
           type: string
         phone:
           type: string
+      type: object
+    ModelsBillingItem:
+      properties:
+        care_team_sequence:
+          description: → careTeam sequences
+          items:
+            type: integer
+          type: array
+        category:
+          $ref: '#/components/schemas/ModelsCodeableConcept'
+        cycle_dates:
+          description: 'The per-cycle session dates ("YYYY-MM-DD", one per cycle)
+            for a cyclic line — each becomes one cycle-information supportingInfo
+            unit (a dated EDT entry) linked to the item. The distinct per-cycle dates
+            matter: same-dated units were not counted by the payer (Experiment D);
+            run 27 cleared PAYR-1368 with distinct dates. Optional; falls back to
+            the line''s serviced period then the admission date. See docs/nhcx/nhcx_cyclic_procedures.md.'
+          items:
+            type: string
+          type: array
+        description:
+          type: string
+        diagnosis_pointer:
+          description: → diagnosis sequences
+          items:
+            type: integer
+          type: array
+        information_sequence:
+          description: Sequence references into Claim arrays (1-based)
+          items:
+            type: integer
+          type: array
+        procedure_code:
+          type: string
+        procedure_sequence:
+          description: → procedure sequences
+          items:
+            type: integer
+          type: array
+        quantity:
+          type: number
+        service_code:
+          type: string
+        service_date:
+          description: Legacy fields (kept for backward compat)
+          format: date-time
+          type:
+          - "null"
+          - string
+        serviced_period_end:
+          type: string
+        serviced_period_start:
+          description: Optional servicedPeriod for the line item (YYYY-MM-DD)
+          type: string
+        total_amount:
+          type: number
+        unit_price:
+          type: number
+      required:
+      - service_code
+      type: object
+    ModelsBiometricAuthInitResponse:
+      properties:
+        txn_id:
+          type: string
+      type: object
+    ModelsBiometricAuthVerifyResponse:
+      properties:
+        user_token:
+          type: string
+      type: object
+    ModelsBiometricConsentStatus:
+      properties:
+        expires_at:
+          format: date-time
+          type:
+          - "null"
+          - string
+        stage:
+          type: string
+        status:
+          description: '"valid" | "none" (an expired consent is evicted, so it reads
+            "none")'
+          type: string
+        user_token:
+          type: string
+      type: object
+    ModelsBiometricSession:
+      properties:
+        auth_mode:
+          type: string
+        captured_at:
+          description: The instant the verify succeeded (IST, RFC3339). The claim's
+            cycle window is validated against it payer-side, and the next cycle unlocks
+            24h after it — a calendar date alone cannot express either, so the FE
+            needs the timestamp.
+          type: string
+        date:
+          description: YYYY-MM-DD (IST)
+          type: string
+        next_capture_allowed_at:
+          description: 'CapturedAt + the 24h re-capture gap: when this stage''s capture
+            button may be re-enabled. Empty once the window has already elapsed.'
+          type: string
+        procedure_code:
+          description: The billed line this capture belongs to (empty on older rows).
+          type: string
+        purpose:
+          description: '"preauth" / "cycle" / "discharge" — only "cycle" rows are
+            treatment visits, and only they belong in the claim''s cycle_dates.'
+          type: string
+        stage:
+          type: string
+      type: object
+    ModelsBiometricSessionList:
+      properties:
+        sessions:
+          items:
+            $ref: '#/components/schemas/ModelsBiometricSession'
+          type:
+          - array
+          - "null"
       type: object
     ModelsCancelOrderRequest:
       properties:
@@ -6505,6 +8997,45 @@ components:
           description: Cancellation status of the order (e.g., SUCCESS, FAILED, PENDING)
           type: string
       type: object
+    ModelsCapability:
+      properties:
+        base_url:
+          description: Overrides the adapter's BaseURL for this one capability, for
+            a HIP whose records are split across services — visits on one host, bundles
+            on another.
+          type: string
+        body:
+          description: Sent as JSON when present. Placeholders inside its string values
+            are substituted, so it doubles as a request template.
+        extract:
+          additionalProperties:
+            type: string
+          description: Names the variables to pull out of the response, by JSON path
+            (`data.visits[*].visitid`, `id`, `$` for the whole body). Those variables
+            feed the templates of later steps and the endpoint's own reply, which
+            is what lets each HIP answer in its own shape.
+          type: object
+        for_each:
+          $ref: '#/components/schemas/ModelsForEach'
+          description: 'Fans this step out: it runs once per element of a variable
+            an earlier step extracted, binding each element to a template param.'
+        headers:
+          additionalProperties:
+            type: string
+          description: Sent on top of the adapter's auth headers; values are templates.
+          type: object
+        method:
+          description: Defaults to GET when empty.
+          type: string
+        path:
+          description: Joined onto BaseURL (the capability's own, or the adapter's).
+          type: string
+        query:
+          additionalProperties:
+            type: string
+          description: Appended as the query string; values are templates.
+          type: object
+      type: object
     ModelsCareContext:
       properties:
         display:
@@ -6512,6 +9043,574 @@ components:
           type: string
         ref_num:
           description: Unique reference number for the care context
+          type: string
+      type: object
+    ModelsChildDetails:
+      properties:
+        birth_certificate:
+          $ref: '#/components/schemas/ModelsRegistrationDoc'
+        parent_pmjay_id:
+          type: string
+      type: object
+    ModelsClaimCareTeamMember:
+      properties:
+        hpr_id:
+          description: ABDM HPR id → Practitioner HPID/HPIN
+          type: string
+        mobile:
+          type: string
+        name:
+          type: string
+        qualification_code:
+          description: SNOMED code, e.g. "422234006"
+          type: string
+        qualification_display:
+          description: e.g. "Ophthalmologist"
+          type: string
+        registration_id:
+          description: NMC / council reg no.
+          type: string
+      required:
+      - name
+      type: object
+    ModelsClaimDetail:
+      properties:
+        admission_date:
+          format: date-time
+          type:
+          - "null"
+          - string
+        admission_type:
+          type: string
+        archived_at:
+          description: Set when the provider archived (set aside) this claim; nil
+            = active. Archived claims still appear in the list/detail APIs (for analytics)
+            but are excluded from reuse.
+          format: date-time
+          type:
+          - "null"
+          - string
+        case_number:
+          type: string
+        catalog_md5:
+          type: string
+        claim_id:
+          minimum: 0
+          type: integer
+        claim_ref:
+          type: string
+        copay_amount:
+          description: The payer-declared patient-liable amount (ClaimResponse.total[copayment]).
+          type: number
+        copay_required:
+          description: 'True when the payer has declared a patient-liable amount on
+            this claim''s latest adjudication — the signal to enable the co-payment
+            collection flow (and its mandatory beneficiary consent form) in the UI.
+            Derived from the payer''s own response, NOT from a wallet-vs-claim comparison:
+            the payer is authoritative on what the beneficiary owes, and its figure
+            already accounts for scheme rules a naive balance subtraction would miss.'
+          type: boolean
+        created_at:
+          format: date-time
+          type: string
+        deduction_pct:
+          description: The payer's deduction on the final claim as a percentage of
+            the submitted amount ((submitted − approved) / submitted × 100). Nil until
+            an adjudicated final-claim request with both amounts exists.
+          type:
+          - "null"
+          - number
+        discharge_date:
+          format: date-time
+          type:
+          - "null"
+          - string
+        discharge_type:
+          type: string
+        drafts:
+          description: Lists the stages that have a saved (unsubmitted) draft — "Preauth"
+            and/or "Claim". Present so the resume path can go straight to GET .../requests/draft:<Stage>
+            instead of issuing speculative reads for ids that may not exist.
+          items:
+            type: string
+          type: array
+        max_queries_reached:
+          type: boolean
+        payer_code:
+          type: string
+        policy_id:
+          description: The policy this case was created against. Serialized so a client
+            resuming the case can key the procedure catalogue (GET /policies/:policyId/...)
+            off it directly, instead of re-deriving it from a redundant, failure-prone
+            POST /policies/search on every resume.
+          minimum: 0
+          type: integer
+        preauth_case_no:
+          type: string
+        preauth_due_by:
+          description: CreatedAt + 48h — the deadline to initiate a pre-auth after
+            registration. Nil once a pre-auth has ever been submitted (the deadline
+            no longer applies) or once the claim is archived.
+          format: date-time
+          type:
+          - "null"
+          - string
+        preauth_overdue:
+          description: True when PreAuthDueBy has passed and no pre-auth has been
+            submitted — the claim is a candidate for the next ArchiveOverdueRegistrations
+            sweep.
+          type: boolean
+        preauth_ref:
+          type: string
+        product_id:
+          type: string
+        provider_hfr:
+          type: string
+        query_count:
+          description: 'How many times the payer has queried this claim''s pre-auth.
+            MaxQueriesReached mirrors the UAT''s stated cap of 2 — informational:
+            NHCX controls when it stops querying, this is not a limit we enforce on
+            submission.'
+          type: integer
+        registration_details:
+          description: The stored TC-04 registration enrichment (attendant, emergency
+            and child document references) as captured at case creation — see models.StoredRegistration.
+            Omitted when none was supplied. Document bytes are not inlined; the refs
+            point to S3.
+        review_path:
+          description: 'Tells the FE which post-adjudication action to offer: "crc"
+            — rejected, or deduction strictly > 20%: the one-shot CRC appeal (POST
+            /claims/:claimId/claim/reprocess). "cpd_review" — deduction ≤ 20% (including
+            exactly 20%): "erroneous claim"; CPD review, NOT appealable — the reprocess
+            endpoint will refuse it. "" — no adjudicated deduction/rejection to act
+            on, or the one-shot appeal is already used (see the claim''s reprocess
+            request row / claim_reprocess_* status for its outcome).'
+          type: string
+        status:
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      type: object
+    ModelsClaimDocument:
+      properties:
+        content:
+          description: base64-encoded inline content
+          type: string
+        content_type:
+          description: e.g. "application/pdf"
+          type: string
+        creation_date:
+          description: '"YYYY-MM-DD"'
+          type: string
+        description:
+          type: string
+        title:
+          type: string
+        type:
+          description: LAB_REPORT / RADIOLOGY / DISCHARGE_SUMMARY …
+          type: string
+        url:
+          description: presigned URL (optional if content provided)
+          type: string
+      required:
+      - type
+      - content_type
+      type: object
+    ModelsClaimDraftDoc:
+      properties:
+        category:
+          type: string
+        code:
+          type: string
+        content:
+          description: base64; empty for an already-stored doc
+          type: string
+        content_type:
+          type: string
+        doc_id:
+          type: string
+        slot_key:
+          description: SlotKey — see ClaimDraftDocRef.SlotKey. Carried through so
+            a document sent in this typed field (rather than inline in the payload)
+            is echoed back to the right form row too.
+          type: string
+        title:
+          type: string
+      type: object
+    ModelsClaimDraftDocRef:
+      properties:
+        category:
+          type: string
+        code:
+          type: string
+        content_type:
+          type: string
+        doc_id:
+          type: string
+        slot_key:
+          description: 'The FORM''s own identifier for the row this document fills
+            ("IN001A::MAND0003", "cycle:MG072D:0", …). The client sends it and it
+            is echoed back untouched: doc_id alone cannot say WHICH row a document
+            belongs to when several slots share a code (every cycle document carries
+            the same mand code), so without this the form cannot put a restored document
+            back where it came from.'
+          type: string
+        title:
+          type: string
+      type: object
+    ModelsClaimDraftSaveResponse:
+      properties:
+        documents:
+          description: Every document the draft now holds, each with the id it was
+            stored under.
+          items:
+            $ref: '#/components/schemas/ModelsClaimDraftDocRef'
+          type: array
+        updated_at:
+          type: string
+      type: object
+    ModelsClaimListItem:
+      properties:
+        admission_date:
+          format: date-time
+          type:
+          - "null"
+          - string
+        admission_type:
+          type: string
+        archived_at:
+          description: Set when the provider archived (set aside) this claim; nil
+            = active. Archived claims still appear in the list/detail APIs (for analytics)
+            but are excluded from reuse.
+          format: date-time
+          type:
+          - "null"
+          - string
+        beneficiary:
+          $ref: '#/components/schemas/ModelsBeneficiarySummary'
+        case_number:
+          type: string
+        catalog_md5:
+          type: string
+        claim_id:
+          minimum: 0
+          type: integer
+        claim_ref:
+          type: string
+        copay_amount:
+          description: The payer-declared patient-liable amount (ClaimResponse.total[copayment]).
+          type: number
+        copay_required:
+          description: 'True when the payer has declared a patient-liable amount on
+            this claim''s latest adjudication — the signal to enable the co-payment
+            collection flow (and its mandatory beneficiary consent form) in the UI.
+            Derived from the payer''s own response, NOT from a wallet-vs-claim comparison:
+            the payer is authoritative on what the beneficiary owes, and its figure
+            already accounts for scheme rules a naive balance subtraction would miss.'
+          type: boolean
+        created_at:
+          format: date-time
+          type: string
+        deduction_pct:
+          description: The payer's deduction on the final claim as a percentage of
+            the submitted amount ((submitted − approved) / submitted × 100). Nil until
+            an adjudicated final-claim request with both amounts exists.
+          type:
+          - "null"
+          - number
+        discharge_date:
+          format: date-time
+          type:
+          - "null"
+          - string
+        discharge_type:
+          type: string
+        drafts:
+          description: Lists the stages that have a saved (unsubmitted) draft — "Preauth"
+            and/or "Claim". Present so the resume path can go straight to GET .../requests/draft:<Stage>
+            instead of issuing speculative reads for ids that may not exist.
+          items:
+            type: string
+          type: array
+        max_queries_reached:
+          type: boolean
+        payer_code:
+          type: string
+        policy_id:
+          description: The policy this case was created against. Serialized so a client
+            resuming the case can key the procedure catalogue (GET /policies/:policyId/...)
+            off it directly, instead of re-deriving it from a redundant, failure-prone
+            POST /policies/search on every resume.
+          minimum: 0
+          type: integer
+        preauth_case_no:
+          type: string
+        preauth_due_by:
+          description: CreatedAt + 48h — the deadline to initiate a pre-auth after
+            registration. Nil once a pre-auth has ever been submitted (the deadline
+            no longer applies) or once the claim is archived.
+          format: date-time
+          type:
+          - "null"
+          - string
+        preauth_overdue:
+          description: True when PreAuthDueBy has passed and no pre-auth has been
+            submitted — the claim is a candidate for the next ArchiveOverdueRegistrations
+            sweep.
+          type: boolean
+        preauth_ref:
+          type: string
+        product_id:
+          type: string
+        provider_hfr:
+          type: string
+        query_count:
+          description: 'How many times the payer has queried this claim''s pre-auth.
+            MaxQueriesReached mirrors the UAT''s stated cap of 2 — informational:
+            NHCX controls when it stops querying, this is not a limit we enforce on
+            submission.'
+          type: integer
+        registration_details:
+          description: The stored TC-04 registration enrichment (attendant, emergency
+            and child document references) as captured at case creation — see models.StoredRegistration.
+            Omitted when none was supplied. Document bytes are not inlined; the refs
+            point to S3.
+        review_path:
+          description: 'Tells the FE which post-adjudication action to offer: "crc"
+            — rejected, or deduction strictly > 20%: the one-shot CRC appeal (POST
+            /claims/:claimId/claim/reprocess). "cpd_review" — deduction ≤ 20% (including
+            exactly 20%): "erroneous claim"; CPD review, NOT appealable — the reprocess
+            endpoint will refuse it. "" — no adjudicated deduction/rejection to act
+            on, or the one-shot appeal is already used (see the claim''s reprocess
+            request row / claim_reprocess_* status for its outcome).'
+          type: string
+        status:
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      type: object
+    ModelsClaimModel:
+      properties:
+        case_number:
+          type: string
+        catalog_md5:
+          type: string
+        claim_id:
+          minimum: 0
+          type: integer
+      type: object
+    ModelsClaimRequestDetail:
+      properties:
+        approved_amount:
+          type:
+          - "null"
+          - number
+        correlation_id:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        documents:
+          items:
+            $ref: '#/components/schemas/ModelsClaimRequestDocSummary'
+          type: array
+        error_code:
+          description: ErrorCode / ErrorMessage carry a gateway/payer ProtocolResponse
+            error so the UI can show WHY a request failed, not just that it did.
+          type: string
+        error_message:
+          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/ModelsClaimRequestItem'
+          type: array
+        outcome:
+          type: string
+        request_id:
+          minimum: 0
+          type: integer
+        request_meta: {}
+        request_subtype:
+          description: Distinguishes a variant within RequestType that workflow_id
+            cannot (e.g. "cancel"/"enhancement"/"reprocess" within request_type "preauth"/"claim")
+            — and, for request_type "communication", carries the payer's Task.reasonCode
+            (tatquery/grievance/ walletupdate/policychange/additionalinfo), which
+            has no workflow_id at all. Previously unexposed on this summary; see nhcx_api_contract_changes.md.
+          type: string
+        request_type:
+          type: string
+        response_meta: {}
+        status:
+          type: string
+        submitted_amount:
+          type:
+          - "null"
+          - number
+        updated_at:
+          format: date-time
+          type: string
+        workflow_id:
+          type: string
+      type: object
+    ModelsClaimRequestDocSummary:
+      properties:
+        category:
+          type: string
+        content_type:
+          type: string
+        doc_id:
+          type: string
+        title:
+          type: string
+      type: object
+    ModelsClaimRequestItem:
+      properties:
+        approved_amount:
+          description: What the payer allowed for this item (its "eligible" adjudication,
+            which is already net of any deduction). Set only once the item is approved.
+          type: number
+        claim_amount:
+          type: number
+        copay_amount:
+          type: number
+        deducted_amount:
+          description: The amount the payer disallowed off this item's claimed amount.
+          type: number
+        procedure_code:
+          type: string
+        quantity:
+          type: number
+        reason_code:
+          description: The payer's machine code for a deduction/rejection (e.g. "DEDUCT/01");
+            Reasons carries the human-readable text the provider must act on (query
+            text, deduction explanation).
+          type: string
+        reasons:
+          items:
+            type: string
+          type: array
+        sequence:
+          type: integer
+        speciality_code:
+          type: string
+        state:
+          description: 'The item''s adjudication state: pending until the payer responds,
+            then approved | queried | rejected.'
+          type: string
+        strat_code:
+          type: string
+      type: object
+    ModelsClaimRequestSummary:
+      properties:
+        approved_amount:
+          type:
+          - "null"
+          - number
+        correlation_id:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        error_code:
+          description: ErrorCode / ErrorMessage carry a gateway/payer ProtocolResponse
+            error so the UI can show WHY a request failed, not just that it did.
+          type: string
+        error_message:
+          type: string
+        outcome:
+          type: string
+        request_id:
+          minimum: 0
+          type: integer
+        request_subtype:
+          description: Distinguishes a variant within RequestType that workflow_id
+            cannot (e.g. "cancel"/"enhancement"/"reprocess" within request_type "preauth"/"claim")
+            — and, for request_type "communication", carries the payer's Task.reasonCode
+            (tatquery/grievance/ walletupdate/policychange/additionalinfo), which
+            has no workflow_id at all. Previously unexposed on this summary; see nhcx_api_contract_changes.md.
+          type: string
+        request_type:
+          type: string
+        status:
+          type: string
+        submitted_amount:
+          type:
+          - "null"
+          - number
+        updated_at:
+          format: date-time
+          type: string
+        workflow_id:
+          type: string
+      type: object
+    ModelsClaimSupportingDoc:
+      properties:
+        category:
+          description: e.g. "HDS"
+          type: string
+        category_display:
+          description: human-readable label
+          type: string
+        code:
+          description: e.g. "MDC"
+          type: string
+        code_display:
+          type: string
+        content:
+          description: base64 inline payload (PMJAY requires data, not url)
+          type: string
+        content_type:
+          description: '"application/pdf"'
+          type: string
+        creation:
+          description: '"YYYY-MM-DD"'
+          type: string
+        doc_id:
+          description: References a document the backend ALREADY stores for this case
+            (a saved draft's attachment). When set and Content is empty, the service
+            hydrates Content from its own store before validating/submitting — the
+            client never has to download bytes it just asked the server to keep. See
+            hydrateDocsFromDraft.
+          type: string
+        title:
+          type: string
+      required:
+      - category
+      - code
+      - content_type
+      - title
+      type: object
+    ModelsCodeableConcept:
+      properties:
+        coding:
+          items:
+            $ref: '#/components/schemas/ModelsCoding'
+          type:
+          - array
+          - "null"
+        text:
+          type: string
+      type: object
+    ModelsCodedReason:
+      properties:
+        code:
+          type: string
+        display:
+          type: string
+        system:
+          type: string
+      required:
+      - code
+      type: object
+    ModelsCoding:
+      properties:
+        code:
+          type: string
+        display:
+          type: string
+        system:
           type: string
       type: object
     ModelsConfirmRequest:
@@ -6533,6 +9632,36 @@ components:
           type: string
         type:
           type: string
+      type: object
+    ModelsCoverageEligibilityItem:
+      properties:
+        claim_amount:
+          description: in INR
+          type: number
+        procedure_code:
+          type: string
+        procedure_name:
+          type: string
+        quantity:
+          description: defaults to 1
+          type: integer
+        questionnaire_answers:
+          description: Carries questionnaire responses for this procedure.
+          items:
+            $ref: '#/components/schemas/ModelsQuestionnaireAnswer'
+          type: array
+        speciality_code:
+          type: string
+        speciality_name:
+          type: string
+        strat_code:
+          description: stratification code
+          type: string
+        supporting_docs:
+          description: Lists documents to be submitted for this procedure line.
+          items:
+            $ref: '#/components/schemas/ModelsSupportingDocInput'
+          type: array
       type: object
     ModelsDecryptPayload:
       properties:
@@ -6557,6 +9686,19 @@ components:
         decrypted_data:
           description: Decrypted plaintext data
           type: string
+      type: object
+    ModelsDiagnosisCoding:
+      properties:
+        code:
+          type: string
+        display:
+          type: string
+        system:
+          description: defaults to ICD-10 if empty
+          type: string
+      required:
+      - code
+      - display
       type: object
     ModelsDiscoverCareContextHmisConnect:
       properties:
@@ -6590,6 +9732,7 @@ components:
         id:
           type: string
         name:
+          description: keep optional if available
           type: string
         tags:
           items:
@@ -6729,6 +9872,30 @@ components:
           description: Indicates whether the health ID exist.
           type: boolean
       type: object
+    ModelsEligibilityResponse:
+      properties:
+        auth_requirements: {}
+        cached:
+          description: True when this response came straight from EligibilityCache.
+            It is false when this call just submitted a fresh NHCX coverage-eligibility
+            check instead — see RequestID/Message in that case.
+          type: boolean
+        fetched_at:
+          format: date-time
+          type: string
+        member_id:
+          type: string
+        message:
+          type: string
+        policy_in_force:
+          type: boolean
+        product_id:
+          type: string
+        request_id:
+          type: string
+        wallet_balance:
+          type: number
+      type: object
     ModelsEncryptPayload:
       properties:
         plain_text_data:
@@ -6811,6 +9978,16 @@ components:
         villageCityTownLGDCode: {}
         villageCityTownName: {}
       type: object
+    ModelsForEach:
+      properties:
+        from:
+          description: The variable holding the list.
+          type: string
+        param:
+          description: The template placeholder each element is bound to for that
+            iteration.
+          type: string
+      type: object
     ModelsGetConfirmResponse:
       properties:
         doctor_info:
@@ -6841,6 +10018,20 @@ components:
         txn_id:
           description: Unique transaction ID for the next API call
           type: string
+      type: object
+    ModelsGetPolicyRequest:
+      properties:
+        identifier_type:
+          enum:
+          - MobileNo
+          - AbhaNumber
+          - MemberId
+          type: string
+        identifier_value:
+          type: string
+      required:
+      - identifier_type
+      - identifier_value
       type: object
     ModelsHPRIDAadhaarInitRequest:
       properties:
@@ -6942,6 +10133,37 @@ components:
       - txn_id
       - request_id
       type: object
+    ModelsNHCXPreAuthItem:
+      properties:
+        claim_amount:
+          type: number
+        procedure_code:
+          type: string
+        procedure_name:
+          type: string
+        quantity:
+          type: integer
+        questionnaire_answers:
+          description: Carries STG form answers for this procedure. Each answer maps
+            to one Claim.supportingInfo entry with valueString.
+          items:
+            $ref: '#/components/schemas/ModelsPreAuthQuestionnaireAnswer'
+          type: array
+        speciality_code:
+          type: string
+        speciality_name:
+          type: string
+        strat_code:
+          type: string
+        strat_display:
+          type: string
+        supporting_docs:
+          description: Provides actual document content keyed by MandCode. Each entry
+            maps to one Claim.supportingInfo entry with valueAttachment.
+          items:
+            $ref: '#/components/schemas/ModelsPreAuthDocInput'
+          type: array
+      type: object
     ModelsOrderStatusRequest:
       properties:
         order_id:
@@ -6995,6 +10217,30 @@ components:
           description: patient reference number.
           type: string
       type: object
+    ModelsPatientDetails:
+      properties:
+        abha_number:
+          type: string
+        age:
+          description: optional; derived server-side if absent
+          type: integer
+        dob:
+          description: YYYY-MM-DD
+          type: string
+        email:
+          type: string
+        gender:
+          description: '"male"/"female"/"other" or title-case variants'
+          type: string
+        mobile:
+          type: string
+        name:
+          type: string
+        relation:
+          type: string
+      required:
+      - name
+      type: object
     ModelsPatientType2:
       properties:
         dob:
@@ -7004,12 +10250,289 @@ components:
         id:
           type: string
       type: object
+    ModelsPayer:
+      properties:
+        address:
+          type: string
+        name:
+          type: string
+        participant_code:
+          type: string
+        scheme_type:
+          type: string
+        state:
+          type: string
+      type: object
     ModelsPayment:
       properties:
         status:
           type: string
         type:
           type: string
+      type: object
+    ModelsPaymentDetailLine:
+      properties:
+        amount:
+          type: number
+        date:
+          type: string
+        id:
+          type: string
+        type:
+          description: e.g. "TDS", "Payment"
+          type: string
+      type: object
+    ModelsPaymentSummary:
+      properties:
+        amount:
+          type: number
+        claim_number:
+          type: string
+        correlation_id:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        detail:
+          items:
+            $ref: '#/components/schemas/ModelsPaymentDetailLine'
+          type: array
+        disposition:
+          type: string
+        id:
+          minimum: 0
+          type: integer
+        payment_date:
+          type: string
+        payment_status:
+          type: string
+        transaction_ref:
+          description: Groups stage-notices of ONE payer transaction (initiated/processed/settled
+            arrive as separate rows with fresh correlation ids and possibly different
+            amounts). Group by this; a transaction's amount is its LATEST row's amount
+            — never Σ across its rows.
+          type: string
+        utr:
+          type: string
+      type: object
+    ModelsPolicy:
+      properties:
+        abha_number:
+          type: string
+        member_id:
+          type: string
+        mobile_number:
+          type: string
+        payer_id:
+          type: string
+        policy_id:
+          minimum: 0
+          type: integer
+        processing_id:
+          type: string
+        product_id:
+          type: string
+        product_name:
+          type: string
+        sno:
+          type: string
+      type: object
+    ModelsPolicyDiscoveryRequest:
+      properties:
+        abha_number:
+          type: string
+        member_id:
+          type: string
+        patient_details:
+          $ref: '#/components/schemas/ModelsPatientDetails'
+        payer_id:
+          type: string
+      required:
+      - member_id
+      - payer_id
+      type: object
+    ModelsPolicyDiscoveryStatus:
+      properties:
+        policy_id:
+          minimum: 0
+          type: integer
+        product_id:
+          type: string
+        product_name:
+          type: string
+        status:
+          description: '"pending" | "found"'
+          type: string
+      type: object
+    ModelsPreAuthConsent:
+      properties:
+        answers:
+          items:
+            $ref: '#/components/schemas/ModelsPreAuthQuestionnaireAnswer'
+          type:
+          - array
+          - "null"
+        questionnaire_url:
+          type: string
+      type: object
+    ModelsPreAuthDocInput:
+      properties:
+        content:
+          description: base64 inline payload
+          type: string
+        content_type:
+          description: '"application/pdf"'
+          type: string
+        creation:
+          description: '"YYYY-MM-DD"'
+          type: string
+        doc_id:
+          description: 'DocID — see ClaimSupportingDoc.DocID: a reference to a stored
+            draft attachment, hydrated server-side when Content is empty.'
+          type: string
+        mand_code:
+          description: e.g. "MAND0006" — matches the plan's mandatory doc
+          type: string
+        title:
+          type: string
+        url:
+          description: presigned S3 URL (preferred)
+          type: string
+      type: object
+    ModelsPreAuthQuestionnaireAnswer:
+      properties:
+        answer: {}
+        link_id:
+          type: string
+        question:
+          type: string
+        questionnaire_url:
+          description: STG questionnaire URL
+          type: string
+      type: object
+    ModelsPreAuthRequest:
+      properties:
+        abha_number:
+          type: string
+        accident_info:
+          $ref: '#/components/schemas/ModelsAccidentInfo'
+          description: Accident details (optional conditional form section)
+        admission_type:
+          description: 'The NDHM claim-type code: "OPD", "IPD", or "EMR". Defaults
+            to "OPD".'
+          type: string
+        auth_type:
+          description: Beneficiary authentication. AuthType "consent" (default) sends
+            the Authentication Consent Questionnaire response (Consent) and OMITS
+            the biometric X-Token; "biometric" sends UserToken as the X-Token. The
+            payer requires one or the other.
+          type: string
+        case_number:
+          description: An OPTIONAL override for the pre-auth case / intimation number
+            sent as Claim.identifier. PMJAY does not issue a case number at eligibility
+            or pre-auth, so this is normally left blank and a random UUID is generated.
+            Provide it only if a specific value must be used (e.g. resubmission/enhancement
+            referencing an earlier pre-auth).
+          type: string
+        clinical_notes:
+          type: string
+        consent:
+          $ref: '#/components/schemas/ModelsPreAuthConsent'
+          description: Authentication Consent Questionnaire response
+        diagnosis:
+          description: Clinical (form inputs)
+          items:
+            $ref: '#/components/schemas/ModelsDiagnosisCoding'
+          type:
+          - array
+          - "null"
+        documents:
+          description: Documents (file uploads from form)
+          items:
+            $ref: '#/components/schemas/ModelsClaimDocument'
+          type: array
+        estimated_amount:
+          type: number
+        hfr_facility_id:
+          type: string
+        hospital_address:
+          type: string
+        hospital_name:
+          type: string
+        items:
+          description: NHCX procedure items with stratification (preferred over ServiceCodes
+            in the NHCX flow).
+          items:
+            $ref: '#/components/schemas/ModelsNHCXPreAuthItem'
+          type: array
+        member_id:
+          type: string
+        participant_id:
+          description: set server-side from auth token
+          type: string
+        patient_details:
+          $ref: '#/components/schemas/ModelsPatientDetails'
+        payer_id:
+          description: Required identifiers
+          type: string
+        planned_end_date:
+          format: date-time
+          type:
+          - "null"
+          - string
+        planned_start_date:
+          description: ISO 8601 — parsed from frontend datetime-local
+          format: date-time
+          type:
+          - "null"
+          - string
+        priority:
+          description: '"normal" | "urgent" | "stat"'
+          type: string
+        procedure_codes:
+          items:
+            type: string
+          type: array
+        product_id:
+          description: NHCX plan identifiers — used to auto-enrich Items from the
+            plan DB.
+          type: string
+        product_name:
+          type: string
+        provider_id:
+          description: Provider & patient (auto-populated by SDK from store; optional
+            for backward compat)
+          type: string
+        provider_name:
+          type: string
+        remarks:
+          type: string
+        request_type:
+          description: '"InitialRequest" | "FollowUp" | "Enhancement"'
+          type: string
+        service_breakdown:
+          description: Cost estimate (auto-filled from package)
+          items:
+            $ref: '#/components/schemas/ModelsServiceBreakdown'
+          type: array
+        service_codes:
+          description: Procedure & dates (form inputs)
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        treating_doctor:
+          $ref: '#/components/schemas/ModelsTreatingDoctor'
+          description: Care team (form inputs)
+        user_token:
+          description: biometric User Token (30-min), used when AuthType=biometric
+          type: string
+      required:
+      - payer_id
+      - member_id
+      - request_type
+      - abha_number
       type: object
     ModelsPrice:
       properties:
@@ -7038,6 +10561,12 @@ components:
           description: Contact phone number of the provider or facility
           type: string
       type: object
+    ModelsQuestionnaireAnswer:
+      properties:
+        answer: {}
+        link_id:
+          type: string
+      type: object
     ModelsQuote:
       properties:
         breakup:
@@ -7054,6 +10583,80 @@ components:
         title:
           type: string
         value:
+          type: string
+      type: object
+    ModelsRegisterAdapterRequest:
+      properties:
+        active:
+          type:
+          - "null"
+          - boolean
+        auth_headers:
+          additionalProperties:
+            type: string
+          type:
+          - object
+          - "null"
+        base_url:
+          type: string
+        capabilities:
+          additionalProperties:
+            $ref: '#/components/schemas/ModelsCapability'
+          type:
+          - object
+          - "null"
+        flows:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          description: 'Chains capabilities by name. Optional: a HIP that names its
+            capabilities admission_visits / visit_fhir gets that chain by default.'
+          type:
+          - object
+          - "null"
+        name:
+          type: string
+      required:
+      - base_url
+      - capabilities
+      type: object
+    ModelsRegistrationDetails:
+      properties:
+        attendant:
+          $ref: '#/components/schemas/ModelsAttendant'
+        child:
+          $ref: '#/components/schemas/ModelsChildDetails'
+          description: Required when the beneficiary is under six years old (derived
+            from DOB).
+        emergency_justification:
+          $ref: '#/components/schemas/ModelsRegistrationDoc'
+          description: Required when the case's admission_type is "emergency" — the
+            document justifying an emergency (unplanned) admission.
+      type: object
+    ModelsRegistrationDoc:
+      properties:
+        content:
+          description: base64
+          type: string
+        content_type:
+          type: string
+        title:
+          type: string
+      type: object
+    ModelsRequestIdModel:
+      properties:
+        estimated_response_time:
+          description: e.g., "4-6 hours"
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+        status:
+          type: string
+        workflow_id:
+          description: Current workflow state
           type: string
       type: object
     ModelsSearchResponse:
@@ -7107,6 +10710,25 @@ components:
         year_of_experience:
           description: Number of years of professional experience
           type: integer
+      type: object
+    ModelsServiceBreakdown:
+      properties:
+        description:
+          type: string
+        net_amount:
+          description: quantity × unit_price
+          type: number
+        quantity:
+          description: units or days
+          type: number
+        service_code:
+          description: NHCX / SNOMED code
+          type: string
+        unit_price:
+          description: per-unit price
+          type: number
+      required:
+      - service_code
       type: object
     ModelsSlot:
       properties:
@@ -7200,6 +10822,17 @@ components:
           - array
           - "null"
       type: object
+    ModelsSupportingDocInput:
+      properties:
+        category_code:
+          type: string
+        doc_code:
+          type: string
+        doc_display:
+          type: string
+        url:
+          type: string
+      type: object
     ModelsTermsSummary:
       properties:
         long_desc:
@@ -7210,6 +10843,24 @@ components:
           type: string
         type:
           type: string
+      type: object
+    ModelsTreatingDoctor:
+      properties:
+        hpr_id:
+          description: ABDM Health Professional Registry ID (e.g. 12-1212-1212-1212)
+          type: string
+        name:
+          type: string
+        qualification:
+          type: string
+        registration_id:
+          description: NMC / council registration no.
+          type: string
+        specialty:
+          description: SNOMED specialty label or free text
+          type: string
+      required:
+      - name
       type: object
     ModelsUpdateOrderRequest:
       properties:
@@ -7238,12 +10889,32 @@ components:
             in the previous api response
           type: string
       type: object
+    ModelsVisitFHIRResponse:
+      properties:
+        fhir: {}
+        visit_id:
+          type: string
+      type: object
     NdhmeventLocation:
       properties:
         lat:
           type: number
         long:
           type: number
+      type: object
+    NhcxError:
+      properties:
+        error:
+          type: string
+        issues:
+          description: Every validation problem found, when the backend rejects a
+            submit before it reaches the payer
+          items:
+            type: string
+          type: array
+        updated_at:
+          description: 'Only on a 409 from the draft save: the stored draft''s version'
+          type: string
       type: object
     NhprDoesHprExistRequest:
       properties:
@@ -7287,10 +10958,12 @@ components:
         notify_user:
           type: boolean
         password:
+          description: encrypted
           type: string
         pincode:
           type: string
         profile_photo:
+          description: base64
           type: string
         role:
           type: integer
@@ -7307,7 +10980,8 @@ components:
           type:
           - array
           - "null"
-        categories: {}
+        categories:
+          description: empty object {}
         category_id:
           type: integer
         day_of_birth:
@@ -7374,6 +11048,7 @@ components:
         middle_name:
           type: string
         mobile:
+          description: nullable
           type:
           - "null"
           - string
@@ -7502,6 +11177,9 @@ components:
         txn_id:
           description: Transaction id received in the search api response
           type: string
+      required:
+      - method
+      - identifier
       type: object
     PhrLoginOTPResponse:
       properties:
@@ -7559,6 +11237,8 @@ components:
         txn_id:
           description: Transaction id received in the previous api response
           type: string
+      required:
+      - txn_id
       type: object
     PhrVerifyLoginOTPResponse:
       properties:
@@ -8239,6 +11919,153 @@ components:
       required:
       - token_number
       type: object
+    ServiceCatalogCost:
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        qualifier_code:
+          type: string
+        qualifier_display:
+          type: string
+        type:
+          type: string
+      type: object
+    ServiceCatalogDocument:
+      properties:
+        category:
+          description: The category DISPLAY (e.g. "Diagnostic report"); CategoryCode
+            is the NDHM category CODE (e.g. "DIA") the payer validates in supportingInfo.category.
+          type: string
+        category_code:
+          type: string
+        code:
+          type: string
+        display:
+          type: string
+        doc_type_id:
+          type: string
+        mand_code:
+          type: string
+      type: object
+    ServiceCatalogProcedure:
+      properties:
+        claim_amount:
+          description: 'ClaimAmount / MandatoryDocs / STGForms are populated by GetProcedure''s
+            join step (not stored directly on the Dynamo item) so existing consumers
+            keep working unchanged: ClaimAmount mirrors the "Procedure" cost line
+            (or the first cost line if none is typed "Procedure"); MandatoryDocs/STGForms
+            are the joined documents'' MAND codes / STG display strings. MandatoryDocDetails
+            is the same join''s full document records (category/code/display) keyed
+            off MandCode, added so callers that need the richer metadata (e.g. enrichPreAuthItems
+            filling CategoryDisplay/DocDisplay) don''t need a second CatalogStore
+            call — it is additive and safe to ignore.'
+          type: number
+        code:
+          type: string
+        costs:
+          items:
+            $ref: '#/components/schemas/ServiceCatalogCost'
+          type: array
+        discharge_stages:
+          type: string
+        document_ids:
+          items:
+            type: string
+          type: array
+        flags:
+          items:
+            type: string
+          type: array
+        is_unspecified:
+          description: 'Marks an "Unspecified Surgical Package" (code "<spec>U100").
+            Derived from the code at read time (not stored), so the FE knows to render
+            the free-text name + amount fields: these packages have no catalog price
+            (ClaimAmount is the 9999999 sentinel) and the provider must supply both.
+            Such an item also cannot be clubbed with other procedures — see unspecified_procedure.go.'
+          type: boolean
+        mandatory_doc_details:
+          items:
+            $ref: '#/components/schemas/ServiceCatalogDocument'
+          type: array
+        mandatory_docs:
+          items:
+            type: string
+          type: array
+        maximum_cycles_allowed:
+          type: integer
+        maximum_implants_allowed:
+          type: integer
+        maximum_stratification_allowed:
+          type: integer
+        name:
+          type: string
+        parent_procedure:
+          description: The procedure an IMPLANT line attaches to (implant caps/flags
+            live on that parent, not on the implant); DischargeStages is the LAMA/DAMA
+            stage list. Both mirror NormProcedure — see the notes there.
+          type: string
+        parent_procedures:
+          items:
+            type: string
+          type: array
+        quantity_allowed:
+          description: The four numeric Claim-Condition caps, mirroring NormProcedure's
+            — see the note there for why they are not omitempty (0 is a real value)
+            and why callers must gate on the matching Flags entry before reading a
+            cap.
+          type: integer
+        questionnaire_ids:
+          items:
+            type: string
+          type: array
+        speciality_codes:
+          items:
+            type: string
+          type: array
+        standalone:
+          description: 'Standalone / ParentProcedures are read-time conveniences for
+            the FE''s payer-enforced standalone/parent-procedure validations: Standalone
+            surfaces the Flags entry as a bool; ParentProcedures splits ParentProcedure''s
+            comma list ("NA" normalised away). Derived in joinProcedureDocuments,
+            not stored.'
+          type: boolean
+        stg_forms:
+          items:
+            type: string
+          type: array
+        type:
+          type: string
+      type: object
+    ServiceCatalogProcedureRef:
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+      type: object
+    ServiceCatalogSpeciality:
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        procedure_codes:
+          items:
+            type: string
+          type: array
+      type: object
+    ServiceReprocessDocument:
+      properties:
+        content:
+          description: base64 inline, like every other NHCX document
+          type: string
+        content_type:
+          type: string
+        title:
+          type: string
+      type: object
     SetRequest:
       properties:
         pin:
@@ -8369,12 +12196,17 @@ components:
           - string
         profile:
           $ref: '#/components/schemas/ProfileResponse'
+          description: Will be present if SkipState is `abha_end`
         refresh_token:
           description: Refresh token of the user, issued by abdm
           type:
           - "null"
           - string
         skip_state:
+          description: SkipState abha_end - When the user has completed the Aadhaar
+            registration process once earlier and this was a login call. confirm_mobile_otp
+            - when it's a first time (registration) user and the user has to link
+            the mobile number to Aadhaar.
           enum:
           - abha_end
           - confirm_mobile_otp
@@ -8405,12 +12237,17 @@ components:
           - string
         profile:
           $ref: '#/components/schemas/ProfileResponse'
+          description: Will be present if SkipState is `abha_end`
         refresh_token:
           description: Refresh token of the user, issued by abdm
           type:
           - "null"
           - string
         skip_state:
+          description: SkipState abha_end - When the user has completed the Aadhaar
+            registration process once earlier and this was a login call. abha_create
+            - when it's a first time (registration) user and the user wants to create
+            a custom ABHA Address.
           enum:
           - abha_end
           - confirm_mobile_otp
