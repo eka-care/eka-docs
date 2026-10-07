@@ -1,6 +1,7 @@
-// The Fork button shows once the collection is published to a public Postman
-// workspace: pass its collection ID (postmanCollectionId) and workspace ID
-// (postmanWorkspaceId), both from the collection's Share > Via API menu.
+// The Fork button stays hidden until the collection is published to a public
+// Postman workspace. To show it, pass postmanCollectionId (the collection's ID
+// in Postman's Info panel) and postmanWorkspaceId (the part after "~" in the
+// workspace URL).
 export const PostmanCollection = ({ collection, environment, postmanCollectionId, postmanWorkspaceId, children }) => {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
