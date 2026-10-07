@@ -287,6 +287,8 @@ def build_items(pages, ops, seen):
     items = []
     for page in pages:
         if isinstance(page, dict):
+            if page.get("hidden"):
+                continue
             children = build_items(page.get("pages", []), ops, seen)
             if children:
                 items.append({"id": stable_id("group", page["group"], *[c["id"] for c in children[:1]]),

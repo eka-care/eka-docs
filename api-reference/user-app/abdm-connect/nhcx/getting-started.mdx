@@ -1,0 +1,106 @@
+---
+title: Overview
+---
+
+NHCX (National Health Claims Exchange) carries cashless insurance claims between your hospital and the payer, including PMJAY. ABDM Connect builds the FHIR bundles, signs and encrypts them, talks to the exchange and parses the payer's answers. You send plain JSON and read the results back.
+
+Every NHCX API is under `/abdm/nhcx/v1` and takes the [common authentication and headers](/api-reference/user-app/abdm-connect/overview#authentication). `X-Hip-Id` selects the facility the claim is raised from.
+
+---
+
+## The Claim Journey
+
+A **claim** is the case every call after setup hangs off. Create one per hospitalisation and keep its `claim_id` against your admission.
+
+<Steps>
+  <Step title="Find the payer and the policy">
+    [Search Payers](/api-reference/user-app/abdm-connect/nhcx/search-payers) gives the `participant_code` used as `payer_id`. Then [Search Policies](/api-reference/user-app/abdm-connect/nhcx/search-policies) by member ID, ABHA number or mobile number. Try the member ID first when the patient has a PMJAY card.
+
+    If no policy comes back, call [Discover Policy](/api-reference/user-app/abdm-connect/nhcx/discover-policy) and poll [Policy Discovery Status](/api-reference/user-app/abdm-connect/nhcx/discovery-status) until `status` is `found`.
+  </Step>
+  <Step title="Check eligibility">
+    [Check Eligibility](/api-reference/user-app/abdm-connect/nhcx/check-eligibility) says whether the policy is in force and returns the wallet balance. The payer rejects pre-auths above the wallet balance, so show it.
+  </Step>
+  <Step title="Pick procedures from the catalogue">
+    Browse the policy's catalogue with [List Specialities](/api-reference/user-app/abdm-connect/nhcx/list-specialities), [List Procedures](/api-reference/user-app/abdm-connect/nhcx/list-procedures) and [Get Procedure](/api-reference/user-app/abdm-connect/nhcx/get-procedure). If the catalogue is empty, call [Refresh Plan](/api-reference/user-app/abdm-connect/nhcx/refresh-plan).
+  </Step>
+  <Step title="Create the claim">
+    [Create Claim](/api-reference/user-app/abdm-connect/nhcx/create-claim) with the `policy_id` and the chosen procedures. It returns the `claim_id` and asks the payer which documents and questionnaires each procedure needs. That answer arrives on the `coverage_eligibility` row of [Get Claim Requests](/api-reference/user-app/abdm-connect/nhcx/claim-requests) and drives the pre-auth form.
+  </Step>
+  <Step title="Authenticate the beneficiary">
+    Send a consent questionnaire on the submit, or capture biometrics with [Init Biometric Auth](/api-reference/user-app/abdm-connect/nhcx/biometric-init) and [Verify Biometric Auth](/api-reference/user-app/abdm-connect/nhcx/biometric-verify), then pass the `user_token` with `auth_type: biometric`. Cyclic procedures such as dialysis and chemotherapy need a biometric capture on every treatment visit.
+  </Step>
+  <Step title="Submit the pre-auth">
+    [Submit Pre-auth](/api-reference/user-app/abdm-connect/nhcx/submit-preauth) with the treating doctor, diagnosis, documents and answers. Use the same API with a different `request_type` to answer a payer query, resubmit after a rejection or ask for an enhancement. [Cancel Pre-auth](/api-reference/user-app/abdm-connect/nhcx/cancel-preauth) withdraws it.
+  </Step>
+  <Step title="Submit the claim">
+    After discharge, [Submit Claim](/api-reference/user-app/abdm-connect/nhcx/submit-claim) with the discharge details, itemized billing and mandatory documents. Each billed line gets its own verdict.
+  </Step>
+  <Step title="Track payment and disputes">
+    [Get Claim Payments](/api-reference/user-app/abdm-connect/nhcx/claim-payments) lists the payer's payment notices. A rejected claim, or one settled with more than 20% deducted, can be appealed once with [Reprocess Claim](/api-reference/user-app/abdm-connect/nhcx/reprocess-claim). [Get Claim](/api-reference/user-app/abdm-connect/nhcx/get-claim) tells you which in `review_path`.
+  </Step>
+</Steps>
+
+<Tip>
+  Users fill long forms over several sittings. [Save Draft](/api-reference/user-app/abdm-connect/nhcx/save-draft) stores a partial pre-auth or claim form without submitting it.
+</Tip>
+
+---
+
+## Every Submit Is Asynchronous
+
+A `2xx` on a submit means the request reached the payer, not that it was approved. Each submit returns a `request_id` with `status: "request.initiated"`:
+
+```json
+{
+  "request_id": "6f1c2b0e-...",
+  "status": "request.initiated",
+  "message": "Preauth request submitted successfully"
+}
+```
+
+Poll [Get Claim Request](/api-reference/user-app/abdm-connect/nhcx/claim-request) with that `request_id`:
+
+| `status` | What to do |
+| --- | --- |
+| `request.initiated`, `response.partial` | Keep polling. `response.partial` is an interim acknowledgement, not the verdict |
+| `response.complete` | Read `outcome` and the per-item verdicts in `items` |
+| `response.error` | Show `error_message` as it is |
+
+Poll every 5 to 10 seconds for the first minute, then back off. Some procedures take the payer hours to decide.
+
+[Get Claim Requests](/api-reference/user-app/abdm-connect/nhcx/claim-requests) lists every exchange on a claim. Build your screens from it rather than from the claim's `status` alone: it shows which request is pending, queried or failed.
+
+---
+
+## Errors
+
+| Error | Meaning | What to do |
+| --- | --- | --- |
+| `400` with `issues` | The backend checked the submit before sending it and found problems | Show every entry in `issues`, fix and resubmit |
+| `5XX` | A server error | Retry |
+| `response.error` on a request | The payer or the exchange refused it | Show `error_message`. Treat `error_code` as opaque and never branch on it |
+
+```json
+{
+  "error": "claim validation failed: <issue 1>; <issue 2>",
+  "issues": ["<issue 1>", "<issue 2>"]
+}
+```
+
+An errored request uses up nothing. A corrected submission is not penalised, and earlier approvals stand.
+
+---
+
+## Conventions
+
+- **Enums are open.** Compare values case-insensitively and show unknown values as they are.
+- **Flags before caps.** In [Get Procedure](/api-reference/user-app/abdm-connect/nhcx/get-procedure), read a cap such as a quantity or cycle limit only when its flag is set.
+- **Dates** are `YYYY-MM-DD`. Date-times are RFC 3339 with the `+05:30` offset.
+- **Documents** are sent inline as base64 `content`. Read them back with [Get Claim Request Document](/api-reference/user-app/abdm-connect/nhcx/claim-request-document).
+
+---
+
+## Records Adapter
+
+The payer often wants the clinical records behind a claim. Register your HIS records API once with [Register Records Adapter](/api-reference/user-app/abdm-connect/nhcx/register-adapter), and ABDM Connect fetches an admission's visits and their FHIR bundles from it through [Get Admission Visits](/api-reference/user-app/abdm-connect/nhcx/admission-visits) and [Get Visit FHIR](/api-reference/user-app/abdm-connect/nhcx/visit-fhir).
