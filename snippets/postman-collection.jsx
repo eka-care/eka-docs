@@ -3,7 +3,38 @@
 // (postmanWorkspaceId), both from the collection's Share > Via API menu.
 export const PostmanCollection = ({ collection, environment, postmanCollectionId, postmanWorkspaceId, children }) => {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   const link = "https://developer.eka.care" + collection;
+
+  // Save the file only once it parses as JSON, so a missing file never downloads
+  // the site's HTML 404 page. Falls back to the copy on GitHub main.
+  const download = (event) => {
+    event.preventDefault();
+    const path = event.currentTarget.getAttribute("href");
+    const sources = [path, "https://raw.githubusercontent.com/eka-care/eka-docs/main" + path];
+    setFailed(false);
+    const attempt = (i) => {
+      if (i === sources.length) {
+        setFailed(true);
+        return;
+      }
+      fetch(sources[i])
+        .then((response) => (response.ok ? response.text() : Promise.reject()))
+        .then((text) => {
+          JSON.parse(text);
+          const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = path.split("/").pop();
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        })
+        .catch(() => attempt(i + 1));
+    };
+    attempt(0);
+  };
   const forkUrl = postmanCollectionId && postmanWorkspaceId
     ? "https://god.gw.postman.com/run-collection/" + postmanCollectionId +
       "?action=collection%2Ffork&source=rip_markdown&collection-url=" +
@@ -33,11 +64,11 @@ export const PostmanCollection = ({ collection, environment, postmanCollectionId
     <div className="eka-postman not-prose">
       <div className="eka-postman-text">{children}</div>
       <div className="eka-postman-actions">
-        <a className="eka-postman-btn eka-postman-btn-primary" href={collection} download>
+        <a className="eka-postman-btn eka-postman-btn-primary" href={collection} download onClick={download}>
           {downloadIcon} Collection
         </a>
         {environment && (
-          <a className="eka-postman-btn" href={environment} download>
+          <a className="eka-postman-btn" href={environment} download onClick={download}>
             {downloadIcon} Environment
           </a>
         )}
@@ -54,6 +85,11 @@ export const PostmanCollection = ({ collection, environment, postmanCollectionId
           </a>
         )}
       </div>
+      {failed && (
+        <div className="eka-postman-error" role="alert">
+          The download didn't work. Try again, or import the link below in Postman.
+        </div>
+      )}
       <div className="eka-postman-link">
         <code>{link}</code>
         <button type="button" onClick={copy} aria-label="Copy collection link" title={copied ? "Copied" : "Copy link"}>
