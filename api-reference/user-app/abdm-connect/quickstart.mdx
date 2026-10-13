@@ -1,0 +1,140 @@
+---
+title: "Quickstart"
+description: "Create your first ABHA against sandbox with Aadhaar OTP in five calls."
+type: quickstart
+product: abdm-connect
+workflow: create-abha-aadhaar-otp
+---
+
+At the end of this page you have a KYC-verified 14-digit ABHA number, an ABHA address and Eka's user id (`oid`) for one patient. It takes about ten minutes.
+
+This page walks one case: the patient has no ABHA yet, and the mobile number you send is the one linked to their Aadhaar. Every other case is on [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp).
+
+## Before you start
+
+- An access token. Follow [Authorization](/api-reference/authorization/getting-started) to create a client and log in. Every call below sends it as `Authorization: Bearer YOUR_ACCESS_TOKEN`.
+- The sandbox base URL: `https://api.dev.eka.care`.
+- An Aadhaar number, and the phone that receives OTPs for it. Replace `AADHAAR_NUMBER` and `MOBILE_NUMBER` below. {/* TODO: confirm: the sandbox test Aadhaar number and OTP to use here, and link the testing page section that lists them. */}
+
+## The calls
+
+Each response carries a `txn_id`. Send the `txn_id` from the most recent response on the next call.
+
+<Steps>
+  <Step title="Send the Aadhaar number">
+    ABDM sends an OTP to the mobile linked to this Aadhaar.
+
+    ```bash
+    curl -X POST "https://api.dev.eka.care/abdm/na/v1/registration/aadhaar/init" \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"aadhaar_number": "AADHAAR_NUMBER"}'
+    ```
+
+    {/* TODO: confirm: replace with a scrubbed sandbox response */}
+    ```json
+    {
+      "txn_id": "5d060cad-a93b-4edf-p3ef-bd412f69s400",
+      "hint": "OTP sent successfully to your mobile number ******90973"
+    }
+    ```
+
+    Keep `txn_id`. `hint` shows which phone the OTP went to.
+  </Step>
+  <Step title="Verify the Aadhaar OTP">
+    Send the OTP the patient received, and the mobile number the ABHA will use.
+
+    ```bash
+    curl -X POST "https://api.dev.eka.care/abdm/na/v1/registration/aadhaar/verify" \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"txn_id": "TXN_ID", "otp": "OTP", "mobile": "MOBILE_NUMBER"}'
+    ```
+
+    {/* TODO: confirm: replace with a scrubbed sandbox response */}
+    ```json
+    {
+      "txn_id": "TXN_ID",
+      "skip_state": "abha_create",
+      "abha_profiles": []
+    }
+    ```
+
+    Keep the new `txn_id`. `skip_state` is `abha_create` and `abha_profiles` is empty, so the patient has no ABHA address yet and you create one.
+  </Step>
+  <Step title="Get suggested ABHA addresses">
+    Eka returns addresses that are free to take.
+
+    ```bash
+    curl "https://api.dev.eka.care/abdm/na/v1/registration/suggest?transactionId=TXN_ID" \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    ```
+
+    {/* TODO: confirm: replace with a scrubbed sandbox response */}
+    ```json
+    {
+      "suggestions": ["ABHA_ADDRESS"]
+    }
+    ```
+
+    The patient picks one entry from `suggestions`, or types their own.
+  </Step>
+  <Step title="Check the address is free">
+    Confirm the chosen address is not taken before you submit it.
+
+    ```bash
+    curl -X POST "https://api.dev.eka.care/abdm/na/v1/registration/phr/check" \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"abha_address": "ABHA_ADDRESS"}'
+    ```
+
+    {/* TODO: confirm: replace with a scrubbed sandbox response */}
+    ```json
+    {
+      "exists": false
+    }
+    ```
+
+    `exists` is `false`, so the address is free. If it is `true`, pick another.
+
+    {/* TODO: confirm: whether ABHA_ADDRESS includes the "@abdm" suffix on phr/check and create-phr. The create-phr schema example is "shyam.eka@abdm". */}
+  </Step>
+  <Step title="Create the ABHA">
+    Send the `txn_id` from Verify OTP and the chosen address.
+
+    ```bash
+    curl -X POST "https://api.dev.eka.care/abdm/na/v1/registration/aadhaar/create-phr" \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"txn_id": "TXN_ID", "abha_address": "ABHA_ADDRESS"}'
+    ```
+
+    {/* TODO: confirm: replace with a scrubbed sandbox response */}
+    ```json
+    {
+      "profile": {
+        "abha_number": "12-3456-7856-8912",
+        "abha_address": "shyam@abdm"
+      },
+      "eka": {
+        "oid": "EKA_OID"
+      }
+    }
+    ```
+
+    `profile.abha_number` is the patient's ABHA number. Save `eka.oid` on the patient record; later calls for this patient send it in the `X-Pt-Id` header.
+  </Step>
+</Steps>
+
+## What just happened
+
+Generate OTP and Verify OTP proved the patient's identity against Aadhaar, which is what makes the ABHA KYC-verified. Suggest and Does ABHA Address Exist let the patient choose an address that is free. Create registered the ABHA with ABDM and returned the ids you keep on the patient record. This is step 3 of [Register a walk-in patient and link the visit](/api-reference/user-app/abdm-connect/journeys/hip-register-patient-and-link-visit).
+
+In production, Eka also sends the `abha.created` webhook after Create. This page does not need it. See [Webhooks](/api-reference/user-app/abdm-connect/webhooks).
+
+## Where next
+
+- [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp): the other `skip_state` branches, the mobile OTP step, resend, and what to do when a call fails.
+- [Link a care context as a HIP](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip): link the patient's visit to the new ABHA.
+- [Testing](/api-reference/user-app/abdm-connect/testing): the happy path for every journey before you go live.

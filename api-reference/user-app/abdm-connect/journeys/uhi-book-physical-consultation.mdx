@@ -1,0 +1,44 @@
+---
+title: "Book an in-person doctor visit over UHI"
+description: "A consumer health app finds a doctor on the Unified Health Interface, books a physical consultation slot for its user, and tracks the booking to the visit."
+type: journey
+product: abdm-connect
+persona: Consumer health app booking for its user
+---
+
+## Who and when
+
+A consumer health app, such as a Personal Health Record (PHR) app, used by a patient who wants to see a doctor in person. The patient opens the app and asks for a doctor by speciality, name, facility or location. The app searches doctors across the Unified Health Interface (UHI), not only one hospital's own list, and books the visit on the patient's behalf.
+
+**Already in place:** your app acts as a UHI consumer app on Eka. The patient has an ABHA and is logged in on your app, so you hold Eka's user id (`oid`) for them ([Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha)). Your server can receive Eka webhooks.
+
+{/* TODO: confirm: does a UHI booking need the patient's ABHA session at all, or only the partner token? The spec lists X-Pt-Id, X-Partner-Pt-Id and X-Hip-Id as optional headers on every UHI call. */}
+{/* TODO: confirm: is there an onboarding or registration step before an app can call the UHI physical consultation APIs? */}
+
+## What they want
+
+"Find a doctor near me who can see me this week, book a slot, and tell me what to show at the clinic."
+
+## The steps
+
+1. The patient describes who they want to see: a speciality, a doctor's name, a hospital, a district or pincode, or their current location with a radius. They choose the days they are free.
+2. The app searches UHI for doctors who match and shows the list: name, qualifications, languages, years of experience, facility and address. → workflow: [Book a physical consultation over UHI](/api-reference/user-app/abdm-connect/workflows/uhi-book-consultation)
+3. The patient picks a doctor. The app fetches that doctor's open slots for the chosen window, with the price of each. → same workflow
+4. The patient picks a slot and gives billing details. The app starts the booking and shows the quote, the price breakup and the provider's terms. → same workflow
+5. The patient accepts the terms. The app confirms the booking. The provider returns a PIN that the patient shows to the doctor before the consultation. → same workflow
+6. Before the visit, the app checks the booking's status and shows it to the patient. → same workflow
+7. The patient goes to the clinic, shows the PIN, and sees the doctor. This is a human step.
+
+{/* TODO: confirm: where and when does the patient pay for the consultation? The booking returns a payment status and type, but no payment call exists in the spec. */}
+
+## What they have at the end
+
+The patient has a confirmed in-person appointment with a named doctor at a named facility, at a known start and end time. They hold the PIN to show at the clinic. Your app holds the booking's `order_id`, `provider_id` and transaction id, so it can check status, reschedule or cancel later.
+
+## Branches
+
+- **No doctor matches the search.** The patient widens the search: a larger radius, another speciality, or a wider time window. → same workflow, search step
+- **The doctor has no open slot in the window.** The patient picks another window or another doctor. → same workflow, slot search step
+- **The patient wants another time.** The app moves the booking to a new slot. → same workflow, update step
+- **The patient cannot go.** The app cancels the booking and confirms the cancellation. → same workflow, cancel step
+- **The patient changes their mind before confirming.** They leave after seeing the quote and terms. {/* TODO: confirm: does an initiated booking that is never confirmed expire on its own, or must the app cancel it? */}

@@ -54,7 +54,7 @@ Prerequisite: `abdm-connect-auth`.
 1. Init → keep `txn_id`
 2. Verify → read `skip_state`; existing profile → Auto-Login, stop
 3. Create → persist `oid`, `abha_address`, `abha_number` on the patient record
-Webhook `abha.abha_created` carries the same fields; wire it as the source of truth.
+Webhook `abha.created` carries the same fields; wire it as the source of truth.
 
 ## Before each call
 Fetch the reference page for the operation and build the request from its schema. Pages: (list of the three reference URLs)

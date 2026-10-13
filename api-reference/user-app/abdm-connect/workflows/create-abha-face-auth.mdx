@@ -13,34 +13,99 @@ webhooks:
   - abha.created
 ---
 
-{/* TODO: Confirm which create call follows face-auth verify; the audit assumed aadhaar/create-phr. */}
-
-{/* Stub written by /journey-new. Fill it with /workflow-new abdm-connect create-abha-face-auth */}
+{/* TODO: confirm: which create call follows face-auth/verify. The spec and pages do not say. Evidence for aadhaar/create-phr: face-auth/verify returns the same txn_id, skip_state, abha_profiles and eka shape as aadhaar/verify, and flows/m1 draws "Verify, then Mobile linked with Aadhaar?, then Create ABHA" for face auth exactly as for Aadhaar OTP. Confirm the endpoint, and whether the mobile branch uses aadhaar/mobile/verify and aadhaar/mobile/resend; if so, add them to operations. */}
 
 ## When to use this
 
-_The situation, and the alternatives if any._
+The patient has Aadhaar but cannot receive the Aadhaar OTP, for example because their mobile is not linked to their Aadhaar. Instead of an OTP, the patient completes Aadhaar face authentication on a mobile device. The verified identity then creates a KYC-verified ABHA.
+
+Alternatives:
+
+- The patient can receive the Aadhaar OTP: [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp).
+- The patient will not use Aadhaar: [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp).
 
 ## Before you start
 
-_Token, role or config, prior workflows, data in hand._
+- A client access token, sent as a Bearer token on every call. See [Client login](/api-reference/authorization/client-login).
+- Your facility onboarded as a Health Information Provider (HIP). You can send its HIP ID in the optional `X-Hip-Id` header and your own patient id in the optional `X-Partner-Pt-Id` header.
+- A webhook endpoint registered with Eka, so you receive `abha.created`. See [Register a webhook](/api-reference/connect/webhooks/register-webhook).
+- A screen that can show a QR code to the patient, and a mobile device on which the patient completes face authentication. {/* TODO: confirm: what the patient needs on the device (app, camera, network) and whether the device must be the patient's own. */}
+- In hand: the patient's 12-digit Aadhaar number.
 
 ## Sequence
 
-_A mermaid sequenceDiagram, one arrow per operation labelled METHOD /path._
+```mermaid
+sequenceDiagram
+  participant App as Your app
+  participant Eka
+  participant Patient as Patient's device
+  App->>Eka: POST /abdm/na/v1/face-auth/init
+  App-->>Patient: Show the QR code from url
+  Patient->>Patient: Scan and complete face authentication
+  loop Until status is Verified
+    App->>Eka: POST /abdm/na/v1/face-auth/capture
+  end
+  App->>Eka: POST /abdm/na/v1/face-auth/verify
+  App->>Eka: POST /abdm/na/v1/registration/aadhaar/create-phr
+  Eka-->>App: webhook abha.created
+```
 
 ## Steps
 
-_One Step per call: what it does, link to the reference page, fields carried from and to the next call, decisions._
+<Steps>
+  <Step title="Start face authentication">
+    Call [Face Auth Init](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-init). It takes no request body. The response carries `txn_id` and `url`. Show `url` to the patient as a QR code to scan with their mobile device. {/* TODO: confirm: whether url is the QR payload to render or a link to open, and how long it stays valid. */}
+
+    Keep `txn_id`; every later call takes the `txn_id` from the most recent response.
+  </Step>
+  <Step title="Poll until the face is verified">
+    Send `txn_id` to [Capture Face](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-capture) repeatedly while the patient completes face authentication. The response carries `status`, `message` and `txn_id`. Keep polling while `status` is `Pending`. Stop when it is `Verified`. {/* TODO: confirm: the poll interval, the maximum time to poll before giving up, and the status values for a failed or expired face authentication. */}
+  </Step>
+  <Step title="Fetch the verified identity">
+    Send `txn_id` and `aadhaar` (the patient's Aadhaar number) to [Verify Face](/api-reference/user-app/abdm-connect/enrollment/face-auth/face-auth-verify). The response carries a new `txn_id`, `skip_state`, `abha_profiles`, `profile` and `eka.oid`. `profile` holds the patient's name, date of birth, gender and address from Aadhaar.
+
+    Read `skip_state` and `abha_profiles`:
+
+    - `abha_create` with an empty `abha_profiles`: go to the next step.
+    - `abha_create` with a non-empty `abha_profiles`: the patient already has ABHA addresses. {/* TODO: confirm: whether aadhaar/auto-login accepts the face-auth txn_id to log in to one of them. */}
+    - `confirm_mobile_otp`: flows/m1 shows a mobile verification before create. {/* TODO: confirm: when face-auth/verify returns confirm_mobile_otp, given it takes no mobile, and which mobile verify call follows. */}
+  </Step>
+  <Step title="Create the ABHA">
+    The patient chooses an ABHA address. You can use [Suggest ABHA Address](/api-reference/user-app/abdm-connect/commons/suggest-abha-address) and [Does ABHA Address Exist](/api-reference/user-app/abdm-connect/commons/does-health-id-exist) as in [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp).
+
+    Send `txn_id` and `abha_address` to [Create](/api-reference/user-app/abdm-connect/enrollment/aadhaar/create-abha). The response carries `profile.abha_number`, `profile.abha_address`, `eka.oid`, `token`, `refresh_token` and `skip_state`.
+
+    Eka also sends the [`abha.created`](/api-reference/user-app/abdm-connect/webhooks/abha-created) webhook with `abha_address`, `abha_number`, `oid`, `hip_id` and `partner_patient_id` in `data`. Reply `200` within 5 seconds; Eka retries on any other status. Verify the `Eka-Webhook-Signature` header as described in [Webhook signature](/api-reference/connect/webhooks/webhook-signature).
+  </Step>
+</Steps>
 
 ## State you must persist
 
-_Field, where it came from, how long to keep it, what for._
+| Field | From | Keep | For |
+|---|---|---|---|
+| `txn_id` | The latest response in this workflow | Until Create returns {/* TODO: confirm: how long a face-auth txn_id stays valid. */} | Every call in this workflow |
+| `eka.oid` | Verify Face or Create; also `data.oid` on `abha.created` | Permanently, on the patient record | The `X-Pt-Id` header or `oid` query on every later call for this patient |
+| `profile.abha_address` | Create; also `data.abha_address` on `abha.created` | Permanently, on the patient record | Care context linking, gateway session, login |
+| `profile.abha_number` | Create; also `data.abha_number` on `abha.created` | Permanently, on the patient record | ABHA card, KYC, login by ABHA number |
 
 ## When it fails
 
-_Situation, error code, what to do; link the errors page._
+Error responses carry `code`, `error` and `source_error`. `source_error.code` holds the ABDM code. See [Error codes](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes face-auth init, capture and verify return, including the code or status for a face that does not match; the spec has no error examples for them. */}
+
+| Situation | Code | Do |
+|---|---|---|
+| Patient never completes face authentication | Capture keeps returning `Pending` | Stop polling after your timeout and start again from Face Auth Init. {/* TODO: confirm: the timeout. */} |
+| Aadhaar number does not match the face authenticated | Not documented | {/* TODO: confirm: the code returned by face-auth/verify when the Aadhaar does not match. */} Ask the patient to check the number. |
+| Expired or unknown transaction | `ABDM-1017`, `MIS-1026` | Start again from Face Auth Init. |
+| Too many requests | `ABDM-1022` | Back off and retry. {/* TODO: confirm: retry interval for ABDM-1022. */} |
+| ABHA address already taken | `ABDM-1101` | Ask for another address. |
+| ABDM or a dependent service is down | `ABDM-1019`, `ABDM-1024`, `ABDM-1007` | Retry later. |
 
 ## Test it
 
-_The sandbox happy path as a checklist, with test data; link the testing page._
+Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: whether face authentication can be completed on sandbox at all, with which test Aadhaar and device, and link the ABDM Connect testing page once it exists. */}
+
+- [ ] Happy path: Face Auth Init, show `url`, poll Capture Face until `Verified`, Verify Face, Create. The response has `profile.abha_number` and `eka.oid`.
+- [ ] `abha.created` arrives with the same `abha_address` and `oid`, and its signature verifies.
+- [ ] Abandon face authentication: Capture Face stays `Pending` and your timeout restarts the flow.
+- [ ] Verify Face with a different Aadhaar number from the one authenticated: record the code it returns in the failure table.

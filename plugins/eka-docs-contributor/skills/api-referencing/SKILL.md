@@ -14,7 +14,7 @@ A request or response schema is written once, in the product's OpenAPI file. Eve
 - One OpenAPI 3.x file per product at `<product>/api-reference/openapi.yaml`. More than one only if the product has independent API surfaces; list each in `product.yaml`.
 - Every operation has `operationId`, `summary`, at least one `tags` entry, a request example and a response example for the success case and for each documented error.
 - Error codes the product returns appear in the error response examples. The errors page lists the same codes; the check warns on a code it cannot find in any example.
-- Webhooks are OpenAPI 3.1 `webhooks` in the same file, keyed by event name (`abha.abha_created`). The webhooks page links each one. Workflow pages name them in `webhooks:` frontmatter.
+- Webhooks are OpenAPI 3.1 `webhooks` in the same file, keyed by event name (`abha.created`). The webhooks page links each one. Workflow pages name them in `webhooks:` frontmatter.
 - Tags group operations the way the reference navigation groups them. Pick tags by what the integrator is doing (Registration, Login, Profile), not by internal service.
 
 ## The reference page

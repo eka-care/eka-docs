@@ -19,9 +19,9 @@ journey: register-walk-in-patient
 operations:
   - POST /abdm/na/v1/registration/aadhaar/init
   - POST /abdm/na/v1/registration/aadhaar/verify
-  - POST /abdm/na/v1/registration/aadhaar/create
+  - POST /abdm/na/v1/registration/aadhaar/create-phr
 webhooks:
-  - abha.abha_created
+  - abha.created
 ---
 ```
 
@@ -55,6 +55,8 @@ webhooks:
 
 ## Worked example, abbreviated
 
+This is a shortened sketch. The full, spec-checked page is `api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp.mdx`; read it before writing a workflow, and verify every field you name against the spec, as that page does.
+
 ```md
 ## When to use this
 
@@ -76,8 +78,8 @@ sequenceDiagram
   App->>Eka: POST /abdm/na/v1/registration/aadhaar/init
   Eka-->>Patient: OTP via SMS
   App->>Eka: POST /abdm/na/v1/registration/aadhaar/verify
-  App->>Eka: POST /abdm/na/v1/registration/aadhaar/create
-  Eka-->>App: webhook abha.abha_created
+  App->>Eka: POST /abdm/na/v1/registration/aadhaar/create-phr
+  Eka-->>App: webhook abha.created
 ```
 
 ## Steps
@@ -87,10 +89,10 @@ sequenceDiagram
     Send the Aadhaar number to [Init](/abdm-connect/api-reference/registration/aadhaar-init). Keep `txn_id` from the response; every later call needs it. The patient receives an OTP.
   </Step>
   <Step title="Verify the OTP">
-    Send `txn_id` and the OTP to [Verify](/abdm-connect/api-reference/registration/aadhaar-verify). Read `skip_state`: if it is `abha_create` and `abha_profiles` is non-empty, the patient already has an ABHA; call [Auto-Login](/abdm-connect/api-reference/login/auto-login) and stop. If `mobile_linked` is false, run the mobile verification sub-step before continuing.
+    Send `txn_id`, the OTP and the patient's `mobile` to [Verify](/abdm-connect/api-reference/registration/aadhaar-verify). Read `skip_state`: if it is `abha_create` and `abha_profiles` is non-empty, the patient already has an ABHA; call [Auto-Login](/abdm-connect/api-reference/login/auto-login) and stop. If it is `confirm_mobile_otp`, the mobile sent is not the one linked to the Aadhaar; run the mobile verification sub-step before continuing.
   </Step>
   <Step title="Create the ABHA">
-    Send `txn_id` to [Create](/abdm-connect/api-reference/registration/aadhaar-create). The response carries `abha_number`, `abha_address` and `oid`. The `abha.abha_created` webhook fires with the same fields.
+    Send `txn_id` and the chosen `abha_address` to [Create](/abdm-connect/api-reference/registration/aadhaar-create). The response carries the ABHA number at `profile.abha_number` and Eka's user id at `eka.oid`. The `abha.created` webhook fires as well.
   </Step>
 </Steps>
 
@@ -108,11 +110,11 @@ sequenceDiagram
 |---|---|---|
 | Wrong OTP | `MIS-1013` | Let the patient retry; after three, restart from Init |
 | Too many OTP requests | `ABDM-1100` | Wait 30 minutes; show the patient the lockout |
-| Aadhaar mobile not linked | `verify` returns `mobile_linked: false` | Run the mobile verification sub-step |
+| Mobile differs from the Aadhaar-linked one | `verify` returns `skip_state` `confirm_mobile_otp` | Run the mobile verification sub-step |
 
 ## Test it
 
-- [ ] Sandbox Aadhaar `999999990019`, OTP from the testing page, through to Create
+- [ ] The sandbox test Aadhaar and OTP from the testing page, through to Create
 - [ ] Wrong OTP once, then correct OTP
 - [ ] Second run with the same Aadhaar: Verify returns an existing profile, Auto-Login path
 ```

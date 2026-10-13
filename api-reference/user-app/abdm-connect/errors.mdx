@@ -6,6 +6,110 @@ type: errors
 Error Code would match with the http status code in most cases.
 4XX indicates a user error and 5XX indicates a server side error.
 
+## By symptom
+
+Start here when you know what you see but not which code it is. Each symptom lists the likely causes, what to check, the codes involved and the workflow step it belongs to. {/* TODO: confirm: the order of causes by frequency; support data was not available, so causes are listed in the order the workflow pages give them. */}
+
+### OTP never arrives
+
+Belongs to: the Generate OTP step of [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp), [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp) and [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The patient is checking the wrong phone. The Aadhaar OTP goes to the mobile linked to the Aadhaar, not the `mobile` you send. | Show the patient the masked number in `hint` from the init response. | none |
+| The OTP is delayed or lost. | Call the workflow's resend operation with the current `txn_id`, then use the `txn_id` it returns. {/* TODO: confirm: how long to wait before offering resend. */} | none |
+| Too many OTP requests in this transaction. | Tell the patient to try again in 30 minutes, then start again from Generate OTP. | `ABDM-1100` |
+| ABDM's SMS gateway is unavailable. | Retry later. | `ABDM-1004` |
+| In [Answer discovery and link old records](/api-reference/user-app/abdm-connect/workflows/hip-discovery-and-link), your HIP sends this OTP itself. | Check your own SMS sending. | none |
+
+### The patient is locked out after entering OTPs
+
+Belongs to: the Verify OTP step of every ABHA creation, login and gateway session workflow.
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The OTP is wrong. | Ask the patient to re-enter it. {/* TODO: confirm: how many wrong attempts are allowed before ABDM-1100. */} | `MIS-1013`, `ABDM-1035` (OTP does not match, in [Discover and link records from a facility](/api-reference/user-app/abdm-connect/workflows/phr-discover-and-link)) |
+| Too many wrong attempts or OTP requests. | Tell the patient to try again in 30 minutes. | `ABDM-1100` |
+| The patient is blocked. | Tell the patient to try again after 24 hours. | `ABDM-1027` |
+| The transaction expired. | Start again from Generate OTP. | `ABDM-1017`, `MIS-1026` |
+
+### Every call returns 401
+
+Belongs to: every call. See [Authorization](/api-reference/authorization/getting-started).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| Your access token has expired. | Get a new token with [Refresh token](/api-reference/authorization/refresh-token-v2) and retry. | HTTP `401` |
+| The token is missing from the request. | Send it as a Bearer token on every call. | HTTP `401` |
+
+{/* TODO: confirm: other causes of 401 on ABDM Connect, such as a client not enabled for ABDM Connect, or a production token used against sandbox. */}
+
+### Patient calls return 491
+
+Belongs to: [Hold the ABHA Gateway session](/api-reference/user-app/abdm-connect/workflows/hold-gateway-session), and every patient-scoped call in the PHR workflows, such as [Approve, deny or revoke a consent in a PHR app](/api-reference/user-app/abdm-connect/workflows/phr-act-on-consent) and [Manage the ABHA profile and KYC](/api-reference/user-app/abdm-connect/workflows/manage-profile-and-kyc).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The patient's ABHA Gateway session has expired. | Run Session Init and Session Verify with a mobile OTP, then retry the call. See [User Session](/api-reference/user-app/abdm-connect/session/getting-started). | HTTP `491` |
+| You called Session Status without the patient's id. | Send the patient's `oid` in `X-Pt-Id`. | not documented |
+
+{/* TODO: confirm: how long a gateway session lasts, so you can renew it before it expires. */}
+
+### A webhook never arrives
+
+Belongs to: every workflow that waits on an event. See [Webhooks](/api-reference/user-app/abdm-connect/webhooks).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| Your endpoint is not registered with Eka, or is not reachable. | Check the registration with [Get webhooks](/api-reference/connect/webhooks/get-webhooks). Check the URL is public, uses HTTPS, and allows Eka's IP addresses. | none |
+| Your endpoint does not reply `200` within 5 seconds. | Reply first, then process. Eka retries on any other status. | none |
+| Your signature check rejects the event. | Compare your check with [Webhook signature](/api-reference/connect/webhooks/webhook-signature). | none |
+| The event is not sent in your setup. `abha.hip_data_fetch` is sent only if you keep the health data yourself. `abha.hiu_data_push` is sent only if you manage the data on your side; if Eka stores it, read the records instead. | Check whether Eka stores the data for you. | none |
+| For `abha.hiu_data_push`: your public keyset is not registered. | Register it as in [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent). | none |
+| For UHI events: the result is late. | Read the result with the matching `GET`, as in [Book a physical consultation over UHI](/api-reference/user-app/abdm-connect/workflows/uhi-book-consultation). {/* TODO: confirm: poll interval and timeout. */} | none |
+
+When `abha.created` does not arrive, use the Create response to proceed. {/* TODO: confirm: how long to wait for any event before treating it as lost. */}
+
+### A consent request never moves on
+
+Belongs to: the wait-for-status step of [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The patient has not acted on the request yet. | The patient approves or denies it in their PHR app. | none |
+| `abha.consent_update` is not reaching you. | Check your webhook registration and signature check, then read the status from [Consent List](/api-reference/user-app/abdm-connect/consents/consent-list). | none |
+| The request expired before the patient acted. | Raise a new consent request; do not retry the old one. | `ABDM-1061` |
+| The patient denied the request. | Close the request on your side. | `ABDM-1062` |
+
+{/* TODO: confirm: the status values Consent List and abha.consent_update return, and how long a request stays open before it expires. */}
+
+### Records do not decrypt
+
+Belongs to: the decrypt step of [Receive and decrypt records as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-receive-data), and the encrypt step of [Serve records on a fetch request](/api-reference/user-app/abdm-connect/workflows/serve-data-on-fetch).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| As a HIU: you used a different key pair from the one registered for this consent. | Use the `private_key` and `nonce` registered at the time of the consent. Report the entry with `success` `false`. | none |
+| As a HIU: a field sent to Ecdh decrypt is not the Base64 value you received. | Send each field exactly as it came in the webhook or your store. | `ABDM-1006`, `ABDM-1010` |
+| As a HIP: you encrypted with the wrong receiver key or nonce. | Take the receiver key and nonce from `key_information` in this `abha.hip_data_fetch` event. | not documented |
+
+{/* TODO: confirm: how a HIP learns that the HIU failed to decrypt or verify the checksum. */}
+
+### A care context link reports ERRORED
+
+Belongs to: the wait-for-status step of [Link a care context as a HIP](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| ABDM rejected the link. | Read `data.error` in `abha.link_care_context`. Correct the request and link again. | `data.status` `ERRORED` |
+| The ABHA address or number is not recognised. | Check the `abha_address` saved on the patient record. | `ABDM-1051` |
+| The HIP ID is wrong. | Check the `X-Hip-Id` header against your onboarded HIP ID. | `ABDM-1035` (Invalid HIP ID) |
+| The gateway or a dependent service is down. | Retry later. | `ABDM-1019`, `ABDM-1024`, `ABDM-1048` |
+
+{/* TODO: confirm: the values data.error takes on ERRORED, what data.retry_count means, and whether Eka retries the link itself. */}
+
+## By code
+
 | code | message | abdm-code | abdm-message |
 | --- | --- | --- | --- |
 | 500 | Something went wrong | ABDM-1000 | Unable to connect the database |
