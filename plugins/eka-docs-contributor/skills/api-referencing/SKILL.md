@@ -48,7 +48,11 @@ Most old pages wrote the schema by hand. To convert one:
 
 ## The errors page
 
-`type: errors`. One table per product, or one per tag if the product is large: code, HTTP status, meaning, what the integrator should do. Codes are the literal strings the API returns (`ABDM-1100`, `MIS-1013`). Each workflow's failure table links here with an anchor.
+`type: errors`. Two parts.
+
+**By code.** One table per product, or one per tag if the product is large: code, HTTP status, meaning, what the integrator should do. Codes are the literal strings the API returns (`ABDM-1100`, `MIS-1013`). Each workflow's failure table links here with an anchor.
+
+**By symptom.** A short section per thing the integrator actually sees, because they rarely start from a code: "OTP never arrives", "Every call returns 401", "Callback never arrives", "Request accepted, then nothing". Each: the likely causes in order of frequency, what to check for each, the codes involved if any, and which workflow step it belongs to. Five to eight symptoms is typical; add one whenever support answers the same question twice.
 
 ## The webhooks page
 

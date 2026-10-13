@@ -23,7 +23,7 @@ The file slug (`register-walk-in-patient`) is what workflow pages name in their 
 
 ## Sections, in order
 
-1. **Who and when.** One paragraph: the person, where they are, what triggers this. "A receptionist at a clinic that is an ABDM HIP. A patient arrives without an ABHA, or does not know whether they have one."
+1. **Who and when.** One paragraph: the person, where they are, what triggers this. "A receptionist at a clinic that is an ABDM HIP. A patient arrives without an ABHA, or does not know whether they have one." Then one line headed **Already in place:** the role the integrator plays (HIP, HIU, PHR app) and the journeys that must have run before this one can start, each linked. A journey that depends on another names it here, never silently.
 2. **What they want.** One sentence, in their words.
 3. **The steps.** A numbered list, each step one or two sentences in product terms. Where a step is done by calling the API, end it with a link: "→ workflow: [Create an ABHA with Aadhaar OTP](/abdm-connect/workflows/create-abha-aadhaar-otp)". Where a step is a human action (the patient reads out an OTP), say so.
 4. **What they have at the end.** The state of the world: the patient has an ABHA number, the HIS holds `abha_address` and `oid` against the patient record.
@@ -37,6 +37,7 @@ Four hundred to eight hundred words is typical. There is no limit; stop when the
 - One persona per journey. Two personas means two journeys.
 - Every step that involves the API must link to exactly one workflow. If the workflow does not exist yet, create the stub with `/workflow-new` and link it; `docs-check` will warn on the stub until it is written.
 - The branches section is mandatory. A journey with no branches is a demo, not a journey.
+- The "Already in place" line is mandatory. If nothing must have run first, say so.
 
 ## Worked example
 
@@ -52,6 +53,8 @@ persona: Clinic receptionist
 ## Who and when
 
 A receptionist at a clinic registered as an ABDM Health Information Provider. A patient walks in for an OPD visit. The clinic wants every visit linked to the patient's ABHA so the records are discoverable later.
+
+**Already in place:** your software acts as a HIP. The facility is onboarded with a HIP ID ([Onboard a facility to ABDM](/abdm-connect/journeys/facility-onboard-to-abdm)) and your server can receive Eka webhooks.
 
 ## What they want
 

@@ -15,18 +15,18 @@ One top-level folder per product (`ekascribe/` is the model). In reading order:
 
 | Rung | `type` | Answers | Count |
 |---|---|---|---|
-| 1 | `overview` | What is this, who is it for, what can I build, key concepts | 1 |
+| 1 | `overview` | What is this, who is it for, what can I build, key concepts. Carries one patient's story across the journeys, "I want to…" cards that each link a journey, and a role to journeys table | 1 |
 | 2 | `journey` | A real person's end-to-end story through the product, in product terms | 1+ |
 | 3 | `quickstart` | First successful call in under ten minutes | 1 |
 | 4 | `workflow` | One journey step as an ordered sequence of API calls | 1+ per journey |
 | 5 | `reference` | One page per operation, generated from OpenAPI (implicit: any page with `openapi:` frontmatter) | 1 per operation |
 | 6 | `webhooks` | Every event the product emits, payload, when it fires, which workflow consumes it | 1 |
-| 7 | `errors` | Every error code, its meaning, what the integrator should do | 1 |
+| 7 | `errors` | Every error code, its meaning, what the integrator should do, plus a "By symptom" section for what the integrator sees (OTP never arrives, callback never arrives) | 1 |
 | 8 | `testing` | Sandbox, credentials, test data, the happy paths to run before go-live | 1 |
 | 9 | `build-with-ai` | How to install the product's plugin and MCP, what each skill does | 1 |
 | 10 | `changelog` | Dated entries, newest first | 1 |
 
-Allowed but never required: `sdk` (a client library page), `resource` (FHIR structure, ngrok, IP allowlisting), `guide` (explanatory and none of the above).
+Allowed but never required: `sdk` (a client library page), `resource` (FHIR structure, ngrok, IP allowlisting), `guide` (explanatory and none of the above). One `guide` is recommended for every product with more than a few workflows: **Build it well**, covering which calls are safe to retry and which must never be repeated, deduplicating webhooks, and what the screen should say on each failure.
 
 Authentication is shared and lives once under `api-reference/authorization/`. Quickstarts link to it; they do not repeat it.
 
