@@ -40,7 +40,9 @@ sequenceDiagram
   Eka->>ABDM: Link care context
   ABDM-->>Eka: Linking result
   Eka-->>App: webhook abha.link_care_context
-  App->>Eka: POST /abdm/v1/care-contexts/sms/notify
+  opt Notify the patient (timing not yet confirmed)
+    App->>Eka: POST /abdm/v1/care-contexts/sms/notify
+  end
 ```
 
 ## Steps
@@ -88,13 +90,17 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Error responses carry `code`, `error` and `source_error`. The codes below are from the [errors page](/api-reference/user-app/abdm-connect/errors); match the one you receive there.
 
 | Situation | Code | Do |
 |---|---|---|
 | Request body malformed or a field invalid | `ABDM-1006`, `ABDM-1010` | Fix the request against the reference page and resend |
 | ABHA address or number not recognised | `ABDM-1051` | Check the `abha_address` saved on the patient record |
-| Wrong HIP ID | `ABDM-1035` (Invalid HIP ID) | Check the `X-Hip-Id` header against your onboarded HIP ID |
+| Wrong HIP ID | `ABDM-1035` (Invalid HIP ID) | `ABDM-1035` also means "OTP does not match" on the errors page. Tell them apart by HTTP status (`500` for Invalid HIP ID, `400` for the OTP) and `source_error.message`. For Invalid HIP ID, check the `X-Hip-Id` header against your onboarded HIP ID |
 | Too many requests | `ABDM-1022` | Back off and retry |
 | Gateway or a dependent service down | `ABDM-1019`, `ABDM-1024`, `ABDM-1048` | Retry later |
 | Status webhook reports `ERRORED` | `data.error` in the webhook | Read the reason; correct and link again |
@@ -103,7 +109,9 @@ Error responses carry `code`, `error` and `source_error`. The codes below are fr
 
 ## Test it
 
-{/* TODO: confirm: sandbox test ABHA address, HIP ID and a sample FHIR bundle to use; there is no testing page for ABDM Connect yet */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+{/* TODO: confirm: sandbox test ABHA address, HIP ID and a sample FHIR bundle to use */}
 
 - [ ] Link one `OPConsultation` care context with `data` set, and receive `abha.link_care_context` with `status` `LINKED`
 - [ ] Link one care context without `data`, receive `LINKED`, then confirm a later consent request arrives as `abha.hip_data_fetch`

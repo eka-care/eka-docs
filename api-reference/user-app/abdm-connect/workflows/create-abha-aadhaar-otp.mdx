@@ -25,7 +25,7 @@ The patient has an Aadhaar number and can receive an OTP on the mobile linked to
 Alternatives:
 
 - The patient will not use Aadhaar: [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp). That address is not KYC-verified.
-- The patient cannot receive the Aadhaar OTP: [Create an ABHA with face authentication](/api-reference/user-app/abdm-connect/workflows/create-abha-face-auth).
+- Assisted creation where the patient authenticates with their face on a mobile device instead of an OTP: [Create an ABHA with face authentication](/api-reference/user-app/abdm-connect/workflows/create-abha-face-auth).
 - The patient already knows their ABHA address: [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha).
 
 If the patient already has an ABHA on this Aadhaar, this workflow finds it at the verify step and logs them in instead of creating a duplicate.
@@ -104,7 +104,7 @@ sequenceDiagram
     {/* TODO: confirm: the address format to send to phr/check and create-phr. The create-phr example is "shyam.eka@abdm"; confirm whether the "@abdm" suffix is required, optional or added by Eka. */}
   </Step>
   <Step title="Log in to the existing address (only if the patient picked one)">
-    Send `txn_id` and the chosen `abha_address` from `abha_profiles` to [Auto Login](/api-reference/user-app/abdm-connect/enrollment/aadhaar/auto-login). The response carries `profile`, `eka.oid`, `token`, `refresh_token` and `skip_state`. The patient is logged in. Stop here; do not call Create. {/* TODO: confirm: the skip_state value Auto Login returns on success (flows/m1 implies abha_end). */}
+    Send `txn_id` and the chosen `abha_address` from `abha_profiles` to [Auto Login](/api-reference/user-app/abdm-connect/enrollment/aadhaar/auto-login). The response carries `profile`, `eka.oid`, `token`, `refresh_token` and `skip_state`. On success `skip_state` is `abha_end`, as drawn in [Milestone 1](/api-reference/user-app/abdm-connect/flows/m1) for Aadhaar login. The patient is logged in. Stop here; do not call Create.
   </Step>
   <Step title="Create the ABHA">
     Send `txn_id` and the chosen `abha_address` to [Create](/api-reference/user-app/abdm-connect/enrollment/aadhaar/create-abha). Both are required. The response carries:
@@ -131,6 +131,10 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Error responses carry `code`, `error` and `source_error`. `source_error.code` holds codes such as `MIS-1013`. See [Error codes](/api-reference/user-app/abdm-connect/errors) for the full list. {/* TODO: confirm: which codes each operation in this workflow returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page. */}
 
 | Situation | Code | Do |
@@ -150,12 +154,14 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 ## Test it
 
-Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: sandbox test Aadhaar numbers and OTPs, and link the ABDM Connect testing page once it exists. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: sandbox test Aadhaar numbers and OTPs. */}
 
 - [ ] Happy path: Generate OTP, Verify OTP with `mobile` set to the Aadhaar-linked number, Suggest, Does ABHA Address Exist returns `exists: false`, Create. The response has `profile.abha_number` and `eka.oid`.
 - [ ] `abha.created` arrives with the same `abha_address` and `oid`, and its signature verifies.
-- [ ] Wrong OTP once, then the correct OTP: `MIS-1013`, then success.
+- [ ] Wrong OTP once, then the correct OTP: `MIS-1013`, then success. Record the code you receive; the expected code is not confirmed.
 - [ ] Verify OTP with a `mobile` that is not the Aadhaar-linked one: `skip_state` is `confirm_mobile_otp`, then Mobile Verify OTP succeeds.
 - [ ] Resend on both OTPs: each returns a `txn_id` that the next call accepts.
 - [ ] Second run with the same Aadhaar: Verify OTP returns `abha_create` with a non-empty `abha_profiles`; Auto Login succeeds.
-- [ ] Create with an address that Does ABHA Address Exist reports as taken: `ABDM-1101`.
+- [ ] Create with an address that Does ABHA Address Exist reports as taken: `ABDM-1101`. Record the code you receive; the expected code is not confirmed.

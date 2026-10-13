@@ -13,7 +13,7 @@ operations:
 
 Your PHR app shows the patient what is linked to their ABHA. An ABHA address can carry thousands of care contexts across many facilities, so listing takes two calls: the facilities first, then the care contexts under the one the patient opens.
 
-This lists metadata only. Reading a record's contents needs the patient's consent and a data transfer. {/* TODO: confirm: which workflow to link for reading a record's contents from a PHR app. */}
+This lists metadata only. Reading a record's contents needs the patient's consent and a data transfer: see [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent) and [Receive and decrypt records as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-receive-data).
 
 ## Before you start
 
@@ -57,6 +57,10 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Errors come back as HTTP 4XX or 5XX with a `GenericError` body: `code`, `error` and `source_error`. Codes are on the [errors page](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes these two operations return; the spec has no error examples for them. */}
 
 | Situation | Code | Do |
@@ -68,10 +72,12 @@ Errors come back as HTTP 4XX or 5XX with a `GenericError` body: `code`, `error` 
 
 ## Test it
 
-Run against the Stage/Sandbox server, `https://api.dev.eka.care`. {/* TODO: confirm: a sandbox patient with linked care contexts to list. There is no ABDM Connect testing page yet. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the Stage/Sandbox server, `https://api.dev.eka.care`. {/* TODO: confirm: a sandbox patient with linked care contexts to list. */}
 
 - [ ] Link one care context with [Discover and link records from a facility](/api-reference/user-app/abdm-connect/workflows/phr-discover-and-link)
 - [ ] Get Linked Providers returns that facility's `hip_id`
 - [ ] Get Linked CareContexts with that `hip_id` returns the care context with a `status`
 - [ ] Get Linked CareContexts without `hip_id` fails with a 4XX
-- [ ] A patient with nothing linked gets an empty list or `ABDM-1012`, and the app offers discovery
+- [ ] A patient with nothing linked gets an empty list or `ABDM-1012`, and the app offers discovery. Record the code you receive; the expected code is not confirmed.

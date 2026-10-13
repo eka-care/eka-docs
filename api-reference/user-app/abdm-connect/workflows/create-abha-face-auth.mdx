@@ -8,20 +8,24 @@ operations:
   - POST /abdm/na/v1/face-auth/init
   - POST /abdm/na/v1/face-auth/capture
   - POST /abdm/na/v1/face-auth/verify
+  - POST /abdm/na/v1/registration/aadhaar/mobile/verify
+  - POST /abdm/na/v1/registration/aadhaar/mobile/resend
+  - GET /abdm/na/v1/registration/suggest
+  - POST /abdm/na/v1/registration/phr/check
   - POST /abdm/na/v1/registration/aadhaar/create-phr
 webhooks:
   - abha.created
 ---
 
-{/* TODO: confirm: which create call follows face-auth/verify. The spec and pages do not say. Evidence for aadhaar/create-phr: face-auth/verify returns the same txn_id, skip_state, abha_profiles and eka shape as aadhaar/verify, and flows/m1 draws "Verify, then Mobile linked with Aadhaar?, then Create ABHA" for face auth exactly as for Aadhaar OTP. Confirm the endpoint, and whether the mobile branch uses aadhaar/mobile/verify and aadhaar/mobile/resend; if so, add them to operations. */}
+{/* TODO: confirm: which create call follows face-auth/verify. The spec and pages do not say. Evidence for aadhaar/create-phr: face-auth/verify returns the same txn_id, skip_state, abha_profiles and eka shape as aadhaar/verify, and flows/m1 draws "Verify, then Mobile linked with Aadhaar?, then Create ABHA" for face auth exactly as for Aadhaar OTP. Confirm the endpoint, and whether the mobile branch uses aadhaar/mobile/verify and aadhaar/mobile/resend (listed in operations on the m1 evidence; the page marks both as not yet confirmed). */}
 
 ## When to use this
 
-The patient has Aadhaar but cannot receive the Aadhaar OTP, for example because their mobile is not linked to their Aadhaar. Instead of an OTP, the patient completes Aadhaar face authentication on a mobile device. The verified identity then creates a KYC-verified ABHA.
+Use this for assisted ABHA creation with Aadhaar face authentication instead of an OTP. The patient scans a QR code you show and completes face authentication on a mobile device. The verified identity then creates a KYC-verified ABHA. {/* TODO: confirm: when to choose face authentication over the Aadhaar OTP. No source says it is for patients who cannot receive the OTP; flows/m1 still draws a "Mobile linked with Aadhaar?" branch after face auth. */}
 
 Alternatives:
 
-- The patient can receive the Aadhaar OTP: [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp).
+- The patient will use an Aadhaar OTP instead: [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp).
 - The patient will not use Aadhaar: [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp).
 
 ## Before you start
@@ -46,6 +50,14 @@ sequenceDiagram
     App->>Eka: POST /abdm/na/v1/face-auth/capture
   end
   App->>Eka: POST /abdm/na/v1/face-auth/verify
+  opt Mobile not linked with Aadhaar (not yet confirmed for face auth)
+    App->>Eka: POST /abdm/na/v1/registration/aadhaar/mobile/verify
+    opt OTP did not arrive
+      App->>Eka: POST /abdm/na/v1/registration/aadhaar/mobile/resend
+    end
+  end
+  App->>Eka: GET /abdm/na/v1/registration/suggest
+  App->>Eka: POST /abdm/na/v1/registration/phr/check
   App->>Eka: POST /abdm/na/v1/registration/aadhaar/create-phr
   Eka-->>App: webhook abha.created
 ```
@@ -68,9 +80,20 @@ sequenceDiagram
 
     - `abha_create` with an empty `abha_profiles`: go to the next step.
     - `abha_create` with a non-empty `abha_profiles`: the patient already has ABHA addresses. {/* TODO: confirm: whether aadhaar/auto-login accepts the face-auth txn_id to log in to one of them. */}
-    - `confirm_mobile_otp`: flows/m1 shows a mobile verification before create. {/* TODO: confirm: when face-auth/verify returns confirm_mobile_otp, given it takes no mobile, and which mobile verify call follows. */}
+    - `confirm_mobile_otp`: go to "Verify the mobile". {/* TODO: confirm: when face-auth/verify returns confirm_mobile_otp, given it takes no mobile. */}
+  </Step>
+  <Step title="Verify the mobile (only if skip_state is confirm_mobile_otp)">
+    <Note>
+    This step is not yet confirmed for face authentication. flows/m1 draws a "Mobile linked with Aadhaar?" branch after Verify Face, with Mobile Verify OTP and Mobile Resend OTP, as in the Aadhaar OTP flow. Whether these calls accept the face-auth `txn_id` is not yet confirmed.
+    </Note>
+
+    Send `txn_id` and the `otp` the patient receives to [Mobile Verify OTP](/api-reference/user-app/abdm-connect/enrollment/aadhaar/mobile-verify). If the OTP does not arrive, send `txn_id` to [Mobile Resend OTP](/api-reference/user-app/abdm-connect/enrollment/aadhaar/mobile-resend-otp) and use the `txn_id` it returns. {/* TODO: confirm: whether aadhaar/mobile/verify and aadhaar/mobile/resend are the calls after face auth, and which mobile number the OTP goes to. */}
   </Step>
   <Step title="Create the ABHA">
+    <Note>
+    The create call after face authentication is not yet confirmed. Verify Face returns the same `txn_id`, `skip_state`, `abha_profiles` and `eka` shape as the Aadhaar OTP Verify call, and flows/m1 draws the same mobile check, then create, path for both. On that evidence this step uses the Aadhaar Create call.
+    </Note>
+
     The patient chooses an ABHA address. You can use [Suggest ABHA Address](/api-reference/user-app/abdm-connect/commons/suggest-abha-address) and [Does ABHA Address Exist](/api-reference/user-app/abdm-connect/commons/does-health-id-exist) as in [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp).
 
     Send `txn_id` and `abha_address` to [Create](/api-reference/user-app/abdm-connect/enrollment/aadhaar/create-abha). The response carries `profile.abha_number`, `profile.abha_address`, `eka.oid`, `token`, `refresh_token` and `skip_state`.
@@ -90,6 +113,10 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Error responses carry `code`, `error` and `source_error`. `source_error.code` holds the ABDM code. See [Error codes](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes face-auth init, capture and verify return, including the code or status for a face that does not match; the spec has no error examples for them. */}
 
 | Situation | Code | Do |
@@ -103,7 +130,9 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 ## Test it
 
-Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: whether face authentication can be completed on sandbox at all, with which test Aadhaar and device, and link the ABDM Connect testing page once it exists. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: whether face authentication can be completed on sandbox at all, with which test Aadhaar and device. */}
 
 - [ ] Happy path: Face Auth Init, show `url`, poll Capture Face until `Verified`, Verify Face, Create. The response has `profile.abha_number` and `eka.oid`.
 - [ ] `abha.created` arrives with the same `abha_address` and `oid`, and its signature verifies.

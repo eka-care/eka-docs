@@ -27,7 +27,7 @@ To stop asking the patient for every request from a trusted source, set up auto-
 
 - A bearer token for the API. See [Authorization](/api-reference/authorization/getting-started).
 - A live ABHA Gateway session for the patient. Every consent operation needs one. See [User Session](/api-reference/user-app/abdm-connect/session/getting-started).
-- The patient's Eka user id (`oid`), sent as the `X-Pt-Id` header or the `oid` query parameter. {/* TODO: confirm: whether X-Pt-Id or the oid query parameter is required, and what X-Partner-Pt-Id and X-Hip-Id should carry for a PHR app. */}
+- The patient's Eka user id (`oid`), sent as the `X-Pt-Id` header. List Requests, Get Details, approve, deny and revoke also accept it as the `oid` query parameter; the three PIN calls take the header only. {/* TODO: confirm: whether X-Pt-Id or the oid query parameter is required where both are accepted, and what X-Partner-Pt-Id and X-Hip-Id should carry for a PHR app. */}
 - A webhook endpoint registered with Eka that verifies the `Eka-Webhook-Signature` header. See [Webhook signature](/api-reference/connect/webhooks/webhook-signature).
 
 ## Sequence
@@ -48,9 +48,9 @@ sequenceDiagram
   else Patient denies
     App->>Eka: POST /abdm/v1/consents/deny
   end
-  Eka-->>App: webhook abha.consent_update
+  Eka-->>App: webhook abha.consent_update (not yet confirmed)
   App->>Eka: POST /abdm/v1/consents/revoke
-  Eka-->>App: webhook abha.consent_update
+  Eka-->>App: webhook abha.consent_update (not yet confirmed)
 ```
 
 ## Steps
@@ -87,7 +87,7 @@ sequenceDiagram
 
     **To deny,** call [Consent Deny](/api-reference/user-app/abdm-connect/consents/consent-deny) with `id` and, optionally, the patient's `reason` in plain text. Eka returns `204`.
 
-    Then wait for [`abha.consent_update`](/api-reference/user-app/abdm-connect/webhooks/consent-update), reply `200` within 5 seconds, and update the request in your inbox from `data.notification.status`.
+    Then update the request in your inbox. Whether a PHR app receives [`abha.consent_update`](/api-reference/user-app/abdm-connect/webhooks/consent-update) for requests the patient acts on is not yet confirmed. If it arrives, reply `200` within 5 seconds and read `data.notification.status`. If it does not, call [List Requests](/api-reference/user-app/abdm-connect/patient-requests/list-requests) with `type` set to `consent` and `status` set to `granted` (or `denied` after a denial) and find the request by `id`.
 
     {/* TODO: confirm: whether the patient may narrow duration or hi_types below what the HIU asked for, or only remove items. */}
     {/* TODO: confirm: whether a PHR app receives abha.consent_update for requests the patient acts on, or only HIUs do. */}
@@ -110,12 +110,16 @@ The patient's PIN is not state. Do not store it.
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Error responses carry `code`, `error` and `source_error` (`code`, `message`). Codes are listed on the [errors page](/api-reference/user-app/abdm-connect/errors).
 
 | Situation | Code | Do |
 |---|---|---|
 | ABHA Gateway session expired | HTTP `491` | Re-run the session OTP, then retry. See [User Session](/api-reference/user-app/abdm-connect/session/getting-started) |
-| Wrong PIN | {/* TODO: confirm: error code for a wrong consent PIN, and the attempt limit */} | Let the patient retry |
+| Wrong PIN | Not documented yet {/* TODO: confirm: error code for a wrong consent PIN, and the attempt limit */} | Let the patient retry |
 | Patient forgot the PIN | none | Use [Consent pin forgot init](/api-reference/user-app/abdm-connect/consents/pin/forgot-init), [Consent pin forgot verify](/api-reference/user-app/abdm-connect/consents/pin/forgot-verify) and [Consent pin reset](/api-reference/user-app/abdm-connect/consents/pin/reset) {/* TODO: confirm: the order of the forgot-PIN calls and whether reset needs the txn_id from forgot init */} |
 | Patient wants to change the PIN | none | Send `old` and `new` to [Consent pin change](/api-reference/user-app/abdm-connect/consents/pin/change) |
 | Missing `id` or `consent_artefacts` | `ABDM-1006`, `ABDM-1010` | Fix the body and resend |
@@ -125,12 +129,14 @@ Error responses carry `code`, `error` and `source_error` (`code`, `message`). Co
 
 ## Test it
 
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
 Sandbox base URL: `https://api.dev.eka.care`. {/* TODO: confirm: a sandbox patient with a pending consent request, and how to raise one from a sandbox HIU. No testing page exists yet. */}
 
 - [ ] Raise a request against a sandbox patient with [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent)
 - [ ] It appears in List Requests with `status` `requested`; Get Details shows its providers and care contexts
 - [ ] Pin exists returns `false` for a new patient; set a PIN; exists now returns `true`
-- [ ] Verify the PIN and approve one care context; `abha.consent_update` arrives
+- [ ] Verify the PIN and approve one care context; record whether `abha.consent_update` arrives (not yet confirmed), otherwise List Requests with `status` `granted` shows the request
 - [ ] Get Details now shows a `consent_artefact_id`; revoke it
 - [ ] Deny a second request with a reason
 - [ ] Let the session expire and confirm the `491` path

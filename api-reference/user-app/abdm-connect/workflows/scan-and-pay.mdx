@@ -86,18 +86,24 @@ All five operations return a `status` from the same list: `REQUESTED_OPEN_ORDER`
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Every operation returns `GenericError` with `code`, `error` and `source_error` on a 4XX or 5XX. A failure inside the facility's answer comes back as `status` `ERROR` with `data.error`. See [Errors](/api-reference/user-app/abdm-connect/errors).
 
 | Situation | Code | Do |
 |---|---|---|
 | Missing `hip_id` or `counter_id`, or an unreadable QR | 4XX {/* TODO: confirm: code */} | Ask the patient to scan again |
-| Unknown or invalid `request_id` | `ABDM-1030` {/* TODO: confirm: that Scan and Pay returns this code */} | Restart from Open Orders |
-| Facility does not answer | `ABDM-1028` or `ABDM-1401` {/* TODO: confirm: that Scan and Pay returns these */} | Tell the patient to pay at the counter |
+| Unknown or invalid `request_id` | `ABDM-1030` (expected, not confirmed) {/* TODO: confirm: that Scan and Pay returns this code */} | Restart from Open Orders |
+| Facility does not answer | `ABDM-1028` or `ABDM-1401` (expected, not confirmed) {/* TODO: confirm: that Scan and Pay returns these */} | Tell the patient to pay at the counter |
 | Facility answers with an error | `status` `ERROR`, `data.error.code` {/* TODO: confirm: the list of data.error codes */} | Show `data.error.message`; pay at the counter |
 | Payment fails or is abandoned | Transaction details `data.status` {/* TODO: confirm: values */} | {/* TODO: confirm: can the patient retry with the same request_id? */} |
-| Rate limit | `ABDM-1022` {/* TODO: confirm: that Scan and Pay returns this code */} | {/* TODO: confirm: wait time */} |
+| Rate limit | `ABDM-1022` (expected, not confirmed) {/* TODO: confirm: that Scan and Pay returns this code */} | {/* TODO: confirm: wait time */} |
 
 ## Test it
+
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
 {/* TODO: confirm: is Scan and Pay available on sandbox, and which test hip_id and counter_id return open orders? */}
 

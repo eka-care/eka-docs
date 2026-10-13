@@ -64,9 +64,13 @@ sequenceDiagram
 | `clinic_id` | Your own system | Permanently, on the facility record | Link HFR and Onboard facility |
 | `hip_id` | Onboard facility | Permanently, on the facility record | The `X-Hip-Id` header on later HIP calls {/* TODO: confirm: that the X-Hip-Id header takes this hip_id */} |
 | `hip_code` | Onboard facility | Permanently, on the facility record | {/* TODO: confirm: what hip_code is used for */} |
-| `scan_share_url` | Onboard facility | Permanently, on the facility record | The facility's Scan and Share QR, used by [Receive a scanned profile as a HIP](/api-reference/user-app/abdm-connect/workflows/hip-scan-and-share) {/* TODO: confirm: that scan_share_url is the URL to encode in the counter QR */} |
+| `scan_share_url` | Onboard facility | Permanently, on the facility record | The facility's Scan and Share link {/* TODO: confirm: that scan_share_url is the URL to encode in the counter QR, and which workflow uses it */} |
 
 ## When it fails
+
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
 
 Errors come back as `4XX` or `5XX` with a body carrying `code`, `error` and `source_error` (`code`, `message`). Read `source_error.code` and look it up on the [errors page](/api-reference/user-app/abdm-connect/errors).
 
@@ -77,11 +81,13 @@ Errors come back as `4XX` or `5XX` with a body carrying `code`, `error` and `sou
 | Malformed body, such as a missing `hip_id` or `name` on Onboard facility | `ABDM-1006` | Fix the request; do not retry unchanged |
 | Facility not in HFR | {/* TODO: confirm: the response search gives for an unknown hfrId */} | Register it with Onboard HFR |
 | Facility already registered | `ABDM-1053` | Search for it and continue from Link {/* TODO: confirm: that onboard HFR returns ABDM-1053 for a duplicate facility */} |
-| Invalid HIP ID on Onboard facility | `ABDM-1035` | Check the HFR ID you sent as `hip_id` |
+| Invalid HIP ID on Onboard facility | `ABDM-1035` (the [errors page](/api-reference/user-app/abdm-connect/errors) lists two meanings: Invalid HIP ID on a 500, and OTP does not match on a 400; tell them apart by HTTP status and `source_error.message`) | Check the `hip_id` you sent |
 | Facility not yet approved | {/* TODO: confirm: the code returned when linking or onboarding a facility whose HFR registration is pending approval */} | Wait for approval, then retry from Link |
 | ABDM registry unavailable | `ABDM-1019` or `ABDM-1024` | Retry later {/* TODO: confirm: retry interval and limit */} |
 
 ## Test it
+
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
 Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: a sandbox HFR ID to search and link, the values to use for a new facility, and the testing page to link */}
 

@@ -95,6 +95,10 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Error responses carry `code`, `error` and `source_error`. `source_error.code` holds codes such as `MIS-1013`. See [Error codes](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes each operation in this workflow returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page. */}
 
 | Situation | Code | Do |
@@ -111,11 +115,13 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 ## Test it
 
-Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: sandbox test mobile numbers and OTPs, and link the ABDM Connect testing page once it exists. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: sandbox test mobile numbers and OTPs. */}
 
 - [ ] Happy path: Generate OTP, Verify OTP, Suggest, Does ABHA Address Exist returns `exists: false`, Create. The response has `success: true` and `eka.oid`.
 - [ ] `abha.created` arrives with the same `abha_address` and `oid`, and its signature verifies.
-- [ ] Wrong OTP once, then the correct one: `MIS-1013`, then success.
+- [ ] Wrong OTP once, then the correct one: `MIS-1013`, then success. Record the code you receive; the expected code is not confirmed.
 - [ ] Resend OTP, then verify with the new OTP and the returned `txn_id`.
 - [ ] Second run with the same mobile: Verify OTP returns a non-empty `abha_profiles`.
-- [ ] Create with an address that Does ABHA Address Exist reports as taken: `ABDM-1101`.
+- [ ] Create with an address that Does ABHA Address Exist reports as taken: `ABDM-1101`. Record the code you receive; the expected code is not confirmed.

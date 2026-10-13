@@ -71,7 +71,7 @@ sequenceDiagram
 
 ## Steps
 
-Every `POST` in this workflow returns `txn_id`, `provider_id` and `order_id`. The spec describes `txn_id` and `provider_id` as the values for the next call. The `GET` calls take the same three as query parameters.
+Every `POST` in this workflow returns `txn_id`, `provider_id` and `order_id`. The spec describes `txn_id` and `provider_id` as the values for the next call. Every `GET` except Get Doctors takes the same three as query parameters; the spec gives Get Doctors none.
 
 {/* TODO: confirm: poll interval and timeout for every GET in this workflow, and which response tells you the result is not ready yet. */}
 {/* TODO: confirm: does the webhook envelope's transaction_id equal the txn_id from the POST, so you can match a webhook to its request? */}
@@ -96,7 +96,9 @@ Every `POST` in this workflow returns `txn_id`, `provider_id` and `order_id`. Th
     The `doctor.slot.search.results` webhook carries `doctor`, `provider_info` and `slots`. You can also read them from [Get Slots](/api-reference/user-app/abdm-connect/phys-cons/get-slots). Each slot has `id`, `date`, `start_time`, `end_time`, `price` and `currency`. If `slots` is empty, pick another window or doctor. The patient picks one slot.
   </Step>
   <Step title="Initiate the booking">
-    Send [Init](/api-reference/user-app/abdm-connect/phys-cons/init) the chosen slot's `id` as `slot_id`, its `start_time` and `end_time`, its price as `price.value` and `price.currency`, the doctor's `doctor.id` as `doctor_id`, plus `facility_id`, `provider_id`, `transaction_id` from the slot search, and the patient's `billing`. Keep `txn_id`, `provider_id` and `order_id` from the response.
+    Send [Init](/api-reference/user-app/abdm-connect/phys-cons/init) the chosen slot's `id` as `slot_id`, its `start_time` and `end_time`, its price as `price.value` and `price.currency`, the doctor's `doctor.id` as `doctor_id`, plus `facility_id` from the chosen doctor, `provider_id`, `transaction_id`, and the patient's `billing`. The spec describes `transaction_id` only as received in the previous API response. Keep `txn_id`, `provider_id` and `order_id` from the response.
+
+    {/* TODO: confirm: is Init's transaction_id the txn_id from the Search Slots response, the webhook transaction_id, or the doctor result's transaction_id? */}
   </Step>
   <Step title="Show the quote and terms">
     The `booking.init` webhook carries `quote` with `total` and `breakup`, `terms`, `payment` with `status` and `type`, and the `order_id`. You can also read them from [Get Init](/api-reference/user-app/abdm-connect/phys-cons/get-init). Show the total and the terms. The patient must accept the terms before you confirm.
@@ -116,7 +118,7 @@ Every `POST` in this workflow returns `txn_id`, `provider_id` and `order_id`. Th
     Send `order_id`, `provider_id` and `transaction_id` to [Order Status](/api-reference/user-app/abdm-connect/phys-cons/order-status). The `booking.status` webhook carries the booking. You can also read it from [Get Order Status](/api-reference/user-app/abdm-connect/phys-cons/get-order-status), which returns `state`, `pin`, `slot`, `price` and `doctor`.
   </Step>
   <Step title="Reschedule, if the patient asks">
-    Send `order_id`, `provider_id`, `transaction_id`, `facility_id` and the new `slot_id`, `start_time` and `end_time` to [Update](/api-reference/user-app/abdm-connect/phys-cons/update). Take the new slot from a fresh slot search (steps 3 and 4).
+    Send `order_id`, `provider_id`, `transaction_id`, `facility_id` and the new `slot_id`, `start_time` and `end_time` to [Update](/api-reference/user-app/abdm-connect/phys-cons/update). Get a new slot, for example by repeating steps 3 and 4.
 
     {/* TODO: confirm: how do you learn the update's result? Update has no GET and no webhook in the spec. Is it Order Status? Does it need a fresh slot search first? */}
   </Step>
@@ -132,12 +134,17 @@ Every `POST` in this workflow returns `txn_id`, `provider_id` and `order_id`. Th
 | `oid` | ABHA login | On the patient record | `X-Pt-Id` header on every call |
 | `txn_id` | Each `POST` response | Until the next step's `POST` returns {/* TODO: confirm: how long a txn_id stays valid */} | The `GET` poll and the next `POST` as `transaction_id` |
 | `provider_id` | Each `POST` response | With the booking, until the visit or cancellation | Every later call for this booking |
-| `hpr_id`, `facility_id`, `transaction_id` | Chosen doctor result | Until slot search returns | Search Slots |
+| `hpr_id`, `transaction_id` | Chosen doctor result | Until slot search returns | Search Slots |
+| `facility_id` | Chosen doctor result | With the booking, until the visit or cancellation | Search Slots, Init, Update |
 | `slot_id`, `start_time`, `end_time`, price | Chosen slot | Until Init returns | Init |
 | `order_id` | Init, then Confirm | With the booking, until the visit or cancellation {/* TODO: confirm: retention */} | Order Status, Update, Cancel |
 | `pin` | Confirm | Until the visit | The patient shows it to the doctor |
 
 ## When it fails
+
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
 
 Every UHI operation returns `GenericError` with `code`, `error` and `source_error` on a 4XX or 5XX. The spec lists no UHI-specific codes. See [Errors](/api-reference/user-app/abdm-connect/errors).
 
@@ -152,6 +159,8 @@ Every UHI operation returns `GenericError` with `code`, `error` and `source_erro
 | Cancel returns `FAILED` or `PENDING` | `status` | Keep the booking active; check again with Get Cancel |
 
 ## Test it
+
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
 {/* TODO: confirm: is UHI physical consultation available on sandbox, and which test doctors, facilities and time windows return results? */}
 

@@ -10,7 +10,7 @@ persona: Consumer health app booking for its user
 
 A consumer health app, such as a Personal Health Record (PHR) app, used by a patient who wants to see a doctor in person. The patient opens the app and asks for a doctor by speciality, name, facility or location. The app searches doctors across the Unified Health Interface (UHI), not only one hospital's own list, and books the visit on the patient's behalf.
 
-**Already in place:** your app acts as a UHI consumer app on Eka. The patient has an ABHA and is logged in on your app, so you hold Eka's user id (`oid`) for them ([Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha)). Your server can receive Eka webhooks.
+**Already in place:** your app acts as a UHI consumer app on Eka. The patient has an ABHA and is logged in on your app, so you hold Eka's id for the patient ([Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha)). Your server can receive Eka webhooks.
 
 {/* TODO: confirm: does a UHI booking need the patient's ABHA session at all, or only the partner token? The spec lists X-Pt-Id, X-Partner-Pt-Id and X-Hip-Id as optional headers on every UHI call. */}
 {/* TODO: confirm: is there an onboarding or registration step before an app can call the UHI physical consultation APIs? */}
@@ -33,7 +33,7 @@ A consumer health app, such as a Personal Health Record (PHR) app, used by a pat
 
 ## What they have at the end
 
-The patient has a confirmed in-person appointment with a named doctor at a named facility, at a known start and end time. They hold the PIN to show at the clinic. Your app holds the booking's `order_id`, `provider_id` and transaction id, so it can check status, reschedule or cancel later.
+The patient has a confirmed in-person appointment with a named doctor at a named facility, at a known start and end time. They hold the PIN to show at the clinic. Your app holds the booking's reference, the provider's identifier and the transaction's identifier, so it can check status, reschedule or cancel later.
 
 ## Branches
 
@@ -42,3 +42,4 @@ The patient has a confirmed in-person appointment with a named doctor at a named
 - **The patient wants another time.** The app moves the booking to a new slot. → same workflow, update step
 - **The patient cannot go.** The app cancels the booking and confirms the cancellation. → same workflow, cancel step
 - **The patient changes their mind before confirming.** They leave after seeing the quote and terms. {/* TODO: confirm: does an initiated booking that is never confirmed expire on its own, or must the app cancel it? */}
+- **The patient also needs blood.** Separately from booking, the same app can offer a related UHI search for blood banks that hold a blood group and component. This is not a step of the booking. → workflow: [Search blood banks over UHI](/api-reference/user-app/abdm-connect/workflows/blood-bank-search)

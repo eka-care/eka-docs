@@ -73,12 +73,16 @@ sequenceDiagram
 |---|---|---|---|
 | `txn_id` | Get Aadhaar OTP, then Verify Aadhaar OTP | Until Create returns {/* TODO: confirm: how long an NHPR transaction stays valid */} | Every call in this workflow; sent as `txnId` to Create |
 | `mobile_num` | The professional, checked by Verify Mobile | Until Get HPR Info returns | Verify Mobile and Get HPR Info |
-| Profile fields (`first_name`, `last_name`, `category_id`, `pincode`) | Get HPR Info | Until Create returns | Prefilling the Create body |
+| Profile fields (`first_name`, `last_name`, `pincode`) | Get HPR Info | Until Create returns | Prefilling the Create body {/* TODO: confirm: whether Get HPR Info's category_id maps to Create's hp_category_code; Create's schema has only hp_category_code and hp_sub_category_code */} |
 | `hprId` or `hpr_id` | Create, or Get HPR Info for an existing ID | Permanently, on the staff record | Registering the facility, and identifying the professional in later ABDM calls {/* TODO: confirm: which later calls need the professional's HPR ID */} |
 | `hpr_id_number` | Create, or Get HPR Info for an existing ID | Permanently, on the staff record | Display and reconciliation with the HPR registry |
 | `token` | Get HPR Info | {/* TODO: confirm: what the token from check/exist is for, and how long to keep it */} | {/* TODO: confirm: which call consumes it */} |
 
 ## When it fails
+
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
 
 Errors come back as `4XX` or `5XX` with a body carrying `code`, `error` and `source_error` (`code`, `message`). Read `source_error.code` for the upstream code, and look it up on the [errors page](/api-reference/user-app/abdm-connect/errors).
 
@@ -95,6 +99,8 @@ Errors come back as `4XX` or `5XX` with a body carrying `code`, `error` and `sou
 | ABDM registry unavailable | `ABDM-1019` or `ABDM-1024` | Retry later {/* TODO: confirm: retry interval and limit for NHPR calls */} |
 
 ## Test it
+
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
 Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: sandbox Aadhaar numbers and OTPs for HPR creation, and the testing page to link */}
 

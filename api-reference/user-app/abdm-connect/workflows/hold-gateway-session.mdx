@@ -12,7 +12,7 @@ operations:
 
 ## When to use this
 
-Creating an ABHA or logging in opens a session for the patient with the ABHA Gateway. The session expires after a period. Patient-scoped calls made without a live session return HTTP `491`. Run this workflow before a patient-scoped call such as fetching the profile, and whenever a call returns `491`.
+Registering or creating an ABHA opens a session for the patient with the ABHA Gateway. Whether logging in also opens one is not yet confirmed. {/* TODO: confirm: whether ABHA login opens an ABHA Gateway session; session/getting-started names only registration and creation. */} The session expires after a period. Patient-scoped calls made without a live session return HTTP `491`. Run this workflow before a patient-scoped call such as fetching the profile, and whenever a call returns `491`.
 
 This workflow renews a session for a patient whose ABHA you already hold. To find or create the ABHA in the first place, use [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha) or one of the create workflows.
 
@@ -72,6 +72,10 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Error responses carry `code`, `error` and `source_error`. `source_error.code` holds codes such as `MIS-1013`. See [Error codes](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes the session operations return; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page. */}
 
 | Situation | Code | Do |
@@ -86,9 +90,11 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 ## Test it
 
-Run against the sandbox base URL `https://api.dev.eka.care`, with an ABHA you created on sandbox. {/* TODO: confirm: how to force a session to expire on sandbox to test the 491 path, sandbox OTPs, and link the ABDM Connect testing page once it exists. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the sandbox base URL `https://api.dev.eka.care`, with an ABHA you created on sandbox. {/* TODO: confirm: how to force a session to expire on sandbox to test the 491 path, sandbox OTPs. */}
 
 - [ ] Straight after creating an ABHA, Session Status returns `logged_in: true`.
 - [ ] After the session expires, Session Status returns `logged_in: false`; Session Init and Session Verify return a `token`; Session Status returns `logged_in: true` again.
 - [ ] A patient-scoped call such as [Profile Details](/api-reference/user-app/abdm-connect/profile/details/profile-details) returns `491` on an expired session and succeeds after renewal.
-- [ ] Wrong OTP on Session Verify: `MIS-1013`.
+- [ ] Wrong OTP on Session Verify: `MIS-1013`. Record the code you receive; the expected code is not confirmed.

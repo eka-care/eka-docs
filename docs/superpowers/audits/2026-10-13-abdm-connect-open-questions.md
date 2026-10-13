@@ -1,10 +1,25 @@
 # ABDM Connect: open questions
 
-346 questions. Every `{/* TODO: confirm: ... */}` left in the ABDM Connect pages, grouped by page. Answer one by editing the page at that spot and deleting the comment. Regenerate with:
+349 questions. Every `{/* TODO: confirm: ... */}` left in the ABDM Connect pages, grouped by page. Answer one by editing the page at that spot and deleting the comment. Regenerate with:
 
 ```sh
 grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journeys/*.mdx,workflows/*.mdx}
 ```
+
+## Defects in the sources
+
+Found while writing and reviewing; these need fixing in the API or the spec, not only in the docs.
+
+- [ ] `errors.mdx` lists `ABDM-1035` twice with two meanings (Invalid HIP ID on 500, OTP does not match on 400). Present before this revamp.
+- [ ] The `abha.hip_profile_share` webhook sends `req_id`; the on-share reply asks for `request_id`.
+- [ ] The `abha.hip_data_fetch` webhook carries a top-level `transaction_id` and an empty `data.transaction_id`.
+- [ ] Reply `error.code` fields are integers; the errors page lists string codes.
+- [ ] Consent Create is documented as `204` but shows a response body.
+- [ ] The spec marks `Eka-Webhook-Signature` required on all 18 webhooks; the Connect pages say unsigned delivery happens.
+- [ ] The health-locker auto-approval `PATCH` body carries only `oid`, so there is no way to say enable or disable.
+- [ ] The onboard request body in the spec (`clinic_id`, `hfr_id`) contradicts `nhpr-abdm/onboarding-overview.mdx` (name, address, doctor OID).
+- [ ] Scan and share and scan and pay status enums carry leading spaces in the spec.
+- [ ] The spec has no error response examples at all, so no failure table can be confirmed from it.
 
 ## Ladder pages
 
@@ -18,9 +33,10 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] whether ABHA_ADDRESS includes the "@abdm" suffix on phr/check and create-phr. The create-phr schema example is "shyam.eka@abdm".
 - [ ] replace with a scrubbed sandbox response
 
-### `webhooks.mdx` (4)
+### `webhooks.mdx` (5)
 
 - [ ] whether ABDM Connect events are registered through Register a webhook or by sharing the URL with Eka, and which event names or scopes to subscribe to.
+- [ ] is Eka-Webhook-Signature sent on every ABDM Connect event, or only when a signing key was given at registration? The 18 webhook definitions in registration.yml mark it required: true.
 - [ ] Eka's retry schedule, how many times it retries, and what happens after the last retry.
 - [ ] whether the envelope's transaction_id stays the same across retries of one event, so you can use it to ignore a repeated delivery.
 - [ ] the source description says booking.init carries the response of the order status API, but links Booking Init. Confirm it fires for Init.
@@ -60,9 +76,13 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 
 - [ ] when every record is already linked, should on-discover return an error or an empty patients list?
 
+### `journeys/hiu-fetch-records-with-consent.mdx` (1)
+
+- [ ] the steps to onboard on Eka as a HIU.
+
 ### `journeys/phr-patient-aggregates-records.mdx` (2)
 
-- [ ] which workflow covers a PHR app reading record contents (raising a consent as HIU and receiving the FHIR data); the PHR slugs assigned to this journey do not include one.
+- [ ] what fills `authorizations` in List Requests, and how a PHR app acts on one (for example when a facility links a record on its own).
 - [ ] which workflow covers patient uploads through the Medical Records APIs; none exists in ABDM Connect.
 
 ### `journeys/uhi-book-physical-consultation.mdx` (4)
@@ -97,14 +117,13 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] code and retry rule
 - [ ] is blood bank search available on sandbox, and which state, district, blood group and component return results?
 
-### `workflows/create-abha-aadhaar-otp.mdx` (18)
+### `workflows/create-abha-aadhaar-otp.mdx` (17)
 
 - [ ] does the abha.created webhook's data.partner_patient_id and data.hip_id echo the X-Partner-Pt-Id and X-Hip-Id headers sent on these calls? If so, say the headers are needed to match the webhook to the patient.
 - [ ] how long to wait before offering resend, and how many resends are allowed before ABDM-1100.
 - [ ] which call follows abha_select in the Aadhaar registration flow, auto-login with the chosen address or something else?
 - [ ] can aadhaar/verify return abha_end directly, and in what case?
 - [ ] the address format to send to phr/check and create-phr. The create-phr example is "shyam.eka@abdm"; confirm whether the "@abdm" suffix is required, optional or added by Eka.
-- [ ] the skip_state value Auto Login returns on success (flows/m1 implies abha_end).
 - [ ] does the integrator need to store or send token, refresh_token or eka.min_token on any later call, or does Eka hold the gateway session itself?
 - [ ] the skip_state value Create returns on success (flows/m1 implies abha_end).
 - [ ] Eka's webhook retry schedule and how many times it retries.
@@ -116,22 +135,24 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] what the integrator should do when EKA-1002 is returned.
 - [ ] retry interval and whether the same txn_id can be reused after a 5XX.
 - [ ] how long to wait for abha.created before treating it as lost.
-- [ ] sandbox test Aadhaar numbers and OTPs, and link the ABDM Connect testing page once it exists.
+- [ ] sandbox test Aadhaar numbers and OTPs.
 
-### `workflows/create-abha-face-auth.mdx` (12)
+### `workflows/create-abha-face-auth.mdx` (14)
 
-- [ ] which create call follows face-auth/verify. The spec and pages do not say. Evidence for aadhaar/create-phr: face-auth/verify returns the same txn_id, skip_state, abha_profiles and eka shape as aadhaar/verify, and flows/m1 draws "Verify, then Mobile linked with Aadhaar?, then Create ABHA" for face auth exactly as for Aadhaar OTP. Confirm the endpoint, and whether the mobile branch uses aadhaar/mobile/verify and aadhaar/mobile/resend; if so, add them to operations.
+- [ ] which create call follows face-auth/verify. The spec and pages do not say. Evidence for aadhaar/create-phr: face-auth/verify returns the same txn_id, skip_state, abha_profiles and eka shape as aadhaar/verify, and flows/m1 draws "Verify, then Mobile linked with Aadhaar?, then Create ABHA" for face auth exactly as for Aadhaar OTP. Confirm the endpoint, and whether the mobile branch uses aadhaar/mobile/verify and aadhaar/mobile/resend (listed in operations on the m1 evidence; the page marks both as not yet confirmed).
+- [ ] when to choose face authentication over the Aadhaar OTP. No source says it is for patients who cannot receive the OTP; flows/m1 still draws a "Mobile linked with Aadhaar?" branch after face auth.
 - [ ] what the patient needs on the device (app, camera, network) and whether the device must be the patient's own.
 - [ ] whether url is the QR payload to render or a link to open, and how long it stays valid.
 - [ ] the poll interval, the maximum time to poll before giving up, and the status values for a failed or expired face authentication.
 - [ ] whether aadhaar/auto-login accepts the face-auth txn_id to log in to one of them.
-- [ ] when face-auth/verify returns confirm_mobile_otp, given it takes no mobile, and which mobile verify call follows.
+- [ ] when face-auth/verify returns confirm_mobile_otp, given it takes no mobile.
+- [ ] whether aadhaar/mobile/verify and aadhaar/mobile/resend are the calls after face auth, and which mobile number the OTP goes to.
 - [ ] how long a face-auth txn_id stays valid.
 - [ ] which codes face-auth init, capture and verify return, including the code or status for a face that does not match; the spec has no error examples for them.
 - [ ] the timeout.
 - [ ] the code returned by face-auth/verify when the Aadhaar does not match.
 - [ ] retry interval for ABDM-1022.
-- [ ] whether face authentication can be completed on sandbox at all, with which test Aadhaar and device, and link the ABDM Connect testing page once it exists.
+- [ ] whether face authentication can be completed on sandbox at all, with which test Aadhaar and device.
 
 ### `workflows/create-abha-mobile-otp.mdx` (10)
 
@@ -144,9 +165,9 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] which codes each operation in this workflow returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page.
 - [ ] retry interval for ABDM-1022.
 - [ ] retry interval and whether the same txn_id can be reused after a 5XX.
-- [ ] sandbox test mobile numbers and OTPs, and link the ABDM Connect testing page once it exists.
+- [ ] sandbox test mobile numbers and OTPs.
 
-### `workflows/create-hpr-id.mdx` (15)
+### `workflows/create-hpr-id.mdx` (16)
 
 - [ ] which of X-Pt-Id, X-Partner-Pt-Id and X-Hip-Id are required on NHPR calls, given the facility has no HIP ID yet at this point?
 - [ ] where an integrator gets the valid values for hp_category_code, hp_sub_category_code, role, id_type, source_type and domain_name
@@ -155,6 +176,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] which field decides that an HPR ID exists: a non-empty hpr_id, or new being false?
 - [ ] should the integrator call POST /abdm/nhpr/v1/hpr/aadhaar/check/available on a handle the professional types before calling create?
 - [ ] how long an NHPR transaction stays valid
+- [ ] whether Get HPR Info's category_id maps to Create's hp_category_code; Create's schema has only hp_category_code and hp_sub_category_code
 - [ ] which later calls need the professional's HPR ID
 - [ ] what the token from check/exist is for, and how long to keep it
 - [ ] which call consumes it
@@ -179,7 +201,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] are care contexts linked through on-confirm always served through abha.hip_data_fetch, or can the HIP send their FHIR data to Eka afterwards?
 - [ ] how long a discovery transaction stays open on ABDM's side, which bounds how long to keep txn_id and the pending OTP
 - [ ] which of these codes Eka returns to the HIP's replies and which only reach the PHR app, and what the HIP should do on ABDM-1026, ABDM-1038 and ABDM-1048
-- [ ] how to trigger discovery against your HIP on sandbox (which PHR app or test ABHA, and test patient data on your side); there is no testing page for ABDM Connect yet
+- [ ] how to trigger discovery against your HIP on sandbox (which PHR app or test ABHA, and test patient data on your side)
 
 ### `workflows/hip-scan-and-share.mdx` (9)
 
@@ -191,14 +213,13 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] which error.code values to send, since error.code is an integer and the errors page lists string codes
 - [ ] the deadline for the on-share reply after the webhook, and what the patient sees if it is missed
 - [ ] which of these codes on-share returns, and what an integrator should do on ABDM-1049 and ABDM-1050
-- [ ] how to produce a facility QR and trigger abha.hip_profile_share on sandbox, and which test ABHA to share; there is no testing page for ABDM Connect yet
+- [ ] how to produce a facility QR and trigger abha.hip_profile_share on sandbox, and which test ABHA to share
 
-### `workflows/hiu-receive-data.mdx` (14)
+### `workflows/hiu-receive-data.mdx` (12)
 
+- [ ] which transaction_id on-push expects, and which one to deduplicate a retried delivery by: the top-level transaction_id or data.transaction_id.
 - [ ] whether one consent can produce several abha.hiu_data_push events (one per HIP, or paged entries), and how to tell when the last one has arrived.
-- [ ] how to deduplicate a retried delivery: by the top-level transaction_id or by data.transaction_id.
-- [ ] the webhook page describes key_information.dh_public_key as the HIU's public key, while the keyset page says the HIP's public key is shared for decryption. Which is it? The mapping above assumes the HIP's key.
-- [ ] how to verify entries[].checksum (which hash, over the encrypted or the decrypted content).
+- [ ] which hash algorithm entries[].checksum uses.
 - [ ] whether to reject an entry when key_information.dh_public_key.expiry has passed.
 - [ ] what happens to an entry reported with success false; does Eka or the HIP resend it?
 - [ ] the deadline for calling on-push after the webhook arrives.
@@ -206,7 +227,6 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] whether the HIU must delete records when the consent's expiry or erase_at passes, or on revoke
 - [ ] retry count and schedule
 - [ ] which call returns ABDM-1061 in this workflow
-- [ ] which transaction_id on-push expects
 - [ ] whether the HIU can trigger a re-fetch for one HIP, or must raise a new consent
 - [ ] a sandbox HIP that pushes test records, and how to trigger a push in sandbox. No testing page exists yet.
 
@@ -232,8 +252,9 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] whether Eka retries the HIP fetch itself, and when the integrator should retry
 - [ ] sandbox test patient (ABHA address), HIP id, clinic_id and d_oid to use, and how to approve the request as the patient in sandbox. No testing page exists yet.
 
-### `workflows/hold-gateway-session.mdx` (10)
+### `workflows/hold-gateway-session.mdx` (11)
 
+- [ ] whether ABHA login opens an ABHA Gateway session; session/getting-started names only registration and creation.
 - [ ] how often to call session/status, for example once per screen or once per patient visit, and whether its result can be cached.
 - [ ] which mobile receives the session OTP, the one linked to the ABHA address or another, and whether a resend call exists for session/init.
 - [ ] whether the integrator must send token on later patient-scoped calls (and in which header), or Eka holds the session against the oid; whether token is the user_x_token that profile/kyc/init and profile/kyc/verify take; and whether refresh_token can renew the session without a new OTP.
@@ -243,7 +264,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] how long to keep refresh_token.
 - [ ] what refresh_token is used for.
 - [ ] which codes the session operations return; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page.
-- [ ] how to force a session to expire on sandbox to test the 491 path, sandbox OTPs, and link the ABDM Connect testing page once it exists.
+- [ ] how to force a session to expire on sandbox to test the 491 path, sandbox OTPs.
 
 ### `workflows/hpr-mobile-login.mdx` (12)
 
@@ -270,9 +291,9 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] when to call sms/notify. Is it for patients without an ABHA (so they can later discover the record), after a LINKED status, or both? Does the patient receive an SMS, and from whom?
 - [ ] is there a retention requirement for the FHIR data you keep yourself, or for data Eka stores on your behalf?
 - [ ] which of these codes the link API actually returns, and the retry interval and limit for rate limits and gateway outages
-- [ ] sandbox test ABHA address, HIP ID and a sample FHIR bundle to use; there is no testing page for ABDM Connect yet
+- [ ] sandbox test ABHA address, HIP ID and a sample FHIR bundle to use
 
-### `workflows/login-abha.mdx` (11)
+### `workflows/login-abha.mdx` (12)
 
 - [ ] the possible values in auth_methods and blocked_methods, and how each maps to the method and otp_system values on login/init.
 - [ ] that login/init's "search api response" means POST /abdm/v1/profile/search, and which skip_state login/verify returns on the search route.
@@ -280,16 +301,16 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] which otp_system to send for each method.
 - [ ] the skip_state login/verify returns on the mobile route (abha_select is expected).
 - [ ] whether the login txn_id can continue into aadhaar/create-phr when abha_profiles is empty, or the patient must start Create an ABHA with Aadhaar OTP from the beginning.
+- [ ] whether ABHA login opens an ABHA Gateway session.
 - [ ] how long a login txn_id stays valid.
 - [ ] whether these must be stored and what they are used for.
 - [ ] which codes each login operation returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page.
 - [ ] retry interval for ABDM-1022.
-- [ ] sandbox test identifiers and OTPs, and link the ABDM Connect testing page once it exists.
+- [ ] sandbox test identifiers and OTPs.
 
-### `workflows/manage-profile-and-kyc.mdx` (10)
+### `workflows/manage-profile-and-kyc.mdx` (9)
 
 - [ ] the accepted values of the format query parameter.
-- [ ] the image content type returned.
 - [ ] the error returned when a locked field is changed on a KYC-verified ABHA.
 - [ ] where user_x_token comes from (the token from session/verify, create or login?) and whether it is required.
 - [ ] which mobile receives the KYC OTP for each method.
@@ -297,11 +318,11 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] how long a KYC txn_id stays valid.
 - [ ] which codes each profile and KYC operation returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page.
 - [ ] what the integrator should do when ABDM-1043 is returned during KYC.
-- [ ] sandbox test identifiers and OTPs for KYC, and link the ABDM Connect testing page once it exists.
+- [ ] sandbox test identifiers and OTPs for KYC.
 
 ### `workflows/phr-act-on-consent.mdx` (13)
 
-- [ ] whether X-Pt-Id or the oid query parameter is required, and what X-Partner-Pt-Id and X-Hip-Id should carry for a PHR app.
+- [ ] whether X-Pt-Id or the oid query parameter is required where both are accepted, and what X-Partner-Pt-Id and X-Hip-Id should carry for a PHR app.
 - [ ] whether approve, deny and revoke fail without a verified consent PIN, or whether the PIN is optional. The spec says pin/verify is used "to approve/revoke consents" but does not say what approve checks.
 - [ ] PIN format (length, digits only). The spec example is four digits.
 - [ ] the values of scope in the verify body, and which scope approve and revoke each need.
@@ -330,11 +351,10 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] how many OTP attempts are allowed and whether link OTP can be resent.
 - [ ] retry rule and backoff when the HIP is unavailable.
 - [ ] the rate limit and how long to wait.
-- [ ] a sandbox facility name and `hip_id` that answers discovery with test care contexts, and how the sandbox delivers the link OTP. There is no ABDM Connect testing page yet.
+- [ ] a sandbox facility name and `hip_id` that answers discovery with test care contexts, and how the sandbox delivers the link OTP.
 
-### `workflows/phr-list-records.mdx` (9)
+### `workflows/phr-list-records.mdx` (8)
 
-- [ ] which workflow to link for reading a record's contents from a PHR app.
 - [ ] which of the `X-Pt-Id` header and the `oid` query parameter is required; the spec marks neither as required.
 - [ ] whether these two operations return HTTP `491` without a live gateway session.
 - [ ] what `status` holds for a care context that is linked but has had no consent raised yet, and what each value means for what the app shows.
@@ -342,7 +362,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] whether caching the provider list is safe, or whether it must be fetched each time.
 - [ ] which codes these two operations return; the spec has no error examples for them.
 - [ ] retry rule for 5XX on these calls.
-- [ ] a sandbox patient with linked care contexts to list. There is no ABDM Connect testing page yet.
+- [ ] a sandbox patient with linked care contexts to list.
 
 ### `workflows/phr-scan-and-share.mdx` (12)
 
@@ -357,7 +377,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] which codes these two operations return; the spec has no error examples for them.
 - [ ] whether a failed share can be retried with the same `request_id` or needs a new share.
 - [ ] the limit.
-- [ ] a sandbox facility QR code, or a test `hip_id` and `counter_id`, whose counter answers with a token. There is no ABDM Connect testing page yet.
+- [ ] a sandbox facility QR code, or a test `hip_id` and `counter_id`, whose counter answers with a token.
 
 ### `workflows/register-hfr.mdx` (15)
 
@@ -368,7 +388,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] is the hip_id sent here the facility's HFR ID, or a different identifier, and what is hip_code used for
 - [ ] that the X-Hip-Id header takes this hip_id
 - [ ] what hip_code is used for
-- [ ] that scan_share_url is the URL to encode in the counter QR
+- [ ] that scan_share_url is the URL to encode in the counter QR, and which workflow uses it
 - [ ] do the HFR and onboard endpoints return the ABDM codes below, or their own codes? None of these operations carries an error example in the spec.
 - [ ] the response search gives for an unknown hfrId
 - [ ] that onboard HFR returns ABDM-1053 for a duplicate facility
@@ -415,7 +435,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] can the same transaction_id be served twice (for a retry), and should your private key be discarded once the push is accepted?
 - [ ] which of these codes on-fetch actually returns, and the retry interval and limit for each
 - [ ] how you learn that an HIU failed to decrypt or verify the checksum
-- [ ] how to trigger abha.hip_data_fetch on sandbox (which test HIU, consent and ABHA to use); there is no testing page for ABDM Connect yet
+- [ ] how to trigger abha.hip_data_fetch on sandbox (which test HIU, consent and ABHA to use)
 
 ### `workflows/set-up-health-locker.mdx` (14)
 
@@ -434,7 +454,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] retry rule
 - [ ] a sandbox patient to enable the locker for, and a sandbox HIP that can link a care context to trigger abha.subscription_notify. No testing page exists yet.
 
-### `workflows/uhi-book-consultation.mdx` (20)
+### `workflows/uhi-book-consultation.mdx` (21)
 
 - [ ] which of X-Pt-Id, X-Partner-Pt-Id and X-Hip-Id are required on UHI calls? The spec marks all three optional.
 - [ ] which party Eka forwards each request to (UHI gateway, provider), so the diagram can show it.
@@ -443,6 +463,7 @@ grep -o 'TODO: confirm: [^*]*' api-reference/user-app/abdm-connect/{*.mdx,journe
 - [ ] which search fields are required together, for example whether radius_km needs latitude and longitude.
 - [ ] the spec gives Get Doctors no query parameters. How does it know which search to return?
 - [ ] is provider_id here the one from the Search Doctors response? The spec describes it as the doctor's identifier, and the doctor results carry no provider_id.
+- [ ] is Init's transaction_id the txn_id from the Search Slots response, the webhook transaction_id, or the doctor result's transaction_id?
 - [ ] how does the patient's acceptance of the terms reach the provider? Confirm takes only provider_id and transaction_id.
 - [ ] when payment.status is not paid, where and when does the patient pay? No payment operation exists in the spec.
 - [ ] the list of values state can take, and which one means confirmed.

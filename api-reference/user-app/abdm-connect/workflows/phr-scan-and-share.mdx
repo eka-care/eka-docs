@@ -68,6 +68,10 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Errors come back as HTTP 4XX or 5XX with a `GenericError` body: `code`, `error` and `source_error`. Codes are on the [errors page](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes these two operations return; the spec has no error examples for them. */}
 
 | Situation | Code | Do |
@@ -76,13 +80,14 @@ Errors come back as HTTP 4XX or 5XX with a `GenericError` body: `code`, `error` 
 | QR code from an unknown facility | [`ABDM-1035`](/api-reference/user-app/abdm-connect/errors) (Invalid HIP ID) | Ask the patient to scan the counter's QR code again |
 | Patient's gateway session expired | HTTP `491` | Run [Hold an ABHA gateway session](/api-reference/user-app/abdm-connect/workflows/hold-gateway-session), then share again |
 | Unknown `request_id` on the poll | [`ABDM-1030`](/api-reference/user-app/abdm-connect/errors) | Use the `request_id` from the share response; if lost, share again |
-| Profile could not reach the facility | [`ABDM-1018`](/api-reference/user-app/abdm-connect/errors) (Unable to share the details with Hospital), [`ABDM-1028`](/api-reference/user-app/abdm-connect/errors) | Tell the patient to register at the counter by hand |
-| Poll returns `failed` | `status: failed` | Offer to scan again {/* TODO: confirm: whether a failed share can be retried with the same `request_id` or needs a new share. */} |
+| Poll returns `failed`, for example because the profile could not reach the facility | `status: failed` on the poll. Share returns `202` and the facility answers later, so a failure such as [`ABDM-1018`](/api-reference/user-app/abdm-connect/errors) (Unable to share the details with Hospital) or [`ABDM-1028`](/api-reference/user-app/abdm-connect/errors) is not returned to your app as an error | Retry later; register the patient at the desk meanwhile {/* TODO: confirm: whether a failed share can be retried with the same `request_id` or needs a new share. */} |
 | Facility never answers | `status` stays `processing` | Stop polling at your limit and tell the patient {/* TODO: confirm: the limit. */} |
 
 ## Test it
 
-Run against the Stage/Sandbox server, `https://api.dev.eka.care`. {/* TODO: confirm: a sandbox facility QR code, or a test `hip_id` and `counter_id`, whose counter answers with a token. There is no ABDM Connect testing page yet. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the Stage/Sandbox server, `https://api.dev.eka.care`. {/* TODO: confirm: a sandbox facility QR code, or a test `hip_id` and `counter_id`, whose counter answers with a token. */}
 
 - [ ] Share with the test `hip_id`, `counter_id`, a location and the patient's profile returns `202` and a `request_id`
 - [ ] Polling with that `request_id` moves from `processing` to `success` with a `token_number` and `expiry`

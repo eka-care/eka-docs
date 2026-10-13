@@ -92,7 +92,7 @@ sequenceDiagram
   </Step>
 </Steps>
 
-Login also opens the patient's ABHA Gateway session. When it later expires, renew it with [Hold the ABHA Gateway session](/api-reference/user-app/abdm-connect/workflows/hold-gateway-session) rather than logging in again.
+Whether login also opens the patient's ABHA Gateway session is not yet confirmed; the session overview names only registration and creation. {/* TODO: confirm: whether ABHA login opens an ABHA Gateway session. */} When a session expires, renew it with [Hold the ABHA Gateway session](/api-reference/user-app/abdm-connect/workflows/hold-gateway-session) rather than logging in again.
 
 ## State you must persist
 
@@ -105,6 +105,10 @@ Login also opens the patient's ABHA Gateway session. When it later expires, rene
 | `token`, `refresh_token` | Auto Login | {/* TODO: confirm: whether these must be stored and what they are used for. */} Not documented | Not documented |
 
 ## When it fails
+
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
 
 Error responses carry `code`, `error` and `source_error`. `source_error.code` holds codes such as `MIS-1013`. See [Error codes](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes each login operation returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page. */}
 
@@ -123,11 +127,13 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 ## Test it
 
-Run against the sandbox base URL `https://api.dev.eka.care`, with an ABHA you created on sandbox through one of the create workflows. {/* TODO: confirm: sandbox test identifiers and OTPs, and link the ABDM Connect testing page once it exists. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the sandbox base URL `https://api.dev.eka.care`, with an ABHA you created on sandbox through one of the create workflows. {/* TODO: confirm: sandbox test identifiers and OTPs. */}
 
 - [ ] ABHA address route: Search Auth Methods, Generate OTP with `phr_address`, Verify OTP returns `abha_end` and `eka.oid`.
 - [ ] Mobile route: Generate OTP with `mobile`, Verify OTP, Login with one address from `abha_profiles` returns `abha_end`.
 - [ ] Aadhaar route: Generate OTP with `aadhaar_number`, Verify OTP returns `abha_create` with a non-empty `abha_profiles`, Auto Login returns `abha_end`.
 - [ ] The `eka.oid` from login equals the one stored when the ABHA was created.
-- [ ] Wrong OTP once: `MIS-1013`.
+- [ ] Wrong OTP once: `MIS-1013`. Record the code you receive; the expected code is not confirmed.
 - [ ] Unknown ABHA address on Search Auth Methods: an error from the failure table.

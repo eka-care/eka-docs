@@ -18,7 +18,7 @@ operations:
 
 ## When to use this
 
-The patient has an ABHA and is logged in. Use this workflow to show their ABHA profile, card and QR code, correct their details, and run KYC on an ABHA address that was created with a mobile OTP. KYC links the address to a KYC-verified 14-digit ABHA number. Deleting the profile is also here; it is irreversible.
+The patient has an ABHA and is logged in. Use this workflow to show their ABHA profile, card and QR code, correct their details, and run KYC on an ABHA address that was created with a mobile OTP. After KYC, expect Profile Details to show `kyc_verified` as `true` and an `abha_number`; check both rather than assuming them. Deleting the profile is also here; it is irreversible.
 
 These calls are independent. Run the ones your screen needs, in any order, except that KYC is a sequence of init then verify.
 
@@ -70,12 +70,12 @@ sequenceDiagram
     Call [ABHA QR Code](/api-reference/user-app/abdm-connect/profile/cards/qr-code). The response is JSON with no fixed structure; it varies with how the ABHA was created. Generate the QR code from the whole response body rather than from named fields. Cache it and evict it when the profile is updated. {/* TODO: confirm: the accepted values of the format query parameter. */}
   </Step>
   <Step title="Show the ABHA card">
-    Call [ABHA card](/api-reference/user-app/abdm-connect/profile/cards/abha-card). The response is the card as a binary image. Cache it and evict it when the profile is updated. {/* TODO: confirm: the image content type returned. */}
+    Call [ABHA card](/api-reference/user-app/abdm-connect/profile/cards/abha-card). The response is the card as a PNG image (`image/png`). Cache it and evict it when the profile is updated.
   </Step>
   <Step title="Update the profile">
     Send the profile to [Update Profile](/api-reference/user-app/abdm-connect/profile/details/update-profile). The request must include every field that Profile Details returned, not only the changed ones. `first_name`, `gender`, `day_of_birth`, `month_of_birth`, `year_of_birth` and `pincode` are required. A successful update returns `204` with no body. Evict your cached profile, QR code and card.
 
-    For a KYC-verified ABHA, name, gender and date of birth cannot be changed. Most fields of an ABHA created with a mobile OTP can be changed. {/* TODO: confirm: the error returned when a locked field is changed on a KYC-verified ABHA. */}
+    For a KYC-verified ABHA, name, gender and date of birth cannot be changed. {/* TODO: confirm: the error returned when a locked field is changed on a KYC-verified ABHA. */}
   </Step>
   <Step title="Start KYC (only if kyc_verified is not true)">
     Send `method` and `identifier` to [Kyc Init](/api-reference/user-app/abdm-connect/profile/kyc/kyc-init). `method` is `abha-number` with the 14-digit ABHA number as `identifier`, or `aadhaar` with the 12-digit Aadhaar number. The request also takes `user_x_token`, the user authorization token. {/* TODO: confirm: where user_x_token comes from (the token from session/verify, create or login?) and whether it is required. */}
@@ -105,6 +105,10 @@ sequenceDiagram
 
 ## When it fails
 
+<Warning>
+Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
+</Warning>
+
 Error responses carry `code`, `error` and `source_error`. `source_error.code` holds codes such as `MIS-1013`. See [Error codes](/api-reference/user-app/abdm-connect/errors). {/* TODO: confirm: which codes each profile and KYC operation returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page. */}
 
 | Situation | Code | Do |
@@ -120,12 +124,14 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 ## Test it
 
-Run against the sandbox base URL `https://api.dev.eka.care`, with a patient whose ABHA you created on sandbox and whose session is live. {/* TODO: confirm: sandbox test identifiers and OTPs for KYC, and link the ABDM Connect testing page once it exists. */}
+The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
+
+Run against the sandbox base URL `https://api.dev.eka.care`, with a patient whose ABHA you created on sandbox and whose session is live. {/* TODO: confirm: sandbox test identifiers and OTPs for KYC. */}
 
 - [ ] Profile Details returns the `abha_address` you stored at creation.
 - [ ] ABHA QR Code returns JSON you can encode as a QR code; ABHA card returns an image.
 - [ ] Update Profile with every field from Profile Details and one changed value returns `204`; Profile Details shows the change.
 - [ ] On a mobile-created address: Kyc Init, Kyc Verify, then Profile Details shows `kyc_verified: true`.
-- [ ] Wrong OTP on Kyc Verify: `MIS-1013`.
+- [ ] Wrong OTP on Kyc Verify: `MIS-1013`. Record the code you receive; the expected code is not confirmed.
 - [ ] Profile Details on an expired session returns `491`.
 - [ ] Delete Profile on a throwaway sandbox ABHA returns `204`; Profile Details for that `oid` then fails.
