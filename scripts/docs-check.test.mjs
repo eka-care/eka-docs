@@ -99,7 +99,7 @@ test('--fix writes the used-in block with the file-prefixed form and creates mis
   const created = fs.readFileSync(path.join(repo, 'things/api-reference/things/get-thing.mdx'), 'utf8');
   assert.equal(created, '---\nopenapi: "/things/api-reference/openapi.yaml GET /v1/things/{id}"\n---\n');
   const written = fs.readFileSync(path.join(repo, 'things/api-reference/things/create-thing.mdx'), 'utf8');
-  assert.ok(written.includes('openapi: /things/api-reference/openapi.yaml POST /v1/things'));
+  assert.ok(written.includes('openapi: "/things/api-reference/openapi.yaml POST /v1/things"'));
   assert.ok(written.includes('{/* used-in:start */}\n## Used in\n- [Create a thing](/things/workflows/create)\n{/* used-in:end */}'));
   // second run is idempotent
   const again = check(repo, { fix: true });
@@ -114,6 +114,16 @@ test('a quickstart must demonstrate a workflow', () => {
   assert.ok(warnsOf(makeRepo(qs('\nworkflow: nope', '')))[0].includes('"nope" does not exist'));
   assert.deepEqual(warnsOf(makeRepo(qs('\nworkflow: create', ''))), []);
   assert.deepEqual(warnsOf(makeRepo(qs('', 'curl -X POST https://api.eka.care/v1/things'))), []);
+});
+
+test('--fix preserves description blocks and body markup verbatim', () => {
+  const fm = 'openapi: "POST /v1/things"\ntitle: Create\ndescription: >\n  Line one of a long folded description that must not be reflowed by the fixer.\n\n  Second paragraph.';
+  const body = '<Note>\nKeep me.\n</Note>';
+  const repo = makeRepo({ ...base, 'things/api-reference/things/create-thing.mdx': page(fm, body) });
+  check(repo, { fix: true });
+  const out = fs.readFileSync(path.join(repo, 'things/api-reference/things/create-thing.mdx'), 'utf8');
+  assert.ok(out.startsWith('---\nopenapi: "/things/api-reference/openapi.yaml POST /v1/things"\ntitle: Create\ndescription: >\n  Line one of a long folded description that must not be reflowed by the fixer.\n\n  Second paragraph.\n---\n'));
+  assert.ok(out.includes('<Note>\nKeep me.\n</Note>\n\n{/* used-in:start */}'));
 });
 
 test('bare openapi form matching two specs warns', () => {

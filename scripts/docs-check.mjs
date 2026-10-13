@@ -188,14 +188,17 @@ function extractUsedIn(content) {
 }
 
 function writeUsedIn(page, block, specRel) {
-  const data = { ...page.data };
-  if (page.ref && !page.ref.spec && specRel) data.openapi = `/${specRel} ${page.ref.op}`;
-  let body = page.content;
+  // Edit the raw file: only the openapi line and the used-in block change, so
+  // description blocks, quoting and body markup survive untouched.
+  const raw = fs.readFileSync(page.file, 'utf8');
+  const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  let fm = m ? m[1] : '', body = m ? raw.slice(m[0].length) : raw;
+  if (page.ref && !page.ref.spec && specRel) fm = fm.replace(/^openapi:.*$/m, `openapi: "/${specRel} ${page.ref.op}"`);
   const a = body.indexOf(USED_IN_START), b = body.indexOf(USED_IN_END);
   const wrapped = block ? `${USED_IN_START}\n${block}\n${USED_IN_END}` : '';
   if (a !== -1 && b !== -1) body = body.slice(0, a) + wrapped + body.slice(b + USED_IN_END.length);
-  else if (wrapped) body = body.trimEnd() + '\n\n' + wrapped + '\n';
-  fs.writeFileSync(page.file, matter.stringify(body.replace(/\n{3,}/g, '\n\n'), data));
+  else if (wrapped) body = (body.trim() ? body.trimEnd() + '\n\n' : '\n') + wrapped;
+  fs.writeFileSync(page.file, `---\n${fm}\n---\n${body.replace(/\n{3,}/g, '\n\n').trimEnd()}\n`);
 }
 
 function createRefPage(repo, root, op, meta) {
