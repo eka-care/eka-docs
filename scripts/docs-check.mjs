@@ -153,6 +153,17 @@ export function checkProduct(repo, product, { fix = false, allSpecs = [] } = {})
     else W('coverage', `${op} has no reference page; run with --fix`);
   }
 
+  // Quickstart must demonstrate a real workflow
+  const workflowSlugs = new Set(workflows.map((w) => path.basename(w.file, '.mdx')));
+  const workflowPaths = [...usedBy.keys()].map((op) => op.split(' ')[1]);
+  for (const q of byType('quickstart')) {
+    if (q.data.workflow) {
+      if (!workflowSlugs.has(q.data.workflow)) W('quickstart', `${q.url}: workflow "${q.data.workflow}" does not exist`);
+    } else if (!workflowPaths.some((p) => q.content.includes(p))) {
+      W('quickstart', `${q.url}: demonstrates no workflow; add workflow: <slug> to its frontmatter or call a workflow's operations`);
+    }
+  }
+
   // Error codes
   for (const e of byType('errors')) {
     for (const code of new Set(e.content.match(ERROR_CODE_RE) ?? [])) {

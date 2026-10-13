@@ -24,6 +24,7 @@ Skills
 - `eka-docs-index` routes any docs request to the right skill, command or agent. Start here.
 - `docs-strategy` the ladder, page types, frontmatter, `product.yaml`, the check's rules
 - `writing-journeys` a person's end-to-end story in product terms
+- `writing-quickstart` the one representative workflow, first call to real response in under ten minutes
 - `writing-workflows` one journey step as an ordered sequence of calls; the unit a product plugin executes
 - `api-referencing` the spec as the only schema, `openapi:` pages, webhooks, errors, the generated "Used in" block
 - `writing-style` the voice
@@ -34,6 +35,7 @@ Commands
 
 - `/product-new` interview and scaffold a whole product
 - `/journey-new`, `/workflow-new` one page each, interviewed against the spec
+- `/quickstart-new` picks the representative workflow and drafts the quickstart from it
 - `/api-sync` reference pages in line with the spec, "Used in" blocks written
 - `/docs-check` run the check and explain each finding
 - `/product-status` the ladder as a checklist

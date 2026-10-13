@@ -58,7 +58,7 @@ A product that has not moved yet (ABDM Connect lives under `api-reference/user-a
 
 Every page: `title`, `description` (Mintlify needs both), and `type` (unless it has `openapi:`). Mintlify ignores unknown keys, so the machine fields cost nothing.
 
-Workflow pages add `product`, `journey` (the journey page's file slug), `operations` (list of `METHOD /path`, must exist in the spec), `webhooks` (event names, must exist in the spec's `webhooks`). Full shape in `writing-workflows`.
+Quickstart pages add `workflow` (the slug of the one workflow the quickstart walks through; see `writing-quickstart`). Workflow pages add `product`, `journey` (the journey page's file slug), `operations` (list of `METHOD /path`, must exist in the spec), `webhooks` (event names, must exist in the spec's `webhooks`). Full shape in `writing-workflows`.
 
 ## The manifest
 
@@ -98,6 +98,7 @@ Warn
 - No `testing` or `build-with-ai` page
 - A bare `openapi: METHOD /path` that matches more than one spec in the repo
 - A stale or missing "Used in" block
+- A quickstart that demonstrates no workflow: no `workflow:` frontmatter naming a workflow page, and no call to any workflow's operation in its body
 
 `--fix` writes the "Used in" block on every reference page (between `{/* used-in:start */}` and `{/* used-in:end */}`, never edited by hand), rewrites bare `openapi:` to the file-prefixed form, and creates a bare page for every operation that has none.
 

@@ -107,6 +107,15 @@ test('--fix writes the used-in block with the file-prefixed form and creates mis
   assert.deepEqual(check(repo).warn.filter((w) => w.rule === 'used-in'), []);
 });
 
+test('a quickstart must demonstrate a workflow', () => {
+  const qs = (fm, body) => ({ ...base, 'things/quickstart.mdx': page(`title: Quickstart\ntype: quickstart${fm}`, body) });
+  const warnsOf = (repo) => msgs(check(repo).warn).filter((m) => m.includes('/things/quickstart'));
+  assert.ok(warnsOf(makeRepo(qs('', 'hello')))[0].includes('demonstrates no workflow'));
+  assert.ok(warnsOf(makeRepo(qs('\nworkflow: nope', '')))[0].includes('"nope" does not exist'));
+  assert.deepEqual(warnsOf(makeRepo(qs('\nworkflow: create', ''))), []);
+  assert.deepEqual(warnsOf(makeRepo(qs('', 'curl -X POST https://api.eka.care/v1/things'))), []);
+});
+
 test('bare openapi form matching two specs warns', () => {
   const repo = makeRepo({ ...base, 'other/spec.yaml': SPEC });
   const { results } = run(repo, { json: true });

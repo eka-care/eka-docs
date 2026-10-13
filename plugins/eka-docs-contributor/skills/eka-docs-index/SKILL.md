@@ -14,6 +14,7 @@ The repo is `eka-care/eka-docs`, a Mintlify site. The binding structure is the *
 | What must a product's docs contain, where does page X go | `docs-strategy` |
 | Write a journey (who the person is, what they do, in product terms) | `writing-journeys`, then `/journey-new` |
 | Write a workflow (ordered API calls for one journey step) | `writing-workflows`, then `/workflow-new` |
+| Write the quickstart, or pick which workflow represents the product | `writing-quickstart`, then `/quickstart-new` |
 | Document an endpoint, webhook, error code; move a hand-written schema into the spec; `openapi:` frontmatter | `api-referencing`, then `/api-sync` |
 | Tone, sentence shape, what words to avoid | `writing-style` |
 | `docs.json` groups, icons, redirects, contextual menu | `mintlify-nav` |
