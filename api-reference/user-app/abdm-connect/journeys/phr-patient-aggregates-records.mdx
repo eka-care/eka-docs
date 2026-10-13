@@ -1,4 +1,5 @@
 ---
+icon: "mobile-screen"
 title: "Gather every health record in a PHR app"
 description: "A patient creates an ABHA in a PHR app, pulls in records from every facility they have visited, decides who sees them, and shares their profile at a facility counter."
 type: journey
@@ -6,11 +7,18 @@ product: abdm-connect
 persona: Patient using a PHR app
 ---
 
+## In short
+
+- The patient creates an ABHA in the app, or logs in to one they already have.
+- They link records from each facility they visited, with an OTP.
+- They answer each consent request, and a health locker policy brings in new records.
+- At a facility counter, one scan shares their profile.
+
 ## Who and when
 
 A patient who has installed a Personal Health Record (PHR) app built on ABDM Connect. They have visited several hospitals, clinics and labs over the years, and their records are scattered across each facility's software. They open the app to get an ABHA, see everything in one place, and stop carrying paper files to every appointment.
 
-**Already in place:** your software acts as a PHR app. That usually makes it both a Health Information User (HIU), when it pulls records from facilities on the patient's behalf, and a Health Information Provider (HIP), when it holds records the patient uploads. You have Eka credentials ([Authorization](/api-reference/authorization/getting-started)), and your cloud can receive Eka webhooks, because linking results, consent updates and subscription notifications arrive only there. No other journey has to run first.
+**Already in place:** your software acts as a PHR app. That usually makes it a Health Information User (HIU), when it pulls records from facilities on the patient's behalf. It is also a Health Information Provider (HIP), when it holds records the patient uploads. You have Eka credentials ([Authorization](/api-reference/authorization/getting-started)), and your cloud can receive Eka webhooks, because linking results, consent updates and subscription notifications arrive only there. No other journey has to run first.
 
 ## What they want
 
@@ -30,15 +38,11 @@ A patient who has installed a Personal Health Record (PHR) app built on ABDM Con
 
 ## What they have at the end
 
-The patient has an ABHA number and an ABHA address, and the app holds a session for them. Records from every facility they linked appear in one list, grouped by facility. They have answered every pending consent request, and under a standing policy the app is notified of each new record and fetches it through a consent. At a facility counter, one scan registers them and gives them a token.
+The patient has an ABHA number and an ABHA address, and the app holds a session for them. Records from every facility they linked appear in one list, grouped by facility. They have answered every pending consent request. Under a standing policy, the app is notified of each new record and fetches it through a consent. At a facility counter, one scan registers them and gives them a token.
 
 ## Branches
 
-- **The patient refuses Aadhaar, or has none.** Create an ABHA address with a mobile OTP only. It is not KYC-verified. → workflow: [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp)
-- **Assisted creation without an OTP.** The patient scans a QR code and authenticates with their face on a mobile device. → workflow: [Create an ABHA with face authentication](/api-reference/user-app/abdm-connect/workflows/create-abha-face-auth)
-- **The Aadhaar OTP finds an ABHA the patient already has.** The app signs them into it rather than creating a duplicate. → auto-login branch of [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp)
-- **The facility finds no unlinked records for the patient.** The patient can try again with the identifier they used at that facility, such as their registration number there. → same workflow, [Discover and link records from a facility](/api-reference/user-app/abdm-connect/workflows/phr-discover-and-link)
+- **The patient cannot use an Aadhaar OTP, or already has an ABHA.** → branches of [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp)
+- **The facility finds no unlinked records for the patient.** → retry branch of [Discover and link records from a facility](/api-reference/user-app/abdm-connect/workflows/phr-discover-and-link)
 {/* TODO: confirm: what fills `authorizations` in List Requests, and how a PHR app acts on one (for example when a facility links a record on its own). */}
-- **The session expires in the middle of any step.** The app re-authenticates the patient and retries the step. → workflow: [Hold an ABHA gateway session](/api-reference/user-app/abdm-connect/workflows/hold-gateway-session)
-- **The patient wants to read a record's contents, not only see it listed.** The app raises its own consent request as an HIU and receives the data once the patient approves. → workflows: [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent), then [Receive and decrypt records as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-receive-data)
 - **The patient uploads a record of their own, such as an old lab report.** The upload becomes a care context under the app's own HIP, discoverable and shareable like any facility record. {/* TODO: confirm: which workflow covers patient uploads through the Medical Records APIs; none exists in ABDM Connect. */}

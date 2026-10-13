@@ -1,4 +1,5 @@
 ---
+icon: "clock-rotate-left"
 title: "Let a patient claim their old records"
 description: "A patient finds the records your facility holds for them from a PHR app and links them to their ABHA, while your HMS answers each request."
 type: journey
@@ -6,11 +7,18 @@ product: abdm-connect
 persona: Patient claiming past records from a PHR app
 ---
 
+## In short
+
+- Your HMS answers each request from a patient's PHR app on its own, through Eka.
+- It searches its records with the patient's verified details and returns what is not yet linked.
+- The patient picks records and confirms them with an OTP your HMS sends by SMS.
+- On a matching OTP, ABDM registers the records under the patient's ABHA.
+
 ## Who and when
 
 A patient who visited your clinic or hospital in the past, before their visits were linked to an ABHA. They now have an ABHA and use an ABDM PHR app, such as the ABHA app, to gather their health records in one place. They pick your facility in the app and ask it for their records. Nobody at your facility is involved: your HMS, acting as a Health Information Provider (HIP), answers every request on its own, through Eka.
 
-**Already in place:** your software acts as a HIP, with the setup from [Register a walk-in patient and link the visit](/api-reference/user-app/abdm-connect/journeys/hip-register-patient-and-link-visit): the facility has a HIP ID and is onboarded on Eka (see [Onboard a facility and its professionals to ABDM](/api-reference/user-app/abdm-connect/journeys/facility-onboard-to-abdm)), and your server can receive Eka webhooks. Your HMS holds past visits, prescriptions or reports for patients, with at least their name, gender, year of birth and mobile number.
+**Already in place:** your software acts as a HIP, with the setup from [Register a walk-in patient and link the visit](/api-reference/user-app/abdm-connect/journeys/hip-register-patient-and-link-visit). The facility has a HIP ID and is onboarded on Eka (see [Onboard a facility and its professionals to ABDM](/api-reference/user-app/abdm-connect/journeys/facility-onboard-to-abdm)). Your server can receive Eka webhooks. Your HMS holds past visits, prescriptions or reports for patients, with at least their name, gender, year of birth and mobile number.
 
 ## What they want
 
@@ -18,8 +26,8 @@ A patient who visited your clinic or hospital in the past, before their visits w
 
 ## The steps
 
-1. The patient opens their PHR app, chooses your facility and asks for their records. ABDM sends the request, with the patient's verified ABHA address, name, gender, year of birth and mobile number, to Eka, which passes it to your HMS.
-2. Your HMS searches its patient records with those details and answers with the visits and documents that belong to this patient and are not yet linked. → workflow: [Answer discovery and link old records](/api-reference/user-app/abdm-connect/workflows/hip-discovery-and-link)
+1. The patient opens their PHR app, chooses your facility and asks for their records. ABDM sends the request to Eka, which passes it to your HMS. The request carries the patient's verified ABHA address, name, gender, year of birth and mobile number.
+2. Your HMS searches its patient records with those details. It answers with the visits and documents that belong to this patient and are not yet linked. → workflow: [Answer discovery and link old records](/api-reference/user-app/abdm-connect/workflows/hip-discovery-and-link)
 3. The PHR app lists what your facility found. The patient picks the records they want to link. This is a human action in the app.
 4. Your HMS sends a one-time password (OTP) by SMS to the patient's registered mobile number and tells ABDM it has done so. → workflow: [Answer discovery and link old records](/api-reference/user-app/abdm-connect/workflows/hip-discovery-and-link)
 5. The patient reads the OTP from their SMS and types it into the PHR app. This is a human action.

@@ -5,7 +5,27 @@ description: The voice for every page on developer.eka.care. Second person, pres
 
 # Writing style
 
-There is no lint for this. There is a reviewer, and this is what the reviewer holds a page to.
+A reviewer holds a page to the voice below. `docs-check` holds it to the page rules, which are adopted from the ABDM Developer Portal.
+
+## Page rules
+
+| Rule | Limit | `docs-check` |
+|---|---|---|
+| Prose budget | overview 600; journey, workflow, quickstart, testing 700; webhooks, errors, changelog none | warn |
+| `## In short` | required above 300 prose words, removed below | warn |
+| Sentence length | 25 words | warn |
+| Sentence length | 35 words | fail |
+| Sentences per paragraph | 5 | warn |
+| Em dash | none | fail |
+| First heading "Introduction" or "Overview" | not allowed | fail |
+
+Prose is counted without code blocks, tables, headings, frontmatter, JSX tags and comments.
+
+**In short** goes right after the opening paragraph: 3 to 5 bullets, the answer first, one short sentence each. It summarises what the page says; it adds nothing. On a short page it only repeats the title, which is why it is removed below 300 words.
+
+**Over budget means the page is too wide, not too wordy.** Move scope to the page that owns it (a failure that belongs on the errors page, a branch another workflow covers) and link it, or split the page in two along the reader's task. Never compress sentences to fit; a cramped page is harder to read than a long one.
+
+**A long sentence is usually a list in disguise.** Three or more parallel things become a bulleted list.
 
 ## Voice
 

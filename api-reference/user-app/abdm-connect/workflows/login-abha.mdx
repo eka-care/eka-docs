@@ -1,4 +1,5 @@
 ---
+icon: "right-to-bracket"
 title: "Log in to an existing ABHA"
 description: "Log a patient in to an ABHA they already hold, by ABHA address, Aadhaar or mobile."
 type: workflow
@@ -12,6 +13,12 @@ operations:
   - POST /abdm/na/v1/profile/login/phr
   - POST /abdm/na/v1/registration/aadhaar/auto-login
 ---
+
+## In short
+
+- Log in by ABHA address, mobile or Aadhaar, each with an OTP.
+- Every route ends with `skip_state` set to `abha_end` and the patient's `oid`.
+- Each call takes the `txn_id` from the most recent response.
 
 ## When to use this
 
@@ -28,7 +35,7 @@ If the patient has no ABHA, use [Create an ABHA with Aadhaar OTP](/api-reference
 ## Before you start
 
 - A client access token, sent as a Bearer token on every call. See [Client login](/api-reference/authorization/client-login).
-- Your facility onboarded as a Health Information Provider (HIP). You can send its HIP ID in the optional `X-Hip-Id` header and your own patient id in the optional `X-Partner-Pt-Id` header.
+- Your facility onboarded as a Health Information Provider (HIP).
 - In hand: the patient's ABHA address, Aadhaar number or mobile number, and access to the phone that receives the OTP.
 
 ## Sequence
@@ -60,10 +67,10 @@ sequenceDiagram
 
 <Steps>
   <Step title="Check the login methods (ABHA address route)">
-    Send `abha_address` to [Search Auth Methods](/api-reference/user-app/abdm-connect/login/methods). The response carries `auth_methods`, `blocked_methods`, `status`, a masked `mobile`, `abha_number` and `fullname`. Offer the patient only methods in `auth_methods`. {/* TODO: confirm: the possible values in auth_methods and blocked_methods, and how each maps to the method and otp_system values on login/init. */}
+    Send `abha_address` to [Search Auth Methods](/api-reference/user-app/abdm-connect/login/methods). The response carries `auth_methods` and `blocked_methods`. Offer the patient only methods in `auth_methods`. {/* TODO: confirm: the possible values in auth_methods and blocked_methods, and how each maps to the method and otp_system values on login/init. */}
   </Step>
   <Step title="Search by mobile (search route, optional)">
-    Send `mobile` to [Search](/api-reference/user-app/abdm-connect/profile/search/search). It returns KYC-verified ABHA profiles on that mobile in `profiles`, each with an `index`, `abha_address`, masked `abha_number`, `name`, `gender` and `age`, plus a `txn_id`. The patient picks one. Pass its `index` as `identifier` and the `txn_id` to the next step with `method` set to `search`. {/* TODO: confirm: that login/init's "search api response" means POST /abdm/v1/profile/search, and which skip_state login/verify returns on the search route. */}
+    Send `mobile` to [Search](/api-reference/user-app/abdm-connect/profile/search/search). It returns KYC-verified ABHA profiles on that mobile in `profiles`, each with an `index` and `abha_address`, plus a `txn_id`. The patient picks one. Pass its `index` as `identifier` and the `txn_id` to the next step with `method` set to `search`. {/* TODO: confirm: that login/init's "search api response" means POST /abdm/v1/profile/search, and which skip_state login/verify returns on the search route. */}
   </Step>
   <Step title="Send the OTP">
     Send `method`, `identifier` and `otp_system` to [Generate OTP](/api-reference/user-app/abdm-connect/login/init):
@@ -129,7 +136,7 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
-Run against the sandbox base URL `https://api.dev.eka.care`, with an ABHA you created on sandbox through one of the create workflows. {/* TODO: confirm: sandbox test identifiers and OTPs. */}
+Use an ABHA you created on sandbox through one of the create workflows. {/* TODO: confirm: sandbox test identifiers and OTPs. */}
 
 - [ ] ABHA address route: Search Auth Methods, Generate OTP with `phr_address`, Verify OTP returns `abha_end` and `eka.oid`.
 - [ ] Mobile route: Generate OTP with `mobile`, Verify OTP, Login with one address from `abha_profiles` returns `abha_end`.

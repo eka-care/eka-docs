@@ -32,6 +32,10 @@ workflow: create-abha-aadhaar-otp
 
 `workflow` names the workflow page the quickstart walks. The check warns on a quickstart that has neither `workflow:` nor a call to any workflow's operation in its body, so a stub cannot pass as a quickstart.
 
+## The shape
+
+Follow docs.abdm.gov.in's "first fifteen minutes": a one-line promise, In short, Before you start, one numbered heading per call (`## 1. Get an access token`), How this fits your product, If a call fails, Next. Every step runs from the docs: open the API page and press **Try it** in Mintlify's playground, after authenticating once on Client Login (the pattern in `ekascribe/authenticate-and-try.mdx`). Each step carries the body to paste and what to copy for the next step; the curl equivalent goes in a collapsed `<Accordion title="Prefer curl?">`.
+
 ## Sections, in order
 
 1. **What you will have** at the end, in one sentence, and roughly how long it takes.

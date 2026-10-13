@@ -1,4 +1,5 @@
 ---
+icon: "droplet"
 title: "Search blood banks over UHI"
 description: "Find blood banks that hold a blood group and component, by state and district or by location and radius."
 type: workflow
@@ -10,6 +11,12 @@ operations:
 ---
 
 {/* TODO: confirm: this workflow needs its own journey. Blood bank search is not a step or branch of booking a physical consultation; it points at uhi-book-physical-consultation only because every workflow must name a journey. Who is the persona, and is it a journey of its own? */}
+
+## In short
+
+- Search blood banks over UHI by state and district, or by a location and radius.
+- Keep `request_id` from Search Blood Banks and pass it to Get Blood Banks.
+- Tell the user to check with the blood bank before they visit.
 
 ## When to use this
 
@@ -36,7 +43,9 @@ sequenceDiagram
 
 <Steps>
   <Step title="Start the search">
-    Send `search_type`, `blood_group` and `blood_component` to [Search Blood Banks](/api-reference/user-app/abdm-connect/blood-bank/state-district). All three are required. For a district search, also send `state` and `district`. For a location search, send `search_type` `location`, `location` with `lat` and `long`, and `radius` with `value` and `unit`, for example `km`. Keep `request_id` from the response. `status` is `SUCCESS` or `FAILURE`; on `FAILURE`, check the request.
+    Send `search_type`, `blood_group` and `blood_component` to [Search Blood Banks](/api-reference/user-app/abdm-connect/blood-bank/state-district). All three are required. For a district search, also send `state` and `district`. For a location search, send `search_type` `location`, `location` with `lat` and `long`, and `radius` with `value` and `unit`, for example `km`.
+
+    Keep `request_id` from the response. `status` is `SUCCESS` or `FAILURE`; on `FAILURE`, check the request.
 
     {/* TODO: confirm: the search_type value for a district search (the spec gives only location as an example). */}
     {/* TODO: confirm: the accepted values for blood_group and blood_component. */}

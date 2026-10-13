@@ -1,4 +1,5 @@
 ---
+icon: "link"
 title: "Link a care context as a HIP"
 description: "Register a visit, test or document against the patient's ABHA so it can be discovered and shared."
 type: workflow
@@ -11,9 +12,16 @@ webhooks:
   - abha.link_care_context
 ---
 
+## In short
+
+- One call links a visit to the patient's ABHA address as a care context.
+- Send the FHIR bundle in `data` if Eka stores the record; leave it out if you keep it.
+- The call returns `202`; the result arrives on `abha.link_care_context`.
+- `LINKED` means the record is shareable; on `ERRORED`, read `data.error`.
+
 ## When to use this
 
-A patient with an ABHA has finished a visit, test or admission at your facility, and you want that record linked to their ABHA address as a care context. Once linked, the care context is registered with ABDM and any Health Information User (HIU) the patient grants consent to can request it.
+A patient with an ABHA has finished a visit, test or admission at your facility. You want that record linked to their ABHA address as a care context. Once linked, the care context is registered with ABDM and any Health Information User (HIU) the patient grants consent to can request it.
 
 Before you link, decide one thing: does Eka store the clinical data, or do you? If Eka stores it, you send the FHIR bundle with the link call and Eka answers every later data request for you. If you keep it, you leave the bundle out and answer each request yourself with [Serve records on a fetch request](/api-reference/user-app/abdm-connect/workflows/serve-data-on-fetch).
 
@@ -24,7 +32,7 @@ For records created before the patient's ABHA was known, the patient claims them
 - A client access token, sent as a Bearer token. See [Authorization](/api-reference/authorization/getting-started).
 - Your facility onboarded as a Health Information Provider (HIP), with its HIP ID. See [Milestone 4](/api-reference/user-app/abdm-connect/flows/m4).
 - A webhook URL registered with Eka that can receive `abha.link_care_context`, and the means to verify the [webhook signature](/api-reference/connect/webhooks/webhook-signature).
-- The patient's `abha_address` and Eka user id `oid`, saved on the patient record by [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp) or [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha).
+- The patient's `abha_address` and Eka user id `oid`, saved on the patient record. They come from [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp) or [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha).
 - Your own id for the care context, its display name and its health information type (`hi_type`, for example `OPConsultation` or `Prescription`).
 - If Eka is to store the data: the ABDM-compliant FHIR bundle for the care context.
 

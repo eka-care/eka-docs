@@ -1,4 +1,5 @@
 ---
+icon: "file-signature"
 title: "Request a patient's consent as a HIU"
 description: "Register your encryption key, raise a consent request for a patient's records, and track it until the patient grants or denies it."
 type: workflow
@@ -13,6 +14,12 @@ operations:
 webhooks:
   - abha.consent_update
 ---
+
+## In short
+
+- Register your keyset once, unless Eka stores the data for you.
+- Create the consent request and keep `consent_init_id`.
+- `abha.consent_update` reports the patient's decision, and Consent List gives the `consent_id`.
 
 ## When to use this
 
@@ -74,13 +81,13 @@ sequenceDiagram
     - `period`: `from` and `to` for the records' date range, and `expiry` for when the consent ends.
     - `hip_identifier` and `care_contexts`: the HIP and the care contexts (`cc_ref`, `patient_ref`) to fetch from.
 
-    Keep `consent_init_id` from the response. The patient now sees the request in their PHR app.
+    Keep `consent_init_id` from the response.
 
     {/* TODO: confirm: whether hip_identifier and care_contexts are optional, and what the request covers when they are left out. */}
     {/* TODO: confirm: the spec documents the success response as 204 with a body carrying consent_init_id; is the status 200 or 204? */}
   </Step>
   <Step title="Wait for the patient's decision">
-    Wait for the [`abha.consent_update`](/api-reference/user-app/abdm-connect/webhooks/consent-update) webhook. Reply `200` within 5 seconds; Eka retries on any other status. Read `data.notification.consentRequestId`, `data.notification.status` and `data.notification.consentArtefacts.id`.
+    Wait for the [`abha.consent_update`](/api-reference/user-app/abdm-connect/webhooks/consent-update) webhook. Acknowledge it as described in [Webhooks](/api-reference/user-app/abdm-connect/webhooks#delivery-signature-and-acknowledgement). Read `data.notification.consentRequestId`, `data.notification.status` and `data.notification.consentArtefacts.id`.
 
     The webhook fires whenever the consent is updated, so expect it more than once for the same request. Treat the latest status as current.
 
@@ -98,7 +105,7 @@ sequenceDiagram
   <Step title="Read what the patient approved">
     Call [Consent Details](/api-reference/user-app/abdm-connect/consents/consent-details) with `consent_id` and the patient's `health_id`. Each entry in `data` names one `hip` (`id`, `name`) and the `care_contexts` the patient approved from it, each with `id`, `display`, `status` and `documents`.
 
-    Keep each `care_contexts[].id`. If you manage the data on your side, the records arrive next on a webhook. If Eka stores the data, you read each care context with the records product. Both paths are in [Receive and decrypt records as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-receive-data).
+    Keep each `care_contexts[].id`. [Receive and decrypt records as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-receive-data) uses it for either storage choice.
   </Step>
 </Steps>
 
@@ -120,7 +127,7 @@ sequenceDiagram
 Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
 </Warning>
 
-Error responses carry `code`, `error` and `source_error` (`code`, `message`). The codes below are from the [errors page](/api-reference/user-app/abdm-connect/errors).
+Error responses carry `code`, `error` and `source_error` (`code`, `message`).
 
 | Situation | Code | Do |
 |---|---|---|
@@ -138,7 +145,7 @@ Error responses carry `code`, `error` and `source_error` (`code`, `message`). Th
 
 The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
-Sandbox base URL: `https://api.dev.eka.care`. {/* TODO: confirm: sandbox test patient (ABHA address), HIP id, clinic_id and d_oid to use, and how to approve the request as the patient in sandbox. No testing page exists yet. */}
+{/* TODO: confirm: sandbox test patient (ABHA address), HIP id, clinic_id and d_oid to use, and how to approve the request as the patient in sandbox. No testing page exists yet. */}
 
 - [ ] Generate a key pair and register the keyset; the call returns `200`
 - [ ] Create a consent request for a sandbox patient; keep `consent_init_id`

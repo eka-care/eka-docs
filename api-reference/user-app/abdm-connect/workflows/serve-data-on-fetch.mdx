@@ -1,4 +1,5 @@
 ---
+icon: "file-export"
 title: "Serve records on a fetch request"
 description: "Answer Eka's request for records you keep yourself: encrypt the FHIR bundle and push it."
 type: workflow
@@ -12,11 +13,23 @@ webhooks:
   - abha.hip_data_fetch
 ---
 
+## In short
+
+- Use this only if you link care contexts without sending their FHIR data to Eka.
+- Eka sends `abha.hip_data_fetch`; acknowledge it within 5 seconds.
+- Encrypt each bundle for the HIU, then push it with on-fetch.
+- Send back the `transaction_id` from the webhook.
+
 ## When to use this
 
 You linked care contexts without sending their FHIR data to Eka, so you hold the records yourself. When a Health Information User (HIU) requests those records after the patient grants consent, Eka sends you a webhook. You build the FHIR bundles, encrypt them for the HIU, and push them back.
 
-If you send the base64 FHIR bundle in the `data` field when you [link a care context](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip), or upload records through the [Upload API](/api-reference/user-app/records/obtain-authorization), Eka serves the data itself and you never receive this webhook. You do not need this workflow.
+Eka serves the data itself, and you never receive this webhook, in two cases:
+
+- You send the base64 FHIR bundle in the `data` field when you [link a care context](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip).
+- You upload records through the [Upload API](/api-reference/user-app/records/obtain-authorization).
+
+Then you do not need this workflow.
 
 ## Before you start
 
@@ -42,7 +55,7 @@ sequenceDiagram
   Eka->>HIU: Encrypted data
 ```
 
-If you use the `abdm-ecdh` library, the two `/abdm/v1/ecdh/` calls run in your own code instead.
+If you use the `abdm-ecdh` library, the two `/abdm/v1/ecdh/` calls run in your own code instead. [Encryption](/api-reference/user-app/abdm-connect/care-contexts/ecdh-encryption) shows the library's calls and their outputs.
 
 ## Steps
 
@@ -62,7 +75,7 @@ If you use the `abdm-ecdh` library, the two `/abdm/v1/ecdh/` calls run in your o
     {/* TODO: confirm: what to do if dh_public_key.expiry has already passed when the webhook arrives */}
   </Step>
   <Step title="Generate your key material">
-    Call [Ecdh keys](/api-reference/user-app/abdm-connect/care-contexts/ecdh/keys). The response carries `private_key`, `public_key` and `nonce` for your side of the exchange. With the library, call `generate_key_material` (or `GenerateKeyMaterial`) instead; it returns `private_key`, `x509_public_key` and `nonce`.
+    Call [Ecdh keys](/api-reference/user-app/abdm-connect/care-contexts/ecdh/keys). The response carries `private_key`, `public_key` and `nonce` for your side of the exchange.
 
     {/* TODO: confirm: generate a new key pair for every fetch request, or reuse one across requests? */}
     {/* TODO: confirm: is public_key from GET /abdm/v1/ecdh/keys in the X.509 SubjectPublicKeyInfo encoding the library calls x509_public_key? */}
@@ -74,7 +87,7 @@ If you use the `abdm-ecdh` library, the two `/abdm/v1/ecdh/` calls run in your o
     - `receiver_public_key`: `key_information.dh_public_key.key_value` from the webhook.
     - `receiver_nonce`: `key_information.nonce` from the webhook.
 
-    The response carries `encrypted_data` and `key_to_share`. With the library, call `encrypt` with the same inputs; it returns `encrypted_data`.
+    The response carries `encrypted_data` and `key_to_share`.
 
     Compute a checksum of the plain-text bundle before you encrypt it; the push needs it.
 
@@ -113,7 +126,7 @@ If you use the `abdm-ecdh` library, the two `/abdm/v1/ecdh/` calls run in your o
 Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
 </Warning>
 
-Error responses carry `code`, `error` and `source_error`. The codes below are from the [errors page](/api-reference/user-app/abdm-connect/errors).
+Error responses carry `code`, `error` and `source_error`.
 
 | Situation | Code | Do |
 |---|---|---|

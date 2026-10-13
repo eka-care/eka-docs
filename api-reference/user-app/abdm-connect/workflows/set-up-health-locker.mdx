@@ -1,4 +1,5 @@
 ---
+icon: "vault"
 title: "Set up the patient's health locker"
 description: "Turn on auto-approval so the patient's PHR app is notified of each new record, and handle the locker and subscription webhooks."
 type: workflow
@@ -13,9 +14,16 @@ webhooks:
   - abha.subscription_modified
 ---
 
+## In short
+
+- Turn on auto-approval once, and your app becomes the patient's health locker.
+- Store `auto_approval_id` and `subscription_id` from `abha.locker_created`.
+- `abha.subscription_notify` tells you each time a HIP links a new care context.
+- The notification carries no records; fetch them with a consent request.
+
 ## When to use this
 
-Your app is a personal health record (PHR) app, and the patient wants new records from their facilities to arrive without approving each one. An auto-approval policy lets the patient authorise a class of requests once. With it in place, your app is the patient's health locker: Eka sets up an auto-approval and a subscription, and tells you each time a Health Information Provider (HIP) links a new care context to the patient's ABHA address.
+Your app is a personal health record (PHR) app, and the patient wants new records from their facilities to arrive without approving each one. An auto-approval policy lets the patient authorise a class of requests once. With it in place, your app is the patient's health locker. Eka sets up an auto-approval and a subscription. It tells you each time a Health Information Provider (HIP) links a new care context to the patient's ABHA address.
 
 For one request at a time, the patient approves or denies by hand: [Approve, deny or revoke a consent in a PHR app](/api-reference/user-app/abdm-connect/workflows/phr-act-on-consent).
 
@@ -62,7 +70,10 @@ sequenceDiagram
   <Step title="Handle new care contexts">
     Each time a HIP links a new care context to the patient's ABHA address, Eka sends [`abha.subscription_notify`](/api-reference/user-app/abdm-connect/webhooks/subscription-notify). Reply `200` within 5 seconds. Read `data.subscription_meta`: `hip_id` (the HIP that created the record), `event_id`, and `care_contexts`, each with `care_context_id` and `patient_reference`.
 
-    The notification carries no records. To fetch them, raise a consent request for those care contexts with [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent), then receive them with [Receive and decrypt records as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-receive-data).
+    The notification carries no records. To fetch them:
+
+    1. Raise a consent request for those care contexts with [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent).
+    2. Receive them with [Receive and decrypt records as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-receive-data).
 
     {/* TODO: confirm: whether a consent raised for care contexts under an active subscription is approved automatically by the auto-approval policy, so the patient sees no prompt. */}
   </Step>

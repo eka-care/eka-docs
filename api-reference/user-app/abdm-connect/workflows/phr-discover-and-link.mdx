@@ -1,4 +1,5 @@
 ---
+icon: "magnifying-glass-plus"
 title: "Discover and link records from a facility"
 description: "Find a facility, ask it for the patient's unlinked care contexts, and link the ones the patient picks with an OTP."
 type: workflow
@@ -12,16 +13,23 @@ operations:
   - POST /abdm/v1/care-contexts/discover/link/confirm
 ---
 
+## In short
+
+- Find the facility, discover its unlinked care contexts, then link them with an OTP.
+- The facility sends the link OTP to the patient's registered mobile.
+- An empty `patient` list means the facility found nothing; retry with a `ref_id`.
+- Each call takes the `txn_id` from the call before it.
+
 ## When to use this
 
-The patient uses your PHR app to claim records that a facility holds against them but never linked to their ABHA. You search for the facility, ask it for unlinked care contexts, and link the ones the patient picks after they enter an OTP the facility sends.
+The patient uses your PHR app to claim records that a facility holds against them but never linked to their ABHA. You search for the facility and ask it for unlinked care contexts. The patient picks the ones to link and enters an OTP the facility sends.
 
 This is the PHR side of discovery. If your software is the facility answering these requests, use [Answer discovery and link old records](/api-reference/user-app/abdm-connect/workflows/hip-discovery-and-link) instead.
 
 ## Before you start
 
 - A client access token, sent as a Bearer token. See [Authorization](/api-reference/authorization/getting-started).
-- A logged-in patient and their Eka user id (`oid`), from [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp), [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp) or [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha). Every call here takes it as the `X-Pt-Id` header or the `oid` query parameter. {/* TODO: confirm: which of the `X-Pt-Id` header and the `oid` query parameter is required on these calls; the spec marks neither as required. */}
+- A logged-in patient and their Eka user id (`oid`). It comes from [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp), [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp) or [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha). Every call here takes it as the `X-Pt-Id` header or the `oid` query parameter. {/* TODO: confirm: which of the `X-Pt-Id` header and the `oid` query parameter is required on these calls; the spec marks neither as required. */}
 - A live ABHA gateway session for the patient. See [Hold an ABHA gateway session](/api-reference/user-app/abdm-connect/workflows/hold-gateway-session). {/* TODO: confirm: which of these five operations need a live ABHA gateway session and return HTTP `491` without one. */}
 - The patient's mobile, to receive the facility's OTP.
 

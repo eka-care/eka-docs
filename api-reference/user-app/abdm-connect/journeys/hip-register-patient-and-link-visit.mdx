@@ -1,10 +1,18 @@
 ---
+icon: "hospital-user"
 title: "Register a walk-in patient and link the visit"
 description: "A clinic receptionist finds or creates the patient's ABHA at the front desk, and the visit is linked to it as a care context."
 type: journey
 product: abdm-connect
 persona: Clinic receptionist
 ---
+
+## In short
+
+- The receptionist logs the patient in to their ABHA, or creates one, with an OTP.
+- The HMS saves the ABHA number, ABHA address and `oid` on the patient record.
+- After the visit, the HMS links it to the ABHA as a care context.
+- Confirmation of the link arrives on a webhook.
 
 ## Who and when
 
@@ -21,7 +29,7 @@ A receptionist at a clinic or hospital whose HMS is integrated with Eka as a Hea
 1. The receptionist asks whether the patient has an ABHA and what they can offer as identity: an ABHA address, their Aadhaar, or a mobile number. Most walk-ins do not know whether they have one.
 2. If the patient has an ABHA, the receptionist logs them in with an OTP to the patient's mobile. → workflow: [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha)
 3. If not, the receptionist creates one. With Aadhaar and its linked mobile, the patient reads out the OTP and gets a KYC-verified 14-digit ABHA number. → workflow: [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp)
-4. The HMS saves the ABHA number, ABHA address and Eka's user id (`oid`) on the patient record, and prints the ABHA card if the patient wants one.
+4. The HMS saves the ABHA number, ABHA address and Eka's user id (`oid`) on the patient record. It prints the ABHA card if the patient wants one.
 5. The consultation happens. The doctor records the prescription or visit summary in the HMS as usual.
 6. After the visit, the HMS links the visit to the patient's ABHA as a care context. Confirmation arrives on a webhook; the HMS marks the visit as linked. → workflow: [Link a care context as a HIP](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip)
 
@@ -33,10 +41,9 @@ The patient has an ABHA number and an ABHA address, and knows them. The HMS hold
 
 - **The Aadhaar OTP finds an existing ABHA.** The verify step reports an existing profile; the flow logs the patient in rather than creating a duplicate. → same workflow, auto-login branch of [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp)
 - **The Aadhaar mobile is not linked.** The flow asks for a separate mobile verification before creating. → same workflow, mobile verification branch
-- **The patient refuses Aadhaar.** Create an ABHA address only, with a mobile OTP. It is not KYC-verified. → workflow: [Create an ABHA address with mobile OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-mobile-otp)
-- **Assisted registration without an OTP.** The patient authenticates with their face on a mobile device. → workflow: [Create an ABHA with face authentication](/api-reference/user-app/abdm-connect/workflows/create-abha-face-auth)
+- **The patient refuses Aadhaar, or needs assisted registration without an OTP.** → the alternatives in [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp)
 - **A later call for the patient returns `491`.** The patient's ABHA Gateway session has expired; renew it with a mobile OTP and retry. → workflow: [Hold the ABHA Gateway session](/api-reference/user-app/abdm-connect/workflows/hold-gateway-session)
 - **The patient wants their ABHA card, or KYC on a mobile-created address.** Fetch the profile, show the card and QR code, or run KYC. → workflow: [Manage the ABHA profile and KYC](/api-reference/user-app/abdm-connect/workflows/manage-profile-and-kyc)
-- **The patient shows a Scan and Share QR at the counter.** Their PHR app has already sent the profile; the HMS receives it on a webhook and replies with a token, skipping steps 1 to 3. → workflow: [Receive a scanned profile as a HIP](/api-reference/user-app/abdm-connect/workflows/hip-scan-and-share)
+- **The patient shows a Scan and Share QR at the counter.** Their PHR app has already sent the profile. The HMS receives it on a webhook and replies with a token, skipping steps 1 to 3. → workflow: [Receive a scanned profile as a HIP](/api-reference/user-app/abdm-connect/workflows/hip-scan-and-share)
 - **The HMS keeps the clinical data itself rather than on Eka.** When the patient later shares records, Eka asks the HMS for them on a webhook and the HMS serves them encrypted. → workflow: [Serve records on a fetch request](/api-reference/user-app/abdm-connect/workflows/serve-data-on-fetch)
 - **The patient visited before this integration existed.** Old visits are not linked. The patient can find and claim them from their PHR app, which the HMS answers on webhooks. → workflow: [Answer discovery and link old records](/api-reference/user-app/abdm-connect/workflows/hip-discovery-and-link)

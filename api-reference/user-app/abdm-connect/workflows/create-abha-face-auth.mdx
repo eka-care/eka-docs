@@ -1,4 +1,5 @@
 ---
+icon: "face-smile"
 title: "Create an ABHA with face authentication"
 description: "Assisted ABHA creation where the patient authenticates with their face on a mobile device instead of an OTP."
 type: workflow
@@ -18,6 +19,13 @@ webhooks:
 ---
 
 {/* TODO: confirm: which create call follows face-auth/verify. The spec and pages do not say. Evidence for aadhaar/create-phr: face-auth/verify returns the same txn_id, skip_state, abha_profiles and eka shape as aadhaar/verify, and flows/m1 draws "Verify, then Mobile linked with Aadhaar?, then Create ABHA" for face auth exactly as for Aadhaar OTP. Confirm the endpoint, and whether the mobile branch uses aadhaar/mobile/verify and aadhaar/mobile/resend (listed in operations on the m1 evidence; the page marks both as not yet confirmed). */}
+
+## In short
+
+- Face authentication on the patient's device replaces the Aadhaar OTP.
+- Show the QR code from Face Auth Init, then poll Capture Face until `Verified`.
+- Verify Face returns the identity, and Create uses the Aadhaar Create call.
+- That create call is not yet confirmed for face authentication.
 
 ## When to use this
 
@@ -91,14 +99,14 @@ sequenceDiagram
   </Step>
   <Step title="Create the ABHA">
     <Note>
-    The create call after face authentication is not yet confirmed. Verify Face returns the same `txn_id`, `skip_state`, `abha_profiles` and `eka` shape as the Aadhaar OTP Verify call, and flows/m1 draws the same mobile check, then create, path for both. On that evidence this step uses the Aadhaar Create call.
+    The create call after face authentication is not yet confirmed. Verify Face returns the same `txn_id`, `skip_state`, `abha_profiles` and `eka` shape as the Aadhaar OTP Verify call. flows/m1 draws the same mobile check, then create, path for both. On that evidence this step uses the Aadhaar Create call.
     </Note>
 
     The patient chooses an ABHA address. You can use [Suggest ABHA Address](/api-reference/user-app/abdm-connect/commons/suggest-abha-address) and [Does ABHA Address Exist](/api-reference/user-app/abdm-connect/commons/does-health-id-exist) as in [Create an ABHA with Aadhaar OTP](/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp).
 
     Send `txn_id` and `abha_address` to [Create](/api-reference/user-app/abdm-connect/enrollment/aadhaar/create-abha). The response carries `profile.abha_number`, `profile.abha_address`, `eka.oid`, `token`, `refresh_token` and `skip_state`.
 
-    Eka also sends the [`abha.created`](/api-reference/user-app/abdm-connect/webhooks/abha-created) webhook with `abha_address`, `abha_number`, `oid`, `hip_id` and `partner_patient_id` in `data`. Reply `200` within 5 seconds; Eka retries on any other status. Verify the `Eka-Webhook-Signature` header as described in [Webhook signature](/api-reference/connect/webhooks/webhook-signature).
+    Eka also sends the [`abha.created`](/api-reference/user-app/abdm-connect/webhooks/abha-created) webhook with `abha_address`, `abha_number`, `oid`, `hip_id` and `partner_patient_id` in `data`. Acknowledge it and verify its signature as described in [Webhooks](/api-reference/user-app/abdm-connect/webhooks#delivery-signature-and-acknowledgement).
   </Step>
 </Steps>
 

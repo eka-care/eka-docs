@@ -1,4 +1,5 @@
 ---
+icon: "unlock"
 title: "Receive and decrypt records as a HIU"
 description: "Take the encrypted FHIR records a HIP pushes after consent, decrypt them, and report which ones you could read."
 type: workflow
@@ -10,6 +11,13 @@ operations:
 webhooks:
   - abha.hiu_data_push
 ---
+
+## In short
+
+- Acknowledge `abha.hiu_data_push` within 5 seconds, then decrypt.
+- Decrypt each entry with your stored `private_key` and `nonce`.
+- Report each entry's result with Push FHIR parsing status.
+- If Eka stores the data for you, read the records from the records product instead.
 
 ## When to use this
 
@@ -76,7 +84,13 @@ sequenceDiagram
     {/* TODO: confirm: whether to reject an entry when key_information.dh_public_key.expiry has passed. */}
   </Step>
   <Step title="Report the parsing status">
-    Call [Push FHIR parsing status](/api-reference/user-app/abdm-connect/care-contexts/data-on-push) with `consent_id` and the `transaction_id` from the webhook (which of the two fields is not yet confirmed), and one `status_response` item per entry: `care_context_id`, `success` (`true` if you decrypted and parsed it), and a `description` when it failed. Eka returns `202 Accepted`.
+    Call [Push FHIR parsing status](/api-reference/user-app/abdm-connect/care-contexts/data-on-push) with:
+
+    - `consent_id`.
+    - The `transaction_id` from the webhook. Which of the two fields is not yet confirmed.
+    - One `status_response` item per entry, with `care_context_id`, `success` (`true` if you decrypted and parsed it), and a `description` when it failed.
+
+    Eka returns `202 Accepted`.
 
     {/* TODO: confirm: what happens to an entry reported with success false; does Eka or the HIP resend it? */}
     {/* TODO: confirm: the deadline for calling on-push after the webhook arrives. */}

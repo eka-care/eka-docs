@@ -1,4 +1,5 @@
 ---
+icon: "user-doctor"
 title: "Create an HPR ID with Aadhaar OTP"
 description: "Verify a healthcare professional's Aadhaar and linked mobile, reuse their HPR ID if one exists, or create a new one from a suggested handle."
 type: workflow
@@ -13,11 +14,22 @@ operations:
   - POST /abdm/nhpr/v1/hpr/aadhaar/create
 ---
 
+## In short
+
+- Verify the professional's Aadhaar with an OTP, then check the Aadhaar-linked mobile.
+- If Get HPR Info finds an existing HPR ID, save it and stop.
+- Otherwise the professional picks a handle and you call Create HPR.
+- Create takes `txnId` and `hprId` in camel case.
+
 ## When to use this
 
-A doctor, nurse or other healthcare professional at the facility needs a Healthcare Professional Registry (HPR) ID, and you want them to get it without leaving your HMS. The flow verifies their Aadhaar with an OTP, confirms the mobile they give is the one linked to Aadhaar, and either returns the HPR ID they already have or creates a new one.
+A doctor, nurse or other healthcare professional at the facility needs a Healthcare Professional Registry (HPR) ID. You want them to get it without leaving your HMS. The flow:
 
-For a professional who already has an HPR ID and wants to sign in with their mobile, use [Log in to HPR with a mobile OTP](/api-reference/user-app/abdm-connect/workflows/hpr-mobile-login). You can also create HPR IDs by hand on the [ABDM portal](https://nhpr.abdm.gov.in/nhpr/v4/login).
+1. Verifies their Aadhaar with an OTP.
+2. Confirms the mobile they give is the one linked to Aadhaar.
+3. Returns the HPR ID they already have, or creates a new one.
+
+A professional may already have an HPR ID and want to sign in with their mobile. For them, use [Log in to HPR with a mobile OTP](/api-reference/user-app/abdm-connect/workflows/hpr-mobile-login). You can also create HPR IDs by hand on the [ABDM portal](https://nhpr.abdm.gov.in/nhpr/v4/login).
 
 ## Before you start
 
@@ -104,7 +116,7 @@ The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox
 
 Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: sandbox Aadhaar numbers and OTPs for HPR creation, and the testing page to link */}
 
-- [ ] Happy path for a new professional: Get Aadhaar OTP, Verify Aadhaar OTP, Verify Mobile with `verified` true, Get HPR Info shows no existing ID, Suggest IDs, Create returns `hprId` and `hpr_id_number`
+- [ ] Happy path for a new professional: Get Aadhaar OTP, Verify Aadhaar OTP, then Verify Mobile with `verified` true. Get HPR Info shows no existing ID, then Suggest IDs, then Create returns `hprId` and `hpr_id_number`
 - [ ] Second run with the same Aadhaar: Get HPR Info returns the existing `hpr_id`, and your app stops without calling Create
 - [ ] Wrong OTP once, then the correct OTP
 - [ ] A mobile that is not linked to the Aadhaar: Verify Mobile returns `verified` false and your app shows `reason`

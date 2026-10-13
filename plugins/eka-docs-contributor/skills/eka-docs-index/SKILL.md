@@ -16,7 +16,7 @@ The repo is `eka-care/eka-docs`, a Mintlify site. The binding structure is the *
 | Write a workflow (ordered API calls for one journey step) | `writing-workflows`, then `/workflow-new` |
 | Write the quickstart, or pick which workflow represents the product | `writing-quickstart`, then `/quickstart-new` |
 | Document an endpoint, webhook, error code; move a hand-written schema into the spec; `openapi:` frontmatter | `api-referencing`, then `/api-sync` |
-| Tone, sentence shape, what words to avoid | `writing-style` |
+| Tone, sentence shape, what words to avoid, word budgets, In short | `writing-style` |
 | `docs.json` groups, icons, redirects, contextual menu | `mintlify-nav` |
 | A new product from scratch | `/product-new` (it runs the interview and scaffolds the ladder) |
 | Which rungs a product has, what is missing | `/product-status` |
@@ -35,4 +35,4 @@ The repo is `eka-care/eka-docs`, a Mintlify site. The binding structure is the *
 
 ## What is deliberately not here
 
-No atoms, no compiler, no word budgets, no "In short" blocks, no sequencing rules, no Gantt, no standup. If someone asks for one of those by name, they are thinking of the ABDM Developer Portal's contributors assistant, which is a different project.
+No atoms, no compiler, no sequencing rules, no Gantt, no standup. If someone asks for one of those by name, they are thinking of the ABDM Developer Portal's contributors assistant, which is a different project.

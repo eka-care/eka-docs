@@ -1,4 +1,5 @@
 ---
+icon: "hourglass-half"
 title: "Hold the ABHA Gateway session"
 description: "Check whether the patient's ABHA Gateway session is live and renew it with a mobile OTP when it has expired."
 type: workflow
@@ -9,6 +10,12 @@ operations:
   - POST /abdm/v1/session/init
   - POST /abdm/v1/session/verify
 ---
+
+## In short
+
+- Patient-scoped calls without a live ABHA Gateway session return HTTP `491`.
+- Check the session with Status, and renew it with Init and Verify on a mobile OTP.
+- Once the session is live, retry the call that returned `491`.
 
 ## When to use this
 
@@ -95,6 +102,6 @@ The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox
 Run against the sandbox base URL `https://api.dev.eka.care`, with an ABHA you created on sandbox. {/* TODO: confirm: how to force a session to expire on sandbox to test the 491 path, sandbox OTPs. */}
 
 - [ ] Straight after creating an ABHA, Session Status returns `logged_in: true`.
-- [ ] After the session expires, Session Status returns `logged_in: false`; Session Init and Session Verify return a `token`; Session Status returns `logged_in: true` again.
+- [ ] After the session expires, Session Status returns `logged_in: false`. Session Init and Session Verify return a `token`; Session Status returns `logged_in: true` again.
 - [ ] A patient-scoped call such as [Profile Details](/api-reference/user-app/abdm-connect/profile/details/profile-details) returns `491` on an expired session and succeeds after renewal.
 - [ ] Wrong OTP on Session Verify: `MIS-1013`. Record the code you receive; the expected code is not confirmed.

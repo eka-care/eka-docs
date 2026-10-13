@@ -16,6 +16,47 @@ export const LADDER_TYPES = [
   'errors', 'testing', 'build-with-ai', 'changelog',
 ];
 export const EXTRA_TYPES = ['sdk', 'resource', 'guide'];
+// Page rules adopted from the ABDM Developer Portal (page-authoring): prose budgets
+// by type, In short above 300 words, sentence and paragraph limits, no em dashes.
+export const BUDGETS = { overview: 600, journey: 700, workflow: 700, quickstart: 700, testing: 700, 'build-with-ai': 700 };
+const PROSE_TYPES = new Set(['overview', 'journey', 'workflow', 'quickstart', 'testing', 'build-with-ai', 'webhooks', 'errors', 'changelog']);
+const IN_SHORT_THRESHOLD = 300;
+
+export function prose(content) {
+  return content
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/^\s*\|.*$/gm, '')
+    .replace(/^\s*#{1,6} .*$/gm, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\*\*|__/g, '');
+}
+
+export function pageRules(content, type) {
+  const out = { fail: [], warn: [] };
+  const text = prose(content);
+  const words = (text.match(/[A-Za-z0-9`_'-]+/g) ?? []).length;
+  const budget = BUDGETS[type];
+  if (budget && words > budget) out.warn.push(['budget', `${words} prose words, budget ${budget}: split the page or move scope; do not compress`]);
+  const hasInShort = /^## In short\s*$/m.test(content);
+  if (words > IN_SHORT_THRESHOLD && !hasInShort) out.warn.push(['in-short', `${words} prose words and no "## In short"`]);
+  if (words <= IN_SHORT_THRESHOLD && hasInShort) out.warn.push(['in-short', `"## In short" on a ${words}-word page; remove it`]);
+  const sentences = text.split(/(?<=[.!?])\s+|\n/).filter((x) => x.trim());
+  const over35 = sentences.filter((x) => x.split(/\s+/).length > 35);
+  for (const x of over35) out.fail.push(['sentence', `sentence over 35 words: "${x.trim().slice(0, 70)}..."`]);
+  const over25 = sentences.filter((x) => x.split(/\s+/).length > 25).length - over35.length;
+  if (over25 > 0) out.warn.push(['sentence', `${over25} sentence(s) over 25 words`]);
+  // A list item is its own block, not part of a paragraph.
+  const blocks = text.split(/\n\s*\n|\n(?=\s*(?:[-*+]|\d+\.)\s)/);
+  for (const para of blocks) {
+    if ((para.match(/[.!?](\s|$)/g) ?? []).length > 5) { out.warn.push(['paragraph', 'a paragraph over 5 sentences']); break; }
+  }
+  if (content.includes('\u2014')) out.fail.push(['em-dash', 'em dash in the body']);
+  const firstHeading = content.match(/^#{1,3} (.+)$/m);
+  if (firstHeading && /^(introduction|overview)$/i.test(firstHeading[1].trim())) out.fail.push(['first-heading', `first heading is "${firstHeading[1].trim()}"`]);
+  return out;
+}
 const ALL_TYPES = new Set([...LADDER_TYPES, ...EXTRA_TYPES]);
 const METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'plugins', 'docs']);
@@ -162,6 +203,14 @@ export function checkProduct(repo, product, { fix = false, allSpecs = [] } = {})
     } else if (!workflowPaths.some((p) => q.content.includes(p))) {
       W('quickstart', `${q.url}: demonstrates no workflow; add workflow: <slug> to its frontmatter or call a workflow's operations`);
     }
+  }
+
+  // Page rules on ladder pages
+  for (const p of pages) {
+    if (!PROSE_TYPES.has(p.type)) continue;
+    const r = pageRules(p.content, p.type);
+    for (const [rule, msg] of r.fail) F(rule, `${p.url}: ${msg}`);
+    for (const [rule, msg] of r.warn) W(rule, `${p.url}: ${msg}`);
   }
 
   // Error codes

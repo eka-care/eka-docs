@@ -1,4 +1,5 @@
 ---
+icon: "thumbs-up"
 title: "Approve, deny or revoke a consent in a PHR app"
 description: "Show the patient their pending consent requests, record their decision with their consent PIN, and revoke access later."
 type: workflow
@@ -17,9 +18,16 @@ webhooks:
   - abha.consent_update
 ---
 
+## In short
+
+- Show the patient each pending request, then approve or deny it after their consent PIN.
+- Approval creates one consent artefact per HIP.
+- The patient can later revoke any artefact on its own.
+- Whether `abha.consent_update` reaches a PHR app is not confirmed; fall back to List Requests.
+
 ## When to use this
 
-Your app is a personal health record (PHR) app, and a Health Information User (HIU) such as a doctor, hospital, insurer or another PHR app has asked for the patient's records. This workflow shows the patient the request, records their decision, and lets them revoke a granted consent later. On approval, ABDM generates one consent artefact per Health Information Provider (HIP), and the patient can revoke each artefact on its own.
+Your app is a personal health record (PHR) app. A Health Information User (HIU) such as a doctor, hospital, insurer or another PHR app has asked for the patient's records. This workflow shows the patient the request, records their decision, and lets them revoke a granted consent later. On approval, ABDM generates one consent artefact per Health Information Provider (HIP), and the patient can revoke each artefact on its own.
 
 To stop asking the patient for every request from a trusted source, set up auto-approval instead: [Set up the patient's health locker](/api-reference/user-app/abdm-connect/workflows/set-up-health-locker).
 
@@ -27,7 +35,7 @@ To stop asking the patient for every request from a trusted source, set up auto-
 
 - A bearer token for the API. See [Authorization](/api-reference/authorization/getting-started).
 - A live ABHA Gateway session for the patient. Every consent operation needs one. See [User Session](/api-reference/user-app/abdm-connect/session/getting-started).
-- The patient's Eka user id (`oid`), sent as the `X-Pt-Id` header. List Requests, Get Details, approve, deny and revoke also accept it as the `oid` query parameter; the three PIN calls take the header only. {/* TODO: confirm: whether X-Pt-Id or the oid query parameter is required where both are accepted, and what X-Partner-Pt-Id and X-Hip-Id should carry for a PHR app. */}
+- The patient's Eka user id (`oid`), sent as the `X-Pt-Id` header. {/* TODO: confirm: whether X-Pt-Id or the oid query parameter is required where both are accepted, and what X-Partner-Pt-Id and X-Hip-Id should carry for a PHR app. */}
 - A webhook endpoint registered with Eka that verifies the `Eka-Webhook-Signature` header. See [Webhook signature](/api-reference/connect/webhooks/webhook-signature).
 
 ## Sequence
@@ -57,7 +65,7 @@ sequenceDiagram
 
 <Steps>
   <Step title="List the patient's pending requests">
-    Call [List Requests](/api-reference/user-app/abdm-connect/patient-requests/list-requests) with `type` set to `consent` and `status` set to `requested`. Both parameters are required. The response groups requests into `consents`, `subscriptions` and `authorizations`; each item carries `id`, `hiu`, `requester`, `purpose`, `duration` and `created_at`.
+    Call [List Requests](/api-reference/user-app/abdm-connect/patient-requests/list-requests) with `type` set to `consent` and `status` set to `requested`. Both parameters are required.
 
     Show the patient who is asking (`hiu`, `requester`) and why (`purpose`). Keep the `id` of the request they open. To show granted consents they can revoke, call again with `status` set to `granted`.
   </Step>
@@ -87,7 +95,7 @@ sequenceDiagram
 
     **To deny,** call [Consent Deny](/api-reference/user-app/abdm-connect/consents/consent-deny) with `id` and, optionally, the patient's `reason` in plain text. Eka returns `204`.
 
-    Then update the request in your inbox. Whether a PHR app receives [`abha.consent_update`](/api-reference/user-app/abdm-connect/webhooks/consent-update) for requests the patient acts on is not yet confirmed. If it arrives, reply `200` within 5 seconds and read `data.notification.status`. If it does not, call [List Requests](/api-reference/user-app/abdm-connect/patient-requests/list-requests) with `type` set to `consent` and `status` set to `granted` (or `denied` after a denial) and find the request by `id`.
+    Then update the request in your inbox. Whether a PHR app receives [`abha.consent_update`](/api-reference/user-app/abdm-connect/webhooks/consent-update) for requests the patient acts on is not yet confirmed. If it arrives, reply `200` within 5 seconds and read `data.notification.status`. If it does not, call [List Requests](/api-reference/user-app/abdm-connect/patient-requests/list-requests) with `type` set to `consent` and `status` set to `granted`, or `denied` after a denial. Find the request by `id`.
 
     {/* TODO: confirm: whether the patient may narrow duration or hi_types below what the HIU asked for, or only remove items. */}
     {/* TODO: confirm: whether a PHR app receives abha.consent_update for requests the patient acts on, or only HIUs do. */}
@@ -114,7 +122,7 @@ The patient's PIN is not state. Do not store it.
 Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
 </Warning>
 
-Error responses carry `code`, `error` and `source_error` (`code`, `message`). Codes are listed on the [errors page](/api-reference/user-app/abdm-connect/errors).
+Error responses carry `code`, `error` and `source_error` (`code`, `message`).
 
 | Situation | Code | Do |
 |---|---|---|
@@ -131,12 +139,12 @@ Error responses carry `code`, `error` and `source_error` (`code`, `message`). Co
 
 The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
-Sandbox base URL: `https://api.dev.eka.care`. {/* TODO: confirm: a sandbox patient with a pending consent request, and how to raise one from a sandbox HIU. No testing page exists yet. */}
+{/* TODO: confirm: a sandbox patient with a pending consent request, and how to raise one from a sandbox HIU. No testing page exists yet. */}
 
 - [ ] Raise a request against a sandbox patient with [Request a patient's consent as a HIU](/api-reference/user-app/abdm-connect/workflows/hiu-request-consent)
 - [ ] It appears in List Requests with `status` `requested`; Get Details shows its providers and care contexts
 - [ ] Pin exists returns `false` for a new patient; set a PIN; exists now returns `true`
-- [ ] Verify the PIN and approve one care context; record whether `abha.consent_update` arrives (not yet confirmed), otherwise List Requests with `status` `granted` shows the request
+- [ ] Verify the PIN and approve one care context. Record whether `abha.consent_update` arrives (not yet confirmed); otherwise List Requests with `status` `granted` shows the request
 - [ ] Get Details now shows a `consent_artefact_id`; revoke it
 - [ ] Deny a second request with a reason
 - [ ] Let the session expire and confirm the `491` path

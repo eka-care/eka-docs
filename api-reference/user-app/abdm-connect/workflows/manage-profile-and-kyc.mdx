@@ -1,4 +1,5 @@
 ---
+icon: "user-check"
 title: "Manage the ABHA profile and KYC"
 description: "Read and update the patient's ABHA profile, show the ABHA card and QR code, run KYC on a mobile-created address, and delete the profile."
 type: workflow
@@ -12,13 +13,24 @@ operations:
   - POST /abdm/v1/profile/kyc/init
   - POST /abdm/v1/profile/kyc/resend
   - POST /abdm/v1/profile/kyc/verify
-  - POST /abdm/v1/profile/search
   - DELETE /abdm/v1/profile
 ---
 
+## In short
+
+- Cache the profile, QR code and card; evict them after an update or KYC.
+- Update Profile must send every field Profile Details returned.
+- After KYC, check that `kyc_verified` is `true` and `abha_number` is set.
+
 ## When to use this
 
-The patient has an ABHA and is logged in. Use this workflow to show their ABHA profile, card and QR code, correct their details, and run KYC on an ABHA address that was created with a mobile OTP. After KYC, expect Profile Details to show `kyc_verified` as `true` and an `abha_number`; check both rather than assuming them. Deleting the profile is also here; it is irreversible.
+The patient has an ABHA and is logged in. Use this workflow to:
+
+- show their ABHA profile, card and QR code
+- correct their details
+- run KYC on an ABHA address that was created with a mobile OTP.
+
+Deleting the profile is also here; it is irreversible.
 
 These calls are independent. Run the ones your screen needs, in any order, except that KYC is a sequence of init then verify.
 
@@ -50,9 +62,6 @@ sequenceDiagram
     end
     App->>Eka: POST /abdm/v1/profile/kyc/verify
   end
-  opt Find KYC-verified ABHAs by mobile
-    App->>Eka: POST /abdm/v1/profile/search
-  end
   opt Patient deletes their profile
     App->>Eka: DELETE /abdm/v1/profile
   end
@@ -62,7 +71,7 @@ sequenceDiagram
 
 <Steps>
   <Step title="Fetch the profile">
-    Call [Profile Details](/api-reference/user-app/abdm-connect/profile/details/profile-details). The response carries the patient's `abha_address`, `abha_addresses`, `abha_number`, names, `gender`, date of birth as `day_of_birth`, `month_of_birth` and `year_of_birth`, `mobile`, address fields, `profile_photo` and `kyc_verified`.
+    Call [Profile Details](/api-reference/user-app/abdm-connect/profile/details/profile-details). The response carries the patient's `abha_address`, `abha_number` and `kyc_verified`, with the other profile fields listed on the reference page.
 
     Cache the response on your side. Do not call it on every page load. Evict the cache when the profile is updated.
   </Step>
@@ -73,7 +82,7 @@ sequenceDiagram
     Call [ABHA card](/api-reference/user-app/abdm-connect/profile/cards/abha-card). The response is the card as a PNG image (`image/png`). Cache it and evict it when the profile is updated.
   </Step>
   <Step title="Update the profile">
-    Send the profile to [Update Profile](/api-reference/user-app/abdm-connect/profile/details/update-profile). The request must include every field that Profile Details returned, not only the changed ones. `first_name`, `gender`, `day_of_birth`, `month_of_birth`, `year_of_birth` and `pincode` are required. A successful update returns `204` with no body. Evict your cached profile, QR code and card.
+    Send the profile to [Update Profile](/api-reference/user-app/abdm-connect/profile/details/update-profile). The request must include every field that Profile Details returned, not only the changed ones. A successful update returns `204` with no body. Evict your cached profile, QR code and card.
 
     For a KYC-verified ABHA, name, gender and date of birth cannot be changed. {/* TODO: confirm: the error returned when a locked field is changed on a KYC-verified ABHA. */}
   </Step>
@@ -84,9 +93,6 @@ sequenceDiagram
   </Step>
   <Step title="Verify KYC">
     Send `txn_id`, `otp` and `user_x_token` to [Kyc Verify](/api-reference/user-app/abdm-connect/profile/kyc/kyc-verify). The response carries `txn_id`. Fetch the profile again and check that `kyc_verified` is `true` and `abha_number` is set. Evict your cached QR code and card. {/* TODO: confirm: that kyc_verified and abha_number on GET /abdm/v1/profile reflect the completed KYC immediately. */}
-  </Step>
-  <Step title="Search by mobile (optional)">
-    Send `mobile` to [Search ABHA](/api-reference/user-app/abdm-connect/profile/search/search). It returns KYC-verified ABHA profiles on that mobile in `profiles`, with masked `abha_number`s, and a `txn_id`. To log the patient in to one of them, continue with [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha).
   </Step>
   <Step title="Delete the profile (only on the patient's request)">
     Call [Delete Profile](/api-reference/user-app/abdm-connect/profile/details/delete). It removes the profile and every associated document, vital record and related data from Eka, with no recovery. The ABHA metadata stays in the ABDM system, because ABDM offers no delete. A successful delete returns `204`. Ask the patient to confirm before you call it, and clear the `oid` and cached assets from your patient record afterwards.
@@ -126,7 +132,7 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
-Run against the sandbox base URL `https://api.dev.eka.care`, with a patient whose ABHA you created on sandbox and whose session is live. {/* TODO: confirm: sandbox test identifiers and OTPs for KYC. */}
+Use a patient whose ABHA you created on sandbox and whose session is live. {/* TODO: confirm: sandbox test identifiers and OTPs for KYC. */}
 
 - [ ] Profile Details returns the `abha_address` you stored at creation.
 - [ ] ABHA QR Code returns JSON you can encode as a QR code; ABHA card returns an image.

@@ -1,4 +1,5 @@
 ---
+icon: "mobile-retro"
 title: "Log in to HPR with a mobile OTP"
 description: "Verify a returning healthcare professional with an OTP to their mobile and check their HPR ID."
 type: workflow
@@ -42,7 +43,9 @@ sequenceDiagram
 
 <Steps>
   <Step title="Send the mobile OTP">
-    Send `mobile_num` to [Get Mobile OTP](/api-reference/user-app/abdm-connect/nhpr-abdm/hpr/get-mobile-otp). The body also accepts `txn_id`. {/* TODO: confirm: is txn_id sent on mobile/init, and if so, from which earlier call? */} The response carries `txn_id`, `mobile_num` and `hint`. Unlike the other NHPR calls, the spec does not wrap this response in `data`. {/* TODO: confirm: is the mobile/init response wrapped in data like the other NHPR responses? */} Keep `txn_id`. The professional receives an OTP.
+    Send `mobile_num` to [Get Mobile OTP](/api-reference/user-app/abdm-connect/nhpr-abdm/hpr/get-mobile-otp). The body also accepts `txn_id`. {/* TODO: confirm: is txn_id sent on mobile/init, and if so, from which earlier call? */} The response carries `txn_id`, `mobile_num` and `hint`. Unlike the other NHPR calls, the spec does not wrap this response in `data`. {/* TODO: confirm: is the mobile/init response wrapped in data like the other NHPR responses? */}
+
+    Keep `txn_id`. The professional receives an OTP.
   </Step>
   <Step title="Verify the mobile OTP">
     Send `txnId` (the `txn_id` from step 1, in camel case) and the `otp` the professional reads out to [Verify Mobile OTP](/api-reference/user-app/abdm-connect/nhpr-abdm/hpr/verify-mobile-otp). The response `data` carries `txn_id`, `mobile_num` and `hint`.

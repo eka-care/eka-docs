@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { checkProduct, findProducts, normalizeOp, run } from './docs-check.mjs';
+import { checkProduct, findProducts, normalizeOp, pageRules, run } from './docs-check.mjs';
 
 const SPEC = `openapi: 3.1.0
 paths:
@@ -142,4 +142,26 @@ test('run blocks only on enforced products and honours the root key', () => {
   assert.equal(results[0].counts.operations, 2);
   assert.ok(results[0].fail.length > 0);
   assert.equal(blocking, false);
+});
+
+test('page rules: budget, In short, sentence length, em dash, first heading', () => {
+  const words = (n) => Array.from({ length: n }, (_, i) => `word${i}`).join(' ');
+  const long = `${words(40)}.`;
+  const shortPage = `Intro line.\n\n${Array.from({ length: 10 }, (_, i) => `${words(10)}.${i % 5 === 4 ? '\n\n' : ' '}`).join('')}`;
+  const rules = (c, t = 'workflow') => { const r = pageRules(c, t); return { fail: r.fail.map((x) => x[0]), warn: r.warn.map((x) => x[0]) }; };
+  assert.deepEqual(rules(shortPage), { fail: [], warn: [] });
+  assert.ok(rules(`## In short\n\n- a\n\n${shortPage}`).warn.includes('in-short'));
+  const big = Array.from({ length: 80 }, () => `${words(10)}.`).join('\n\n');
+  assert.ok(rules(big).warn.includes('in-short'));
+  assert.ok(rules(big).warn.includes('budget'));
+  assert.ok(!rules(`## In short\n\n- a\n\n${big}`, 'errors').warn.includes('budget'));
+  assert.ok(rules(long).fail.includes('sentence'));
+  assert.ok(rules('A dash \u2014 here.').fail.includes('em-dash'));
+  assert.ok(rules('## Overview\n\nText.').fail.includes('first-heading'));
+  assert.ok(!rules('## In short\n\n- x\n\n## Overview of steps\n\nText.').fail.includes('first-heading'));
+  // a bold label does not join the next sentence; list items are separate blocks
+  assert.ok(!rules(`**Already in place.** ${words(20)}. ${words(20)}.`).warn.includes('sentence'));
+  assert.ok(!rules(Array.from({ length: 8 }, (_, i) => `${i + 1}. Step one is short.`).join('\n')).warn.includes('paragraph'));
+  // code, tables, comments and headings are not prose
+  assert.deepEqual(rules('```\n' + long + '\n```\n\n| ' + long + ' |\n\n{/* ' + long + ' */}'), { fail: [], warn: [] });
 });

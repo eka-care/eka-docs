@@ -23,6 +23,7 @@ The file slug (`register-walk-in-patient`) is what workflow pages name in their 
 
 ## Sections, in order
 
+0. **In short.** Three to five bullets: who, what they get, the workflows involved. Above 300 prose words only.
 1. **Who and when.** One paragraph: the person, where they are, what triggers this. "A receptionist at a clinic that is an ABDM HIP. A patient arrives without an ABHA, or does not know whether they have one." Then one line headed **Already in place:** the role the integrator plays (HIP, HIU, PHR app) and the journeys that must have run before this one can start, each linked. A journey that depends on another names it here, never silently.
 2. **What they want.** One sentence, in their words.
 3. **The steps.** A numbered list, each step one or two sentences in product terms. Where a step is done by calling the API, end it with a link: "→ workflow: [Create an ABHA with Aadhaar OTP](/abdm-connect/workflows/create-abha-aadhaar-otp)". Where a step is a human action (the patient reads out an OTP), say so.

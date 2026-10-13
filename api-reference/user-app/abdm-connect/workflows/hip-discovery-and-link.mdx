@@ -1,4 +1,5 @@
 ---
+icon: "magnifying-glass"
 title: "Answer discovery and link old records"
 description: "Let a patient find and claim records your facility created before they were linked to their ABHA."
 type: workflow
@@ -14,19 +15,25 @@ webhooks:
   - abha.context_discover_link_confirm
 ---
 
+## In short
+
+- You answer three Eka webhooks in turn, each with one call back to Eka.
+- First return the patient's unlinked records, then send an OTP by SMS.
+- When the OTP matches, call On Link Confirm and ABDM links the records.
+
 ## When to use this
 
-A patient searches for their records at your facility from a PHR app, such as the ABHA app. The records exist in your system but were never linked to their ABHA. You answer three webhooks in turn: you return the matching records, you send the patient an OTP, and you confirm the link once the OTP checks out.
+A patient searches for their records at your facility from a PHR app, such as the ABHA app. The records exist in your system but were never linked to their ABHA. You answer three webhooks in turn:
 
-You never talk to ABDM directly. ABDM sends each request to Eka, Eka forwards it to your webhook, and you answer by calling Eka.
-
-For records created after you know the patient's ABHA, link them yourself with [Link a care context as a HIP](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip). You do not call that API in this workflow; the on-confirm call does the linking.
+1. You return the matching records.
+2. You send the patient an OTP.
+3. You confirm the link once the OTP checks out.
 
 ## Before you start
 
 - A client access token, sent as a Bearer token. See [Authorization](/api-reference/authorization/getting-started).
 - Your facility onboarded as a Health Information Provider (HIP), with its HIP ID. ABDM routes discovery requests by HIP ID.
-- A webhook URL registered with Eka that can receive the three discovery events, and the means to verify the [webhook signature](/api-reference/connect/webhooks/webhook-signature).
+- A webhook URL registered with Eka that can receive the three discovery events, and the means to verify the [webhook signature](/api-reference/connect/webhooks/webhook-signature). Acknowledge each event as described in [Webhooks](/api-reference/user-app/abdm-connect/webhooks#delivery-signature-and-acknowledgement).
 - A patient search in your system by mobile number, name, gender and year of birth.
 - A way to generate an OTP and send it by SMS to the patient's registered mobile number. You send this OTP yourself.
 
@@ -59,15 +66,22 @@ sequenceDiagram
 
 <Steps>
   <Step title="Answer the discovery request">
-    Eka sends the [`abha.care_context_discover`](/api-reference/user-app/abdm-connect/webhooks/discover-care-context) webhook. Acknowledge it with HTTP `200` within 5 seconds; Eka retries on any other status.
+    Eka sends the [`abha.care_context_discover`](/api-reference/user-app/abdm-connect/webhooks/discover-care-context) webhook.
 
-    From `data`, read `abha_address`, `patient_name`, `gender`, `year_of_birth` and the `identifiers` list (`MOBILE`, `ABHA_NUMBER`, `abhaAddress`). These are verified by ABDM, not typed in by the patient. Keep `request_id` and `txn_id`.
+    From `data`, read `abha_address`, `patient_name`, `gender`, `year_of_birth` and the `identifiers` list (`MOBILE`, `ABHA_NUMBER`, `abhaAddress`). Keep `request_id` and `txn_id`.
 
     Search your system with these identifiers. Collect the care contexts for this patient that are not yet linked: visits, prescriptions, lab reports.
 
-    Call [On Discover](/api-reference/user-app/abdm-connect/care-contexts/discover/on_discover) with `request_id` and `txn_id` from the webhook, and `patients`: each entry with your patient reference number in `ref_num`, a `display` name, the `hi_type`, and `care_contexts` (each with `ref_num` and `display`). If you find no match, send `error` with `code` and `message` instead of `patients`. The call returns `204 No Content`.
+    Call [On Discover](/api-reference/user-app/abdm-connect/care-contexts/discover/on_discover) with `request_id` and `txn_id` from the webhook, and `patients`. Each entry carries:
 
-    You may save `abha_address` to the matched patient's record. ABDM leaves that to you. If you save it, you can link the patient's future records directly with [Link a care context as a HIP](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip).
+    - `ref_num`: your patient reference number
+    - `display`: a display name
+    - `hi_type`
+    - `care_contexts`, each with `ref_num` and `display`
+
+    If you find no match, send `error` with `code` and `message` instead of `patients`. The call returns `204 No Content`.
+
+    You may save `abha_address` to the matched patient's record. ABDM leaves that to you. Saving it lets you [link future records directly](/api-reference/user-app/abdm-connect/workflows/link-care-context-hip).
 
     {/* TODO: confirm: which identifiers must match for a record to count as the patient's (mobile alone, or mobile plus name, gender and year of birth), and what to return when several patients match */}
     {/* TODO: confirm: hi_type sits on each patients entry, not on each care context; do you send one patients entry per hi_type when a patient's care contexts have different types? */}
@@ -75,9 +89,9 @@ sequenceDiagram
     {/* TODO: confirm: the deadline for the on-discover reply after the webhook */}
   </Step>
   <Step title="Send the OTP and report it">
-    When the patient selects records to link, Eka sends the [`abha.care_context_discover_link_init`](/api-reference/user-app/abdm-connect/webhooks/discover-link-init) webhook. Acknowledge it with HTTP `200` within 5 seconds.
+    When the patient selects records to link, Eka sends the [`abha.care_context_discover_link_init`](/api-reference/user-app/abdm-connect/webhooks/discover-link-init) webhook.
 
-    From `data`, read `patient`: each entry carries `ref_num`, `hi_type`, `count` and `care_contexts` (each with `reference_number`). Save these as the care contexts to link. Keep `request_id` and `txn_id`. The `txn_id` is the same one the discovery webhook carried.
+    From `data`, read `patient`: each entry carries `ref_num`, `hi_type`, `count` and `care_contexts` (each with `reference_number`). Save these as the care contexts to link. Keep `request_id` and `txn_id`.
 
     Generate an OTP and send it to the patient's registered mobile number. Record when it expires.
 
@@ -89,11 +103,11 @@ sequenceDiagram
     {/* TODO: confirm: what to do if the selected reference_number values include care contexts you did not return in on-discover, or that are already linked */}
   </Step>
   <Step title="Verify the OTP and confirm the link">
-    When the patient enters the OTP in the PHR app, Eka sends the [`abha.context_discover_link_confirm`](/api-reference/user-app/abdm-connect/webhooks/discover-link-confirm) webhook. Acknowledge it with HTTP `200` within 5 seconds.
+    When the patient enters the OTP in the PHR app, Eka sends the [`abha.context_discover_link_confirm`](/api-reference/user-app/abdm-connect/webhooks/discover-link-confirm) webhook.
 
     From `data`, read `token` (the OTP the patient entered), `linkRefNumber`, `request_id` and `hip_id`. Find the pending link from step 2 and compare `token` with the OTP you generated. Check it has not expired.
 
-    If the OTP is valid, call [On Link Confirm](/api-reference/user-app/abdm-connect/care-contexts/discover/link_on_confirm) with `request_id` from this webhook and `patients`: the care contexts to link, in the same shape as on-discover. ABDM then registers the link under the patient's ABHA, against the HIP in `hip_id`. Mark those care contexts as linked in your system. The call returns `204 No Content`.
+    If the OTP is valid, call [On Link Confirm](/api-reference/user-app/abdm-connect/care-contexts/discover/link_on_confirm) with `request_id` from this webhook. Send `patients`: the care contexts to link, in the same shape as on-discover. ABDM then registers the link under the patient's ABHA, against the HIP in `hip_id`. Mark those care contexts as linked in your system. The call returns `204 No Content`.
 
     If the OTP is wrong or expired, call On Link Confirm with `error` instead of `patients`.
 
@@ -102,7 +116,7 @@ sequenceDiagram
   </Step>
 </Steps>
 
-Once linked, these care contexts are discoverable and shareable like any other. If you keep their data yourself, answer HIU requests for them with [Serve records on a fetch request](/api-reference/user-app/abdm-connect/workflows/serve-data-on-fetch).
+Once linked, if you keep their data yourself, see [Serve records on a fetch request](/api-reference/user-app/abdm-connect/workflows/serve-data-on-fetch).
 
 {/* TODO: confirm: are care contexts linked through on-confirm always served through abha.hip_data_fetch, or can the HIP send their FHIR data to Eka afterwards? */}
 
@@ -126,7 +140,7 @@ Once linked, these care contexts are discoverable and shareable like any other. 
 Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
 </Warning>
 
-Error responses carry `code`, `error` and `source_error`. The codes below are from the [errors page](/api-reference/user-app/abdm-connect/errors).
+Error responses carry `code`, `error` and `source_error`.
 
 | Situation | Code | Do |
 |---|---|---|
@@ -146,7 +160,7 @@ The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox
 
 {/* TODO: confirm: how to trigger discovery against your HIP on sandbox (which PHR app or test ABHA, and test patient data on your side) */}
 
-- [ ] Create a test patient in your system with an unlinked visit, using the same mobile, name, gender and year of birth as a sandbox ABHA
+- [ ] Create a test patient in your system with an unlinked visit. Use the same mobile, name, gender and year of birth as a sandbox ABHA
 - [ ] Discover your HIP from a sandbox PHR app; receive `abha.care_context_discover` and reply with the visit
 - [ ] Select the visit; receive `abha.care_context_discover_link_init`, send the OTP, reply with on-init
 - [ ] Enter the OTP; receive `abha.context_discover_link_confirm`, reply with on-confirm, and see the record linked in the PHR app

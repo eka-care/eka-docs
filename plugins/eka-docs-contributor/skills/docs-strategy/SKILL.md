@@ -60,6 +60,23 @@ Every page: `title`, `description` (Mintlify needs both), and `type` (unless it 
 
 Quickstart pages add `workflow` (the slug of the one workflow the quickstart walks through; see `writing-quickstart`). Workflow pages add `product`, `journey` (the journey page's file slug), `operations` (list of `METHOD /path`, must exist in the spec), `webhooks` (event names, must exist in the spec's `webhooks`). Full shape in `writing-workflows`.
 
+## Page rules
+
+Every ladder page follows the budgets, the In short rule and the sentence limits in `writing-style`. `docs-check` reports them; the sentence, em dash and first-heading rules fail an enforced product.
+
+## Navigation shape
+
+`scripts/build-nav.py` builds `docs.json` from the families on the landing page (AI, Information Management, ABDM, Platform), each a Mintlify product with a menu of products. It also:
+
+- makes each section's landing page its title: a group whose first page is an overview, intro or getting-started page gets it as `root`, so there is no separate "Overview" row under the title; a group with only one page becomes that page
+- gives every group an icon, from its name
+- keeps every product's sidebar to three levels (section, group, page) in one order: Get started, Journeys, Workflows, Guides (one group per milestone or area, its overview as the title), Webhooks, Resources (errors, testing, SDKs, changelog). HIE-CM is built this way by `restructure_hiecm`; other products move to it as they come onto the ladder
+- moves every endpoint page into a separate **API Reference** division, like docs.stripe.com/api: one sidebar, one section per product (opened by the product's API overview page, `API_SECTION_HOME`), then spec-tag groups, then endpoints. Product sidebars hold the docs only. The division is hidden from the product picker and reached from the navbar **API Reference** button, which lands on the current product's section. A product with no docs pages left (IPD) links straight to its section
+
+Re-run it after moving groups in `docs.json`; never hand-edit what it generates (`api-reference-link.js`, `api-reference/introduction.mdx`).
+
+Every page sets `icon:` in its frontmatter (a Font Awesome name). API endpoint pages are the exception: Mintlify shows their HTTP method badge in that place.
+
 ## The manifest
 
 `<product>/product.yaml`:

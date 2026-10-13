@@ -1,0 +1,676 @@
+"""Rebuild docs.json navigation as four product families (Mintlify `products`),
+each with a menu of individual products, following the landing page.
+
+    python3 scripts/build-nav.py            # rewrite docs.json in place
+    python3 scripts/build-nav.py --check    # exit 1 if a page would be dropped
+
+Reads the existing navigation, so groups are moved, never rewritten. Every page
+listed today must appear exactly once afterwards; --check enforces that.
+"""
+import json
+import re
+import sys
+
+DOCS = 'docs.json'
+ABDM = 'api-reference/user-app/abdm-connect/'
+
+
+def walk_pages(x):
+    if isinstance(x, str):
+        yield x
+    elif isinstance(x, dict):
+        if x.get('root'):
+            yield x['root']
+        for k in ('pages', 'groups', 'tabs', 'anchors', 'menu', 'products'):
+            for i in x.get(k, []):
+                yield from walk_pages(i)
+    elif isinstance(x, list):
+        for i in x:
+            yield from walk_pages(i)
+
+
+def find(x, name, key='group'):
+    if isinstance(x, dict):
+        if x.get(key) == name:
+            return x
+        for v in x.values():
+            r = find(v, name, key)
+            if r:
+                return r
+    elif isinstance(x, list):
+        for i in x:
+            r = find(i, name, key)
+            if r:
+                return r
+    return None
+
+
+def take(nav, *path):
+    """Find a group by a path of group names, e.g. take(nav, 'Doctor Tool', 'IPD API')."""
+    node = nav
+    for name in path:
+        node = find(node, name)
+        assert node, f'group not found: {path}'
+    return json.loads(json.dumps(node))
+
+
+def without(group, *names):
+    g = json.loads(json.dumps(group))
+    g['pages'] = [p for p in g['pages'] if not (isinstance(p, dict) and p['group'] in names)]
+    return g
+
+
+def pages_of(group):
+    return {'group': group['group'], **({'icon': group['icon']} if group.get('icon') else {}), 'pages': group['pages']}
+
+
+def build(d):
+    nav = d['navigation']
+    tab = lambda t: json.loads(json.dumps(find(nav, t, 'tab')))
+    abdm = take(nav, 'ABDM Connect')
+    abdm_top = [p for p in abdm['pages'] if isinstance(p, str)]
+    sub = {p['group']: p for p in abdm['pages'] if isinstance(p, dict)}
+
+    uhi_journeys = [p for p in sub['Journeys']['pages'] if '/uhi-' in p]
+    uhi_workflows = find(sub['Workflows'], 'UHI')
+    hie_journeys = {**sub['Journeys'], 'pages': [p for p in sub['Journeys']['pages'] if p not in uhi_journeys]}
+    hie_workflows = {**sub['Workflows'], 'pages': [g for g in sub['Workflows']['pages'] if g['group'] != 'UHI']}
+
+    scribe = tab('EkaScribe')
+    spotlight = tab('Spotlight')
+    sdks = tab('SDKs')
+    ai_tools = tab('AI Tools')
+    cookbook = tab('CookBook')
+    changelog = find(nav, 'Changelog', 'anchor')
+    product_details = take(nav, 'Product Details')
+    pd = {p['group']: p for p in product_details['pages']}
+    healthai = take(nav, 'HealthAI')
+    doctor = take(nav, 'Doctor Tool')
+
+    def item(name, icon, description, groups):
+        return {'item': name, 'icon': icon, 'description': description, 'groups': groups}
+
+    products = [
+        {
+            'product': 'AI', 'icon': 'sparkles',
+            'description': 'Scribe, agents and clinical models that turn speech and documents into structured care.',
+            'menu': [
+                item('Scribe', 'waveform-lines', 'Consultations become structured notes',
+                     [{'group': 'Guides', 'pages': ['integrations/health-ai/ekascribe', 'api-reference/health-ai/ekascribe-link']}]
+                     + scribe['groups']),
+                item('Agents', 'robot', 'MedAssist, Agent Kit and MCP servers',
+                     [{'group': 'Guides', 'pages': ['integrations/health-ai/medassist'] + pd['MCP']['pages']},
+                      pages_of(find(healthai, 'MedAssist'))] + ai_tools['groups']),
+                item('Models', 'brain', 'Parsing, codification and assessments',
+                     [{'group': 'Guides', 'pages': ['integrations/health-ai/medical-document-parsing',
+                                                     'integrations/health-ai/medical-entity-codification']},
+                      pages_of(find(healthai, 'Medical Document Parsing')),
+                      pages_of(find(healthai, 'Medical Entity Codification')),
+                      {'group': 'Eka MedAI research', 'pages': spotlight['pages']}]),
+                item('Datasets', 'database', 'Drugs, labs, protocols and medical knowledge',
+                     [{'group': 'Guides', 'pages': ['integrations/health-ai/medical-db']},
+                      take(nav, 'Datasets'), take(nav, 'Medical Knowledge-bases'), take(nav, 'Medical Database')]),
+            ],
+        },
+        {
+            'product': 'Information Management', 'icon': 'folder-open',
+            'description': 'Patients, appointments, admissions and billing, kept in one record your system reads and writes.',
+            'menu': [
+                item('EMR', 'stethoscope', 'Patients, appointments and prescriptions',
+                     [{'group': 'Guides', 'pages': [x for x in pd['EMR']['pages'] if x != 'integrations/core-emr/payments']}, pd['Console'],
+                      without(doctor, 'IPD API', 'Payments API')]),
+                item('IPD', 'bed-pulse', 'Admission, beds, nursing and discharge',
+                     [pages_of(take(nav, 'Doctor Tool', 'IPD API'))]),
+                item('Billing', 'receipt', 'Charges, deposits, invoices and payments',
+                     [{'group': 'Guides', 'pages': ['integrations/core-emr/payments']},
+                      pages_of(take(nav, 'Doctor Tool', 'Payments API'))]),
+                item('Health Records', 'file-medical', 'Records, cases and vitals on the patient\'s side',
+                     [take(nav, 'Medical Records'), take(nav, 'User App')]),
+            ],
+        },
+        {
+            'product': 'ABDM', 'icon': 'hospital',
+            'description': 'ABHA, consent and record exchange across India\'s health stack, plus insurance claims.',
+            'menu': [
+                item('HIE-CM', 'id-card', 'ABHA, care contexts, consent and records',
+                     [{'group': 'Get started', 'pages': ['integrations/interoperability/abdm'] + abdm_top},
+                      hie_journeys, hie_workflows]
+                     + [g for n, g in sub.items() if n not in ('Journeys', 'Workflows', 'UHI', 'NHCX')]),
+                item('NHCX', 'shield-heart', 'Eligibility, pre-auth and insurance claims', [sub['NHCX']]),
+                item('UHI', 'magnifying-glass-location', 'Blood bank search and consultations across the network',
+                     [{'group': 'Journeys', 'icon': 'route', 'pages': uhi_journeys},
+                      {'group': 'Workflows', 'icon': 'diagram-project', 'pages': uhi_workflows['pages']},
+                      sub['UHI']]),
+            ],
+        },
+        {
+            'product': 'Platform', 'icon': 'key',
+            'description': 'The same keys, token and events for every product. This is where every integration starts.',
+            'menu': [
+                item('Get started', 'rocket', 'Overview, products and cookbook',
+                     [take(nav, 'Eka Overview'), {'group': 'CookBook', 'pages': cookbook['groups'][0]['pages']},
+                      {'group': 'Changelog', 'pages': changelog['pages'] + pd['Change Logs']['pages']}]),
+                item('Auth', 'lock', 'Client credentials, OAuth2 and OIDC', [take(nav, 'Authorization')]),
+                item('Webhooks', 'webhook', 'Register, receive and verify events', [take(nav, 'Webhooks')]),
+                item('Encryption', 'shield-halved', 'End-to-end encryption and IP allowlisting',
+                     [take(nav, 'Encryption'), pages_of(take(nav, 'Doctor Tool', 'IP Allowlisting'))]),
+                item('SDKs', 'code', 'TypeScript, Python, Java, Go and mobile', sdks['groups']),
+            ],
+        },
+    ]
+    # IP Allowlisting moved to Encryption; drop it from EMR.
+    emr = products[1]['menu'][0]['groups'][2]  # before shaping, items still use groups
+    emr['pages'] = [p for p in emr['pages'] if not (isinstance(p, dict) and p['group'] == 'IP Allowlisting')]
+    # The landing page's Lucide icons, vendored under images/icons/products/.
+    for fam in products:
+        for it in fam['menu']:
+            it['icon'] = f"/images/icons/products/{ICONS[it['item']]}.svg"
+    return {'products': products}
+
+
+API_INDEX = 'api-reference/introduction'
+
+# Same icon per product as the landing page's Products menu (landing/index.html).
+ICONS = {
+    'Scribe': 'mic', 'Agents': 'bot', 'Models': 'brain-circuit', 'Datasets': 'database',
+    'EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
+    'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
+    'Get started': 'rocket', 'Auth': 'key-round', 'Webhooks': 'webhook', 'Encryption': 'lock', 'SDKs': 'code',
+}
+
+# Where the navbar "API Reference" button lands for each product: the product's
+# API overview where one exists. Products not listed fall back to their first
+# reference page, then to API_INDEX.
+API_HOME = {
+    'Auth': 'api-reference/authorization/getting-started',
+    'Webhooks': 'api-reference/connect/webhooks/getting-started',
+    'Encryption': 'api-reference/end-to-end-encryption/guide',
+    'SDKs': 'SDKs/web-sdk/getting-started',
+    'Scribe': 'ekascribe/api-reference/sessions/overview',
+    'Agents': 'api-reference/health-ai/medassist/overview',
+    'Models': 'api-reference/health-ai/medical-document-parsing/introduction',
+    'Datasets': 'api-reference/datasets/overview',
+    'EMR': 'api-reference/doc-tool/Instructions/before-you-begin',
+    'Health Records': 'api-reference/user-app/records/create-overview',
+    'HIE-CM': 'api-reference/user-app/abdm-connect/overview',
+    'NHCX': 'api-reference/user-app/abdm-connect/nhcx/getting-started',
+    'UHI': 'api-reference/user-app/abdm-connect/blood-bank/getting-started',
+}
+LINK_JS = 'api-reference-link.js'
+
+# A group whose first page is its landing page gets that page as its `root`, so
+# the section title opens it instead of listing a separate "Overview" under it.
+LANDING = re.compile(r'(^|/)(overview|intro|introduction|getting-started|get-started|before-you-begin|guide|flows/m\d)$')
+
+# Icon for a group or page, by the first keyword its title or path contains.
+# Order matters: specific words before general ones.
+ICON_RULES = [
+    ('glossary', 'book'), ('changelog', 'clock-rotate-left'), ('change log', 'clock-rotate-left'),
+    ('release', 'tag'), ('weekly', 'calendar-week'), ('under the hood', 'gears'),
+    ('quickstart', 'bolt'), ('get started', 'rocket'), ('getting started', 'rocket'), ('before you begin', 'flag'),
+    ('journey', 'route'), ('workflow', 'diagram-project'), ('webhook', 'webhook'), ('error', 'triangle-exclamation'),
+    ('testing', 'flask'), ('sandbox', 'flask'), ('postman', 'paper-plane'),
+    ('api reference', 'code'), ('apis', 'code'), ('sdk', 'box-open'), ('android', 'android'), ('ios', 'apple'),
+    ('python', 'python'), ('java', 'java'), ('web', 'globe'), ('mobile', 'mobile'), ('backend', 'server'),
+    ('mcp', 'plug'), ('agent', 'robot'), ('synapse', 'circle-nodes'), ('echo', 'robot'),
+    ('auth', 'lock'), ('login', 'right-to-bracket'), ('token', 'key'), ('session', 'clock'), ('encryption', 'shield-halved'),
+    ('ecdh', 'key'), ('ip allow', 'shield'), ('privacy', 'user-shield'), ('invite', 'user-plus'), ('byoa', 'id-badge'),
+    ('abha', 'id-card'), ('aadhaar', 'fingerprint'), ('face', 'face-smile'), ('kyc', 'user-check'),
+    ('profile', 'user'), ('card', 'id-card'), ('qr', 'qrcode'), ('scan', 'qrcode'), ('share', 'share-nodes'),
+    ('care context', 'folder-tree'), ('discover', 'magnifying-glass'), ('link', 'link'), ('consent', 'file-signature'),
+    ('pin', 'key'), ('auto approval', 'robot'), ('locker', 'vault'), ('subscription', 'bell'), ('request', 'inbox'),
+    ('provider', 'hospital'), ('hpr', 'user-doctor'), ('hfr', 'hospital'), ('registr', 'clipboard-list'),
+    ('facility', 'hospital'), ('onboard', 'door-open'), ('milestone', 'flag-checkered'), ('phr', 'mobile-screen'),
+    ('nhcx', 'shield-heart'), ('claim', 'file-invoice-dollar'), ('policy', 'file-contract'), ('payer', 'building-columns'),
+    ('preauth', 'file-shield'), ('pre-auth', 'file-shield'), ('eligib', 'circle-check'), ('biometric', 'fingerprint'),
+    ('uhi', 'network-wired'), ('blood', 'droplet'), ('consultation', 'user-doctor'), ('booking', 'calendar-check'),
+    ('slot', 'calendar'), ('doctor', 'user-doctor'), ('scan & pay', 'qrcode'), ('pay', 'credit-card'),
+    ('billing', 'receipt'), ('invoice', 'file-invoice'), ('ipd', 'bed-pulse'), ('admission', 'bed'),
+    ('bed', 'bed'), ('room', 'door-closed'), ('nursing', 'user-nurse'), ('discharge', 'file-medical'),
+    ('rate plan', 'tags'), ('categor', 'layer-group'), ('order', 'cart-shopping'), ('pharmac', 'prescription-bottle-medical'),
+    ('dawakhana', 'prescription-bottle-medical'), ('prescription', 'prescription'), ('appointment', 'calendar-check'),
+    ('patient', 'hospital-user'), ('clinic', 'house-medical'), ('config', 'sliders'), ('actor', 'users'),
+    ('instruction', 'list-check'), ('notif', 'bell'), ('vital', 'heart-pulse'),
+    ('record', 'file-medical'), ('document', 'file-lines'), ('parsing', 'file-magnifying-glass'),
+    ('codification', 'tags'), ('snomed', 'tags'), ('loinc', 'vial'), ('icd', 'tags'), ('medication', 'pills'),
+    ('protocol', 'book-medical'), ('knowledge', 'book-open-cover'), ('dataset', 'database'), ('database', 'database'),
+    ('ontology', 'sitemap'), ('medassist', 'comments'), ('assessment', 'clipboard-question'), ('scribe', 'microphone'),
+    ('template', 'file-pen'), ('fhir', 'fire'), ('model', 'brain'), ('research', 'flask-vial'), ('technolog', 'microchip'),
+    ('spotlight', 'star'), ('asset', 'box-archive'), ('console', 'terminal'), ('cookbook', 'utensils'),
+    ('what', 'lightbulb'), ('product', 'cubes'), ('open source', 'code-branch'), ('overview', 'compass'),
+    ('reference', 'book'), ('resource', 'folder-open'), ('tool', 'screwdriver-wrench'), ('data', 'database'),
+    ('search', 'magnifying-glass'), ('create', 'plus'), ('update', 'pen'), ('delete', 'trash'), ('list', 'list'),
+    ('get', 'download'), ('add', 'plus'), ('read', 'eye'), ('setup', 'gear'), ('status', 'signal'),
+]
+DEFAULT_GROUP_ICON = 'folder'
+# Group names too short or generic for the keyword rules.
+GROUP_ICONS = {'Guides': 'book-open', 'HIP': 'hospital', 'HIU': 'magnifying-glass-chart', 'PHR': 'mobile-screen',
+               'Eka User': 'user', 'Schedule': 'calendar', 'Events': 'bolt', 'User App': 'mobile'}
+DEFAULT_PAGE_ICON = 'file-lines'
+# Pages that sit side by side in one sidebar get distinct icons by hand.
+PAGE_ICONS = {
+    'journeys/hip-register-patient-and-link-visit': 'hospital-user', 'journeys/hip-answer-discovery': 'clock-rotate-left',
+    'journeys/hiu-fetch-records-with-consent': 'file-import', 'journeys/phr-patient-aggregates-records': 'mobile-screen',
+    'journeys/facility-onboard-to-abdm': 'hospital', 'journeys/uhi-book-physical-consultation': 'calendar-check',
+    'journeys/uhi-scan-and-pay': 'qrcode',
+    'workflows/login-abha': 'right-to-bracket', 'workflows/create-abha-aadhaar-otp': 'fingerprint',
+    'workflows/create-abha-mobile-otp': 'mobile', 'workflows/create-abha-face-auth': 'face-smile',
+    'workflows/hold-gateway-session': 'hourglass-half', 'workflows/manage-profile-and-kyc': 'user-check',
+    'workflows/link-care-context-hip': 'link', 'workflows/serve-data-on-fetch': 'file-export',
+    'workflows/hip-scan-and-share': 'qrcode', 'workflows/hip-discovery-and-link': 'magnifying-glass',
+    'workflows/hiu-request-consent': 'file-signature', 'workflows/hiu-receive-data': 'unlock',
+    'workflows/phr-discover-and-link': 'magnifying-glass-plus', 'workflows/phr-list-records': 'list',
+    'workflows/phr-act-on-consent': 'thumbs-up', 'workflows/set-up-health-locker': 'vault',
+    'workflows/phr-scan-and-share': 'share-nodes', 'workflows/create-hpr-id': 'user-doctor',
+    'workflows/hpr-mobile-login': 'mobile-retro', 'workflows/register-hfr': 'house-medical',
+    'workflows/uhi-book-consultation': 'stethoscope', 'workflows/scan-and-pay': 'credit-card',
+    'workflows/blood-bank-search': 'droplet',
+    'quickstart': 'bolt', 'testing': 'flask', 'webhooks': 'webhook', 'changelog': 'clock-rotate-left',
+    'errors': 'triangle-exclamation', 'overview': 'compass',
+}
+
+
+# HIE-CM's sidebar, three levels at most: section -> group -> page.
+HIECM_TAG_ORDER = ['Session', 'Aadhaar Registration', 'Mobile Registration', 'Face Auth Registration',
+                   'Registration Utilities', 'Login', 'Profile', 'Scan and Share', 'Care Contexts',
+                   'Patient Requests', 'Providers', 'Consents', 'HPR and HFR']
+HIECM_TAG_ICONS = {'Session': 'hourglass-half', 'Aadhaar Registration': 'fingerprint', 'Mobile Registration': 'mobile',
+                   'Face Auth Registration': 'face-smile', 'Registration Utilities': 'toolbox', 'Login': 'right-to-bracket',
+                   'Profile': 'user', 'Scan and Share': 'qrcode', 'Care Contexts': 'folder-tree',
+                   'Patient Requests': 'inbox', 'Providers': 'hospital', 'Consents': 'file-signature',
+                   'HPR and HFR': 'user-doctor'}
+# CARE: the four milestones as Create, Attach, Retrieve, Enrol.
+MILESTONE_GUIDES = [('Milestone 1', 'Create: ABHA (M1)', 'flows/m1'), ('Milestone 2', 'Attach: records (M2)', 'flows/m2'),
+                    ('Milestone 3', 'Retrieve: with consent (M3)', 'flows/m3'), ('Milestone 4', 'Enrol: registries (M4)', 'flows/m4'),
+                    ('PHR App', 'PHR app', 'phr/overview')]
+
+
+def spec_tags(spec_path):
+    import yaml
+    spec = yaml.safe_load(open(spec_path))
+    out = {}
+    for path, item in spec.get('paths', {}).items():
+        for method, op in item.items():
+            if isinstance(op, dict) and op.get('tags'):
+                out[f'{method.upper()} {path}'] = op['tags'][0]
+    return out
+
+
+def operation_of(page):
+    head = open(page + '.mdx').read(600)
+    m = re.search(r'^openapi:\s*"?([^"\n]+)"?', head, re.M)
+    if not m:
+        return None
+    toks = m.group(1).split()
+    return f'{toks[-2].upper()} {toks[-1]}'
+
+
+def restructure_hiecm(item):
+    """Get started, Journeys, Workflows, Guides, API reference, Webhooks, Resources."""
+    entries = item.get('pages') or item.get('groups')
+    by_name = {e['group']: e for e in entries if isinstance(e, dict)}
+    tags = spec_tags(ABDM + 'registration.yml')
+    guides, by_tag, webhooks, sdks = [], {}, [], []
+    for name, label, root in MILESTONE_GUIDES:
+        g = by_name.get(name)
+        if not g:
+            continue
+        pages = [p for p in walk_pages(g) if p != ABDM + root]
+        guide_pages = []
+        for p in pages:
+            if is_reference(p):
+                by_tag.setdefault(tags.get(operation_of(p), 'Other'), []).append(p)
+            elif '/webhooks/' in p:
+                webhooks.append(p)
+            elif p.lower().startswith('sdks/') or '/sdks/' in p.lower() or 'sdk' in p.split('/')[-1].lower():
+                sdks.append(p)
+            else:
+                guide_pages.append(p)
+        guides.append({'group': label, 'icon': g.get('icon', 'flag-checkered'), 'root': ABDM + root, 'pages': guide_pages})
+    reference = [{'group': t, 'icon': HIECM_TAG_ICONS.get(t, 'code'), 'pages': by_tag[t]}
+                 for t in HIECM_TAG_ORDER + sorted(set(by_tag) - set(HIECM_TAG_ORDER)) if t in by_tag]
+    handled = {'Get started', 'Journeys', 'Workflows'} | {n for n, _, _ in MILESTONE_GUIDES}
+    top = [e for e in entries if isinstance(e, str)]
+    top += [p for e in entries if isinstance(e, dict) and e['group'] not in handled for p in walk_pages(e)]
+    keep = [json.loads(json.dumps(by_name[n])) for n in ('Get started', 'Journeys', 'Workflows') if n in by_name]
+    errors_page = ABDM + 'errors'
+    for g in keep:
+        g['pages'] = [p for p in g['pages'] if p != errors_page]
+    top.insert(0, errors_page)
+    webhooks_index = next((p for p in top if p.endswith('/webhooks')), None)
+    resources = [p for p in top if p != webhooks_index] + ([{'group': 'SDKs', 'icon': 'box-open', 'pages': sdks}] if sdks else [])
+    sections = keep + [
+        {'group': 'Guides', 'pages': guides},
+        {'group': 'API reference', 'pages': reference},
+        {'group': 'Webhooks', 'pages': ([{'group': 'Events', 'icon': 'bell', 'root': webhooks_index, 'pages': webhooks}]
+                                        if webhooks_index else webhooks)},
+        {'group': 'Resources', 'pages': resources},
+    ]
+    used = set(walk_pages(sections))
+    assert used == set(walk_pages(entries)), sorted(set(walk_pages(entries)) - used)[:5]
+    item.pop('groups', None)
+    item['pages'] = sections
+
+
+# The API reference is its own division, like docs.stripe.com/api: one sidebar,
+# one section per product, then tag groups, then endpoints. Product sidebars keep
+# the docs. Each product's API overview page opens its section.
+API_DIVISION = 'API Reference'
+API_SECTION_HOME = {
+    'HIE-CM': 'api-reference/user-app/abdm-connect/overview',
+    'Scribe': 'ekascribe/api-reference/sessions/overview',
+    'Agents': 'api-reference/health-ai/medassist/overview',
+    'Models': 'api-reference/health-ai/medical-document-parsing/introduction',
+    'Datasets': 'api-reference/datasets/overview',
+    'EMR': 'api-reference/doc-tool/Instructions/before-you-begin',
+    'Health Records': 'api-reference/user-app/records/create-overview',
+    'Auth': 'api-reference/authorization/getting-started',
+    'Webhooks': 'api-reference/connect/webhooks/getting-started',
+}
+
+
+def take_pages(node, keep):
+    """Split `node` into (kept, rest): kept holds the pages `keep` accepts, in the
+    same group structure; rest holds everything else. Empty groups are dropped."""
+    if isinstance(node, str):
+        return (node, None) if keep(node) else (None, node)
+    kept_pages, rest_pages = [], []
+    for c in node.get('pages', []):
+        k, r = take_pages(c, keep)
+        if k is not None:
+            kept_pages.append(k)
+        if r is not None:
+            rest_pages.append(r)
+    root = node.get('root')
+    def rebuild(pages, with_root):
+        if not pages and not with_root:
+            return None
+        g = {k: v for k, v in node.items() if k not in ('pages', 'root')}
+        if with_root:
+            g['root'] = root
+        g['pages'] = pages
+        return g
+    root_kept = bool(root) and keep(root)
+    return rebuild(kept_pages, root_kept), rebuild(rest_pages, bool(root) and not root_kept)
+
+
+def flatten(node, depth):
+    """Inside the API reference keep section -> group -> endpoint: groups deeper
+    than `depth` hand their pages up to the group above."""
+    if isinstance(node, str):
+        return [node]
+    if depth <= 0:
+        return list(walk_pages(node))
+    pages = []
+    for c in node.get('pages', []):
+        if isinstance(c, dict) and depth == 1:
+            pages.extend(walk_pages(c))
+        elif isinstance(c, dict):
+            inner = ([c['root']] if c.get('root') else []) + flatten(c, depth - 1)
+            pages.append({**{k: v for k, v in c.items() if k not in ('pages', 'root')}, 'pages': inner})
+        else:
+            pages.append(c)
+    return pages
+
+
+def split_api(products):
+    if any(p['product'] == API_DIVISION for p in products):
+        return
+    sections = []
+    for fam in products:
+        for it in fam['menu']:
+            home = API_SECTION_HOME.get(it['item'])
+            keep = lambda p, home=home: is_reference(p) or p == home
+            kept, rest = [], []
+            for e in it['pages']:
+                k, r = take_pages(e, keep)
+                if k is not None:
+                    kept.append(k)
+                if r is not None:
+                    rest.append(r)
+            if not kept:
+                continue
+            drop_home = lambda e: e if isinstance(e, str) else {**e, 'pages': [x for x in (drop_home(y) for y in e['pages']) if x and x != home]}
+            nonempty = lambda e: isinstance(e, str) or e['pages'] or e.get('root')
+            kept = [x for x in (drop_home(e) for e in kept) if x and x != home and nonempty(x)]
+            # A section holding one wrapper group (HIE-CM's "API reference", NHCX's
+            # "NHCX") lists that group's children directly.
+            while len(kept) == 1 and isinstance(kept[0], dict):
+                kept = ([kept[0]['root']] if kept[0].get('root') else []) + kept[0]['pages']
+            body = [x for x in (drop_home(e) for e in flatten({'pages': kept}, 2)) if x != home and (isinstance(x, str) or x['pages'])]
+            section_pages = ([home] if home else []) + body
+            sections.append({'group': it['item'], 'icon': ICONS_FA.get(it['item'], 'code'), 'pages': section_pages})
+            it['pages'] = rest
+            if not rest:
+                it.pop('pages')
+                it['href'] = '/' + next(p for p in walk_pages(section_pages))
+    index = [API_INDEX] if API_INDEX in set(walk_pages(products)) else []
+    if index:
+        for fam in products:
+            for it in fam['menu']:
+                if 'pages' in it:
+                    it['pages'] = [x for x in (take_pages(e, lambda p: p != API_INDEX)[0] for e in it['pages']) if x is not None]
+    products.append({'product': API_DIVISION, 'icon': 'code', 'description': 'Every endpoint, by product',
+                     'menu': [{'item': API_DIVISION, 'icon': 'code', 'description': 'Every endpoint, by product',
+                               'pages': index + sections}]})
+
+
+# Font Awesome stand-ins for the product icons, for API section headers.
+ICONS_FA = {'Scribe': 'microphone', 'Agents': 'robot', 'Models': 'brain', 'Datasets': 'database', 'EMR': 'clipboard-list',
+            'IPD': 'bed', 'Billing': 'receipt', 'Health Records': 'folder-open', 'HIE-CM': 'arrow-right-arrow-left',
+            'NHCX': 'shield-heart', 'UHI': 'network-wired', 'Auth': 'key', 'Webhooks': 'webhook'}
+
+
+def page_meta(page):
+    try:
+        src = open(page + '.mdx').read()
+    except FileNotFoundError:
+        return {}
+    m = re.match(r'---\n([\s\S]*?)\n---', src)
+    meta = {}
+    for line in (m.group(1).splitlines() if m else []):
+        k = re.match(r'(\w+):\s*(.*)$', line)
+        if k:
+            meta[k.group(1)] = k.group(2).strip().strip('"\'')
+    return meta
+
+
+def pick_icon(*texts, default):
+    hay = ' '.join(t.lower().replace('-', ' ').replace('_', ' ') for t in texts if t)
+    for word, icon in ICON_RULES:
+        if word in hay:
+            return icon
+    return default
+
+
+def shape(node):
+    """Give every group an icon; make each section's landing page its root;
+    collapse a group left with only its root, or a single page, into that page."""
+    if not isinstance(node, dict) or 'group' not in node:
+        return node
+    pages = node.get('pages', [])
+    if 'root' not in node and pages and isinstance(pages[0], str) and LANDING.search(pages[0]):
+        node['root'], pages = pages[0], pages[1:]
+    node['pages'] = [shape(p) for p in pages]
+    node.setdefault('icon', GROUP_ICONS.get(node['group']) or pick_icon(node['group'], default=DEFAULT_GROUP_ICON))
+    if not node['pages'] and node.get('root'):
+        return node['root']
+    if 'root' not in node and len(node['pages']) == 1 and isinstance(node['pages'][0], str):
+        return node['pages'][0]
+    return node
+
+
+def is_reference(page):
+    try:
+        head = open(page + '.mdx').read(600)
+    except FileNotFoundError:
+        return False
+    return head.startswith('---') and '\nopenapi:' in head.split('\n---', 1)[0]
+
+
+def reference_targets(products):
+    """Each product's first page in the API Reference division, and a map from
+    every page to it. Pages inside the division map to their own section."""
+    api = next((p for p in products if p['product'] == API_DIVISION), None)
+    sections = {s['group']: s for s in api['menu'][0]['pages'] if isinstance(s, dict)} if api else {}
+    targets, page_map = [], {}
+    for fam in products:
+        if fam['product'] == API_DIVISION:
+            continue
+        for it in fam['menu']:
+            sec = sections.get(it['item'])
+            first = next(walk_pages(sec), None) if sec else None
+            targets.append((fam['product'], it['item'], it.get('description', ''), first))
+            for p in list(walk_pages(it)) + (list(walk_pages(sec)) if sec else []):
+                page_map['/' + p] = '/' + first if first else '/' + API_INDEX
+    return targets, page_map
+
+
+def write_link_js(page_map):
+    body = f'''// Generated by scripts/build-nav.py. Do not edit.
+// Points the navbar "API Reference" link at the current product's reference.
+(function () {{
+  var MAP = {json.dumps(page_map, separators=(',', ':'))};
+  var FALLBACK = "/{API_INDEX}";
+  function target() {{
+    return MAP[window.location.pathname.replace(/\\/$/, "")] || FALLBACK;
+  }}
+  function isButton(a) {{
+    return a && a.textContent.trim() === "API Reference" && a.closest("header, nav, #navbar");
+  }}
+  function update() {{
+    document.querySelectorAll("a").forEach(function (a) {{
+      if (isButton(a)) a.setAttribute("href", target());
+    }});
+  }}
+  // The site router navigates by the link's original address, so take the click first.
+  document.addEventListener("click", function (e) {{
+    var a = e.target.closest && e.target.closest("a");
+    if (!isButton(a) || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    window.location.assign(target());
+  }}, true);
+  window.addEventListener("mintlify:navigate", function () {{ setTimeout(update, 0); }});
+  window.addEventListener("popstate", update);
+  document.addEventListener("DOMContentLoaded", update);
+  setInterval(update, 1000);
+}})();
+'''
+    open(LINK_JS, 'w').write(body)
+
+
+def write_index(targets):
+    lines = ['---', 'title: "API Reference"',
+             'description: "Every Eka API, by product family. Each product\'s reference starts from the link below."',
+             'type: guide', '---', '',
+             '{/* Generated by scripts/build-nav.py from docs.json. Do not edit by hand. */}', '']
+    fam = None
+    for family, product, desc, first in targets:
+        if not first:
+            continue
+        if family != fam:
+            if fam:
+                lines += ['</CardGroup>', '']
+            lines += [f'## {family}', '', '<CardGroup cols={2}>']
+            fam = family
+        lines += [f'  <Card title="{product}" href="/{first}">', f'    {desc}', '  </Card>']
+    lines += ['</CardGroup>', '']
+    open(API_INDEX + '.mdx', 'w').write('\n'.join(lines))
+
+
+def open_ok(page):
+    try:
+        open(page + '.mdx').close()
+        return True
+    except FileNotFoundError:
+        return False
+
+
+def set_page_icons(products):
+    """Add `icon:` to every listed page that has none. Endpoint pages are skipped:
+    Mintlify shows their HTTP method badge where the icon would go."""
+    changed = 0
+    for page in sorted(set(walk_pages(products))):
+        path = page + '.mdx'
+        try:
+            src = open(path).read()
+        except FileNotFoundError:
+            continue
+        m = re.match(r'---\n([\s\S]*?)\n---', src)
+        if not m or re.search(r'^(icon|openapi):', m.group(1), re.M):
+            continue
+        meta = page_meta(page)
+        key = page.split(ABDM, 1)[-1] if page.startswith(ABDM) else None
+        icon = PAGE_ICONS.get(key) if key else None
+        icon = icon or pick_icon(meta.get('sidebarTitle', ''), meta.get('title', ''), page.split('/')[-1],
+                         default=DEFAULT_PAGE_ICON)
+        open(path, 'w').write(src.replace('---\n', f'---\nicon: "{icon}"\n', 1))
+        changed += 1
+    print(f'page icons added: {changed}')
+
+
+def main():
+    d = json.load(open(DOCS))
+    if 'products' in d['navigation']:
+        new = d['navigation']  # already built: only regenerate the derived files
+    else:
+        before = set(walk_pages(d['navigation']))
+        new = build(d)
+        after = list(walk_pages(new))
+        dropped = sorted(before - set(after))
+        dupes = sorted({p for p in after if after.count(p) > 1})
+        print(f'pages before {len(before)}, after {len(set(after))}, dropped {len(dropped)}, duplicated {len(dupes)}')
+        for p in dropped[:20]:
+            print('  dropped:', p)
+        for p in dupes[:20]:
+            print('  duplicate:', p)
+        if dropped or dupes:
+            sys.exit(1)
+        if '--check' in sys.argv:
+            return
+    get_started = next(f for f in new['products'] if f['product'] == 'Platform')['menu'][0]
+    gs = get_started.get('pages') or get_started.get('groups')
+    gs_pages = gs[0]['pages'] if isinstance(gs[0], dict) else gs
+    if API_INDEX not in set(walk_pages(new)):
+        gs_pages.insert(1, API_INDEX)
+    glossary = 'user-guides/glossary'
+    if open_ok(glossary) and glossary not in set(walk_pages(new)):
+        gs_pages.insert(2, glossary)
+    links = d['navbar'].setdefault('links', [])
+    if not any(l.get('label') == 'API Reference' for l in links):
+        links.insert(0, {'label': 'API Reference', 'href': '/' + API_INDEX})
+    for fam in new['products']:
+        for it in fam['menu']:
+            if fam['product'] == API_DIVISION or 'href' in it:
+                continue
+            if it['item'] == 'HIE-CM' and any(isinstance(e, dict) and e.get('group') == 'Milestone 1' for e in it.get('pages', []) + it.get('groups', [])):
+                restructure_hiecm(it)
+            entries = [shape(g) for g in it.pop('groups', it.pop('pages', []))]
+            # Entries go in `pages`, not `groups`: Mintlify honours a group's
+            # `root` only on nested groups, and `pages` may mix pages and groups,
+            # so every section title can be its own page.
+            it['pages'] = entries
+    split_api(new['products'])
+    for _ in range(5):  # shape until nothing changes, so one run gives the final tree
+        before = json.dumps(new)
+        for fam in new['products']:
+            if fam['product'] != API_DIVISION:
+                for it in fam['menu']:
+                    if it.get('pages'):
+                        it['pages'] = [shape(e) for e in it['pages']]
+        if json.dumps(new) == before:
+            break
+    if '--page-icons' in sys.argv:
+        set_page_icons(new['products'])
+    targets, page_map = reference_targets(new['products'])
+    write_link_js(page_map)
+    write_index(targets)
+    d['navigation'] = new
+    json.dump(d, open(DOCS, 'w'), indent=2, ensure_ascii=False)
+    open(DOCS, 'a').write('\n')
+    print(f'{len(targets)} products, {sum(1 for t in targets if t[3])} with a reference; {len(page_map)} pages mapped')
+
+
+if __name__ == '__main__':
+    main()

@@ -61,4 +61,4 @@ Source: `scripts/docs-check.mjs`. Runs on every pull request. Blocks only on pro
 
 ## What is deliberately not here
 
-No atoms, no compiler, no word budgets, no "In short" blocks, no sequencing rules, no Gantt, no standup, no source watcher. Those belong to the ABDM Developer Portal's contributors assistant, which this plugin is modelled on and stripped from.
+No atoms, no compiler, no sequencing rules, no Gantt, no standup, no source watcher. Those belong to the ABDM Developer Portal's contributors assistant, which this plugin is modelled on and stripped from.

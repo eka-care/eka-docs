@@ -1,4 +1,5 @@
 ---
+icon: "credit-card"
 title: "Pay an open order with Scan and Pay"
 description: "Share the patient's profile from a facility QR code, fetch their open orders, get a payment link for the selected ones, and read the transaction result."
 type: workflow
@@ -12,9 +13,20 @@ operations:
   - GET /abdm/v1/profile/scan-and-pay/transaction-details/{request_id}
 ---
 
+## In short
+
+- Share the profile, list open orders, get a payment link, then read the payment result.
+- Each `POST` returns a `request_id`; poll the matching `GET` with it, since no webhook is documented.
+- The patient pays on `payment_url`; no Scan and Pay operation takes the payment.
+
 ## When to use this
 
-The patient has scanned a facility's Scan and Pay QR code in your Personal Health Record (PHR) app and wants to pay an open bill. This workflow shares the patient's profile with the facility, lists their open orders, gets a payment link for the ones they select, and reads the payment result.
+The patient has scanned a facility's Scan and Pay QR code in your Personal Health Record (PHR) app and wants to pay an open bill. This workflow:
+
+- shares the patient's profile with the facility
+- lists their open orders
+- gets a payment link for the ones they select
+- reads the payment result.
 
 Each `POST` returns a `request_id` and a `status` at once. You pass that `request_id` to the matching `GET` to read the result. No webhook is documented for Scan and Pay, so you poll.
 
@@ -51,7 +63,9 @@ All five operations return a `status` from the same list: `REQUESTED_OPEN_ORDER`
     Send `hip_id` and `counter_id` from the QR code to [Open Orders](/api-reference/user-app/abdm-connect/scan-and-pay/open-orders). This shares the patient's profile with the facility. Keep `request_id` from the response. `status` is `REQUESTED_OPEN_ORDER`.
   </Step>
   <Step title="Read the open orders">
-    Call [Get Open Orders](/api-reference/user-app/abdm-connect/scan-and-pay/get-open-orders) with `request_id`. When the facility has answered, `data` carries `abha_address`, `intent` and `procedures`. Each procedure has a `category` and `services`, each with `serviceId`, `name`, `description` and `amount`. If `status` is `ERROR`, read `data.error.code` and `data.error.message`. If `procedures` is empty, the patient has nothing to pay here. The patient selects what to pay.
+    Call [Get Open Orders](/api-reference/user-app/abdm-connect/scan-and-pay/get-open-orders) with `request_id`. When the facility has answered, `data` carries `abha_address`, `intent` and `procedures`. Each procedure has a `category` and `services`, each with `serviceId`, `name`, `description` and `amount`.
+
+    If `status` is `ERROR`, read `data.error.code` and `data.error.message`. If `procedures` is empty, the patient has nothing to pay here. The patient selects what to pay.
 
     {/* TODO: confirm: the status that means the open orders are ready to read. */}
   </Step>

@@ -1,4 +1,5 @@
 ---
+icon: "fingerprint"
 title: "Create an ABHA with Aadhaar OTP"
 description: "Verify the patient's Aadhaar with an OTP and create a KYC-verified ABHA number and ABHA address."
 type: workflow
@@ -18,6 +19,13 @@ webhooks:
   - abha.created
 ---
 
+## In short
+
+- This workflow gives a KYC-verified ABHA number and ABHA address.
+- Send the Aadhaar number, verify the OTP, choose an address, then call Create.
+- Each call takes the latest `txn_id`.
+- A patient who already has an ABHA on this Aadhaar logs in with Auto Login instead.
+
 ## When to use this
 
 The patient has an Aadhaar number and can receive an OTP on the mobile linked to it. This workflow produces a KYC-verified 14-digit ABHA number and an ABHA address such as `shyam@abdm`. Aadhaar is the KYC.
@@ -28,7 +36,7 @@ Alternatives:
 - Assisted creation where the patient authenticates with their face on a mobile device instead of an OTP: [Create an ABHA with face authentication](/api-reference/user-app/abdm-connect/workflows/create-abha-face-auth).
 - The patient already knows their ABHA address: [Log in to an existing ABHA](/api-reference/user-app/abdm-connect/workflows/login-abha).
 
-If the patient already has an ABHA on this Aadhaar, this workflow finds it at the verify step and logs them in instead of creating a duplicate.
+If the patient already has an ABHA on this Aadhaar, this workflow finds it at the verify step. It then logs them in instead of creating a duplicate.
 
 ## Before you start
 
@@ -36,7 +44,10 @@ If the patient already has an ABHA on this Aadhaar, this workflow finds it at th
 - Your facility onboarded as a Health Information Provider (HIP), with its HIP ID. You can send it in the optional `X-Hip-Id` header.
 - Your own patient id for this person. You can send it in the optional `X-Partner-Pt-Id` header. {/* TODO: confirm: does the abha.created webhook's data.partner_patient_id and data.hip_id echo the X-Partner-Pt-Id and X-Hip-Id headers sent on these calls? If so, say the headers are needed to match the webhook to the patient. */}
 - A webhook endpoint registered with Eka, so you receive `abha.created`. See [Register a webhook](/api-reference/connect/webhooks/register-webhook).
-- In hand: the patient's 12-digit Aadhaar number, the 10-digit mobile number they want on the ABHA, and their consent to use Aadhaar, recorded on your side.
+- In hand:
+  - the patient's 12-digit Aadhaar number
+  - the 10-digit mobile number they want on the ABHA
+  - their consent to use Aadhaar, recorded on your side
 
 ## Sequence
 
@@ -104,7 +115,7 @@ sequenceDiagram
     {/* TODO: confirm: the address format to send to phr/check and create-phr. The create-phr example is "shyam.eka@abdm"; confirm whether the "@abdm" suffix is required, optional or added by Eka. */}
   </Step>
   <Step title="Log in to the existing address (only if the patient picked one)">
-    Send `txn_id` and the chosen `abha_address` from `abha_profiles` to [Auto Login](/api-reference/user-app/abdm-connect/enrollment/aadhaar/auto-login). The response carries `profile`, `eka.oid`, `token`, `refresh_token` and `skip_state`. On success `skip_state` is `abha_end`, as drawn in [Milestone 1](/api-reference/user-app/abdm-connect/flows/m1) for Aadhaar login. The patient is logged in. Stop here; do not call Create.
+    Send `txn_id` and the chosen `abha_address` from `abha_profiles` to [Auto Login](/api-reference/user-app/abdm-connect/enrollment/aadhaar/auto-login). Read its response as in [Complete the Aadhaar login](/api-reference/user-app/abdm-connect/workflows/login-abha#complete-the-aadhaar-login), and see [Milestone 1](/api-reference/user-app/abdm-connect/flows/m1). The patient is logged in. Stop here; do not call Create.
   </Step>
   <Step title="Create the ABHA">
     Send `txn_id` and the chosen `abha_address` to [Create](/api-reference/user-app/abdm-connect/enrollment/aadhaar/create-abha). Both are required. The response carries:
@@ -115,7 +126,7 @@ sequenceDiagram
     - `token` and `refresh_token`: the ABHA tokens ABDM issues. {/* TODO: confirm: does the integrator need to store or send token, refresh_token or eka.min_token on any later call, or does Eka hold the gateway session itself? */}
     - `skip_state`. {/* TODO: confirm: the skip_state value Create returns on success (flows/m1 implies abha_end). */}
 
-    Eka also sends the [`abha.created`](/api-reference/user-app/abdm-connect/webhooks/abha-created) webhook to your server. Its `data` carries `abha_address`, `abha_number`, `oid`, `hip_id` and `partner_patient_id`. Reply `200` within 5 seconds; Eka retries on any other status. Verify the `Eka-Webhook-Signature` header as described in [Webhook signature](/api-reference/connect/webhooks/webhook-signature). Use the webhook, not only the API response, to provision the patient in your database. {/* TODO: confirm: Eka's webhook retry schedule and how many times it retries. */}
+    Eka also sends the [`abha.created`](/api-reference/user-app/abdm-connect/webhooks/abha-created) webhook to your server. Its `data` carries `abha_address`, `abha_number`, `oid`, `hip_id` and `partner_patient_id`. Use the webhook, not only the API response, to provision the patient in your database. Acknowledge it and verify its signature as described in [Webhooks](/api-reference/user-app/abdm-connect/webhooks#delivery-signature-and-acknowledgement). {/* TODO: confirm: Eka's webhook retry schedule and how many times it retries. */}
   </Step>
 </Steps>
 
@@ -135,7 +146,7 @@ sequenceDiagram
 Which of these codes each call returns is not yet confirmed. The codes come from the [errors page](/api-reference/user-app/abdm-connect/errors), matched by meaning. Log the code you actually receive.
 </Warning>
 
-Error responses carry `code`, `error` and `source_error`. `source_error.code` holds codes such as `MIS-1013`. See [Error codes](/api-reference/user-app/abdm-connect/errors) for the full list. {/* TODO: confirm: which codes each operation in this workflow returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page. */}
+Error responses carry `code`, `error` and `source_error`. `source_error.code` holds codes such as `MIS-1013`. {/* TODO: confirm: which codes each operation in this workflow returns; the spec has no error examples for them, so the rows below are matched by the meaning on the errors page. */}
 
 | Situation | Code | Do |
 |---|---|---|
@@ -156,7 +167,7 @@ Error responses carry `code`, `error` and `source_error`. `source_error.code` ho
 
 The [testing page](/api-reference/user-app/abdm-connect/testing) has the sandbox base URL, credentials and the happy path for every journey.
 
-Run against the sandbox base URL `https://api.dev.eka.care`. {/* TODO: confirm: sandbox test Aadhaar numbers and OTPs. */}
+{/* TODO: confirm: sandbox test Aadhaar numbers and OTPs. */}
 
 - [ ] Happy path: Generate OTP, Verify OTP with `mobile` set to the Aadhaar-linked number, Suggest, Does ABHA Address Exist returns `exists: false`, Create. The response has `profile.abha_number` and `eka.oid`.
 - [ ] `abha.created` arrives with the same `abha_address` and `oid`, and its signature verifies.

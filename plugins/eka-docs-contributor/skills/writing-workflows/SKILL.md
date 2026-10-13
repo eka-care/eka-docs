@@ -29,6 +29,7 @@ webhooks:
 
 ## Sections, in order
 
+0. **In short.** Three to five bullets: what the workflow produces, the calls in order, the one decision that matters, what to keep. Above 300 prose words only.
 1. **When to use this.** Two or three sentences: the situation, and the alternatives if there are any ("For a patient without Aadhaar, use mobile OTP instead").
 2. **Before you start.** A list: the auth token and how to get it (link to authorization), the role or config needed, any workflow that must have run first, any data you need in hand.
 3. **Sequence.** A mermaid `sequenceDiagram` with participants Your app, Eka, and any third party (ABDM gateway, the patient's phone). One arrow per operation, labelled with `METHOD /path`.
