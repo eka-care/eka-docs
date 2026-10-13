@@ -1,0 +1,992 @@
+openapi: 3.1.0
+info:
+  title: Eka Care Datasets API
+  description: >-
+    Manage your workspace's formulary catalogs (medications, lab tests,
+    symptoms and diagnoses): upload them as JSON or CSV, keep them in sync,
+    read them back, and switch on partner search in the Eka Medical Database.
+    Every request acts only on the workspace your access token belongs to.
+  version: 1.0.0
+  contact:
+    name: Eka Care Support
+    url: https://eka.care/
+    email: support@eka.care
+servers:
+  - url: https://api.eka.care
+    description: Production
+  - url: https://api.dev.eka.care
+    description: Stage/Sandbox
+security:
+  - BearerAuth: []
+tags:
+  - name: datasets
+paths:
+  /admin/datasets/v1/:
+    get:
+      summary: List dataset records
+      description: >-
+        Returns one page of the catalog for the given type, newest first.
+        Inactive (soft-deleted or deactivated) records are left out unless
+        `show_inactive=1`.
+
+
+        Unlike the other endpoints, this one returns the page object directly,
+        without the `success` / `message` envelope.
+      operationId: listDatasetRecords
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+        - name: q
+          in: query
+          required: false
+          description: Text search over name, display name and aliases.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/ShowInactive'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: A page of records.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordPage'
+              example:
+                items:
+                  - medication_id: DRUG1001
+                    name: Dolo 650
+                    aliases: [Dolo, Paracetamol 650]
+                    display_name: Dolo 650
+                    strength: 650mg
+                    generic_name: Paracetamol
+                    generic_list: [Paracetamol]
+                    form_name: Tablet
+                    manufacturer: Micro Labs Ltd
+                    otc: true
+                    is_active: true
+                    updated_at: '2026-09-28T10:15:00+00:00'
+                count: 1
+                total: 1
+                limit: 100
+                offset: 0
+                has_more: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create or update records
+      description: >-
+        Writes records to the catalog. Send either a JSON list of records
+        (`Content-Type: application/json`) or a CSV file
+        (`multipart/form-data`, field `file`, headers as in the CSV template).
+
+
+        Writes are **all-or-nothing**: if any record or row fails validation,
+        nothing in the request is written and `errors` lists every problem.
+
+
+        **Modes**
+
+        - `upsert` (default): records in the request are inserted, or
+        merged into the existing record with the same id. Records not in the
+        request are left alone.
+
+        - `reconcile`: the request is treated as your **complete** catalog.
+        Records in it are inserted or updated, and every active record not in
+        it is deactivated (never hard-deleted, so it can be restored by sending
+        it again). If a reconcile would deactivate more than half of a
+        non-empty catalog, it is rejected with a `shrink_guard` error unless
+        you pass `confirm_shrink=true`. An empty list or a CSV with no data
+        rows is always rejected in this mode.
+
+
+        Use `dry_run=true` to validate and get the counts without writing
+        anything.
+
+
+        `overwrite=true` (CSV only) hard-deletes the whole catalog and replaces
+        it with the file, in one transaction. It cannot be combined with
+        `mode=reconcile`; prefer `reconcile`, which can be undone.
+      operationId: writeDatasetRecords
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+        - name: mode
+          in: query
+          required: false
+          description: '`upsert` leaves records not in the request alone; `reconcile` deactivates them.'
+          schema:
+            type: string
+            enum: [upsert, reconcile]
+            default: upsert
+        - name: dry_run
+          in: query
+          required: false
+          description: Validate and count without writing.
+          schema:
+            type: boolean
+            default: false
+        - name: confirm_shrink
+          in: query
+          required: false
+          description: Allow a reconcile that deactivates more than half of the catalog.
+          schema:
+            type: boolean
+            default: false
+        - name: overwrite
+          in: query
+          required: false
+          description: CSV only. Replace the whole catalog with the file. Not allowed with `mode=reconcile`.
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              description: Records of the type named in `type`.
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/Medication'
+                  - $ref: '#/components/schemas/LabTest'
+                  - $ref: '#/components/schemas/Symptom'
+                  - $ref: '#/components/schemas/Diagnosis'
+            example:
+              - medication_id: DRUG1001
+                name: Dolo 650
+                strength: 650mg
+                generic_name: Paracetamol
+                form_name: Tablet
+                manufacturer: Micro Labs Ltd
+              - medication_id: DRUG1002
+                name: Augmentin 625 Duo
+                generic_list: [Amoxicillin, Clavulanic Acid]
+                form_name: Tablet
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: >-
+                    CSV with one header row. Column names match the record
+                    fields; multi-value cells are pipe-separated (`Dolo|Paracetamol 650`),
+                    except `generic_list` and `generic_list_ids`, which use `+`.
+      responses:
+        '200':
+          description: Written (or, with `dry_run=true`, validated and counted).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WriteResponse'
+              example:
+                success: true
+                message: 2 medication upserted
+                data:
+                  upserted: 2
+                  inserted: 1
+                  updated: 1
+                  reactivated: 0
+                  deactivated: 0
+                  dry_run: false
+        '400':
+          description: >-
+            Validation failed, the shrink guard stopped a reconcile, or the
+            request was malformed. Nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validation:
+                  summary: A record failed validation
+                  value:
+                    success: false
+                    message: validation failed
+                    errors:
+                      - index: 1
+                        field: name
+                        msg: required
+                        value: null
+                shrinkGuard:
+                  summary: Reconcile would deactivate most of the catalog
+                  value:
+                    success: false
+                    message: reconcile would deactivate 800 of 1000 active rows; pass confirm_shrink=true to proceed
+                    errors:
+                      - code: shrink_guard
+                        active_before: 1000
+                        would_deactivate: 800
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+  /admin/datasets/v1/{entity_id}/:
+    get:
+      summary: Get a record
+      description: Fetches one record by your own id for it.
+      operationId: getDatasetRecord
+      tags: [datasets]
+      parameters:
+        - name: entity_id
+          in: path
+          required: true
+          description: Your id for the record (`medication_id`, `lab_test_id`, `symptom_id` or `diagnosis_id`).
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Type'
+      responses:
+        '200':
+          description: The record.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Record'
+              example:
+                success: true
+                message: found
+                data:
+                  symptom_id: SYM1001
+                  name: Chest Pain
+                  display_name: Chest Pain
+                  aliases: [Chest Discomfort]
+                  snomed_id: '1263722001'
+                  icd10: R07.4
+                  icd10_term: Chest pain, unspecified
+                  gender: null
+                  is_active: true
+                  updated_at: '2026-09-28T10:15:00+00:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No record with this id in your workspace.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "no symptom with id 'SYM9999'"
+  /admin/datasets/v1/delete/:
+    post:
+      summary: Deactivate records
+      description: >-
+        Soft-deletes the records with the given ids: they stop appearing in
+        lists and partner search but are kept, and sending them again in a
+        write restores them. Ids that don't exist are reported in `not_found`.
+      operationId: deactivateDatasetRecords
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+            example:
+              ids: [DRUG1001, DRUG1002]
+      responses:
+        '200':
+          description: Records deactivated.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deactivated:
+                            type: integer
+                          not_found:
+                            type: array
+                            items:
+                              type: string
+              example:
+                success: true
+                message: 1 medication deactivated
+                data:
+                  deactivated: 1
+                  not_found: [DRUG1002]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/datasets/v1/delete-all/:
+    post:
+      summary: Delete the whole catalog
+      description: >-
+        **Permanently** deletes every record of this type in your workspace.
+        This cannot be undone. Requires `confirm=true`. To remove records
+        reversibly, use a reconcile write or deactivate them instead.
+      operationId: deleteAllDatasetRecords
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+        - name: confirm
+          in: query
+          required: true
+          description: Must be `true`.
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Catalog deleted.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deleted:
+                            type: integer
+              example:
+                success: true
+                message: 1000 medication deleted
+                data:
+                  deleted: 1000
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/datasets/v1/search-status/:
+    get:
+      summary: Get partner search status
+      description: >-
+        Whether partner search in the Eka Medical Database uses this catalog.
+        Off until you switch it on.
+      operationId: getDatasetSearchStatus
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+      responses:
+        '200':
+          description: Current status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchStatusResponse'
+              example:
+                success: true
+                message: search status
+                data:
+                  search_enabled: false
+                  kb_id: default
+                  dataset_type: medication
+                  updated_at: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Turn partner search on or off
+      description: >-
+        Switches partner search in the Eka Medical Database to use this
+        catalog, or back off. Turn it on once, after your first successful
+        write; later syncs don't need to touch it. Turning it off is the
+        rollback if a catalog turns out to be wrong.
+      operationId: setDatasetSearchStatus
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+            example:
+              enabled: true
+      responses:
+        '200':
+          description: New status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchStatusResponse'
+              example:
+                success: true
+                message: partner search enabled for medication
+                data:
+                  search_enabled: true
+                  kb_id: default
+                  dataset_type: medication
+                  updated_at: '2026-09-28T10:20:00+00:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/datasets/v1/batches/:
+    get:
+      summary: List CSV import batches
+      description: >-
+        Your recent CSV uploads for this type, newest first, with their row
+        counts. Use it to confirm that a sync landed.
+
+
+        Returns the page object directly, without the `success` / `message`
+        envelope.
+      operationId: listDatasetBatches
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: A page of batches.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchPage'
+              example:
+                items:
+                  - batch_id: 412
+                    entity_type: medication
+                    status: committed
+                    original_filename: catalog.csv
+                    total_rows: 1000
+                    valid_rows: 1000
+                    error_rows: 0
+                    inserted_rows: 12
+                    updated_rows: 988
+                    reactivated_rows: 0
+                    created_at: '2026-09-28T02:00:04+00:00'
+                    committed_at: '2026-09-28T02:00:09+00:00'
+                count: 1
+                total: 1
+                limit: 100
+                offset: 0
+                has_more: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/datasets/v1/export.csv:
+    get:
+      summary: Export the catalog as CSV
+      description: >-
+        Downloads the catalog as CSV, in the same column order the write
+        endpoint accepts, so an export can be uploaded again unchanged.
+      operationId: exportDatasetRecords
+      tags: [datasets]
+      parameters:
+        - $ref: '#/components/parameters/Type'
+        - name: q
+          in: query
+          required: false
+          description: Only export records matching this text.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/ShowInactive'
+      responses:
+        '200':
+          description: The catalog as CSV.
+          content:
+            text/csv:
+              schema:
+                type: string
+              example: |
+                medication_id,name,aliases,display_name,strength,generic_name,generic_id,generic_list,generic_list_ids,form_name,sku,schedule_code,custom_type,therapy_class,therapy_class_id,action_class,action_class_id,manufacturer,otc,is_active
+                DRUG1001,Dolo 650,Dolo|Paracetamol 650,Dolo 650,650mg,Paracetamol,GEN-PARA-650,Paracetamol,GEN-PARA-650,Tablet,10012345,OTC,,Analgesic,,Antipyretic,,Micro Labs Ltd,true,true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token for your workspace.
+  parameters:
+    Type:
+      name: type
+      in: query
+      required: true
+      description: Which catalog to act on.
+      schema:
+        type: string
+        enum: [medication, lab_test, symptom, diagnosis]
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Page size.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Number of items to skip.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    ShowInactive:
+      name: show_inactive
+      in: query
+      required: false
+      description: Pass `1` to include inactive records.
+      schema:
+        type: string
+        enum: ['1']
+  responses:
+    BadRequest:
+      description: Invalid request, for example a missing or unknown `type`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: type must be one of 'medication', 'lab_test', 'symptom', 'diagnosis'
+    Unauthorized:
+      description: The access token is missing, invalid or expired.
+    PayloadTooLarge:
+      description: The request body is larger than 10 MB. Split the upload into several upsert requests.
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          const: true
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          const: false
+        message:
+          type: string
+        errors:
+          type: array
+          description: Present when validation failed or the shrink guard stopped a reconcile.
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FieldError'
+              - $ref: '#/components/schemas/ShrinkGuardError'
+    FieldError:
+      type: object
+      properties:
+        index:
+          type: [integer, 'null']
+          description: For a JSON body, the 0-based position of the failing record in the list. For a CSV, the 1-based data row (the header row is not counted). `null` for a file-level error.
+        field:
+          type: [string, 'null']
+        msg:
+          type: string
+        value:
+          description: The rejected value.
+    ShrinkGuardError:
+      type: object
+      properties:
+        code:
+          type: string
+          const: shrink_guard
+        active_before:
+          type: integer
+        would_deactivate:
+          type: integer
+    WriteResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                upserted:
+                  type: integer
+                  description: inserted + updated + reactivated.
+                inserted:
+                  type: integer
+                updated:
+                  type: integer
+                reactivated:
+                  type: integer
+                  description: Previously inactive records made active again.
+                deactivated:
+                  type: integer
+                  description: Records deactivated by a reconcile. Always 0 in upsert mode.
+                dry_run:
+                  type: boolean
+                batch_id:
+                  type: integer
+                  description: CSV uploads only. Matches `batch_id` in the batches list.
+    SearchStatusResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                search_enabled:
+                  type: boolean
+                kb_id:
+                  type: string
+                dataset_type:
+                  type: string
+                updated_at:
+                  type: [string, 'null']
+                  format: date-time
+    RecordPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Record'
+        count:
+          type: integer
+          description: Items on this page.
+        total:
+          type: integer
+          description: Items matching the query across all pages.
+        limit:
+          type: integer
+        offset:
+          type: integer
+        has_more:
+          type: boolean
+    BatchPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              batch_id:
+                type: integer
+              entity_type:
+                type: string
+              status:
+                type: string
+              original_filename:
+                type: string
+              total_rows:
+                type: [integer, 'null']
+              valid_rows:
+                type: [integer, 'null']
+              error_rows:
+                type: [integer, 'null']
+              inserted_rows:
+                type: [integer, 'null']
+              updated_rows:
+                type: [integer, 'null']
+              reactivated_rows:
+                type: [integer, 'null']
+              created_at:
+                type: [string, 'null']
+                format: date-time
+              committed_at:
+                type: [string, 'null']
+                format: date-time
+        count:
+          type: integer
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        has_more:
+          type: boolean
+    Record:
+      description: A record of the requested type, as returned by the API.
+      oneOf:
+        - $ref: '#/components/schemas/Medication'
+        - $ref: '#/components/schemas/LabTest'
+        - $ref: '#/components/schemas/Symptom'
+        - $ref: '#/components/schemas/Diagnosis'
+    Medication:
+      type: object
+      title: Medication
+      required: [medication_id, name]
+      properties:
+        medication_id:
+          type: string
+          maxLength: 200
+          description: Your id for the drug.
+        name:
+          type: string
+          maxLength: 200
+        aliases:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+          description: Alternate names and short forms, used by search.
+        display_name:
+          type: string
+          maxLength: 200
+          description: Shown to end users. Defaults to `name`.
+        strength:
+          type: string
+          maxLength: 32
+        generic_name:
+          type: string
+          maxLength: 300
+        generic_id:
+          type: string
+          maxLength: 64
+        generic_list:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+          description: All generic (salt) components.
+        generic_list_ids:
+          type: array
+          items:
+            type: string
+            maxLength: 64
+        form_name:
+          type: string
+          maxLength: 64
+          description: Dosage form. Matched case-insensitively against the [accepted drug forms](/api-reference/datasets/forms); a match links the drug to Eka's form, and any other value is stored as text without that link.
+        sku:
+          type: string
+          maxLength: 64
+        schedule_code:
+          type: string
+          maxLength: 32
+        custom_type:
+          type: string
+          maxLength: 64
+        therapy_class:
+          type: string
+          maxLength: 128
+        therapy_class_id:
+          type: string
+          maxLength: 64
+        action_class:
+          type: string
+          maxLength: 128
+        action_class_id:
+          type: string
+          maxLength: 64
+        manufacturer:
+          type: string
+          maxLength: 200
+        otc:
+          type: boolean
+        is_active:
+          type: boolean
+          description: Defaults to true on write.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    LabTest:
+      type: object
+      title: LabTest
+      required: [lab_test_id, name, kind, result_type]
+      description: >-
+        `specimen` is required when `kind` is `laboratory`, `unit` when
+        `result_type` is `numerical`, and `panel_members` when `kind` is
+        `panel`.
+      properties:
+        lab_test_id:
+          type: string
+          maxLength: 200
+          description: Your id for the test.
+        name:
+          type: string
+          maxLength: 200
+        display_name:
+          type: string
+          maxLength: 200
+          description: Shown to end users. Defaults to `name`.
+        aliases:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+        loinc:
+          type: string
+          maxLength: 32
+          description: LOINC code. Not checked against the LOINC vocabulary.
+        kind:
+          type: string
+          enum: [imaging, laboratory, functional, special_test, package, panel]
+        result_type:
+          type: string
+          enum: [numerical, ordinal, string, na]
+        discipline:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+          description: For example biochemistry, hematology, micro, molecular, cardiology.
+        specimen:
+          type: string
+          maxLength: 100
+        unit:
+          type: string
+          maxLength: 32
+        unit_id:
+          type: string
+          maxLength: 64
+        panel_members:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+          description: Names of the member tests.
+        panel_member_ids:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+        method:
+          type: string
+          maxLength: 100
+          description: For example ELISA, RAPID_ICT, CHEMILUMINESCENCE (CLIA).
+        body_part:
+          type: string
+          maxLength: 100
+          description: Imaging only.
+        laterality:
+          type: string
+          maxLength: 32
+          description: Imaging only.
+        view:
+          type: string
+          maxLength: 64
+          description: Imaging only.
+        is_active:
+          type: boolean
+          description: Defaults to true on write.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    Symptom:
+      type: object
+      title: Symptom
+      required: [symptom_id, name]
+      properties:
+        symptom_id:
+          type: string
+          maxLength: 200
+          description: Your id for the symptom.
+        name:
+          type: string
+          maxLength: 200
+        display_name:
+          type: string
+          maxLength: 200
+          description: Shown to end users. Defaults to `name`.
+        aliases:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+        snomed_id:
+          type: string
+          maxLength: 32
+          description: SNOMED CT concept id. Not checked against the vocabulary.
+        icd10:
+          type: string
+          maxLength: 32
+        icd10_term:
+          type: string
+          maxLength: 255
+        gender:
+          type: [string, 'null']
+          enum: [M, F, null]
+          description: Leave empty when the symptom applies to everyone.
+        is_active:
+          type: boolean
+          description: Defaults to true on write.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    Diagnosis:
+      type: object
+      title: Diagnosis
+      required: [diagnosis_id, name]
+      properties:
+        diagnosis_id:
+          type: string
+          maxLength: 200
+          description: Your id for the diagnosis.
+        name:
+          type: string
+          maxLength: 200
+        display_name:
+          type: string
+          maxLength: 200
+          description: Shown to end users. Defaults to `name`.
+        aliases:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+        snomed_id:
+          type: string
+          maxLength: 32
+          description: SNOMED CT concept id. Not checked against the vocabulary.
+        icd10:
+          type: string
+          maxLength: 32
+        icd10_term:
+          type: string
+          maxLength: 255
+        gender:
+          type: [string, 'null']
+          enum: [M, F, null]
+          description: Leave empty when the diagnosis applies to everyone.
+        is_active:
+          type: boolean
+          description: Defaults to true on write.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true

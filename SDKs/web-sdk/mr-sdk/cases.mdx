@@ -31,6 +31,12 @@ const cases = await sdk.listCases({
 setCases(cases);
 ```
 
+<Note>
+  `listCases` and `listLocalCases` also accept `linkedPatientIds` to return cases across
+  a primary profile and its linked profiles. See
+  [Records → Linked profiles](https://developer.eka.care/SDKs/web-sdk/mr-sdk/records#linked-profiles).
+</Note>
+
 To list the documents inside a case:
 
 ```typescript
@@ -71,7 +77,7 @@ await sdk.updateCase({
 
 ## Delete a Case
 
-Deletes the case only — the records inside it are **not** deleted. They just lose the link to this case (the case ID is removed from each record's `caseIDs`) and remain available in the record list.
+Deletes the case only — the records inside it are **not** deleted. They just lose the link to this case (the case ID is removed from each record's `cases` array) and remain available in the record list.
 
 ```typescript
 await sdk.deleteCase({ bid: BID, patientId: OID, caseId: 'case-uuid' });
@@ -79,7 +85,7 @@ await sdk.deleteCase({ bid: BID, patientId: OID, caseId: 'case-uuid' });
 
 ## Assigning Records to Cases
 
-The case–record link lives **on the document, not the case** — every record carries a `caseIDs: string[]` array, and there is no case-side "add documents" method. Both directions are handled through the record APIs.
+The case–record link lives **on the document, not the case** — every record carries a `cases: string[]` array, and there is no case-side "add documents" method. Both directions are handled through the record APIs.
 
 ### Assign at upload time
 
@@ -105,7 +111,7 @@ Use `editDocument` with `data.cases`. This is local-first — the DB is patched 
 
 <Warning>
   `data.cases` **replaces** the document's full case list. To add a case
-  without dropping existing links, read the record's current `caseIDs` and
+  without dropping existing links, read the record's current `cases` array and
   append.
 </Warning>
 
@@ -114,14 +120,14 @@ Use `editDocument` with `data.cases`. This is local-first — the DB is patched 
 await sdk.editDocument({
   bid: BID, patientId: OID,
   documentId: doc.documentId,
-  data: { cases: [...doc.caseIDs, 'new-case-uuid'] },
+  data: { cases: [...doc.cases, 'new-case-uuid'] },
 });
 
 // Remove from a case
 await sdk.editDocument({
   bid: BID, patientId: OID,
   documentId: doc.documentId,
-  data: { cases: doc.caseIDs.filter(id => id !== 'case-to-remove') },
+  data: { cases: doc.cases.filter(id => id !== 'case-to-remove') },
 });
 
 // Unlink from all cases
@@ -141,7 +147,7 @@ for (const doc of selectedDocs) {
   await sdk.editDocument({
     bid: BID, patientId: OID,
     documentId: doc.documentId,
-    data: { cases: [...doc.caseIDs, caseId] },
+    data: { cases: [...doc.cases, caseId] },
   });
 }
 ```
@@ -153,7 +159,7 @@ for (const doc of selectedDocs) {
 const docs = await sdk.listLocalDocuments({ bid: BID, patientId: OID, filter: { caseId } });
 
 // Cases a document belongs to
-doc.caseIDs  // string[] on every record object
+doc.cases  // string[] on every record object
 ```
 
-Deletion side effects are handled automatically: `deleteCase` strips that case ID from all linked records' `caseIDs`, and `deleteDocument` removes the document from any linked cases.
+Deletion side effects are handled automatically: `deleteCase` strips that case ID from all linked records' `cases` arrays, and `deleteDocument` removes the document from any linked cases.

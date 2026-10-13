@@ -1,0 +1,160 @@
+---
+title: "Get Messages"
+api: "GET https://console.eka.care/conversations/{conversation_id}/messages/"
+description: "Returns the full transcript of a MedAssist conversation, including tool calls, user feedback and session context."
+authMethod: "bearer"
+---
+
+Use this endpoint to read everything that happened in one conversation: user messages, agent replies, tool calls and their results, plus any feedback the user left.
+
+Get the conversation ID from the `data-session-id` values returned by [Get Conversation](/api-reference/health-ai/medassist/get-conversation).
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token. Format: `Bearer <token>`
+</ParamField>
+
+## Path parameters
+
+<ParamField path="conversation_id" type="string" required>
+  ID of the conversation (the `data-session-id` value from Get Conversation).
+</ParamField>
+
+## Response
+
+<ResponseField name="messages" type="object[]">
+  Messages in the order they were sent.
+
+  <Expandable title="properties">
+    <ResponseField name="msg_id" type="string">
+      Unique ID of the message.
+    </ResponseField>
+    <ResponseField name="role" type="string">
+      Who produced the message: `user`, `assistant` or `tool`.
+    </ResponseField>
+    <ResponseField name="content" type="object[]">
+      Parts that make up the message. Each part has a `type`:
+
+      - `text`: plain text. Fields: `text`, `tid` (ID of the text part).
+      - `tool_call`: the agent called a tool (assistant messages only). Fields: `tool_id`, `tool_name`, `tool_input` (object with the tool's arguments).
+      - `tool_result`: the result returned for a tool call (tool messages only). Fields: `tool_id` (matches the `tool_call`), `result`, and optional `sources` (array of `{ "label", "url" }`).
+
+      For interactive tools such as `elicit_selection`, `result` holds the option the user picked or the text they typed.
+    </ResponseField>
+    <ResponseField name="usage" type="object | null">
+      Token usage for assistant messages; `null` for other roles.
+
+      <Expandable title="properties">
+        <ResponseField name="input_tokens" type="integer">Input tokens used.</ResponseField>
+        <ResponseField name="output_tokens" type="integer">Output tokens generated.</ResponseField>
+        <ResponseField name="latency_ms" type="integer | null">LLM response time in milliseconds, if recorded.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="feedback" type="object">
+  Feedback the end user left for this conversation.
+
+  <Expandable title="properties">
+    <ResponseField name="present" type="boolean">Whether any feedback was given.</ResponseField>
+    <ResponseField name="type" type="string">Feedback form type.</ResponseField>
+    <ResponseField name="nps_base5" type="integer | null">Rating from 1 to 5, or `null` if not rated.</ResponseField>
+    <ResponseField name="options" type="object[]">Feedback options the user selected. Each has `label` and `value`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="user_context" type="object | null">
+  Details of the signed-in user, if the session was authenticated. `null` otherwise.
+
+  <Expandable title="properties">
+    <ResponseField name="name" type="string">User's name.</ResponseField>
+    <ResponseField name="age" type="integer">Age.</ResponseField>
+    <ResponseField name="gender" type="string">Gender.</ResponseField>
+    <ResponseField name="marital_status" type="string">Marital status.</ResponseField>
+    <ResponseField name="dob" type="string">Date of birth.</ResponseField>
+    <ResponseField name="mobile" type="string">Mobile number.</ResponseField>
+    <ResponseField name="is_authenticated" type="boolean">Whether the user was signed in.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="tz" type="string | null">
+  Timezone of the session, as an IANA name (for example `Asia/Kolkata`).
+</ResponseField>
+
+<ResponseField name="initial_context" type="object">
+  Context that was passed when the session was created. Empty object if none.
+</ResponseField>
+
+<Note>
+  This response can contain patient health information and personal details. Store and display it according to your data-protection obligations.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl --request GET \
+  --url 'https://console.eka.care/conversations/<conversation-id>/messages/' \
+  --header 'Authorization: Bearer <token>'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "messages": [
+    {
+      "msg_id": "1789461095244-0",
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "How can I get rid of kidney stones faster?", "tid": "0" }
+      ],
+      "usage": null
+    },
+    {
+      "msg_id": "1789461095272-0",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Drinking plenty of water usually helps. A urologist can advise on the best treatment for your case. Would you like me to find a specialist?",
+          "tid": "1"
+        },
+        {
+          "type": "tool_call",
+          "tool_id": "toolu_01AbCdEfGhIjKlMnOpQrStUv",
+          "tool_name": "elicit_selection",
+          "tool_input": {
+            "component": "pills",
+            "text": "How would you like to continue?",
+            "options": ["Find a urologist", "Book an appointment", "More information"]
+          }
+        }
+      ],
+      "usage": { "input_tokens": 2, "output_tokens": 445, "latency_ms": null }
+    },
+    {
+      "msg_id": "1789461174145",
+      "role": "tool",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_id": "toolu_01AbCdEfGhIjKlMnOpQrStUv",
+          "result": "Find a urologist"
+        }
+      ],
+      "usage": null
+    }
+  ],
+  "feedback": {
+    "present": false,
+    "type": "default",
+    "nps_base5": null,
+    "options": []
+  },
+  "user_context": null,
+  "tz": "Asia/Kolkata",
+  "initial_context": {}
+}
+```
+</ResponseExample>

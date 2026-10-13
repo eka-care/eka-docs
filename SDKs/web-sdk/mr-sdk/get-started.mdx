@@ -13,7 +13,9 @@ The Medical Records Web SDK (`@eka-care/medical-records-ts-sdk`) is a TypeScript
 
 - **Records Management**: Upload, list, group, download, edit and delete medical documents.
 - **Smart Reports**: Fetch AI-extracted structured data from lab reports.
+- **Vital & Lab Trends**: Plot every logged reading of a single parameter across a patient's reports.
 - **Cases**: Organise records into cases (folders) — a record can belong to multiple cases.
+- **Linked Profiles**: Read records and cases across a primary profile and its linked dependents.
 - **Offline Support**: All data is cached in IndexedDB; writes done offline are auto-synced on reconnect.
 - **Reactive UI Updates**: Subscribe to DB change events so your UI auto-updates on any write.
 - **Electron Support**: Route API calls through an IPC bridge with a single config switch.
@@ -61,6 +63,8 @@ new MedicalRecordsClient(config: SDKConfig)
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
 | `environment` | `SDKEnvironment` | ⚙️ Optional | `SDKEnvironment.Prod` = `api.eka.care` (default), `SDKEnvironment.Dev` = `api.dev.eka.care` |
+| `baseUrl` | `string` | ⚙️ Optional | Override the API base URL. Takes precedence over `environment`. Pass `''` to issue requests against the same origin (host page proxies the calls) |
+| `vaultBaseUrl` | `string` | ⚙️ Optional | Override the vault host used by `getParameterTrend` (parameter/vital trends). Takes precedence over `environment`. Pass `''` for same-origin |
 | `defaultHeaders` | `Record<string, string>` | ⚙️ Optional | Eka identification headers — see below |
 | `cache` | `boolean` | ⚙️ Optional | Defaults to `true` — IndexedDB offline cache is on by default. Pass `false` to disable (e.g. environments without IndexedDB, or when patient data must not persist on disk) |
 | `transport` | `TransportMode` | ⚙️ Optional | `TransportMode.Native` = browser fetch (default). `TransportMode.Bridge` = Electron IPC |

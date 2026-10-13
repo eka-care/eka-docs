@@ -434,10 +434,11 @@ paths:
           description: Server error
 
     delete:
-      summary: Archive patient profile
+      summary: Archive or permanently delete patient profile
       description: |
-        **Note:** The patient profile is not deleted permanently — it is only archived.
-        Archived profiles can still be retrieved using the `arc=true` query parameter in the retrieve API.
+        By default, the patient profile is **archived** (soft delete). Archived profiles can still be retrieved using the `arc=true` query parameter in the retrieve API.
+
+        To **permanently delete** an already archived profile, set the `perm=true` query parameter. Permanent deletion is only allowed on profiles that have already been archived.
       tags:
         - Patient
       parameters:
@@ -460,11 +461,20 @@ paths:
             type: boolean
             example: true
             default: false
+        - in: query
+          name: perm
+          required: false
+          description: |
+            Permanently delete an archived profile. The profile must already be archived for this to take effect.
+          schema:
+            type: boolean
+            example: true
+            default: false
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Patient profile archived successfully
+          description: Patient profile archived or permanently deleted successfully
           content:
             application/json:
               schema:
