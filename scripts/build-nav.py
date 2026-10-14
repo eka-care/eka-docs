@@ -633,11 +633,22 @@ def root_groups(products):
 
 
 # ---------- Tabs ----------
-# Each product has its own tab bar: Documentation (its docs sidebar), APIs & SDKs (its API reference) and, where it
-# has recipes, Cook Book. The script still builds docs families and separate API families ("AI API", ...); tabify()
+# Each product has its own tab bar: Documentation (its docs sidebar), APIs & SDKs (its API reference), Changelog
+# where it has one, and Cook Book where it has recipes. Get started's Changelog tab holds the platform-wide feed. The script still builds docs families and separate API families ("AI API", ...); tabify()
 # folds each API item into its product as a tab just before docs.json is written, and untab() reverses that on the
 # next run, so routes (/docs/<product>/, /api-sdk/<product>/) and every derived file stay as they were.
-DOCS_TAB, API_TAB, RECIPES_TAB = 'Documentation', 'APIs & SDKs', 'Cook Book'
+DOCS_TAB, API_TAB, CHANGELOG_TAB, RECIPES_TAB = 'Documentation', 'APIs & SDKs', 'Changelog', 'Cook Book'
+CHANGELOGS = {
+    'Get started': ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood',
+                    'docs/get-started/release-notes-2026-04-06', 'docs/get-started/weekly-update-2026-04-06',
+                    'docs/get-started/under-the-hood-march-2026'],
+    'Scribe': ['docs/get-started/ekascribe-changelog', 'docs/get-started/ekascribe'],
+    'Agents': ['docs/get-started/ekaagents-changelog', 'docs/get-started/eka-agents'],
+    'EMR': ['docs/get-started/emr-changelog'],
+    'Billing': ['docs/billing/changelog'],
+    'Health Records': ['docs/health-records/changelog'],
+    'HIE-CM': ['docs/hie-cm/changelog'],
+}
 RECIPES = {
     'EMR': ['docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management'],
     'Datasets': ['docs/get-started/whats-possible/medicine-lookup'],
@@ -646,13 +657,26 @@ RECIPES = {
 
 
 def drop_cookbook(products):
-    """The recipes live in their products' Cook Book tabs, not in Get started's sidebar."""
+    """The recipes and the changelogs live in their products' tabs, not in the docs sidebars."""
+    moved = {p for pages in CHANGELOGS.values() for p in pages}
+
+    def prune(entries):
+        out = []
+        for e in entries:
+            if isinstance(e, str):
+                if e not in moved:
+                    out.append(e)
+            elif e.get('group') != 'CookBook':
+                e = {**e, 'pages': prune(e.get('pages', []))}
+                if e['pages'] or e.get('root'):
+                    out.append(e)
+        return out
     for fam in products:
         if is_api_family(fam):
             continue
         for it in fam['menu']:
             if it.get('pages'):
-                it['pages'] = [e for e in it['pages'] if not (isinstance(e, dict) and e.get('group') == 'CookBook')]
+                it['pages'] = prune(it['pages'])
 
 
 def tabify(products):
@@ -670,6 +694,8 @@ def tabify(products):
             twin = by_name.pop(it['item'] + API_SUFFIX, None)
             if twin and twin.get('pages'):
                 tabs.append({'tab': API_TAB, 'pages': twin['pages']})
+            if CHANGELOGS.get(it['item']):
+                tabs.append({'tab': CHANGELOG_TAB, 'pages': [{'group': CHANGELOG_TAB, 'pages': CHANGELOGS[it['item']]}]})
             if RECIPES.get(it['item']):
                 tabs.append({'tab': RECIPES_TAB, 'pages': [{'group': RECIPES_TAB, 'pages': RECIPES[it['item']]}]})
             it.pop('href', None)
