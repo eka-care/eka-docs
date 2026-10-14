@@ -1228,12 +1228,19 @@ function drawSketches(){
 var PART_PRODUCT=Object.fromEntries(Object.values(SCENES).flatMap(s=>s.parts.map(p=>[p.id,p.product])));
 window.UNLOCKED=new Set();
 var plName=a=>a.querySelector("b").firstChild.textContent.trim();
+// Every lit product says why it is lit: the parts clipped for it, or for Auth, that every product needs keys.
+var PART_LABEL=Object.fromEntries(Object.values(SCENES).flatMap(s=>s.parts.map(p=>[p.id,p.label])));
+var CLIPPED={};
+var whyOf=p=>!UNLOCKED.has(p)?"":CLIPPED[p]?`In your app: ${CLIPPED[p].join(", ")}.`:
+  p==="Auth"?"Every product needs API keys, so any part you clip unlocks Auth.":"";
+function markWhy(el,p){const w=whyOf(p);if(w)el.title=w;else el.removeAttribute("title")}
 function unlock(ids){
   if(!PART_PRODUCT)return; // Assemble restores saved parts before this block runs; the call below catches up
-  const on=new Set(ids.map(id=>PART_PRODUCT[id]).filter(Boolean));if(on.size)on.add("Auth");window.UNLOCKED=on;
-  $$(".fgrid .pl").forEach(a=>a.classList.toggle("on",on.has(plName(a))));
+  CLIPPED={};ids.forEach(id=>{const p=PART_PRODUCT[id];if(p)(CLIPPED[p]=CLIPPED[p]||[]).push(PART_LABEL[id])});
+  const on=new Set(Object.keys(CLIPPED));if(on.size)on.add("Auth");window.UNLOCKED=on;
+  $$(".fgrid .pl").forEach(a=>{a.classList.toggle("on",on.has(plName(a)));markWhy(a,plName(a))});
   $$(".fgrid .fcell").forEach(c=>c.classList.toggle("has-on",!!c.querySelector(".pl.on")));
-  $$("#journey-ui [data-prod]").forEach(b=>b.classList.toggle("on",on.has(b.dataset.prod)));
+  $$("#journey-ui [data-prod]").forEach(b=>{b.classList.toggle("on",on.has(b.dataset.prod));markWhy(b,b.dataset.prod)});
 }
 unlock(Object.keys(SCENES).flatMap(k=>k===sceneKey?built:loadBuilt(k)));
 
@@ -1253,7 +1260,7 @@ unlock(Object.keys(SCENES).flatMap(k=>k===sceneKey?built:loadBuilt(k)));
     const prods=Object.keys(J[fam]);
     root.innerHTML=
       `<div class="jfam" role="tablist" aria-label="Product family">${fams.map(f=>`<button role="tab" aria-selected="${f===fam}" data-fam="${esc(f)}">${esc(f)}</button>`).join("")}</div>`+
-      (prods.length>1?`<div class="jprod" role="tablist" aria-label="Product">${prods.map(p=>`<button role="tab" aria-selected="${p===prod}" data-prod="${esc(p)}"${window.UNLOCKED&&UNLOCKED.has(p)?' class="on"':""}>${esc(p)}</button>`).join("")}</div>`:"")+
+      (prods.length>1?`<div class="jprod" role="tablist" aria-label="Product">${prods.map(p=>`<button role="tab" aria-selected="${p===prod}" data-prod="${esc(p)}"${window.UNLOCKED&&UNLOCKED.has(p)?' class="on"':""}${window.UNLOCKED&&whyOf(p)?` title="${esc(whyOf(p))}"`:""}>${esc(p)}</button>`).join("")}</div>`:"")+
       `<ol class="jsteps">${J[fam][prod].map(([name,cards],i)=>`<li class="jstep"><div class="jhead"><span class="jn">${i+1}</span><h3>${esc(name)}</h3></div>`+
         (cards.length?`<div class="jcards">${cards.map(([t,u,ic],k)=>`<a class="jcard" href="${BASE+u}"><i data-lucide="${ic}"></i><span>${esc(t)}</span>${i===0&&k===0?`<i class="jgo" data-lucide="arrow-right"></i>`:""}</a>`).join("")}</div>`
         :`<p class="jnone">Nothing published for this step yet.</p>`)+`</li>`).join("")}</ol>`;
