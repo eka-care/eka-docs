@@ -11,7 +11,7 @@ await build({
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
                export {mockTransport} from './src/mock-transport';
                export {createTransport} from './src/transport';
-               export {revealStep, THINKING_HOLD, THINKING_BURST} from './src/pacing';
+               export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
                export {startersFrom, DEFAULT_STARTERS} from './src/starters';
@@ -38,6 +38,7 @@ await build({
 });
 const {
   toBlocks, absolute, headings, mockTransport, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
+  nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
   mount, install, rowLabel,
@@ -194,6 +195,44 @@ const t2 = mockTransport({delayMs: 5}); await t2.start();
 let after = 0; t2.send({text: 'x', files: []}, {onText: () => after++, onProgress() {}, onTips() {}, onDone: () => after++, onError() {}});
 t2.detach(); await new Promise((r) => setTimeout(r, 50));
 assert.equal(after, 0, 'detach stops delivery');
+// The reveal loop's clock: a page with no frames (hidden, backgrounded)
+// still steps on the timer, so an answer finishes and is saved; a frame that
+// does come runs it once and stops the timer; cancelling runs neither.
+{
+  const clock = (frames) => {
+    const timers = new Map(); let id = 0; const cleared = [];
+    return {
+      timers, cleared, frames,
+      requestAnimationFrame: (f) => { frames.push(f); return frames.length; },
+      cancelAnimationFrame: () => {},
+      setTimeout: (f, ms) => { timers.set(++id, {f, ms}); return id; },
+      clearTimeout: (n) => { cleared.push(n); timers.delete(n); },
+    };
+  };
+  let runs = 0;
+  const hidden = clock([]); hidden.requestAnimationFrame = () => 1; // no frame ever comes
+  nextFrame(() => runs++, hidden);
+  const [[, waiting]] = [...hidden.timers];
+  assert.equal(waiting.ms, FRAME_FALLBACK);
+  waiting.f();
+  assert.equal(runs, 1, 'a hidden page still steps on the timer');
+
+  runs = 0;
+  const shown = clock([]);
+  nextFrame(() => runs++, shown);
+  shown.frames[0]();
+  assert.equal(shown.timers.size, 0, 'the frame stops the timer');
+  shown.frames[0]();
+  assert.equal(runs, 1, 'runs once');
+
+  runs = 0;
+  const gone = clock([]);
+  const cancel = nextFrame(() => runs++, gone);
+  cancel();
+  gone.frames[0]?.();
+  assert.equal(gone.timers.size, 0);
+  assert.equal(runs, 0, 'cancelled runs neither');
+}
 // No agent id is the mock; an agent id is Synapse, which is not wired yet.
 assert.equal(createTransport({}).isMock, true);
 assert.throws(() => createTransport({agentId: 'a1'}), /Synapse transport not wired yet/);

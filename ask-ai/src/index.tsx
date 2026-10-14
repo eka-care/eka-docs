@@ -3,7 +3,7 @@ import {useEffect, useMemo, useRef, useState} from 'preact/hooks';
 import ChatMarkdown, {CopyButton, absolute, headings} from './markdown';
 import {ChevronRight, FileText, Paperclip, Plus, X} from './icons';
 import {createTransport, UNREACHABLE, type SessionRef} from './transport';
-import {revealStep} from './pacing';
+import {nextFrame, revealStep} from './pacing';
 import {
   clearCurrentId,
   currentId,
@@ -312,7 +312,8 @@ function Panel({
   const netDone = useRef(true);
   const askedAt = useRef(0);
   const atOnce = useRef(false);
-  const frame = useRef(0);
+  // Cancels the scheduled step of the reveal loop; null while it is not running.
+  const frame = useRef<(() => void) | null>(null);
   const extras = useRef<Extras | null>(null);
   // Which question the transport's handlers belong to. Stop, New and
   // resuming move it on, so a late event from an answer the reader left is
@@ -320,13 +321,13 @@ function Panel({
   const asking = useRef(0);
 
   const drain = () => {
-    frame.current = requestAnimationFrame(drain);
+    frame.current = nextFrame(drain);
     const backlog = pending.current.length;
 
     if (backlog === 0) {
       if (!netDone.current) return;
-      cancelAnimationFrame(frame.current);
-      frame.current = 0;
+      frame.current();
+      frame.current = null;
       revealing.current = false;
       if (extras.current) {
         attachExtras(setTurns, extras.current);
@@ -340,7 +341,8 @@ function Panel({
       backlog,
       performance.now() - askedAt.current,
       revealing.current,
-      atOnce.current,
+      // Nobody is watching a hidden page reveal, so it gets the lot at once.
+      atOnce.current || document.hidden,
     );
     // Zero is the thinking hold: the indicator stands rather than a first word
     // flashing up in its place.
@@ -367,8 +369,8 @@ function Panel({
   };
 
   const stopDrain = () => {
-    if (frame.current) cancelAnimationFrame(frame.current);
-    frame.current = 0;
+    frame.current?.();
+    frame.current = null;
     revealing.current = false;
     pending.current = '';
     extras.current = null;
@@ -488,13 +490,14 @@ function Panel({
     started.current = false;
     return () => {
       transport.detach();
-      if (frame.current) cancelAnimationFrame(frame.current);
+      frame.current?.();
+      frame.current = null;
     };
   }, [transport]);
 
   /**
-   * Writes the conversation on screen into this browser's history, once it
-   * has a question and an answer in it and the answer has finished.
+   * Writes the conversation on screen into this browser's history: when a
+   * question goes in, and again when its answer has finished.
    *
    * An attachment's text is dropped on the way in. It can be twenty thousand
    * characters, ten of those would not fit the quota, and the point of the
@@ -526,8 +529,11 @@ function Panel({
     setCurrentId(conversation.current);
   };
 
+  // Kept when the question goes in as well as when the answer is done, so a
+  // page left while the answer is still coming keeps the question. Not while
+  // it streams, which would write the whole list again on every few words.
   useEffect(() => {
-    if (phase === 'idle') keep(turns);
+    if (phase !== 'streaming') keep(turns);
   }, [phase, turns]);
 
   useEffect(() => {
@@ -683,7 +689,7 @@ function Panel({
     ).matches;
     setPhase('thinking');
     setActivity('Thinking');
-    if (!frame.current) frame.current = requestAnimationFrame(drain);
+    if (!frame.current) frame.current = nextFrame(drain);
 
     const mine = ++asking.current;
     const live = () => asking.current === mine;

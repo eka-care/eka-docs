@@ -36,3 +36,38 @@ export function revealStep(
   if (atOnce) return backlog;
   return Math.min(backlog, Math.max(REVEAL_FLOOR, Math.ceil(backlog / REVEAL_SHARE)));
 }
+
+/** How long the reveal loop waits for a frame before stepping anyway. */
+export const FRAME_FALLBACK = 100;
+
+type Clock = Pick<
+  typeof globalThis,
+  'requestAnimationFrame' | 'cancelAnimationFrame' | 'setTimeout' | 'clearTimeout'
+>;
+
+/**
+ * Runs `run` on the next frame, or after a short wait where no frame comes.
+ *
+ * A page that is not being shown gets no animation frames at all, so a
+ * reveal loop driven only by them stops dead: the answer never finishes, the
+ * panel never goes idle, and the conversation is never saved. A reader who
+ * asks and switches tab, or a page loaded in the background, lost the
+ * exchange on the next load. The timer is the floor under that. Returns a
+ * function that cancels whichever has not run yet.
+ */
+export function nextFrame(run: () => void, clock: Clock = globalThis): () => void {
+  let settled = false;
+  const cancel = () => {
+    settled = true;
+    clock.cancelAnimationFrame(raf);
+    clock.clearTimeout(timer);
+  };
+  const go = () => {
+    if (settled) return;
+    cancel();
+    run();
+  };
+  const raf = clock.requestAnimationFrame(go);
+  const timer = clock.setTimeout(go, FRAME_FALLBACK);
+  return cancel;
+}
