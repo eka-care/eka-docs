@@ -17,7 +17,8 @@ await build({
                export {startersFrom, DEFAULT_STARTERS} from './src/starters';
                export {forModel} from './src/transcript';
                export {parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';
-               export {mount, install} from './src/mount';`,
+               export {mount, install} from './src/mount';
+               export {rowLabel} from './src/search-row';`,
     resolveDir: import.meta.dirname,
     loader: 'ts',
   },
@@ -39,8 +40,16 @@ const {
   toBlocks, absolute, headings, mockTransport, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
-  mount, install,
+  mount, install, rowLabel,
 } = await import(out);
+
+// Search row: the label for Mintlify's search box, nothing for an empty query.
+assert.equal(rowLabel(''), null);
+assert.equal(rowLabel('   '), null);
+assert.equal(rowLabel('  create   session '), 'Ask AI about "create session"');
+assert.ok(rowLabel('x'.repeat(100)).endsWith('…"'));
+assert.equal(rowLabel('x'.repeat(100)), `Ask AI about "${'x'.repeat(60)}…"`);
+assert.equal(rowLabel('x'.repeat(60)), `Ask AI about "${'x'.repeat(60)}"`, 'sixty is not cut');
 
 // History: one conversation comes out, the rest stay in order.
 assert.deepEqual(forgetOne([{id: 'a'}, {id: 'b'}, {id: 'c'}], 'b').map((s) => s.id), ['a', 'c']);
@@ -210,18 +219,20 @@ assert.equal(a.tagName, 'EKA-ASK-AI');
 assert.equal(a.getAttribute('auth-token'), null, 'auth-token is left unset');
 
 // install: a script evaluated twice adds one set of listeners and one interval.
-const calls = {listen: 0, interval: 0, define: 0};
+const calls = {listen: 0, interval: 0, define: 0, observe: 0};
 const defined = new Map();
 const win = {
   customElements: {get: (n) => defined.get(n), define: (n, c) => { calls.define++; defined.set(n, c); }},
   addEventListener: () => calls.listen++,
   setInterval: () => calls.interval++,
   setTimeout: () => 0,
+  requestAnimationFrame: () => 0,
+  MutationObserver: class { observe() { calls.observe++; } },
 };
 const page = {...fakeDocument(), readyState: 'complete', addEventListener: () => calls.listen++};
 assert.equal(install(win, page), true);
 assert.equal(install(win, page), false, 'second install is a no-op');
-assert.deepEqual(calls, {listen: 2, interval: 1, define: 1});
+assert.deepEqual(calls, {listen: 2, interval: 1, define: 1, observe: 1});
 assert.equal(page.body.children.length, 1);
 
 // Last: this replaces a global the tests above may rely on.

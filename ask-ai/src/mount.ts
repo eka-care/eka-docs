@@ -7,6 +7,7 @@
  * element already there and does nothing.
  */
 import {SupportAgentElement} from './index';
+import {ensureRow} from './search-row';
 
 /** The assistant to talk to. Empty keeps the panel on the mock transport. */
 const AGENT_ID = '';
@@ -39,10 +40,26 @@ export function install(win: Window = window, doc: Document = document): boolean
   const run = () => {
     if (doc.body) mount(doc);
   };
-  if (doc.readyState === 'loading') {
-    doc.addEventListener('DOMContentLoaded', run);
-  } else {
+  // The search dialog is rendered on open and dropped on close, so the Ask AI
+  // row is put back whenever the page changes, at most once a frame.
+  const ask = (q: string) => (mount(doc) as SupportAgentElement).ask(q);
+  let queued = false;
+  const searchRow = () => {
+    if (queued) return;
+    queued = true;
+    win.requestAnimationFrame(() => {
+      queued = false;
+      ensureRow(doc, ask);
+    });
+  };
+  const start = () => {
     run();
+    if (doc.body) new win.MutationObserver(searchRow).observe(doc.body, {childList: true, subtree: true});
+  };
+  if (doc.readyState === 'loading') {
+    doc.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
   }
   win.addEventListener('mintlify:navigate', () => win.setTimeout(run, 0));
   win.addEventListener('popstate', run);
