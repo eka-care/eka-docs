@@ -512,6 +512,30 @@ def shape(node):
     return node
 
 
+def wrap(item):
+    """Put a product's sections, docs or API, inside one group named after the
+    product. Mintlify never collapses a top-level group, so this is what lets Get
+    started, Journeys, Workflows and the rest fold. The first section starts open;
+    the rest start closed, and Mintlify opens whichever holds the current page."""
+    pages = item.get('pages')
+    if not pages or is_wrapped(item, pages):
+        return
+    first = next((e for e in pages if isinstance(e, dict) and 'group' in e), None)
+    if first is not None:
+        first['expanded'] = True
+    item['pages'] = [{'group': item['item'], 'pages': pages}]
+
+
+def is_wrapped(item, pages):
+    return len(pages) == 1 and isinstance(pages[0], dict) and pages[0].get('group') == item['item'] \
+        and 'icon' not in pages[0]
+
+
+def unwrap(item, pages):
+    """Undo wrap(), so a rebuild reshapes the sections, not the wrapper."""
+    return pages[0]['pages'] if is_wrapped(item, pages) else pages
+
+
 def is_reference(page):
     try:
         head = open(page + '.mdx').read(600)
@@ -730,11 +754,16 @@ def main():
                 continue
             if it['item'] == 'HIE-CM' and any(isinstance(e, dict) and e.get('group') == 'Milestone 1' for e in it.get('pages', []) + it.get('groups', [])):
                 restructure_hiecm(it)
-            entries = [shape(g) for g in it.pop('groups', it.pop('pages', []))]
+            entries = [shape(g) for g in unwrap(it, it.pop('groups', it.pop('pages', [])))]
             # Entries go in `pages`, not `groups`: Mintlify honours a group's
             # `root` only on nested groups, and `pages` may mix pages and groups,
             # so every section title can be its own page.
             it['pages'] = entries
+    for fam in new['products']:
+        if is_api_family(fam):
+            for it in fam['menu']:
+                if it.get('pages'):
+                    it['pages'] = unwrap(it, it['pages'])
     split_api(new['products'])
     align_areas(new['products'])
     for _ in range(5):  # shape until nothing changes, so one run gives the final tree
@@ -743,9 +772,12 @@ def main():
             if not is_api_family(fam):
                 for it in fam['menu']:
                     if it.get('pages'):
-                        it['pages'] = [shape(e) for e in it['pages']]
+                        it['pages'] = [shape(e) for e in unwrap(it, it['pages'])]
         if json.dumps(new) == before:
             break
+    for fam in new['products']:
+        for it in fam['menu']:
+            wrap(it)
     if '--page-icons' in sys.argv:
         set_page_icons(new['products'])
     targets, page_map = reference_targets(new['products'])
