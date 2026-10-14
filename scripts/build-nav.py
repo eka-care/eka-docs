@@ -721,6 +721,7 @@ def main():
     if open_ok(glossary) and glossary not in set(walk_pages(new)):
         gs_pages.insert(2, glossary)
     links = [l for l in d['navbar'].setdefault('links', []) if l.get('label') not in ('API Reference', API_LABEL, 'Docs')]
+    # Order matters: styles.css shows only one of these two by URL (Docs on /api-sdk/, API and SDKs elsewhere).
     d['navbar']['links'] = [{'label': 'Docs', 'href': '/docs/get-started/overview'},
                             {'label': API_LABEL, 'href': '/' + API_INDEX}] + links
     for fam in new['products']:
