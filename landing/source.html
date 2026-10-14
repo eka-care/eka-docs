@@ -389,13 +389,21 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
 #journey .eyebrow{margin-bottom:18px}
 .jpanel{position:relative;z-index:1;max-width:1078px;margin:40px auto 0;background:var(--bg);padding:6px 32px 24px}
 .jfam,.jprod{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.jfam button{height:34px;padding:0 15px;border-radius:999px;border:1px solid var(--line);font-size:.85rem;color:var(--ink-2);transition:background .2s var(--ease),color .2s,border-color .2s}
-.jfam button:hover{border-color:var(--ink-3);color:var(--ink)}
-.jfam button[aria-selected="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn-edge)}
-.jprod{margin-top:8px}
-.jprod button{height:30px;padding:0 12px;border-radius:8px;font-size:.82rem;color:var(--ink-3);transition:color .2s,background .2s}
+/* Parent and child: the families are one segmented control, the products a row of underlined tabs beneath it. */
+.jfam{width:fit-content;max-width:100%;margin:0 auto;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.jfam button{height:32px;padding:0 16px;border-radius:999px;font-size:.85rem;color:var(--ink-2);transition:background .2s var(--ease),color .2s,box-shadow .2s}
+.jfam button:hover{color:var(--ink)}
+.jfam button[aria-selected="true"]{background:var(--btn);color:var(--btn-ink);box-shadow:inset 0 0 0 1px var(--btn-edge)}
+.jprod{margin-top:16px;gap:4px;border-bottom:1px solid var(--line)}
+.jprod button{height:36px;margin-bottom:-1px;padding:0 12px;border-radius:0;font-size:.8rem;color:var(--ink-3);box-shadow:inset 0 -2px 0 transparent;transition:color .2s,box-shadow .2s}
+
+.jprod button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--btn-ink)}
+
+
+
+
 .jprod button:hover{color:var(--ink)}
-.jprod button[aria-selected="true"]{color:var(--ink);background:color-mix(in srgb,var(--ink) 5%,transparent);box-shadow:inset 0 0 0 1px var(--line-2)}
+
 .jsteps{list-style:none;padding:0;margin:28px 0 0}
 .jstep{position:relative;padding:0 0 18px 40px}
 .jstep:not(:last-child)::before{content:"";position:absolute;left:11.5px;top:30px;bottom:4px;width:1px;background:var(--line-2)}
@@ -1248,6 +1256,9 @@ unlock(Object.keys(SCENES).flatMap(k=>k===sceneKey?built:loadBuilt(k)));
         (cards.length?`<div class="jcards">${cards.map(([t,u,ic],k)=>`<a class="jcard" href="${BASE+u}"><i data-lucide="${ic}"></i><span>${esc(t)}</span>${i===0&&k===0?`<i class="jgo" data-lucide="arrow-right"></i>`:""}</a>`).join("")}</div>`
         :`<p class="jnone">Nothing published for this step yet.</p>`)+`</li>`).join("")}</ol>`;
     if(window.lucide)lucide.createIcons({root});
+    // On a narrow screen the rows scroll sideways; keep each row's selected item in view.
+    root.querySelectorAll(".jfam,.jprod").forEach(row=>{const b=row.querySelector('[aria-selected="true"]');
+      if(b&&row.scrollWidth>row.clientWidth)row.scrollLeft=b.offsetLeft-row.offsetLeft-(row.clientWidth-b.offsetWidth)/2});
   }
   root.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
     if(b.dataset.fam){fam=b.dataset.fam;prod=Object.keys(J[fam])[0]}else if(b.dataset.prod)prod=b.dataset.prod;else return;
