@@ -100,7 +100,7 @@ def build(d):
             'description': 'Scribe, agents and clinical models that turn speech and documents into structured care.',
             'menu': [
                 item('Scribe', 'waveform-lines', 'Consultations become structured notes',
-                     [{'group': 'Guides', 'pages': ['docs/scribe/about', 'docs/scribe/ekascribe-link']}]
+                     [{'group': 'Guides', 'pages': ['docs/scribe/about']}]
                      + scribe['groups']),
                 item('Agents', 'robot', 'MedAssist, Agent Kit and MCP servers',
                      [{'group': 'Guides', 'pages': ['docs/agents/medassist'] + pd['MCP']['pages']},
@@ -360,7 +360,7 @@ def restructure_hiecm(item):
 # one section per product, then tag groups, then endpoints. Product sidebars keep
 # the docs. Each product's API overview page opens its section.
 API_DIVISION = 'API Reference'  # legacy single division, replaced by API families
-API_LABEL = 'API and SDKs'  # the navbar link into the API reference
+API_LABEL = 'APIs & SDKs'  # the navbar link into the API reference
 API_SUFFIX = ' API'  # the API Reference has one family per docs family: "AI API", "ABDM API", ...
 
 
@@ -755,7 +755,9 @@ def card_of(entry):
         meta = page_meta(entry)
         # An untitled page gets Mintlify's own label: the file name with dashes as spaces, first letter capitalised.
         slug = entry.split('/')[-1].replace('-', ' ').replace('_', ' ')
-        return [meta.get('sidebarTitle') or meta.get('title') or slug[:1].upper() + slug[1:], '/' + entry, lucide(meta.get('icon'))]
+        # A link page (frontmatter url:) is a sidebar shortcut; its card goes where the sidebar entry goes.
+        href = meta.get('url') or '/' + entry
+        return [meta.get('sidebarTitle') or meta.get('title') or slug[:1].upper() + slug[1:], href, lucide(meta.get('icon'))]
     first = next(walk_pages(entry), None)
     return [entry['group'], '/' + first, lucide(entry.get('icon'))] if first else None
 
@@ -866,8 +868,8 @@ def main():
     glossary = 'docs/get-started/glossary'
     if open_ok(glossary) and glossary not in set(walk_pages(new)):
         gs_pages.insert(2, glossary)
-    links = [l for l in d['navbar'].setdefault('links', []) if l.get('label') not in ('API Reference', API_LABEL, 'Docs')]
-    # Order matters: styles.css shows only one of these two by URL (Docs on /api-sdk/, API and SDKs elsewhere).
+    links = [l for l in d['navbar'].setdefault('links', []) if l.get('label') not in ('API Reference', 'API and SDKs', API_LABEL, 'Docs')]
+    # Order matters: styles.css shows only one of these two by URL (Docs on /api-sdk/, APIs & SDKs elsewhere).
     d['navbar']['links'] = [{'label': 'Docs', 'href': '/docs/get-started/overview'},
                             {'label': API_LABEL, 'href': '/' + API_INDEX}] + links
     for fam in new['products']:
