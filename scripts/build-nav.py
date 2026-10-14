@@ -4,6 +4,10 @@ each with a menu of individual products, following the landing page.
     python3 scripts/build-nav.py            # rewrite docs.json in place
     python3 scripts/build-nav.py --check    # exit 1 if a page would be dropped
 
+Also writes the files derived from the navigation: api-reference-link.js, the API index
+and the landing page's developer journey (landing/source.html; then run
+node scripts/build-landing.mjs).
+
 Reads the existing navigation, so groups are moved, never rewritten. Every page
 listed today must appear exactly once afterwards; --check enforces that.
 """
@@ -686,6 +690,99 @@ def write_index(targets):
     open(API_INDEX + '.mdx', 'w').write('\n'.join(lines))
 
 
+# ---------- Landing page developer journey ----------
+# The landing page's journey (landing/source.html, const J) follows each product's docs
+# sidebar: one step per sidebar section, in order and by its name, so it cannot drift from
+# the docs. A product with no docs pages gets a single step labelled API reference.
+LANDING_HTML = 'landing/source.html'
+JOURNEY_CARDS = 8  # per step; past that the last card says how many more the section holds
+# Font Awesome (docs) to Lucide (landing page) for the icons the docs use; others fall back.
+FA_LUCIDE = {
+    'file-lines': 'file-text', 'rocket': 'rocket', 'compass': 'compass', 'bolt': 'zap', 'clock-rotate-left': 'history',
+    'calendar-check': 'calendar-check', 'plug': 'plug', 'tags': 'tags', 'tag': 'tag', 'screwdriver-wrench': 'wrench',
+    'hospital': 'hospital', 'database': 'database', 'user-doctor': 'stethoscope', 'stethoscope': 'stethoscope',
+    'magnifying-glass': 'search', 'magnifying-glass-plus': 'search', 'flag-checkered': 'flag', 'folder-tree': 'folder-tree',
+    'webhook': 'webhook', 'code': 'code', 'sliders': 'sliders-horizontal', 'lock': 'lock', 'unlock': 'lock-open',
+    'hospital-user': 'contact', 'qrcode': 'qr-code', 'file-signature': 'file-signature', 'microphone': 'mic',
+    'microphone-lines': 'mic', 'globe': 'globe', 'fire': 'flame', 'shield': 'shield', 'shield-halved': 'shield',
+    'download': 'download', 'gear': 'settings', 'gears': 'settings', 'book': 'book-open', 'book-open': 'book-open',
+    'book-open-cover': 'book-open', 'book-medical': 'book-heart', 'pills': 'pill', 'prescription': 'pill',
+    'house-medical': 'house-plus', 'credit-card': 'credit-card', 'file-medical': 'file-heart', 'mobile-screen': 'smartphone',
+    'mobile': 'smartphone', 'mobile-retro': 'smartphone', 'mobile-screen-button': 'smartphone', 'vault': 'vault',
+    'id-card': 'id-card', 'inbox': 'inbox', 'calendar-week': 'calendar', 'calendar': 'calendar', 'comments': 'messages-square',
+    'robot': 'bot', 'box-open': 'package', 'cube': 'box', 'cubes': 'boxes', 'star': 'star', 'brain': 'brain',
+    'folder-open': 'folder-open', 'vial': 'test-tube', 'flask': 'flask-conical', 'flask-vial': 'flask-conical',
+    'file-import': 'file-input', 'file-export': 'file-output', 'right-to-bracket': 'log-in', 'fingerprint': 'fingerprint',
+    'face-smile': 'smile', 'hourglass-half': 'hourglass', 'user-check': 'user-check', 'user': 'user', 'user-plus': 'user-plus',
+    'link': 'link', 'list': 'list', 'thumbs-up': 'thumbs-up', 'share-nodes': 'share-2', 'key': 'key-round', 'bell': 'bell',
+    'circle-exclamation': 'circle-alert', 'droplet': 'droplet', 'code-branch': 'git-branch', 'clipboard-question': 'clipboard',
+    'route': 'route', 'diagram-project': 'workflow', 'react': 'atom', 'server': 'server', 'terminal': 'terminal',
+    'microchip': 'cpu', 'laptop-binary': 'laptop', 'box-archive': 'archive', 'network-wired': 'network',
+    'handshake': 'handshake', 'building-columns': 'landmark', 'utensils': 'utensils', 'java': 'coffee',
+}
+
+
+def lucide(fa):
+    return FA_LUCIDE.get(fa or '', 'file-text')
+
+
+def card_of(entry):
+    """One journey card: a page, or a nested group opening its root or first page."""
+    if isinstance(entry, str):
+        meta = page_meta(entry)
+        return [meta.get('sidebarTitle') or meta.get('title') or entry.split('/')[-1], '/' + entry, lucide(meta.get('icon'))]
+    first = next(walk_pages(entry), None)
+    return [entry['group'], '/' + first, lucide(entry.get('icon'))] if first else None
+
+
+def step_of(name, entries):
+    cards = [c for c in (card_of(e) for e in entries) if c]
+    if len(cards) > JOURNEY_CARDS:
+        more = len(cards) - (JOURNEY_CARDS - 1)
+        cards = cards[:JOURNEY_CARDS - 1] + [[f'{more} more in {name}', cards[JOURNEY_CARDS - 1][1], 'ellipsis']]
+    return [name, cards]
+
+
+def journey(products):
+    api = {it['item'][:-len(API_SUFFIX)]: it for fam in products if is_api_family(fam)
+           for it in fam['menu'] if it['item'].endswith(API_SUFFIX)}
+    J = {}
+    for fam in products:
+        if is_api_family(fam):
+            continue
+        J[fam['product']] = prods = {}
+        for it in fam['menu']:
+            pages = it.get('pages')
+            if not pages:
+                twin = api.get(it['item'])
+                first = next(walk_pages(twin), None) if twin else it.get('href', '/').lstrip('/')
+                prods[it['item']] = [['API reference', [[f"{it['item']} API reference", '/' + first, 'code']]]]
+                continue
+            steps, loose = [], []
+            for e in unwrap(it, pages):
+                if isinstance(e, dict):
+                    if loose:
+                        steps.append(step_of(it['item'], loose))
+                        loose = []
+                    steps.append(step_of(e['group'], ([e['root']] if e.get('root') else []) + e['pages']))
+                else:
+                    loose.append(e)
+            if loose:
+                steps.append(step_of(it['item'], loose))
+            prods[it['item']] = steps
+    return J
+
+
+def write_journey(products):
+    src = open(LANDING_HTML).read()
+    start = src.index('const J=')
+    end = src.index('\n', src.index('BASE="";', start))
+    block = ('const J=' + json.dumps(journey(products), ensure_ascii=False, separators=(',', ':')) + ';\n'
+             '  // const J is written by scripts/build-nav.py from docs.json: one step per docs sidebar section.\n'
+             '  const BASE="";')
+    open(LANDING_HTML, 'w').write(src[:start] + block + src[end:])
+
+
 def open_ok(page):
     try:
         open(page + '.mdx').close()
@@ -783,6 +880,7 @@ def main():
     targets, page_map = reference_targets(new['products'])
     write_link_js(page_map, api_pages(new['products']), docs_targets(new['products']))
     write_index(targets)
+    write_journey(new['products'])
     d['navigation'] = new
     json.dump(d, open(DOCS, 'w'), indent=2, ensure_ascii=False)
     open(DOCS, 'a').write('\n')
