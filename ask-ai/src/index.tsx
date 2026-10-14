@@ -97,7 +97,6 @@ type PanelProps = {
   starters: Starter[];
   /** False where the host asked not to keep conversations in its origin. */
   keepHistory: boolean;
-  supportUrl: string;
   page: PageAttachment | null;
   onDetach: () => void;
   /** Puts a page the reader found in the page search on the conversation. */
@@ -254,7 +253,6 @@ function Panel({
   asked,
   starters,
   keepHistory,
-  supportUrl,
 }: PanelProps) {
   // Empty until the reader asks something: the welcome stands in for an
   // opening line, so no turn is spent saying hello.
@@ -835,7 +833,6 @@ function Panel({
           <Welcome
             starters={openers}
             mock={transport.isMock}
-            supportUrl={supportUrl}
             onPick={(prompt) => void ask(prompt)}
           />
         )}
@@ -888,21 +885,28 @@ function Panel({
                   {turn.sources.length === 1 ? 'source' : 'sources'}
                 </summary>
                 <ul class="ask-ai__source-list">
-                  {turn.sources.map((source) => (
+                  {turn.sources.map((source) => {
+                    const href = absolute(source.url, docsOrigin);
+                    return (
                     <li key={source.id}>
-                      <a
-                        href={absolute(source.url, docsOrigin) ?? source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="ask-ai__source-link">
-                        <FileText />
-                        <span class="ask-ai__source-title">
-                          {source.title}
-                          {source.status !== 'verified' ? ' (spec)' : ''}
+                      {href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="ask-ai__source-link">
+                          <FileText />
+                          <span class="ask-ai__source-title">{source.title}</span>
+                        </a>
+                      ) : (
+                        <span class="ask-ai__source-link">
+                          <FileText />
+                          <span class="ask-ai__source-title">{source.title}</span>
                         </span>
-                      </a>
+                      )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </details>
             )}
@@ -968,7 +972,6 @@ function Widget({
   agentId,
   authToken,
   docsOrigin,
-  supportUrl,
   open,
   page,
   onDetach,
@@ -984,7 +987,6 @@ function Widget({
   agentId: string;
   authToken: string;
   docsOrigin: string;
-  supportUrl: string;
   open: boolean;
   page: PageAttachment | null;
   onDetach: () => void;
@@ -1008,7 +1010,6 @@ function Widget({
         agentId={agentId}
         authToken={authToken}
         docsOrigin={docsOrigin}
-        supportUrl={supportUrl}
         open={open}
         question={question}
         send={send}
@@ -1049,8 +1050,8 @@ function Widget({
  * Two things are done by method rather than attribute. ask(question) opens
  * the panel and asks at once; the floating bar at the foot of the page is
  * what calls it. attachPage({title, url, markdown}) gives the conversation
- * the page the reader is looking at, and attachPage(null) takes it off again. A page of Markdown does not belong in
- * an attribute, and the host is the only one that knows where its own pages
+ * the page the reader is looking at, and attachPage(null) takes it off again. A page of Markdown does not
+ * belong in an attribute, and the host is the only one that knows where its own pages
  * are published, so it fetches and hands over the text.
  *
  * Everything renders in a shadow root, so the host page's styles cannot reach
@@ -1090,7 +1091,6 @@ export class SupportAgentElement extends Base {
     'agent-id',
     'auth-token',
     'docs-origin',
-    'support-url',
     'open',
     'question',
     'send',
@@ -1182,10 +1182,6 @@ export class SupportAgentElement extends Base {
         agentId={this.getAttribute('agent-id') ?? ''}
         authToken={this.getAttribute('auth-token') ?? ''}
         docsOrigin={docsOrigin}
-        supportUrl={
-          this.getAttribute('support-url') ??
-          `${docsOrigin.replace(/\/$/, '')}/docs/support`
-        }
         open={this.hasAttribute('open')}
         page={this.page}
         onDetach={() => this.attachPage(null)}

@@ -1,8 +1,9 @@
-# The support agent widget
+# Ask AI widget
 
-The ABDM support agent as one custom element, `<eka-ask-ai>`, that
-goes on any page: the docs site, the developer console, a partner's internal
-wiki, a landing page. The docs site is its first user, not its owner.
+The Eka Developer Platform's Ask AI assistant as one custom element,
+`<eka-ask-ai>`, that goes on any page. The docs site is its first user, not its
+owner. It currently runs in mock mode: with no `agent-id` it answers from canned
+text and says so, until a Synapse backend is wired in (see below).
 
 ## Embedding
 
@@ -27,7 +28,6 @@ configuration.
 | ------------- | ------------------------------------------------------------------------- |
 | `api-base`    | The chat server's origin. Absent leaves the panel a labelled mock.        |
 | `docs-origin` | Where citations resolve. Defaults to the host page's own origin, which is right only on the docs site. |
-| `support-url` | Where the mock's "use support" link points. Defaults to `<docs-origin>/docs/support`. |
 | `ground`      | `light` or `dark`. The element reads the host page's background and sets this itself; set it to override that reading. |
 | `question`    | Seeds the composer when the panel opens on an empty box. Nothing is sent; the reader still presses send. The docs site fills it from whatever is in the search field. |
 | `starters`    | The empty state's openers, one per line, at most five, shown as pills under the greeting. A line may be `label \| question`, so the pill stays two or three words while the question it asks is whole; a line with no bar is its own label. Absent keeps the widget's own general set. |
@@ -105,6 +105,19 @@ embedding page's origin, each dropped after thirty days, with any attached
 file's text stripped before saving. A reader can delete one or clear them all
 from the History tab, and `history="off"` keeps nothing. Nothing about a
 conversation leaves the browser except the question being asked.
+
+## Wiring Synapse
+
+The backend is wired through `src/transport.ts`. For the team doing it:
+
+- Replace the throw in `createTransport` with a Synapse-backed `Transport`.
+- Citations need an `onSources` handler added across `types.ts`,
+  `transport.ts` and `index.tsx`; nothing supplies sources today, so the panel
+  shows none.
+- `reset()` does not await `end()`, so a new conversation can start before the
+  old session is closed.
+- Stop during a pending `start()` orphans the session that call creates.
+- Attached pages are sent without a size cap.
 
 ## Working on it
 

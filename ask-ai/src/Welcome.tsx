@@ -10,22 +10,17 @@ import type {Starter} from './starters';
 type Props = {
   starters: Starter[];
   mock: boolean;
-  supportUrl: string;
   onPick: (prompt: string) => void;
 };
 
-export function Welcome({starters, mock, supportUrl, onPick}: Props) {
+export function Welcome({starters, mock, onPick}: Props) {
   return (
     <div class="ask-ai__welcome">
       <FrostedOrb size={80} />
       <h3 class="ask-ai__greeting">Welcome to the Eka Developer Platform. What do you want to build?</h3>
       {mock && (
         <p class="ask-ai__welcome-note">
-          A preview, not connected to an assistant. For a real answer, use{' '}
-          <a href={supportUrl} target="_blank" rel="noopener noreferrer">
-            support
-          </a>
-          .
+          A preview, not connected to an assistant.
         </p>
       )}
       <div class="ask-ai__pills">

@@ -171,6 +171,7 @@ assert.deepEqual(toBlocks('```mermaid\nsequenceDiagram\n```'), [
 ]);
 
 // Links resolve against the docs origin, and only http(s) survives.
+assert.equal(absolute('javascript:alert(1)', 'https://d.example/'), null);
 assert.equal(absolute('/docs/m1', 'https://d.example/'), 'https://d.example/docs/m1');
 assert.equal(absolute('https://x.test/a', 'https://d.example'), 'https://x.test/a');
 assert.equal(absolute('javascript:alert(1)', 'https://d.example'), null);

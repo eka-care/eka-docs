@@ -7,7 +7,7 @@
  * page, so the panel gives it and the model is not asked.
  */
 export const ABOUT = [
-  "I answer questions about the Eka Developer Platform, from developer.eka.care's documentation and API reference. Every answer lists the pages it used, so you can check the source.",
+  "I answer questions about the Eka Developer Platform, from developer.eka.care's documentation and API reference.",
   '',
   '**What you can ask**',
   '',
@@ -17,7 +17,7 @@ export const ABOUT = [
   '',
   '**What you can give me**',
   '',
-  '- **A page.** Press **+** and attach any page on this site, or open me from **Ask about this page**.',
+  '- **A page.** Press **+** and attach any page on this site, or ask from the Ask AI bar at the bottom of any page, or from **Ask AI about ...** in search.',
   '- **A file.** A request, a response or a log, as a text file. It is read in your browser, and only its text is sent.',
   '',
   '**What I will not do**',
