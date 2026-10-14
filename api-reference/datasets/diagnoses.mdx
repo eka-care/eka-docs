@@ -1,0 +1,74 @@
+---
+title: "Diagnoses"
+description: "What you can upload for each diagnosis, which columns are mandatory, and the values each one accepts."
+---
+
+Your diagnosis list is what clinicians can record as a patient's condition, such as type 2 diabetes or hypertension. Each row is one diagnosis, identified by your own id. Use `type=diagnosis` with the API, or pick **Diagnoses** in the console.
+
+<Note>
+**Mandatory columns:** `diagnosis_id` and `name`. Every other column is optional; leave the cell empty if you don't have the value.
+</Note>
+
+## Columns
+
+| Column | Required | What it means | Allowed values | Example |
+|---|---|---|---|---|
+| `diagnosis_id` | **Yes** | Your own id for the diagnosis. Any text works, including a code you already use. Writing a row with an id that already exists updates it. | Text, up to 200 characters | `DX1001` |
+| `name` | **Yes** | The diagnosis name. Used for search. | Text, up to 200 characters | `Type 2 Diabetes Mellitus` |
+| `ekaid` | No | Eka's own id for the same diagnosis, from Eka's reference list. Lets Eka products recognise it. See [Mapping your records to Eka ids](/api-reference/datasets/overview#mapping-your-records-to-eka-ids). | Text, up to 64 characters | From Eka's list |
+| `display_name` | No | The name shown to doctors and patients. Defaults to `name`. | Text, up to 200 characters | `Type 2 Diabetes Mellitus` |
+| `aliases` | No | Synonyms and everyday words people search by. | Several values separated by `\|` | `T2DM\|Type 2 Diabetes` |
+| `snomed_id` | No | SNOMED CT concept id. The most reliable link to standard terminology, when you have it. Not checked against SNOMED. | Text, up to 32 characters | `44054006` |
+| `icd10` | No | ICD-10 code. Not checked against the ICD list. | Text, up to 32 characters | `E11.9` |
+| `icd10_term` | No | The ICD-10 description for that code. | Text, up to 255 characters | `Type 2 diabetes mellitus without complications` |
+| `gender` | No | Use when the diagnosis applies to one gender only. Leave empty when it applies to everyone. | `M` or `F` (capital letter) | `M` |
+| `is_active` | No | Set to `false` to keep the diagnosis but hide it. Defaults to `true`. | `true` or `false` | `true` |
+
+## Example file
+
+```csv diagnoses.csv
+diagnosis_id,name,ekaid,display_name,aliases,snomed_id,icd10,icd10_term,gender,is_active
+DX1001,Type 2 Diabetes Mellitus,,Type 2 Diabetes Mellitus,T2DM|Type 2 Diabetes,44054006,E11.9,Type 2 diabetes mellitus without complications,,true
+DX1002,Essential Hypertension,,Essential Hypertension,HTN|High Blood Pressure,59621000,I10,Essential (primary) hypertension,,true
+DX1005,Benign Prostatic Hyperplasia,,Benign Prostatic Hyperplasia,BPH|Enlarged Prostate,266569009,N40,Benign prostatic hyperplasia,M,true
+```
+
+<Tip>
+Put quotes around any value that contains a comma, like `"Chest pain, unspecified"`. Spreadsheet programs do this for you when they save as CSV.
+</Tip>
+
+The smallest valid file has just the two mandatory columns:
+
+```csv minimal.csv
+diagnosis_id,name
+DX1001,Type 2 Diabetes Mellitus
+```
+
+## Example JSON
+
+Records sent to [Create or update records](/api-reference/datasets/write). In JSON, multi-value fields are lists.
+
+```json
+[
+  {
+    "diagnosis_id": "DX1002",
+    "name": "Essential Hypertension",
+    "aliases": ["HTN", "High Blood Pressure"],
+    "snomed_id": "59621000",
+    "icd10": "I10",
+    "icd10_term": "Essential (primary) hypertension"
+  },
+  {
+    "diagnosis_id": "DX1005",
+    "name": "Benign Prostatic Hyperplasia",
+    "aliases": ["BPH", "Enlarged Prostate"],
+    "gender": "M"
+  }
+]
+```
+
+## Common mistakes
+
+- **Lowercase `gender`.** Use `M` or `F`; `m`, `male` or `Female` are rejected.
+- **Several codes in `snomed_id` or `icd10`.** Each holds one code. Put alternative names in `aliases` instead.
+- **Reusing an id for a different diagnosis.** An existing `diagnosis_id` updates that record; it never creates a second one.

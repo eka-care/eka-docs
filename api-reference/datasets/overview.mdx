@@ -9,16 +9,29 @@ Every request acts only on the workspace your access token belongs to. You canno
 
 ## Dataset types
 
-Every endpoint takes a `type` query parameter:
+You can upload four kinds of catalog. Each page lists every column you can send, which ones are mandatory, the values they accept, and a sample file.
 
-| `type` | Catalog | Your id field |
-|---|---|---|
-| `medication` | Drugs | `medication_id` |
-| `lab_test` | Lab tests, imaging, panels and packages | `lab_test_id` |
-| `symptom` | Symptoms | `symptom_id` |
-| `diagnosis` | Diagnoses | `diagnosis_id` |
+| Catalog | `type` | Mandatory columns | Details |
+|---|---|---|---|
+| Drugs | `medication` | `medication_id`, `name` | [Medications](/api-reference/datasets/medications) |
+| Lab tests, imaging, panels and packages | `lab_test` | `lab_test_id`, `name`, `kind`, `result_type`, plus `specimen`, `unit` or `panel_members` in some cases | [Lab tests](/api-reference/datasets/lab-tests) |
+| Symptoms | `symptom` | `symptom_id`, `name` | [Symptoms](/api-reference/datasets/symptoms) |
+| Diagnoses | `diagnosis` | `diagnosis_id`, `name` | [Diagnoses](/api-reference/datasets/diagnoses) |
 
 Records are identified by **your** id. Writing a record whose id already exists updates it.
+
+## Preparing a file
+
+These rules apply to every catalog, whether you upload a CSV in the console or through the API.
+
+- **One header row, then one row per record.** Column names are the ones listed on each catalog's page. Columns can be in any order, and you only need the mandatory ones plus whatever else you have.
+- **Common alternative column names are understood.** For example `id` for your id column, or `eka_id` for `ekaid`. A column Eka doesn't recognise is ignored, with a warning.
+- **Leave a cell empty when you don't have the value.**
+- **Lists in one cell** use `|` between values, like `CBC|Hemogram`. The one exception is a drug's `generic_list` and `generic_list_ids`, which use `+`. In JSON, send these as lists instead.
+- **Yes/no columns** accept `true` or `false` (also `yes`/`no` and `1`/`0`).
+- **Quote any value containing a comma**, like `"Chest pain, unspecified"`. Spreadsheet programs do this when they save as CSV.
+- **Save as UTF-8 CSV** if you can. Files saved by Excel on Windows also work.
+- **Up to 50,000 rows per file.**
 
 ## Endpoints
 
@@ -34,7 +47,7 @@ For medications, use a `form_name` from the [accepted drug forms](/api-reference
 
 ## Mapping your records to Eka ids
 
-Every record can carry an optional `ekaid`: Eka's own id for the same item, taken from Eka's reference list (for example `lu-991284286` for a lab test). When it is set, Eka products such as the EMR recognise your item and can offer features built on Eka's data, like calculators. Eka stores the id as you send it and does not check it, so make sure each mapping is right.
+Every record can carry an optional `ekaid`: Eka's own id for the same item, taken from Eka's reference list (for example `lb-1322178942` for a lab test). When it is set, Eka products such as the EMR recognise your item and can offer features built on Eka's data, like calculators. Eka stores the id as you send it and does not check it, so make sure each mapping is right.
 
 ## Keeping a catalog in sync
 

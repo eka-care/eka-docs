@@ -1,0 +1,74 @@
+---
+title: "Symptoms"
+description: "What you can upload for each symptom, which columns are mandatory, and the values each one accepts."
+---
+
+Your symptom list is what clinicians can record as a patient's complaint, such as fever or chest pain. Each row is one symptom, identified by your own id. Use `type=symptom` with the API, or pick **Symptoms** in the console.
+
+<Note>
+**Mandatory columns:** `symptom_id` and `name`. Every other column is optional; leave the cell empty if you don't have the value.
+</Note>
+
+## Columns
+
+| Column | Required | What it means | Allowed values | Example |
+|---|---|---|---|---|
+| `symptom_id` | **Yes** | Your own id for the symptom. Any text works, including a code you already use. Writing a row with an id that already exists updates it. | Text, up to 200 characters | `SYM1001` |
+| `name` | **Yes** | The symptom name. Used for search. | Text, up to 200 characters | `Chest Pain` |
+| `ekaid` | No | Eka's own id for the same symptom, from Eka's reference list. Lets Eka products recognise it. See [Mapping your records to Eka ids](/api-reference/datasets/overview#mapping-your-records-to-eka-ids). | Text, up to 64 characters | From Eka's list |
+| `display_name` | No | The name shown to doctors and patients. Defaults to `name`. | Text, up to 200 characters | `Chest Pain` |
+| `aliases` | No | Synonyms and everyday words people search by. | Several values separated by `\|` | `Chest Discomfort\|Angina Pain` |
+| `snomed_id` | No | SNOMED CT concept id. The most reliable link to standard terminology, when you have it. Not checked against SNOMED. | Text, up to 32 characters | `1263722001` |
+| `icd10` | No | ICD-10 code. Not checked against the ICD list. | Text, up to 32 characters | `R07.4` |
+| `icd10_term` | No | The ICD-10 description for that code. | Text, up to 255 characters | `Chest pain, unspecified` |
+| `gender` | No | Use when the symptom applies to one gender only. Leave empty when it applies to everyone. | `M` or `F` (capital letter) | `F` |
+| `is_active` | No | Set to `false` to keep the symptom but hide it. Defaults to `true`. | `true` or `false` | `true` |
+
+## Example file
+
+```csv symptoms.csv
+symptom_id,name,ekaid,display_name,aliases,snomed_id,icd10,icd10_term,gender,is_active
+SYM1001,Chest Pain,,Chest Pain,Chest Discomfort,1263722001,R07.4,"Chest pain, unspecified",,true
+SYM1002,Fever,,Fever,Pyrexia|High Temperature,386661006,R50.9,"Fever, unspecified",,true
+SYM1005,Menstrual Cramps,,Menstrual Cramps,Dysmenorrhea|Period Pain,266599000,N94.6,"Dysmenorrhea, unspecified",F,true
+```
+
+<Tip>
+Put quotes around any value that contains a comma, like `"Chest pain, unspecified"`. Spreadsheet programs do this for you when they save as CSV.
+</Tip>
+
+The smallest valid file has just the two mandatory columns:
+
+```csv minimal.csv
+symptom_id,name
+SYM1001,Chest Pain
+```
+
+## Example JSON
+
+Records sent to [Create or update records](/api-reference/datasets/write). In JSON, multi-value fields are lists.
+
+```json
+[
+  {
+    "symptom_id": "SYM1002",
+    "name": "Fever",
+    "aliases": ["Pyrexia", "High Temperature"],
+    "snomed_id": "386661006",
+    "icd10": "R50.9",
+    "icd10_term": "Fever, unspecified"
+  },
+  {
+    "symptom_id": "SYM1005",
+    "name": "Menstrual Cramps",
+    "aliases": ["Dysmenorrhea", "Period Pain"],
+    "gender": "F"
+  }
+]
+```
+
+## Common mistakes
+
+- **Lowercase `gender`.** Use `M` or `F`; `m`, `male` or `Female` are rejected.
+- **Several codes in `snomed_id` or `icd10`.** Each holds one code. Put alternative names in `aliases` instead.
+- **Reusing an id for a different symptom.** An existing `symptom_id` updates that record; it never creates a second one.

@@ -1,0 +1,94 @@
+---
+title: "Medications"
+description: "What you can upload for each drug in your formulary, which columns are mandatory, and the values each one accepts."
+---
+
+Your medication catalog is the list of drugs your clinicians prescribe. Each row is one drug product, identified by your own id. Use `type=medication` with the API, or pick **Drugs** in the console.
+
+<Note>
+**Mandatory columns:** `medication_id` and `name`. Every other column is optional; leave the cell empty if you don't have the value.
+</Note>
+
+## Columns
+
+| Column | Required | What it means | Allowed values | Example |
+|---|---|---|---|---|
+| `medication_id` | **Yes** | Your own id for the drug. Writing a row with an id that already exists updates that drug. | Text, up to 200 characters | `DRUG1001` |
+| `name` | **Yes** | The drug's brand name. Used for search. | Text, up to 200 characters | `Dolo 650` |
+| `ekaid` | No | Eka's own id for the same drug, from Eka's reference list. Lets Eka products recognise it. See [Mapping your records to Eka ids](/api-reference/datasets/overview#mapping-your-records-to-eka-ids). | Text, up to 64 characters | From Eka's list |
+| `aliases` | No | Other names people search by: short forms, old names, common misspellings. | Several values separated by `\|` | `Dolo\|Paracetamol 650` |
+| `display_name` | No | The name shown to doctors and patients. If empty, the original `name` is shown. | Text, up to 200 characters | `Dolo 650` |
+| `strength` | No | Strength per unit. | Text, up to 32 characters | `650mg`, `10mg/5ml` |
+| `generic_name` | No | The generic (salt) composition, written as one text. | Text, up to 300 characters | `Amoxicillin + Clavulanic Acid` |
+| `generic_id` | No | Your id for that generic composition. | Text, up to 64 characters | `GEN-AMOX-625` |
+| `generic_list` | No | Each generic component on its own. | Several values separated by `+` | `Amoxicillin+Clavulanic Acid` |
+| `generic_list_ids` | No | Ids for the components in `generic_list`, in the same order. | Several values separated by `+` | `GEN-AMOX-500+GEN-CLAV-125` |
+| `form_name` | No | Dosage form. Use a name from the [accepted drug forms](/api-reference/datasets/forms) so the drug is linked to Eka's form; other values are stored as text without that link. | Text, up to 64 characters; matched ignoring case | `Tablet`, `Dry Syrup` |
+| `sku` | No | Your stock-keeping code. | Text, up to 64 characters | `10012345` |
+| `schedule_code` | No | Regulatory schedule. | Text, up to 32 characters | `OTC`, `H`, `H1`, `X` |
+| `custom_type` | No | Your own category for the drug. | Text, up to 64 characters | `Antibiotic` |
+| `therapy_class` | No | Therapeutic class. | Text, up to 128 characters | `Analgesic` |
+| `therapy_class_id` | No | Your id for the therapeutic class. | Text, up to 64 characters | `TC-ANALG` |
+| `action_class` | No | Pharmacological action. | Text, up to 128 characters | `Antipyretic` |
+| `action_class_id` | No | Your id for the action class. | Text, up to 64 characters | `AC-ANTIPYR` |
+| `manufacturer` | No | Manufacturer or marketer. | Text, up to 200 characters | `Micro Labs Ltd` |
+| `otc` | No | Whether the drug is sold over the counter. | `true` or `false` (also `yes`/`no`, `1`/`0`) | `true` |
+| `is_active` | No | Set to `false` to keep the drug but hide it. Defaults to `true`. | `true` or `false` | `true` |
+
+<Tip>
+Brand names often carry the strength and form, like `Dolo 650 Tablet`. Eka trims that from `name` for search and keeps your original text as `display_name`, unless you send your own `display_name`.
+</Tip>
+
+## Example file
+
+```csv medications.csv
+medication_id,name,ekaid,aliases,display_name,strength,generic_name,generic_id,generic_list,generic_list_ids,form_name,sku,schedule_code,custom_type,therapy_class,therapy_class_id,action_class,action_class_id,manufacturer,otc,is_active
+DRUG1001,Dolo 650,,Dolo|Paracetamol 650,Dolo 650,650mg,Paracetamol,GEN-PARA-650,Paracetamol,GEN-PARA-650,Tablet,10012345,OTC,,Analgesic,,Antipyretic,,Micro Labs Ltd,true,true
+DRUG1002,Augmentin 625 Duo,,Augmentin|Amox Clav 625,Augmentin 625 Duo,625mg,Amoxicillin + Clavulanic Acid,GEN-AMOX-625,Amoxicillin+Clavulanic Acid,GEN-AMOX-500+GEN-CLAV-125,Tablet,10012346,H,Antibiotic,Antibiotic,,Beta-lactam,,GlaxoSmithKline,false,true
+DRUG1003,Crocin Cough Syrup,,Crocin Cough,Crocin Cough Syrup,10mg/5ml,Dextromethorphan,GEN-DXM-100,Dextromethorphan,GEN-DXM-100,Dry Syrup,10012347,OTC,,Antitussive,,Cough Suppressant,,GlaxoSmithKline,true,true
+```
+
+The smallest valid file has just the two mandatory columns:
+
+```csv minimal.csv
+medication_id,name
+DRUG1001,Dolo 650
+DRUG1002,Augmentin 625 Duo
+```
+
+## Example JSON
+
+The same records sent to [Create or update records](/api-reference/datasets/write). In JSON, multi-value fields are lists.
+
+```json
+[
+  {
+    "medication_id": "DRUG1001",
+    "name": "Dolo 650",
+    "aliases": ["Dolo", "Paracetamol 650"],
+    "strength": "650mg",
+    "generic_name": "Paracetamol",
+    "generic_list": ["Paracetamol"],
+    "form_name": "Tablet",
+    "schedule_code": "OTC",
+    "manufacturer": "Micro Labs Ltd",
+    "otc": true
+  },
+  {
+    "medication_id": "DRUG1002",
+    "name": "Augmentin 625 Duo",
+    "generic_name": "Amoxicillin + Clavulanic Acid",
+    "generic_list": ["Amoxicillin", "Clavulanic Acid"],
+    "generic_list_ids": ["GEN-AMOX-500", "GEN-CLAV-125"],
+    "form_name": "Tablet",
+    "schedule_code": "H",
+    "otc": false
+  }
+]
+```
+
+## Common mistakes
+
+- **Using `|` in `generic_list`.** Generic components are separated with `+`, unlike `aliases`, which uses `|`.
+- **A dosage form that isn't on the list.** The drug is still saved, but without a link to Eka's form. Check the spelling against [accepted drug forms](/api-reference/datasets/forms).
+- **Reusing an id for a different drug.** An existing `medication_id` updates that drug; it never creates a second one.
