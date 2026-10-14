@@ -1,12 +1,11 @@
 import {Fragment, render} from 'preact';
-import {useEffect, useRef, useState} from 'preact/hooks';
+import {useEffect, useMemo, useRef, useState} from 'preact/hooks';
 import ChatMarkdown, {CopyButton, absolute, headings} from './markdown';
 import {ChevronRight, FileText, Paperclip, Plus, Sparkles, X} from './icons';
-import {readStream, UNREACHABLE, type Source} from './sse';
+import {createTransport, UNREACHABLE, type SessionRef} from './transport';
 import {revealStep} from './pacing';
 import {
   clearCurrentId,
-  continuedId,
   currentId,
   forget,
   forgetOne,
@@ -14,7 +13,6 @@ import {
   remember,
   resumable,
   save as saveHistory,
-  setContinuedId,
   setCurrentId,
   titleOf,
   type Session,
@@ -25,9 +23,8 @@ import {HistoryList} from './HistoryList';
 import {Welcome} from './Welcome';
 import {ThinkingOrb} from './orb/frosted-orb';
 import {startersFrom, type Starter} from './starters';
-import {forModel, MAX_TURNS, memoryOf, sentFrom} from './transcript';
 import {isHtmlDocument, markdownUrl, pageUrl, type PageEntry} from './pages';
-import type {Attached, PageAttachment} from './types';
+import type {Attached, PageAttachment, Source} from './types';
 
 export type {PageAttachment} from './types';
 import css from './styles.css';
@@ -42,44 +39,25 @@ type Turn = {
   from: 'you' | 'assistant';
   text: string;
   sources?: Source[];
-  /** The file that went with this question, kept so a follow-up still has it. */
+  /** Follow-up questions the assistant suggested after this answer. */
+  tips?: string[];
+  /** The file that went with this question, named in the reader's bubble. */
   file?: Attached;
-  /** The panel's own turn, never shown to the model: its answer about itself. */
+  /** The panel's own turn, never sent to the assistant: its answer about itself. */
   local?: boolean;
 };
 
 /**
  * What may be attached, and how much of it.
  *
- * Text only, and read here rather than uploaded: the server has no place to
- * put a file and no way to redact one it cannot read. The character cap
- * matches the server's own, so a file that is too long is refused here, where
- * the reader can see why, rather than in a 400.
+ * Text only, and read here before it is sent, so a file that is not text or
+ * is too long is refused here, where the reader can see why.
  */
 const ATTACH_TYPES = '.json,.txt,.log,.csv,.xml,.yaml,.yml,.md,.har';
 const ATTACH_MAX_CHARS = 20000;
 const ATTACH_MAX_BYTES = 256 * 1024;
 const ATTACH_REFUSED =
   'Only text files can be attached here: JSON, text, logs, CSV, XML, YAML, Markdown or HAR.';
-
-/**
- * The chat API caps an attached page, so the panel cuts to the same length
- * rather than having the request rejected. The note goes to the model, not
- * to the reader: it is the model that has to know its copy stops early.
- */
-const MAX_PAGE_CHARS = 24000;
-const CUT_NOTE =
-  '\n\n[This page was cut here to fit. Say so if the answer needs the rest of it.]';
-
-function pageBody(markdown: string): string {
-  if (markdown.length <= MAX_PAGE_CHARS) return markdown;
-  return markdown.slice(0, MAX_PAGE_CHARS - CUT_NOTE.length) + CUT_NOTE;
-}
-
-/** What the mock says back, whatever it is asked. */
-const CANNED =
-  'This panel is a mock. No assistant is connected here yet, so nothing in ' +
-  'it can answer that. The support page lists the channels a human reads.';
 
 type Setter = (update: (prior: Turn[]) => Turn[]) => void;
 
@@ -91,16 +69,20 @@ function appendToLastTurn(setTurns: Setter, delta: string) {
   });
 }
 
-/** Attaches the citation chips to the last turn in the thread. */
-function attachSources(setTurns: Setter, sources: Source[]) {
+/** What belongs under an answer and waits for it to finish. */
+type Extras = Pick<Turn, 'sources' | 'tips'>;
+
+/** Puts the citation chips and the tips on the last turn in the thread. */
+function attachExtras(setTurns: Setter, extras: Extras) {
   setTurns((prior) => {
     const last = prior[prior.length - 1];
-    return [...prior.slice(0, -1), {...last, sources}];
+    return [...prior.slice(0, -1), {...last, ...extras}];
   });
 }
 
 type PanelProps = {
-  apiBase: string;
+  agentId: string;
+  authToken: string;
   docsOrigin: string;
   open: boolean;
   onClose: () => void;
@@ -119,8 +101,8 @@ type PanelProps = {
 /**
  * The conversation itself.
  *
- * Without a backend configured (`apiBase` is empty), this is a labelled mock:
- * the opening line says so, the reply is a constant, and the badge in the
+ * Without an agent configured (`agentId` is empty), the transport is a
+ * labelled mock: the welcome says so, the reply says so, and the badge in the
  * header repeats it, because a convincing mock of an assistant that cannot
  * answer is worse than no assistant at all.
  *
@@ -232,7 +214,8 @@ function ResizeGrip({dialog}: {dialog: {current: HTMLDialogElement | null}}) {
 }
 
 function Panel({
-  apiBase,
+  agentId,
+  authToken,
   docsOrigin,
   open,
   onClose,
@@ -256,9 +239,10 @@ function Panel({
     ? pageOpeners.map((heading) => ({label: heading, prompt: heading}))
     : starters;
   const [draft, setDraft] = useState('');
-  const [chosen, setChosen] = useState<Attached | null>(null);
+  // The file as the reader chose it, which is what is sent, and what was read
+  // from it, which is what the composer and the thread show.
+  const [chosen, setChosen] = useState<{attached: Attached; file: File} | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
-  const [reading, setReading] = useState<string | null>(null);
   const [phase, setPhase] = useState<'idle' | 'thinking' | 'streaming'>('idle');
   const [activity, setActivity] = useState<string | null>(null);
   // Past conversations, read from this browser once the panel is built, and
@@ -271,22 +255,24 @@ function Panel({
   const [menu, setMenu] = useState<Menu>('closed');
   const [attaching, setAttaching] = useState<string | null>(null);
   const conversation = useRef(newId());
-  // The conversation the reader chose to carry on past the window with, so
-  // the offer to start a new one is made once per conversation.
-  const [continued, setContinued] = useState<string | null>(continuedId);
+  // One transport for the panel. The assistant holds the conversation; the
+  // panel holds the pair that names it, and whether it has been started (or
+  // resumed) since this conversation came on screen.
+  const transport = useMemo(
+    () => createTransport({agentId, authToken}),
+    [agentId, authToken],
+  );
+  const session = useRef<SessionRef | undefined>(undefined);
+  const started = useRef(false);
   const autoAsked = useRef<string | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const thread = useRef<HTMLDivElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
-  const picker = useRef<HTMLInputElement>(null);
-  const abort = useRef<AbortController | null>(null);
   const busy = phase !== 'idle';
   // A page with no markdown is one the host could not fetch. It still shows,
   // as a failure, because a reader who asked for the page to be attached has
   // to be told it was not.
   const attached = page !== null && page.markdown !== '';
-  const memory = memoryOf(turns);
-  const cut = sentFrom(turns);
 
   // Text that has arrived but has not been shown yet, and the frame loop that
   // shows it. Both are refs: the loop runs from a callback the browser holds,
@@ -298,7 +284,11 @@ function Panel({
   const askedAt = useRef(0);
   const atOnce = useRef(false);
   const frame = useRef(0);
-  const heldSources = useRef<Source[] | null>(null);
+  const extras = useRef<Extras | null>(null);
+  // Which question the transport's handlers belong to. Stop, New and
+  // resuming move it on, so a late event from an answer the reader left is
+  // dropped rather than written into the next one.
+  const asking = useRef(0);
 
   const drain = () => {
     frame.current = requestAnimationFrame(drain);
@@ -309,9 +299,9 @@ function Panel({
       cancelAnimationFrame(frame.current);
       frame.current = 0;
       revealing.current = false;
-      if (heldSources.current) {
-        attachSources(setTurns, heldSources.current);
-        heldSources.current = null;
+      if (extras.current) {
+        attachExtras(setTurns, extras.current);
+        extras.current = null;
       }
       setPhase('idle');
       return;
@@ -339,9 +329,12 @@ function Panel({
     pending.current += text;
   };
 
-  /** Holds the citations until the answer they belong to has finished. */
-  const queueSources = (sources: Source[]) => {
-    heldSources.current = sources;
+  /**
+   * Holds the tips until the answer they belong to has finished: attaching
+   * them while the text is still revealing would sit them under half a reply.
+   */
+  const queueTips = (tips: string[]) => {
+    extras.current = {...extras.current, tips};
   };
 
   const stopDrain = () => {
@@ -349,8 +342,9 @@ function Panel({
     frame.current = 0;
     revealing.current = false;
     pending.current = '';
-    heldSources.current = null;
+    extras.current = null;
     netDone.current = true;
+    asking.current += 1;
   };
 
   // A host that already knows what the reader was typing, the docs site's
@@ -447,14 +441,14 @@ function Panel({
     el.style.overflowY = el.scrollHeight > height ? 'auto' : 'hidden';
   }, [draft]);
 
-  // Leaving the page mid-answer stops the stream rather than leaving it to
+  // Leaving the page mid-answer stops the delivery rather than leaving it to
   // run against a component nobody is watching.
   useEffect(
     () => () => {
-      abort.current?.abort();
+      transport.detach();
       if (frame.current) cancelAnimationFrame(frame.current);
     },
-    [],
+    [transport],
   );
 
   /**
@@ -465,6 +459,8 @@ function Panel({
    * characters, ten of those would not fit the quota, and the point of the
    * list is finding the question again rather than replaying the file with
    * it. A restored conversation keeps the file's name and loses its body.
+   * The session pair is kept with it, so a follow-up resumes the same
+   * conversation on the assistant's side.
    */
   const keep = (said: Turn[]) => {
     if (!keepHistory) return;
@@ -472,15 +468,17 @@ function Panel({
     // an assistant turn with nothing in it, and the thread already draws
     // nothing for those, so what comes back is the question on its own.
     if (!said.some((turn) => turn.from === 'you')) return;
+    const entry: Session<Turn> = {
+      id: conversation.current,
+      at: Date.now(),
+      title: titleOf(said),
+      turns: said.map((turn) =>
+        turn.file ? {...turn, file: {...turn.file, text: ''}} : turn,
+      ),
+      ...(session.current ? {session: session.current} : {}),
+    };
     setHistory((held) => {
-      const next = remember(held, {
-        id: conversation.current,
-        at: Date.now(),
-        title: titleOf(said),
-        turns: said.map((turn) =>
-          turn.file ? {...turn, file: {...turn.file, text: ''}} : turn,
-        ),
-      });
+      const next = remember(held, entry);
       saveHistory(next);
       return next;
     });
@@ -500,23 +498,27 @@ function Panel({
     const left = resumable(held, currentId());
     if (left) {
       conversation.current = left.id;
+      session.current = left.session;
+      started.current = false;
       setTurns((now) => (now.length ? now : left.turns));
     }
   }, [keepHistory]);
 
   /** Puts a past conversation back on screen, where it can be carried on. */
-  const resume = (session: Session<Turn>) => {
+  const resume = (saved: Session<Turn>) => {
     keep(turns);
-    abort.current?.abort();
+    transport.detach();
     stopDrain();
     stick.current = true;
-    conversation.current = session.id;
-    setTurns(session.turns);
+    conversation.current = saved.id;
+    // Resumed on the assistant's side when the reader asks a follow-up.
+    session.current = saved.session;
+    started.current = false;
+    setTurns(saved.turns);
     setView('chat');
     setDraft('');
     setChosen(null);
     setAttachError(null);
-    setReading(null);
     setActivity(null);
     setPhase('idle');
   };
@@ -527,16 +529,19 @@ function Panel({
     keep(turns);
     conversation.current = newId();
     clearCurrentId();
+    // The assistant's session ends with the conversation; the next question
+    // starts a fresh one.
+    void transport.end();
+    session.current = undefined;
+    started.current = false;
     setView('chat');
     setMenu('closed');
-    abort.current?.abort();
     stopDrain();
     stick.current = true;
     setTurns([]);
     setDraft('');
     setChosen(null);
     setAttachError(null);
-    setReading(null);
     setActivity(null);
     setPhase('idle');
   };
@@ -544,10 +549,10 @@ function Panel({
   /**
    * Reads a chosen file into the composer's attachment slot.
    *
-   * The reading happens here, in the reader's own browser, and what travels
-   * is the text it found. Anything that is not a text file, a file that is too
-   * large, or one that turns out to be binary once read, is refused with a
-   * line saying so rather than sent as mojibake for the model to guess at.
+   * The reading happens here, in the reader's own browser, before anything
+   * is sent. Anything that is not a text file, a file that is too large, or
+   * one that turns out to be binary once read, is refused with a line saying
+   * so rather than sent for the model to guess at.
    */
   const takeFile = async (file: File | undefined) => {
     if (!file) return;
@@ -584,23 +589,24 @@ function Panel({
       setAttachError('That file is empty.');
       return;
     }
-    setChosen({name: file.name, text});
+    setChosen({attached: {name: file.name, text}, file});
     composer.current?.focus();
   };
 
   /** Stops the answer and keeps every word of it that had arrived. */
   const stop = () => {
-    abort.current?.abort();
+    asking.current += 1;
+    transport.detach();
     if (pending.current) appendToLastTurn(setTurns, pending.current);
     pending.current = '';
     netDone.current = true;
+    setActivity(null);
   };
 
   /** Asks a question. */
   const ask = async (asked: string) => {
     if (!asked || busy) return;
     const file = chosen;
-    const base = turns;
     setDraft('');
     setChosen(null);
     setAttachError(null);
@@ -608,33 +614,26 @@ function Panel({
     setView('chat');
 
     // A question about the panel itself is the panel's to answer, the same
-    // on every page, and it is never shown to the model: `local` drops the
-    // pair from what the next question sends.
+    // on every page, and it is never sent to the assistant.
     if (!file && isAboutQuestion(asked)) {
-      setTurns([
-        ...base,
+      setTurns((prior) => [
+        ...prior,
         {from: 'you', text: asked},
         {from: 'assistant', text: ABOUT, local: true},
       ]);
       return;
     }
 
-    // The panel's own answer is in the thread because the reader had it, but
-    // the model did not say it and would only be confused by it. forModel
-    // drops it with the turn it answered, so what is sent still alternates.
-    const history = forModel([
-      ...base,
-      {from: 'you' as const, text: asked, file: file ?? undefined},
-    ]);
     setTurns((prior) => [
       ...prior,
-      {from: 'you', text: asked, file: file ?? undefined},
+      {from: 'you', text: asked, file: file?.attached},
       {from: 'assistant', text: ''},
     ]);
 
     // Every answer, mock or live, goes through the same reveal loop, so the
     // preview shows the pacing the real thing has.
     pending.current = '';
+    extras.current = null;
     revealing.current = false;
     netDone.current = false;
     askedAt.current = performance.now();
@@ -645,68 +644,46 @@ function Panel({
     setActivity('Thinking');
     if (!frame.current) frame.current = requestAnimationFrame(drain);
 
-    if (!apiBase) {
-      emit(CANNED);
-      netDone.current = true;
-      return;
-    }
-
-    const controller = new AbortController();
-    abort.current = controller;
-    try {
-      const res = await fetch(`${apiBase.replace(/\/$/, '')}/api/chat`, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          turns: history.slice(-MAX_TURNS).map((t) => ({
-            role: t.from === 'you' ? 'user' : 'assistant',
-            text: t.text,
-            // The file rides with the question it came with, on every round,
-            // because the whole conversation is re-sent each time and a
-            // follow-up about "the bundle I sent" needs it still there.
-            ...(t.file
-              ? {
-                  attachment: {
-                    name: t.file.name,
-                    text: t.file.text,
-                  },
-                }
-              : {}),
-          })),
-          // Context, not a turn: the server puts it in front of the model as
-          // the page the reader is looking at, and it never enters the
-          // transcript as something they typed. Omitted entirely when
-          // nothing is attached, which is what an older server also sees.
-          ...(attached
-            ? {
-                page: {
-                  title: page!.title,
-                  url: page!.url,
-                  markdown: pageBody(page!.markdown),
-                },
-              }
-            : {}),
-        }),
-      });
-      if (!res.ok || !res.body) throw new Error(`status ${res.status}`);
-      await readStream(res.body, {
-        onText: emit,
-        onTool: (detail) => setActivity(detail),
-        // Citations belong to the answer, so they wait for it: attaching them
-        // while the text is still revealing would sit them under half a reply.
-        onSources: (sources) => queueSources(sources),
-        onError: emit,
-      });
-    } catch (err) {
-      // A stop is the reader's own doing: keep whatever arrived, say nothing.
-      if (!(err instanceof DOMException && err.name === 'AbortError')) {
-        emit(UNREACHABLE);
-      }
-    } finally {
-      abort.current = null;
+    const mine = ++asking.current;
+    const live = () => asking.current === mine;
+    const finish = () => {
       netDone.current = true;
       setActivity(null);
+    };
+    try {
+      // The first question of a conversation starts its session, or resumes
+      // the one a saved conversation already had.
+      if (!started.current) {
+        const ref = await transport.start(session.current);
+        // Stopped, or left for another conversation, while it was starting.
+        if (!live()) return;
+        session.current = ref;
+        started.current = true;
+      }
+      transport.send(
+        {
+          text: asked,
+          files: file ? [file.file] : [],
+          // An attached page goes as the page, not as something the reader
+          // typed. A page that could not be fetched does not go at all.
+          ...(attached ? {page: page!} : {}),
+        },
+        {
+          onText: (delta) => live() && emit(delta),
+          onProgress: (text) => live() && setActivity(text),
+          onTips: (tips) => live() && queueTips(tips),
+          onDone: () => live() && finish(),
+          onError: (message) => {
+            if (!live()) return;
+            emit(message || UNREACHABLE);
+            finish();
+          },
+        },
+      );
+    } catch {
+      if (!live()) return;
+      emit(UNREACHABLE);
+      finish();
     }
   };
 
@@ -735,8 +712,8 @@ function Panel({
 
   // The indicator stands until the first word is actually shown, not until
   // the first byte lands. A reader watching it needs to know the panel is
-  // working; what it says comes from the model's own tool calls once those
-  // start arriving.
+  // working; what it says comes from the assistant's progress messages once
+  // those start arriving.
   const showActivity = phase === 'thinking';
 
   return (
@@ -776,7 +753,7 @@ function Panel({
             History
           </button>
         </div>
-        {!apiBase && <span class="ask-ai__badge">Mock</span>}
+        {transport.isMock && <span class="ask-ai__badge">Mock</span>}
         <span class="ask-ai__grow" />
         <button
           type="button"
@@ -810,21 +787,13 @@ function Panel({
         {turns.length === 0 && (
           <Welcome
             starters={openers}
-            mock={!apiBase}
+            mock={transport.isMock}
             supportUrl={supportUrl}
             onPick={(prompt) => void ask(prompt)}
           />
         )}
         {turns.map((turn, index) => (
           <Fragment key={index}>
-          {/* Above the oldest message the next question still carries, once
-              the conversation is longer than that: what is above the line,
-              the assistant no longer has. */}
-          {index === cut && (
-            <p class="ask-ai__cut" role="separator">
-              <span>Earlier turns are no longer sent</span>
-            </p>
-          )}
           {/* An answer with nothing in it yet is not a bubble. The thinking
               indicator below stands in its place until the first word. */}
           {turn.from === 'assistant' && turn.text === '' ? null : (
@@ -890,6 +859,24 @@ function Panel({
                 </ul>
               </details>
             )}
+            {/* What the assistant suggests asking next, under the latest
+                answer once it has finished. A pill asks it. */}
+            {turn.tips &&
+              turn.tips.length > 0 &&
+              index === turns.length - 1 &&
+              !busy && (
+                <div class="ask-ai__tips" role="group" aria-label="Suggested questions">
+                  {turn.tips.map((tip) => (
+                    <button
+                      key={tip}
+                      type="button"
+                      class="ask-ai__pill"
+                      onClick={() => void ask(tip)}>
+                      {tip}
+                    </button>
+                  ))}
+                </div>
+              )}
           </div>
           )}
           </Fragment>
@@ -899,29 +886,6 @@ function Panel({
             <ThinkingOrb />
             {activity ?? 'Thinking'}
           </p>
-        )}
-
-        {/* Once the conversation fills what a question carries, the reader
-            is asked, once, whether to go on here or start afresh. Going on
-            is fine: the oldest exchanges simply stop being sent. */}
-        {memory.full && !busy && continued !== conversation.current && (
-          <div class="ask-ai__window-offer" role="status">
-            <p>Context window full. Earlier turns are no longer sent.</p>
-            <div class="ask-ai__window-offer-actions">
-              <button type="button" class="ask-ai__window-offer-new" onClick={reset}>
-                Start a new chat
-              </button>
-              <button
-                type="button"
-                class="ask-ai__window-offer-stay"
-                onClick={() => {
-                  setContinued(conversation.current);
-                  setContinuedId(conversation.current);
-                }}>
-                Continue here
-              </button>
-            </div>
-          </div>
         )}
 
       </div>
@@ -937,8 +901,7 @@ function Panel({
         onMenu={setMenu}
         accept={ATTACH_TYPES}
         onFile={(file) => void takeFile(file)}
-        file={chosen}
-        fileNote={reading}
+        file={chosen?.attached ?? null}
         fileError={attachError}
         onRemoveFile={() => setChosen(null)}
         docsOrigin={docsOrigin}
@@ -946,7 +909,6 @@ function Panel({
         attaching={attaching}
         onPage={(entry) => void attachFromSearch(entry)}
         onRemovePage={onDetach}
-        memory={memory}
       />
       </>
       )}
@@ -956,7 +918,8 @@ function Panel({
 
 function Widget({
   host,
-  apiBase,
+  agentId,
+  authToken,
   docsOrigin,
   supportUrl,
   launcher,
@@ -971,7 +934,8 @@ function Widget({
   keepHistory,
 }: {
   host: HTMLElement;
-  apiBase: string;
+  agentId: string;
+  authToken: string;
   docsOrigin: string;
   supportUrl: string;
   launcher: boolean;
@@ -1015,7 +979,8 @@ function Widget({
         </button>
       )}
       <Panel
-        apiBase={apiBase}
+        agentId={agentId}
+        authToken={authToken}
         docsOrigin={docsOrigin}
         supportUrl={supportUrl}
         open={open}
@@ -1036,7 +1001,8 @@ function Widget({
  * `<eka-ask-ai>`: the whole assistant, on any page, from one script
  * tag. Configuration is by attribute so an embedder needs no build step:
  *
- *   api-base     the chat server's origin; absent keeps the panel a mock
+ *   agent-id     the assistant to talk to; absent keeps the panel a mock
+ *   auth-token   the token that assistant is reached with
  *   docs-origin  where citations resolve, since "/docs/..." is wrong on
  *                every host except the docs site itself
  *   launcher     "none" to supply your own trigger and drive `open`
@@ -1091,7 +1057,8 @@ function groundOf(): 'light' | 'dark' {
 
 class SupportAgentElement extends HTMLElement {
   static observedAttributes = [
-    'api-base',
+    'agent-id',
+    'auth-token',
     'docs-origin',
     'support-url',
     'launcher',
@@ -1170,7 +1137,8 @@ class SupportAgentElement extends HTMLElement {
     render(
       <Widget
         host={this}
-        apiBase={this.getAttribute('api-base') ?? ''}
+        agentId={this.getAttribute('agent-id') ?? ''}
+        authToken={this.getAttribute('auth-token') ?? ''}
         docsOrigin={docsOrigin}
         supportUrl={
           this.getAttribute('support-url') ??

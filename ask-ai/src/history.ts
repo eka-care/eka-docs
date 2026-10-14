@@ -1,11 +1,12 @@
 /**
  * The conversations this browser has already had.
  *
- * They are kept in localStorage and nowhere else: the panel has no account to
- * hang a conversation on, and a support question is the reader's, not ours to
- * hold on a server. So "recent" means recent on this machine, in this browser,
- * and clearing it clears it for good.
+ * The list is kept in localStorage: the panel has no account to hang it on,
+ * so "recent" means recent on this machine, in this browser. The assistant
+ * holds each conversation on its own side too, and a saved entry keeps the
+ * session pair that lets a follow-up carry on that same conversation.
  */
+import type {SessionRef} from './transport';
 
 /** The little a conversation has to be for this module to work with it. */
 type Said = {from: 'you' | 'assistant'; text: string};
@@ -16,6 +17,8 @@ export type Session<T extends Said = Said> = {
   at: number;
   title: string;
   turns: T[];
+  /** The assistant's session for this conversation, once it has one. */
+  session?: SessionRef;
 };
 
 const KEY = 'eka-ask-ai-history';
@@ -131,26 +134,6 @@ export function setCurrentId(id: string): void {
 export function clearCurrentId(): void {
   try {
     sessionStorage.removeItem(CURRENT_KEY);
-  } catch {}
-}
-
-/**
- * The conversation the reader chose to carry on past the window with, so the
- * offer to start a new one is made once, and not again after a reload.
- */
-const CONTINUED_KEY = 'eka-ask-ai-continued';
-
-export function continuedId(): string | null {
-  try {
-    return sessionStorage.getItem(CONTINUED_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function setContinuedId(id: string): void {
-  try {
-    sessionStorage.setItem(CONTINUED_KEY, id);
   } catch {}
 }
 

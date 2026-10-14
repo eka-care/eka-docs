@@ -1,5 +1,5 @@
-// The pieces with logic in them: the markdown the model streams, the event
-// stream it arrives on, and the panel's own copy. Run with `node test.mjs`.
+// The pieces with logic in them: the markdown the model streams, the mock
+// transport it arrives on, and the panel's own copy. Run with `node test.mjs`.
 import assert from 'node:assert/strict';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -9,12 +9,13 @@ const out = join(tmpdir(), `abdm-widget-test-${process.pid}.mjs`);
 await build({
   stdin: {
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
-               export {readStream} from './src/sse';
+               export {mockTransport} from './src/mock-transport';
+               export {createTransport} from './src/transport';
                export {revealStep, THINKING_HOLD, THINKING_BURST} from './src/pacing';
-               export {titleOf, remember, whenSaid, forgetOne, resumable} from './src/history';
+               export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
                export {startersFrom, DEFAULT_STARTERS} from './src/starters';
-               export {forModel, memoryOf, sentFrom} from './src/transcript';
+               export {forModel} from './src/transcript';
                export {parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';`,
     resolveDir: import.meta.dirname,
     loader: 'ts',
@@ -34,8 +35,8 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, readStream, revealStep, THINKING_HOLD, THINKING_BURST,
-  titleOf, remember, whenSaid, forgetOne, resumable, ABOUT, isAboutQuestion, memoryOf, sentFrom,
+  toBlocks, absolute, headings, mockTransport, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
+  titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
 } = await import(out);
 
@@ -48,23 +49,6 @@ const held = [{id: 'a', turns: [{from: 'you', text: 'q'}]}, {id: 'b', turns: []}
 assert.equal(resumable(held, 'a').id, 'a');
 assert.equal(resumable(held, null), null);
 assert.equal(resumable(held, 'gone'), null);
-
-// Memory: counts the exchanges the next question takes, not the panel's own.
-const turn = (from, text, extra = {}) => ({from, text, ...extra});
-const ex = (n) => Array.from({length: n}, (_, i) => [turn('you', `q${i}`), turn('assistant', `a${i}`)]).flat();
-assert.deepEqual(memoryOf([]), {earlier: 0, window: 15, percent: 0, full: false});
-assert.deepEqual(memoryOf(ex(3)), {earlier: 3, window: 15, percent: 20, full: false});
-assert.equal(memoryOf(ex(15)).full, true, 'fifteen exchanges fill the window');
-assert.equal(memoryOf(ex(20)).percent, 100, 'never over 100');
-// The line sits above the oldest message still carried, and only once
-// something is no longer carried.
-assert.equal(sentFrom(ex(15)), -1, 'all fifteen still go');
-const long = ex(17);
-assert.equal(sentFrom(long), 4, 'two exchanges (four turns) have dropped');
-assert.equal(long[sentFrom(long)].text, 'q2');
-const withOwn = [turn('you', 'What can you do?'), turn('assistant', 'I answer', {local: true}), ...ex(16)];
-assert.equal(withOwn[sentFrom(withOwn)].text, 'q1', "the panel's own answers are not counted");
-assert.equal(memoryOf([...ex(2), turn('you', 'What can you do?'), turn('assistant', 'I answer', {local: true})]).earlier, 2, "the panel's own answer takes no memory");
 
 // About: the panel answers questions about itself, and only those.
 for (const q of ['What can the Ask AI assistant do?', 'what can you do', 'Who are you?', 'help', 'What is Ask AI?', 'How do I use this?']) {
@@ -179,35 +163,35 @@ assert.equal(absolute('/docs/m1', 'https://d.example/'), 'https://d.example/docs
 assert.equal(absolute('https://x.test/a', 'https://d.example'), 'https://x.test/a');
 assert.equal(absolute('javascript:alert(1)', 'https://d.example'), null);
 
-// The stream: events split on blank lines, deltas concatenated, a payload
-// that arrives in two chunks mid-event still parses.
-const chunks = [
-  'event: tool\ndata: {"name":"search","detail":"Consulting the catalogue"}\n\n',
-  'event: text\ndata: {"delta":"Hel',
-  'lo"}\n\nevent: text\ndata: {"delta":" there"}\n\n',
-  'event: sources\ndata: [{"id":"a","title":"A","status":"verified","url":"/docs/a"}]\n\n',
-  'event: done\ndata: {}\n\n',
-];
-const encoder = new TextEncoder();
-const stream = new ReadableStream({
-  start(controller) {
-    for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
-    controller.close();
-  },
-});
-let text = '';
-let tool = null;
-let sources = null;
-await readStream(stream, {
-  onText: (delta) => (text += delta),
-  onTool: (detail) => (tool = detail),
-  onSources: (s) => (sources = s),
-  onError: () => assert.fail('no error expected'),
-});
-assert.equal(text, 'Hello there');
-assert.equal(tool, 'Consulting the catalogue');
-assert.deepEqual(sources, [
-  {id: 'a', title: 'A', status: 'verified', url: '/docs/a'},
-]);
+// Transport: the mock is a session like Synapse's, and says it is a mock.
+const t = mockTransport({delayMs: 0});
+assert.equal(t.isMock, true);
+const ref = await t.start();
+assert.match(ref.sessionId, /^mock-/);
+assert.deepEqual(await t.start(ref), ref, 'resuming returns the same session');
+const got = {text: '', progress: [], tips: null, done: 0};
+await new Promise((resolve) => t.send({text: 'hi', files: []}, {
+  onText: (d) => (got.text += d), onProgress: (p) => got.progress.push(p),
+  onTips: (x) => (got.tips = x), onDone: () => { got.done++; resolve(); }, onError: assert.fail,
+}));
+assert.match(got.text, /mock/i, 'a mock reply says it is a mock');
+assert.equal(got.tips.length, 2);
+assert.equal(got.done, 1);
+assert.ok(got.progress.length >= 1);
+// detach: nothing more arrives
+const t2 = mockTransport({delayMs: 5}); await t2.start();
+let after = 0; t2.send({text: 'x', files: []}, {onText: () => after++, onProgress() {}, onTips() {}, onDone: () => after++, onError() {}});
+t2.detach(); await new Promise((r) => setTimeout(r, 50));
+assert.equal(after, 0, 'detach stops delivery');
+// No agent id is the mock; an agent id is Synapse, which is not wired yet.
+assert.equal(createTransport({}).isMock, true);
+assert.throws(() => createTransport({agentId: 'a1'}), /Synapse transport not wired yet/);
+
+// Last: this replaces a global the tests above may rely on.
+// history keeps the session pair; blocked storage never throws
+assert.deepEqual(remember([], {id: 'a', at: 1, title: 'q', turns: [], session: ref})[0].session, ref);
+globalThis.localStorage = {getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }};
+assert.deepEqual(load(), []);
+assert.doesNotThrow(() => save([{id: 'a', at: 1, title: 'q', turns: []}]));
 
 console.log('ok');

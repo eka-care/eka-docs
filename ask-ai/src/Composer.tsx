@@ -39,7 +39,6 @@ type Props = {
   accept: string;
   onFile: (file: File | undefined) => void;
   file: Attached | null;
-  fileNote: string | null;
   fileError: string | null;
   onRemoveFile: () => void;
   docsOrigin: string;
@@ -47,57 +46,10 @@ type Props = {
   attaching: string | null;
   onPage: (entry: PageEntry) => void;
   onRemovePage: () => void;
-  /** How much of the conversation the next question takes. See memoryOf. */
-  memory: {earlier: number; window: number; percent: number; full: boolean};
 };
 
-/**
- * The context window, as a ring beside the send button that fills as the
- * conversation grows, the way Claude shows it. The numbers are one hover or
- * one tab stop away rather than a line of text under every exchange.
- */
-function ContextRing({earlier, window, percent, full}: Props['memory']) {
-  const r = 7;
-  const around = 2 * Math.PI * r;
-  const detail =
-    earlier > window
-      ? `The last ${window} of ${earlier} exchanges go with your next question. Earlier ones are no longer sent; New starts afresh.`
-      : full
-        ? `All ${window} exchanges go with your next question. From here, the oldest stop being sent.`
-        : `${earlier} of ${window} earlier exchanges go with your next question. Very long answers go shortened.`;
-  return (
-    <span class={`ask-ai__ring${full ? ' ask-ai__ring--full' : ''}`}>
-      <span
-        class="ask-ai__ring-mark"
-        tabIndex={0}
-        role="progressbar"
-        aria-label="Context window"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={percent}
-        aria-describedby="ask-ai-ring-tip">
-        <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
-          <circle class="ask-ai__ring-track" cx="9" cy="9" r={r} />
-          <circle
-            class="ask-ai__ring-fill"
-            cx="9"
-            cy="9"
-            r={r}
-            stroke-dasharray={around}
-            stroke-dashoffset={around * (1 - percent / 100)}
-          />
-        </svg>
-      </span>
-      <span class="ask-ai__ring-tip" id="ask-ai-ring-tip" role="tooltip">
-        <strong>Context window: {percent}%</strong>
-        <span>{detail}</span>
-      </span>
-    </span>
-  );
-}
-
 export function Composer(props: Props) {
-  const {draft, busy, menu, onMenu, page, file, fileNote, fileError, attaching} = props;
+  const {draft, busy, menu, onMenu, page, file, fileError, attaching} = props;
   const picker = useRef<HTMLInputElement>(null);
   const addWrap = useRef<HTMLDivElement>(null);
   const pageReady = page !== null && page.markdown !== '';
@@ -113,7 +65,7 @@ export function Composer(props: Props) {
     return () => document.removeEventListener('pointerdown', away, true);
   }, [menu]);
 
-  const hasContext = Boolean(page || attaching || file || fileNote || fileError);
+  const hasContext = Boolean(page || attaching || file || fileError);
 
   return (
     <div class="ask-ai__foot">
@@ -149,28 +101,21 @@ export function Composer(props: Props) {
                 </button>
               </span>
             )}
-            {fileNote ? (
-              <span class="ask-ai__chip ask-ai__chip--pending">
+            {file && (
+              <span class="ask-ai__chip">
                 <Paperclip />
-                <span class="ask-ai__chip-text">{fileNote}</span>
-              </span>
-            ) : (
-              file && (
-                <span class="ask-ai__chip">
-                  <Paperclip />
-                  <span class="ask-ai__chip-text">{file.name}</span>
-                  <span class="ask-ai__chip-meta">
-                    {file.text.length.toLocaleString()} characters
-                  </span>
-                  <button
-                    type="button"
-                    class="ask-ai__chip-remove"
-                    aria-label={`Remove ${file.name}`}
-                    onClick={props.onRemoveFile}>
-                    <X />
-                  </button>
+                <span class="ask-ai__chip-text">{file.name}</span>
+                <span class="ask-ai__chip-meta">
+                  {file.text.length.toLocaleString()} characters
                 </span>
-              )
+                <button
+                  type="button"
+                  class="ask-ai__chip-remove"
+                  aria-label={`Remove ${file.name}`}
+                  onClick={props.onRemoveFile}>
+                  <X />
+                </button>
+              </span>
             )}
             {fileError && <span class="ask-ai__context-error">{fileError}</span>}
           </div>
@@ -223,8 +168,8 @@ export function Composer(props: Props) {
             )}
           </div>
 
-          {/* The file never leaves the browser as a file: it is read here and
-              its text goes with the question. */}
+          {/* The file is checked in the browser first, so a file that is not
+              text is refused here, then goes with the question as a file. */}
           <input
             ref={picker}
             type="file"
@@ -256,8 +201,6 @@ export function Composer(props: Props) {
             placeholder="Ask about Eka APIs"
             aria-label="Ask the assistant"
           />
-
-          {props.memory.earlier > 0 && <ContextRing {...props.memory} />}
 
           {busy ? (
             <button

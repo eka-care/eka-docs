@@ -1,3 +1,6 @@
+/** A source an answer drew on, surfaced under it as a citation. */
+export type Source = {id: string; title: string; status: string; url: string};
+
 /** A text file the reader attached, read in the browser and never uploaded. */
 export type Attached = {name: string; text: string};
 
