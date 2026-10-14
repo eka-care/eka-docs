@@ -4,15 +4,15 @@
  * A pill carries a short label and the full question it asks, because a pill
  * has room for two or three words and a good question needs more. A blank
  * chat box is the hardest question a reader answers; these teach the panel's
- * range in one glance, and each is one the catalogue genuinely answers.
+ * range in one glance, and each is one the docs genuinely answer.
  */
 export type Starter = {label: string; prompt: string};
 
 export const DEFAULT_STARTERS: Starter[] = [
-  {label: 'Create an ABHA', prompt: 'How do I create an ABHA with an Aadhaar OTP?'},
-  {label: 'Link care contexts', prompt: 'How do I link care contexts to an ABHA?'},
-  {label: 'Request consent', prompt: 'How does an HIU raise a consent request?'},
-  {label: 'Decode an error', prompt: 'What does ABDM-1016 mean and how do I fix it?'},
+  {label: 'Get an API key', prompt: 'How do I get a client ID and secret to call Eka APIs?'},
+  {label: 'Start an EkaScribe session', prompt: 'How do I create an EkaScribe session and upload audio?'},
+  {label: 'Parse a lab report', prompt: 'How do I upload a lab report for parsing?'},
+  {label: 'Verify a webhook', prompt: 'How do I verify an Eka webhook signature?'},
   {label: 'Learn about Ask AI', prompt: 'What can the Ask AI assistant do?'},
 ];
 

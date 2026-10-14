@@ -18,7 +18,7 @@ export function Welcome({starters, mock, supportUrl, onPick}: Props) {
   return (
     <div class="ask-ai__welcome">
       <FrostedOrb size={80} />
-      <h3 class="ask-ai__greeting">What do you want to build today?</h3>
+      <h3 class="ask-ai__greeting">Welcome to the Eka Developer Platform. What do you want to build?</h3>
       {mock && (
         <p class="ask-ai__welcome-note">
           A preview, not connected to an assistant. For a real answer, use{' '}

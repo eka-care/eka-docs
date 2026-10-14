@@ -1,5 +1,5 @@
 // The pieces with logic in them: the markdown the model streams, the event
-// stream it arrives on, and the scripted install flow. Run with `node test.mjs`.
+// stream it arrives on, and the panel's own copy. Run with `node test.mjs`.
 import assert from 'node:assert/strict';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -11,13 +11,11 @@ await build({
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
                export {readStream} from './src/sse';
                export {revealStep, THINKING_HOLD, THINKING_BURST} from './src/pacing';
-               export {say, answer, wantsTools, needsAgent, TOOLS, AGENTS} from './src/install';
                export {titleOf, remember, whenSaid, forgetOne, resumable} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
                export {startersFrom, DEFAULT_STARTERS} from './src/starters';
                export {forModel, memoryOf, sentFrom} from './src/transcript';
-               export {parseLlms, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';
-               export {moduleLabel, skillNote, COMMANDS} from './src/commands';`,
+               export {parseLlms, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';`,
     resolveDir: import.meta.dirname,
     loader: 'ts',
   },
@@ -37,10 +35,8 @@ await build({
 });
 const {
   toBlocks, absolute, headings, readStream, revealStep, THINKING_HOLD, THINKING_BURST,
-  say, answer, wantsTools, needsAgent, TOOLS, AGENTS,
   titleOf, remember, whenSaid, forgetOne, resumable, ABOUT, isAboutQuestion, memoryOf, sentFrom,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, searchPages, pageUrl, markdownUrl, isHtmlDocument,
-  moduleLabel, skillNote, COMMANDS,
 } = await import(out);
 
 // History: one conversation comes out, the rest stay in order.
@@ -80,6 +76,10 @@ for (const q of ['What can an HIU do with a consent artefact?', 'Hi', 'What does
 assert.ok(isAboutQuestion(DEFAULT_STARTERS.find((s) => s.label === 'Learn about Ask AI').prompt), 'the starter is answered by the panel');
 assert.ok(!/\u2014/.test(ABOUT), 'no em dash in the about answer');
 assert.ok(!/NHCX|HIE-CM|payer|claim/i.test(ABOUT), 'the about answer is about the panel, not a gateway');
+assert.ok(!/ABDM|ABHA|HIU|NHCX|HIE-CM|catalogue/i.test(ABOUT), 'about is Eka, not ABDM');
+assert.ok(!/ABDM|ABHA/i.test(DEFAULT_STARTERS.map((s) => s.prompt).join(' ')));
+assert.ok(DEFAULT_STARTERS.some((s) => s.prompt === 'What can the Ask AI assistant do?'));
+assert.ok(isAboutQuestion('What can the Ask AI assistant do?'));
 
 // Starters: a pill's label and the question it asks; old hosts still work.
 assert.equal(startersFrom(''), DEFAULT_STARTERS);
@@ -91,16 +91,14 @@ assert.equal(startersFrom('a\nb\nc\nd\ne\nf').length, 5, 'at most five');
 assert.ok(DEFAULT_STARTERS.some((s) => s.prompt === 'What can the Ask AI assistant do?'), 'the assistant can be asked about itself');
 assert.ok(DEFAULT_STARTERS.every((s) => s.label.split(' ').length <= 4), 'pills stay short');
 
-// Transcript: the panel's own exchanges go in pairs, so roles still alternate.
+// Transcript: the panel's own answers go with the question, so roles still alternate.
 const said = (from, text, extra = {}) => ({from, text, ...extra});
 const shown = forModel([
   said('you', 'q1'), said('assistant', 'a1'),
-  said('you', 'Install AI tools'), said('assistant', 'Which tool?', {install: {at: 'tools'}}),
+  said('you', 'What can you do?'), said('assistant', 'I answer', {local: true}),
   said('you', 'q2'),
 ]);
-assert.deepEqual(shown.map((t) => t.text), ['q1', 'a1', 'q2'], 'the install pair is dropped whole');
-assert.deepEqual(forModel([said('you', 'q'), said('assistant', 'Which module?', {local: true}), said('you', 'q again')])
-  .map((t) => t.text), ['q again'], 'an unresolved command pair is dropped whole');
+assert.deepEqual(shown.map((t) => t.text), ['q1', 'a1', 'q2'], 'the about pair is dropped whole');
 for (let i = 1; i < shown.length; i += 1) assert.notEqual(shown[i].from, shown[i - 1].from);
 
 // Pages: llms.txt parsed to paths, re-rooted on the widget's own docs origin.
@@ -129,16 +127,6 @@ assert.ok(isHtmlDocument('<!DOCTYPE html>\n<html lang="en">'));
 assert.ok(isHtmlDocument('  <html>'));
 assert.ok(!isHtmlDocument('# Care contexts\n\nA care context is <b>one</b> visit.'));
 assert.ok(!isHtmlDocument('<details> in markdown'));
-
-// Commands: four of them, and the lines the panel shows for a skill event.
-assert.deepEqual(COMMANDS.map((c) => c.id), ['scaffold', 'design', 'integrate', 'debug']);
-assert.equal(moduleLabel('abdm-m2'), 'M2');
-assert.equal(moduleLabel('abdm-scan-and-pay'), 'Scan and pay');
-assert.equal(skillNote({module: 'abdm-m2', section: 'debug', status: 'used'}), 'Using M2 · Debug');
-assert.equal(skillNote({module: 'abdm-p2', section: 'design', status: 'missing'}),
-  'No design guide for P2 yet. Answering from the docs.');
-assert.equal(skillNote({section: 'debug', status: 'unresolved'}), 'Which module is this about?');
-for (const c of COMMANDS) assert.ok(!/\u2014/.test(skillNote({module: 'abdm-m1', section: c.id, status: 'used'})), 'no em dash');
 
 // History: named after the first question, one entry per conversation, fifty kept.
 assert.equal(titleOf([{from: 'assistant', text: 'Hello'}, {from: 'you', text: '  ABDM\n1016  '}]), 'ABDM 1016');
@@ -177,13 +165,9 @@ assert.deepEqual(toBlocks('```json\n{"a":1}'), [
   {kind: 'code', text: '{"a":1}', lang: 'json', closed: false},
 ]);
 
-// A diagram is only a diagram once its fence has closed. Half of one is a
-// syntax error, and mermaid draws syntax errors rather than throwing them.
+// A mermaid fence is an ordinary code block: nothing here draws diagrams.
 assert.deepEqual(toBlocks('```mermaid\nsequenceDiagram\n```'), [
   {kind: 'code', text: 'sequenceDiagram', lang: 'mermaid', closed: true},
-]);
-assert.deepEqual(toBlocks('```mermaid\nsequenceDiagram'), [
-  {kind: 'code', text: 'sequenceDiagram', lang: 'mermaid', closed: false},
 ]);
 
 // Links resolve against the docs origin, and only http(s) survives.
@@ -221,79 +205,5 @@ assert.equal(tool, 'Consulting the catalogue');
 assert.deepEqual(sources, [
   {id: 'a', title: 'A', status: 'verified', url: '/docs/a'},
 ]);
-
-// The install flow is offered to somebody doing the work, not to somebody
-// reading. These are the panel's own opening questions and the shapes a
-// reader in trouble actually types.
-for (const asked of [
-  'What is a care context?',
-  'What format does the TIMESTAMP header need?',
-  'What does ABDM stand for?',
-  'Who runs the HIE-CM gateway?',
-]) {
-  assert.equal(wantsTools(asked), false, `should not offer tools for: ${asked}`);
-}
-for (const asked of [
-  'How do I integrate M2 into my HIP?',
-  'I want to implement consent management',
-  'help me debug ABDM-1016',
-  'my link request keeps failing',
-  'how do I create an ABHA with an Aadhaar OTP?',
-  'the callback is not working',
-  'What does ABDM-1016 mean and how do I fix it?',
-  'how do I set up the sandbox?',
-]) {
-  assert.equal(wantsTools(asked), true, `should offer tools for: ${asked}`);
-}
-
-// The flow: three tools, four agents, and every tool asks which agent. The
-// plugin used to skip that question when it was Claude Code's alone.
-const ctx = {
-  docsOrigin: 'https://d.example/',
-  mcpUrl: 'https://mcp.example/x',
-  pluginRepo: 'example-org/example-docs',
-};
-assert.deepEqual(TOOLS.map((t) => t.id), ['skills', 'mcp', 'plugin']);
-assert.deepEqual(AGENTS.map((a) => a.id), ['claude', 'codex', 'cursor', 'other']);
-for (const tool of ['skills', 'mcp', 'plugin']) {
-  assert.equal(needsAgent(tool), true, `${tool} should ask which agent`);
-}
-
-// Every combination says something, and the command it hands out is fenced
-// so the panel's own code block renders it with its copy button.
-for (const tool of ['skills', 'mcp', 'plugin']) {
-  for (const agent of ['claude', 'codex', 'cursor', 'other']) {
-    const step = {at: 'answer', tool, agent, named: agent === 'other' ? 'Zed' : undefined};
-    const {text, link} = answer(step, ctx);
-    assert.equal(typeof text, 'string');
-    assert.equal(text.length > 0, true, `${tool}/${agent} says nothing`);
-    assert.equal(text.includes('\u2014'), false, 'no em dash');
-    if (link) assert.match(link.href, /^(claude|cursor|https):/);
-  }
-}
-assert.match(answer({at: 'answer', tool: 'mcp', agent: 'claude'}, ctx).text,
-  /claude mcp add --transport http abdm-docs https:\/\/mcp\.example\/x -s user/);
-assert.match(answer({at: 'answer', tool: 'skills', agent: 'other', named: 'Zed'}, ctx).text,
-  /Zed included/);
-assert.match(answer({at: 'answer', tool: 'plugin', agent: 'claude'}, ctx).text,
-  /claude plugin marketplace add example-org\/example-docs/);
-// Codex installs the same plugin from the same repository, since Agent
-// Plugins 1.0. Cursor reads the standard but installs from its own
-// marketplace, so it is told that rather than given a command that fails.
-assert.match(answer({at: 'answer', tool: 'plugin', agent: 'codex'}, ctx).text,
-  /codex plugin marketplace add example-org\/example-docs/);
-const cursorPlugin = answer({at: 'answer', tool: 'plugin', agent: 'cursor'}, ctx);
-assert.equal(cursorPlugin.text.includes('```'), false, 'no command Cursor cannot run');
-assert.match(cursorPlugin.text, /not listed in one yet/);
-
-// No MCP address in this build is a sentence, never a placeholder command.
-const locked = answer({at: 'answer', tool: 'mcp', agent: 'claude'},
-  {docsOrigin: 'https://d.example', mcpUrl: null, pluginRepo: 'example-org/example-docs'});
-assert.equal(locked.text.includes('```'), false, 'no command without an address');
-assert.match(locked.text, /does not carry its address/);
-
-// The steps before the answer: the overview, then the one question.
-assert.match(say({at: 'tools'}, ctx), /Skills/);
-assert.match(say({at: 'agents', tool: 'mcp'}, ctx), /Which agent are you working in\?/);
 
 console.log('ok');

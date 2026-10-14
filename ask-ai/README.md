@@ -1,6 +1,6 @@
 # The support agent widget
 
-The ABDM support agent as one custom element, `<abdm-support-agent>`, that
+The ABDM support agent as one custom element, `<eka-ask-ai>`, that
 goes on any page: the docs site, the developer console, a partner's internal
 wiki, a landing page. The docs site is its first user, not its owner.
 
@@ -10,11 +10,11 @@ One script tag and one element. No framework is required on the host page, and
 there is no build step for an embedder.
 
 ```html
-<script defer src="https://<docs-origin>/agent/abdm-support-agent.js"></script>
+<script defer src="https://<docs-origin>/agent/ask-ai.js"></script>
 
-<abdm-support-agent
+<eka-ask-ai
   api-base="https://<chat-server>"
-  docs-origin="https://<docs-origin>"></abdm-support-agent>
+  docs-origin="https://<docs-origin>"></eka-ask-ai>
 ```
 
 The origin the page is served from must be on the server's allowlist, or the
@@ -45,33 +45,7 @@ answers for a missing page, is refused as a failed attachment rather than sent.
 
 ### Attachments
 
-A reader can attach one file per question: `.json`, `.txt`, `.log`, `.csv`,
-`.xml`, `.yaml`, `.md`, `.har`, `.pdf`, or an image. At most 20,000 characters
-of text, 256KB for a text file and 8MB for a PDF or an image.
-
-Whatever the format, what leaves the browser is text. A text file is read with
-`File.text()`, a PDF's text layer with pdf.js, and an image with Tesseract,
-all in the reader's own browser; the result is sent as `turns[n].attachment`
-beside the question, with `kind` saying which of the three it was. There is no
-upload route, no storage, and no image on any server to redact later. The
-attachment rides with its question on every later round, because the whole
-conversation is re-sent each time.
-
-pdf.js and Tesseract are not in this bundle: they are copied beside it at
-build time, into `vendor/` next to the built script, and loaded from there the
-first time a reader attaches a PDF or an image. The widget finds them from its
-own `document.currentScript.src`, so an embed on somebody else's page loads
-them from the site that serves the widget rather than from a CDN. Tesseract's
-English data is about 11MB and the browser caches it after the first image.
-
-The chat server masks the file before the model or any log sees it: by field
-name where the file is JSON (FHIR's `name`, `telecom`, `address`, `birthDate`
-and identifier values), by labelled line where it is not (`patient: …`,
-`name = …`, which is the shape a name takes in a log or in text read from a
-screenshot), and by pattern always (Aadhaar, ABHA, PAN, passport, voter ID,
-mobile, email, tokens). A name written in running prose, with nothing marking
-it as one, survives: that is the gap an NLP model would fill and a regex
-cannot, and the panel tells the reader so next to any file it read for them.
+A reader can attach one text file per question: `.json`, `.txt`, `.log`, `.csv`, `.xml`, `.yaml`, `.md` or `.har`, at most 20,000 characters and 256KB. Only text files are read; the widget reads them with `File.text()` in the reader's own browser and sends the text as `turns[n].attachment` beside the question. Anything else, a PDF or an image included, is refused with a message saying so.
 
 ### How an answer arrives
 
@@ -110,17 +84,6 @@ The list is `<docs-origin>/llms.txt`, fetched once, searched in the browser,
 and a page's text is `<path>.md` beside it. Nothing else is needed from the
 host: an embed that sets `docs-origin` has page search.
 
-### Commands
-
-Four pills under the chat bar, Scaffold, Design, Integrate and Debug, point a
-question at that section of the module's agent skill. Only the name travels:
-the request gains `command` and, when the reader has answered "which module?",
-`module`. The server resolves the module, puts the section in front of the
-model, and says which in a `skill` event before the answer. A scaffold answer
-is a build plan with curl only; the panel then offers the Install AI tools
-flow, because building it is the coding agent's job. A server that predates
-commands ignores both fields.
-
 ### The orb
 
 The greeting's orb is the Plasma Orb (Apache-2.0, on
@@ -140,7 +103,7 @@ conversation leaves the browser except the question being asked.
 
 ## Working on it
 
-    npm run build --workspace ai-widget    # dist/abdm-support-agent.js
+    npm run build --workspace ai-widget    # dist/ask-ai.js
     npm test --workspace ai-widget         # the markdown and the event stream
 
 The docs site builds its own copy into `site/static/agent/` on every

@@ -1,11 +1,5 @@
-/**
- * A file the reader attached, read in the browser and never uploaded.
- *
- * kind says how the text was got, because it changes how far it can be
- * trusted: a PDF's own text layer is exact, an image's is a machine's reading
- * of a picture and comes with the mistakes that implies.
- */
-export type Attached = {name: string; text: string; kind?: 'pdf' | 'image'};
+/** A text file the reader attached, read in the browser and never uploaded. */
+export type Attached = {name: string; text: string};
 
 /**
  * A page attached as context for the conversation, either by the host through

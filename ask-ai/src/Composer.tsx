@@ -4,8 +4,7 @@
  * One card: what is going with the question sits on top of it as pills (the
  * page, the file), and under them one row with add on the left, the field in
  * the middle and send on the right. Add opens a small menu: upload a file
- * from the computer, or find a page to attach. Under the card sit the
- * commands, one of which can be on at a time.
+ * from the computer, or find a page to attach.
  *
  * Nothing here decides anything about a conversation. The panel owns the
  * state; this draws it and says what the reader did.
@@ -23,7 +22,6 @@ import {
   Upload,
   X,
 } from './icons';
-import {COMMANDS, type CommandId} from './commands';
 import {loadPages, searchPages, type PageEntry} from './pages';
 import type {Attached, PageAttachment} from './types';
 
@@ -49,8 +47,6 @@ type Props = {
   attaching: string | null;
   onPage: (entry: PageEntry) => void;
   onRemovePage: () => void;
-  command: CommandId | null;
-  onCommand: (command: CommandId | null) => void;
   /** How much of the conversation the next question takes. See memoryOf. */
   memory: {earlier: number; window: number; percent: number; full: boolean};
 };
@@ -179,16 +175,6 @@ export function Composer(props: Props) {
             {fileError && <span class="ask-ai__context-error">{fileError}</span>}
           </div>
         )}
-        {/* Identifiers are masked on the way out, but a person's name written
-            in prose is not something any pattern finds, and a scan or a
-            screenshot is where one usually is. Said once, beside the file. */}
-        {file?.kind && !fileNote && (
-          <p class="ask-ai__context-note">
-            Read here in your browser; the file itself is not sent. Names in it
-            are yours to check before you send.
-          </p>
-        )}
-
         <div class="ask-ai__bar">
           <div class="ask-ai__add-wrap" ref={addWrap}>
             <button
@@ -267,7 +253,7 @@ export function Composer(props: Props) {
                 props.onSend();
               }
             }}
-            placeholder="Ask about ABDM"
+            placeholder="Ask about Eka APIs"
             aria-label="Ask the assistant"
           />
 
@@ -292,21 +278,6 @@ export function Composer(props: Props) {
           )}
         </div>
       </form>
-
-      {/* The commands: each points the answer at one section of the module's
-          agent skill. One at a time, and it stays on until turned off. */}
-      <div class="ask-ai__commands" role="group" aria-label="Commands">
-        {COMMANDS.map((command) => (
-          <button
-            key={command.id}
-            type="button"
-            class="ask-ai__command"
-            aria-pressed={props.command === command.id}
-            onClick={() => props.onCommand(props.command === command.id ? null : command.id)}>
-            {command.label}
-          </button>
-        ))}
-      </div>
 
       {/* Said once, under the chat bar, where it is seen before anything is
           asked and after every answer. */}

@@ -1,19 +1,8 @@
 import {Fragment, render} from 'preact';
 import {useEffect, useRef, useState} from 'preact/hooks';
 import ChatMarkdown, {CopyButton, absolute, headings} from './markdown';
-import {ArrowUp, ChevronRight, FileText, Paperclip, Plus, Sparkles, X} from './icons';
+import {ChevronRight, FileText, Paperclip, Plus, Sparkles, X} from './icons';
 import {readStream, UNREACHABLE, type Source} from './sse';
-import {
-  AGENTS,
-  TOOLS,
-  agentLabel,
-  answer as scripted,
-  needsAgent,
-  say,
-  wantsTools,
-  type AgentId,
-  type Step,
-} from './install';
 import {revealStep} from './pacing';
 import {
   clearCurrentId,
@@ -38,11 +27,9 @@ import {ThinkingOrb} from './orb/frosted-orb';
 import {startersFrom, type Starter} from './starters';
 import {forModel, MAX_TURNS, memoryOf, sentFrom} from './transcript';
 import {isHtmlDocument, markdownUrl, pageUrl, type PageEntry} from './pages';
-import {moduleLabel, skillNote, type CommandId, type SkillUse} from './commands';
 import type {Attached, PageAttachment} from './types';
 
 export type {PageAttachment} from './types';
-import {ASSET_BASE, loadScript} from './assets';
 import css from './styles.css';
 
 declare const __EKA_ACCENT__: string;
@@ -57,18 +44,7 @@ type Turn = {
   sources?: Source[];
   /** The file that went with this question, kept so a follow-up still has it. */
   file?: Attached;
-  /**
-   * Where the install flow had got to when this turn was written. Present
-   * only on the panel's own scripted turns, which is also what marks them as
-   * not part of the conversation the model is shown.
-   */
-  install?: Step;
-  /** Which skill section a command used for this answer, when one did. */
-  skill?: SkillUse;
-  /**
-   * The panel's own turn, never shown to the model: the question asking
-   * which module a command is about.
-   */
+  /** The panel's own turn, never shown to the model: its answer about itself. */
   local?: boolean;
 };
 
@@ -76,78 +52,15 @@ type Turn = {
  * What may be attached, and how much of it.
  *
  * Text only, and read here rather than uploaded: the server has no place to
- * put a file and no way to redact one it cannot read. A screenshot would need
- * both, which is why images are not in this list. The character cap matches
- * the server's own, so a file that is too long is refused here, where the
- * reader can see why, rather than in a 400.
+ * put a file and no way to redact one it cannot read. The character cap
+ * matches the server's own, so a file that is too long is refused here, where
+ * the reader can see why, rather than in a 400.
  */
-const ATTACH_TYPES =
-  '.json,.txt,.log,.csv,.xml,.yaml,.yml,.md,.har,.pdf,.png,.jpg,.jpeg,.webp';
+const ATTACH_TYPES = '.json,.txt,.log,.csv,.xml,.yaml,.yml,.md,.har';
 const ATTACH_MAX_CHARS = 20000;
-/** A text file is small. A scan or a screenshot is not, so it gets its own cap. */
 const ATTACH_MAX_BYTES = 256 * 1024;
-const ATTACH_MAX_BINARY_BYTES = 8 * 1024 * 1024;
-
-/**
- * Reads the text a PDF already carries. A scan with no text layer comes back
- * empty, which the caller reports rather than sending a blank attachment.
- */
-async function textFromPdf(file: File): Promise<string> {
-  const pdfjs = await import(/* @vite-ignore */ `${ASSET_BASE}pdf.min.mjs`);
-  pdfjs.GlobalWorkerOptions.workerSrc = `${ASSET_BASE}pdf.worker.min.mjs`;
-  const task = pdfjs.getDocument({data: await file.arrayBuffer()});
-  const doc = await task.promise;
-  const pages: string[] = [];
-  for (let n = 1; n <= doc.numPages; n += 1) {
-    const content = await (await doc.getPage(n)).getTextContent();
-    pages.push(
-      content.items
-        .map((item: {str?: string}) => item.str ?? '')
-        .join(' ')
-        .replace(/[ \t]+/g, ' ')
-        .trim(),
-    );
-    if (pages.join('\n\n').length > ATTACH_MAX_CHARS) break;
-  }
-  // The loading task owns the worker, not the document, so this is what
-  // actually lets the worker go.
-  await doc.cleanup?.();
-  await task.destroy();
-  return pages.join('\n\n').trim();
-}
-
-/**
- * Reads the text out of an image, in the reader's own browser.
- *
- * The picture never leaves their machine: what travels is the text, masked
- * on the way like any other attachment. Sending the image itself would mean
- * an upload, a vision model and redacting pixels, and a screenshot of a
- * failing call in a health system carries the patient in its pixels.
- */
-async function textFromImage(
-  file: File,
-  onProgress: (note: string) => void,
-): Promise<string> {
-  onProgress('Loading the reader, once per browser.');
-  await loadScript(`${ASSET_BASE}tesseract.min.js`);
-  const lib = (window as unknown as {Tesseract: any}).Tesseract;
-  onProgress('Reading the text out of that image.');
-  const worker = await lib.createWorker('eng', 1, {
-    workerPath: `${ASSET_BASE}worker.min.js`,
-    corePath: ASSET_BASE,
-    langPath: `${ASSET_BASE}lang`,
-    // The language data is a file this site serves, not a download from
-    // somebody else's CDN, so it must not be cached under a name that
-    // implies otherwise.
-    cacheMethod: 'none',
-  });
-  try {
-    const {data} = await worker.recognize(file);
-    return (data.text ?? '').replace(/[ \t]+/g, ' ').trim();
-  } finally {
-    await worker.terminate();
-  }
-}
+const ATTACH_REFUSED =
+  'Only text files can be attached here: JSON, text, logs, CSV, XML, YAML, Markdown or HAR.';
 
 /**
  * The chat API caps an attached page, so the panel cuts to the same length
@@ -178,25 +91,6 @@ function appendToLastTurn(setTurns: Setter, delta: string) {
   });
 }
 
-/**
- * Where the tools are offered, and the only place they are.
- *
- * Under the newest answer, and only when the question it answers sounded
- * like somebody doing the work rather than reading about it. Once the flow
- * has been entered the offer goes entirely: it is already in the thread.
- * Returns the turn index to put it under, or -1 for nowhere.
- */
-function offerIndex(turns: Turn[]): number {
-  if (turns.some((turn) => turn.install)) return -1;
-  for (let i = turns.length - 1; i > 0; i -= 1) {
-    const turn = turns[i];
-    if (turn.from !== 'assistant' || turn.text === '') continue;
-    const asked = turns[i - 1];
-    return asked?.from === 'you' && wantsTools(asked.text) ? i : -1;
-  }
-  return -1;
-}
-
 /** Attaches the citation chips to the last turn in the thread. */
 function attachSources(setTurns: Setter, sources: Source[]) {
   setTurns((prior) => {
@@ -208,9 +102,6 @@ function attachSources(setTurns: Setter, sources: Source[]) {
 type PanelProps = {
   apiBase: string;
   docsOrigin: string;
-  /** The Docs MCP server's address, where this build carries one. */
-  mcpUrl: string | null;
-  pluginRepo: string;
   open: boolean;
   onClose: () => void;
   question: string;
@@ -218,8 +109,6 @@ type PanelProps = {
   starters: Starter[];
   /** False where the host asked not to keep conversations in its origin. */
   keepHistory: boolean;
-  /** The gateway of the page the panel is on, hiecm or nhcx, or empty. */
-  gateway: string;
   supportUrl: string;
   page: PageAttachment | null;
   onDetach: () => void;
@@ -345,8 +234,6 @@ function ResizeGrip({dialog}: {dialog: {current: HTMLDialogElement | null}}) {
 function Panel({
   apiBase,
   docsOrigin,
-  mcpUrl,
-  pluginRepo,
   open,
   onClose,
   page,
@@ -356,7 +243,6 @@ function Panel({
   send,
   starters,
   keepHistory,
-  gateway,
   supportUrl,
 }: PanelProps) {
   // Empty until the reader asks something: the welcome stands in for an
@@ -375,19 +261,13 @@ function Panel({
   const [reading, setReading] = useState<string | null>(null);
   const [phase, setPhase] = useState<'idle' | 'thinking' | 'streaming'>('idle');
   const [activity, setActivity] = useState<string | null>(null);
-  // The install flow's one piece of state: the reader has pressed Other and
-  // is typing the name of their agent. Panel level rather than per turn
-  // because only the newest step is ever interactive.
-  const [naming, setNaming] = useState('');
-  const [asking, setAsking] = useState(false);
   // Past conversations, read from this browser once the panel is built, and
   // the list of them that the head can drop down.
   const [history, setHistory] = useState<Session<Turn>[]>([]);
   // Which of the two views is showing: the conversation, or the list of
-  // past ones. The command the reader has on, the add menu, and the title of
-  // a page on its way in from the page search.
+  // past ones. Then the add menu, and the title of a page on its way in from
+  // the page search.
   const [view, setView] = useState<'chat' | 'history'>('chat');
-  const [command, setCommand] = useState<CommandId | null>(null);
   const [menu, setMenu] = useState<Menu>('closed');
   const [attaching, setAttaching] = useState<string | null>(null);
   const conversation = useRef(newId());
@@ -665,48 +545,32 @@ function Panel({
    * Reads a chosen file into the composer's attachment slot.
    *
    * The reading happens here, in the reader's own browser, and what travels
-   * is the text it found. A file that is too large, or that turns out to be
-   * binary once read, is refused with a line saying so rather than sent as
-   * mojibake for the model to guess at.
+   * is the text it found. Anything that is not a text file, a file that is too
+   * large, or one that turns out to be binary once read, is refused with a
+   * line saying so rather than sent as mojibake for the model to guess at.
    */
   const takeFile = async (file: File | undefined) => {
     if (!file) return;
     setAttachError(null);
-    const name = file.name.toLowerCase();
-    const isPdf = file.type === 'application/pdf' || name.endsWith('.pdf');
-    const isImage = file.type.startsWith('image/');
-    const cap = isPdf || isImage ? ATTACH_MAX_BINARY_BYTES : ATTACH_MAX_BYTES;
-    if (file.size > cap) {
+    const ext = file.name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? '';
+    if (!ATTACH_TYPES.split(',').includes(ext)) {
+      setAttachError(ATTACH_REFUSED);
+      return;
+    }
+    if (file.size > ATTACH_MAX_BYTES) {
       setAttachError('That file is too large. Attach the failing part of it.');
       return;
     }
     let text: string;
     try {
-      if (isPdf) {
-        setReading('Reading the text in that PDF.');
-        text = await textFromPdf(file);
-        if (!text) {
-          setReading(null);
-          setAttachError(
-            'That PDF has no text in it, only pictures of text. Attach a screenshot of the part you mean and it will be read.',
-          );
-          return;
-        }
-      } else if (isImage) {
-        text = await textFromImage(file, setReading);
-      } else {
-        text = await file.text();
-      }
+      text = await file.text();
     } catch {
-      setReading(null);
       setAttachError('That file could not be read.');
       return;
-    } finally {
-      setReading(null);
     }
     // A replacement character is what a decoder leaves behind when the bytes
-    // were never text, which is the cheap way to catch an image renamed .txt.
-    if (!isPdf && !isImage && text.includes('\uFFFD')) {
+    // were never text, which is the cheap way to catch a binary renamed .txt.
+    if (text.includes('\uFFFD')) {
       setAttachError('That looks like a binary file. Text and JSON only.');
       return;
     }
@@ -717,18 +581,10 @@ function Panel({
       return;
     }
     if (!text.trim()) {
-      setAttachError(
-        isImage
-          ? 'No text could be read out of that image.'
-          : 'That file is empty.',
-      );
+      setAttachError('That file is empty.');
       return;
     }
-    setChosen({
-      name: file.name,
-      text,
-      kind: isPdf ? 'pdf' : isImage ? 'image' : undefined,
-    });
+    setChosen({name: file.name, text});
     composer.current?.focus();
   };
 
@@ -740,39 +596,11 @@ function Panel({
     netDone.current = true;
   };
 
-  /**
-   * Moves the install flow on by one step, writing it into the thread the
-   * way an exchange reads: what the reader chose, then the answer to it.
-   *
-   * Nothing here goes to the server. The steps are scripted, so the panel
-   * says them itself rather than asking a model to remember a command.
-   */
-  const walk = (next: Step, chose: string) => {
-    setNaming('');
-    setAsking(false);
-    setTurns((prior) => [
-      ...prior,
-      ...(chose ? [{from: 'you' as const, text: chose}] : []),
-      {
-        from: 'assistant' as const,
-        text: say(next, {docsOrigin, mcpUrl, pluginRepo}),
-        install: next,
-      },
-    ]);
-  };
-
-  /**
-   * Asks a question. `module` answers the server's "which module is this
-   * about?" for a command; `base` and `file` let that re-ask stand in for
-   * the exchange it replaces rather than follow it.
-   */
-  const ask = async (
-    asked: string,
-    opts: {module?: string; base?: Turn[]; file?: Attached | null} = {},
-  ) => {
+  /** Asks a question. */
+  const ask = async (asked: string) => {
     if (!asked || busy) return;
-    const file = opts.file !== undefined ? opts.file : chosen;
-    const base = opts.base ?? turns;
+    const file = chosen;
+    const base = turns;
     setDraft('');
     setChosen(null);
     setAttachError(null);
@@ -780,9 +608,9 @@ function Panel({
     setView('chat');
 
     // A question about the panel itself is the panel's to answer, the same
-    // on every page, and like the install steps it is never shown to the
-    // model: `local` drops the pair from what the next question sends.
-    if (!file && !command && isAboutQuestion(asked)) {
+    // on every page, and it is never shown to the model: `local` drops the
+    // pair from what the next question sends.
+    if (!file && isAboutQuestion(asked)) {
       setTurns([
         ...base,
         {from: 'you', text: asked},
@@ -791,16 +619,15 @@ function Panel({
       return;
     }
 
-    // The panel's own exchanges, the install flow and the module question,
-    // are in the thread because the reader had them, but the model did not
-    // say them and would only be confused by them. forModel drops each with
-    // the turn it answered, so what is sent still alternates.
+    // The panel's own answer is in the thread because the reader had it, but
+    // the model did not say it and would only be confused by it. forModel
+    // drops it with the turn it answered, so what is sent still alternates.
     const history = forModel([
       ...base,
       {from: 'you' as const, text: asked, file: file ?? undefined},
     ]);
     setTurns((prior) => [
-      ...(opts.base ?? prior),
+      ...prior,
       {from: 'you', text: asked, file: file ?? undefined},
       {from: 'assistant', text: ''},
     ]);
@@ -843,7 +670,6 @@ function Panel({
                   attachment: {
                     name: t.file.name,
                     text: t.file.text,
-                    ...(t.file.kind ? {kind: t.file.kind} : {}),
                   },
                 }
               : {}),
@@ -861,14 +687,6 @@ function Panel({
                 },
               }
             : {}),
-          // The command names a section of the module's agent skill; the
-          // server has the skill and works out the module. Only the name
-          // travels, never skill text.
-          ...(command ? {command} : {}),
-          ...(opts.module ? {module: opts.module} : {}),
-          // Which gateway's documentation the reader is in, so the answer's
-          // searches stay in it unless the question names another.
-          ...(gateway ? {gateway} : {}),
         }),
       });
       if (!res.ok || !res.body) throw new Error(`status ${res.status}`);
@@ -879,19 +697,6 @@ function Panel({
         // while the text is still revealing would sit them under half a reply.
         onSources: (sources) => queueSources(sources),
         onError: emit,
-        // Before any text: which section the answer draws on. When the
-        // server could not tell which module the question is about, it asks
-        // instead of answering, and the panel shows that question with the
-        // modules to pick from.
-        onSkill: (use) =>
-          setTurns((prior) => {
-            const last = prior[prior.length - 1];
-            const asked =
-              use.status === 'unresolved'
-                ? {...last, text: skillNote(use), skill: use, local: true}
-                : {...last, skill: use};
-            return [...prior.slice(0, -1), asked];
-          }),
       });
     } catch (err) {
       // A stop is the reader's own doing: keep whatever arrived, say nothing.
@@ -903,14 +708,6 @@ function Panel({
       netDone.current = true;
       setActivity(null);
     }
-  };
-
-  /** Asks the question the module chips answered, again, with the module. */
-  const reask = (module: string) => {
-    const at = turns.length - 2;
-    const question = turns[at];
-    if (!question || question.from !== 'you') return;
-    void ask(question.text, {module, base: turns.slice(0, at), file: question.file ?? null});
   };
 
   /** Attaches a page found in the page search, the same way the host would. */
@@ -941,7 +738,6 @@ function Panel({
   // working; what it says comes from the model's own tool calls once those
   // start arriving.
   const showActivity = phase === 'thinking';
-  const offer = offerIndex(turns);
 
   return (
     <dialog
@@ -1038,20 +834,6 @@ function Panel({
                 ? ' ask-ai__turn--streaming'
                 : ''
             }`}>
-            {turn.skill && turn.skill.status !== 'unresolved' && (
-              <p class={`ask-ai__skill ask-ai__skill--${turn.skill.status}`}>
-                {turn.skill.status === 'used' && turn.skill.href ? (
-                  <a
-                    href={absolute(turn.skill.href, docsOrigin) ?? turn.skill.href}
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    {skillNote(turn.skill)}
-                  </a>
-                ) : (
-                  skillNote(turn.skill)
-                )}
-              </p>
-            )}
             {turn.from === 'assistant' ? (
               <ChatMarkdown text={turn.text} docsOrigin={docsOrigin} />
             ) : (
@@ -1107,155 +889,6 @@ function Panel({
                   ))}
                 </ul>
               </details>
-            )}
-            {/* The install flow's own controls, on the newest step only.
-                An older step's chips stay on the page as a record of what
-                was chosen, but pressing them again would fork the thread. */}
-            {turn.install && index === turns.length - 1 && (
-              <div class="ask-ai__choices">
-                {turn.install.at === 'tools' &&
-                  TOOLS.map((tool) => (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      class="ask-ai__choice"
-                      onClick={() =>
-                        walk(
-                          needsAgent(tool.id)
-                            ? {at: 'agents', tool: tool.id}
-                            : {at: 'answer', tool: tool.id, agent: 'claude'},
-                          tool.label,
-                        )
-                      }>
-                      {tool.label}
-                    </button>
-                  ))}
-
-                {turn.install.at === 'agents' &&
-                  !asking &&
-                  AGENTS.map((agent) => (
-                    <button
-                      key={agent.id}
-                      type="button"
-                      class="ask-ai__choice"
-                      onClick={() => {
-                        // Other is the one answer that needs a second
-                        // question, so it opens a field instead of moving on.
-                        if (agent.id === 'other') {
-                          setAsking(true);
-                          return;
-                        }
-                        walk(
-                          {
-                            at: 'answer',
-                            tool: (turn.install as {tool: typeof TOOLS[number]['id']}).tool,
-                            agent: agent.id as AgentId,
-                          },
-                          agent.label,
-                        );
-                      }}>
-                      {agent.label}
-                    </button>
-                  ))}
-
-                {turn.install.at === 'agents' && asking && (
-                  <form
-                    class="ask-ai__naming"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      const named = naming.trim();
-                      if (!named) return;
-                      walk(
-                        {
-                          at: 'answer',
-                          tool: (turn.install as {tool: typeof TOOLS[number]['id']}).tool,
-                          agent: 'other',
-                          named,
-                        },
-                        named,
-                      );
-                    }}>
-                    <input
-                      class="ask-ai__naming-field"
-                      value={naming}
-                      autoFocus
-                      placeholder="Which agent?"
-                      aria-label="The name of your agent"
-                      onInput={(event) =>
-                        setNaming((event.target as HTMLInputElement).value)
-                      }
-                    />
-                    <button
-                      type="submit"
-                      class="ask-ai__choice"
-                      disabled={naming.trim() === ''}>
-                      <ArrowUp />
-                    </button>
-                  </form>
-                )}
-              </div>
-            )}
-
-            {/* One click into the agent, where the agent has a scheme for
-                it. The line to run is already in the answer above, as the
-                same fenced block every other answer here uses. */}
-            {turn.install?.at === 'answer' &&
-              (() => {
-                const {link} = scripted(turn.install, {docsOrigin, mcpUrl, pluginRepo});
-                return link ? (
-                  <a
-                    class="ask-ai__install-cta"
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    <Sparkles />
-                    {link.label}
-                  </a>
-                ) : null;
-              })()}
-
-            {turn.skill?.status === 'unresolved' && index === turns.length - 1 && (
-              <div class="ask-ai__choices">
-                {(turn.skill.candidates ?? []).map((module) => (
-                  <button
-                    key={module}
-                    type="button"
-                    class="ask-ai__choice"
-                    onClick={() => reask(module)}>
-                    {moduleLabel(module)}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* A scaffold answer is a build plan; building it is the coding
-                agent's job, so the next step is getting the skill into one. */}
-            {turn.skill?.status === 'used' &&
-              turn.skill.section === 'scaffold' &&
-              !(busy && index === turns.length - 1) && (
-                <button
-                  type="button"
-                  class="ask-ai__install-cta"
-                  onClick={() => walk({at: 'tools'}, 'Install AI tools')}>
-                  <Sparkles />
-                  Build it with your coding agent
-                </button>
-              )}
-
-            {/* The tools, offered where they would actually help. See
-                offerIndex: under the newest answer, and only to a question
-                that sounded like somebody doing the work. A reader who asked
-                what a care context is gets the sentence and nothing else. */}
-            {index === offer &&
-              turn.skill?.section !== 'scaffold' &&
-              !(busy && index === turns.length - 1) && (
-              <button
-                type="button"
-                class="ask-ai__install-cta"
-                onClick={() => walk({at: 'tools'}, 'Install AI tools')}>
-                <Sparkles />
-                Install AI tools
-              </button>
             )}
           </div>
           )}
@@ -1313,8 +946,6 @@ function Panel({
         attaching={attaching}
         onPage={(entry) => void attachFromSearch(entry)}
         onRemovePage={onDetach}
-        command={command}
-        onCommand={setCommand}
         memory={memory}
       />
       </>
@@ -1327,8 +958,6 @@ function Widget({
   host,
   apiBase,
   docsOrigin,
-  mcpUrl,
-  pluginRepo,
   supportUrl,
   launcher,
   shortcut,
@@ -1340,13 +969,10 @@ function Widget({
   send,
   starters,
   keepHistory,
-  gateway,
 }: {
   host: HTMLElement;
   apiBase: string;
   docsOrigin: string;
-  mcpUrl: string | null;
-  pluginRepo: string;
   supportUrl: string;
   launcher: boolean;
   shortcut: string;
@@ -1359,7 +985,6 @@ function Widget({
   starters: Starter[];
   /** False where the host asked not to keep conversations in its origin. */
   keepHistory: boolean;
-  gateway: string;
 }) {
   const close = () => {
     host.removeAttribute('open');
@@ -1392,15 +1017,12 @@ function Widget({
       <Panel
         apiBase={apiBase}
         docsOrigin={docsOrigin}
-        mcpUrl={mcpUrl}
-        pluginRepo={pluginRepo}
         supportUrl={supportUrl}
         open={open}
         question={question}
         send={send}
         starters={starters}
         keepHistory={keepHistory}
-        gateway={gateway}
         onClose={close}
         page={page}
         onDetach={onDetach}
@@ -1417,10 +1039,6 @@ function Widget({
  *   api-base     the chat server's origin; absent keeps the panel a mock
  *   docs-origin  where citations resolve, since "/docs/..." is wrong on
  *                every host except the docs site itself
- *   plugin-repo  the repository serving the plugin marketplace, so the
- *                install flow names the fork this site is published from
- *   mcp-url      the Docs MCP server's address, for the install flow to hand
- *                out; absent and the flow says so rather than inventing one
  *   launcher     "none" to supply your own trigger and drive `open`
  *   shortcut     the key the host has bound to open the panel, shown on the
  *                launcher; the host binds it, this only says what it is
@@ -1437,9 +1055,6 @@ function Widget({
  *                and not to this element, so a host whose origin should not
  *                hold what readers type turns the list off here. Off also
  *                means a reload starts a fresh conversation
- *   gateway      the gateway the page belongs to, "hiecm" or "nhcx", so the
- *                answers stay in its documentation unless the reader names
- *                another; absent on a page that belongs to no gateway
  *
  * One thing is set by method rather than attribute: attachPage({title, url,
  * markdown}) gives the conversation the page the reader is looking at, and
@@ -1478,8 +1093,6 @@ class SupportAgentElement extends HTMLElement {
   static observedAttributes = [
     'api-base',
     'docs-origin',
-    'mcp-url',
-    'plugin-repo',
     'support-url',
     'launcher',
     'shortcut',
@@ -1489,7 +1102,6 @@ class SupportAgentElement extends HTMLElement {
     'starters',
     'history',
     'ground',
-    'gateway',
   ];
 
   private root: ShadowRoot | null = null;
@@ -1560,8 +1172,6 @@ class SupportAgentElement extends HTMLElement {
         host={this}
         apiBase={this.getAttribute('api-base') ?? ''}
         docsOrigin={docsOrigin}
-        mcpUrl={this.getAttribute('mcp-url')}
-        pluginRepo={this.getAttribute('plugin-repo') ?? 'nha-in/docs'}
         supportUrl={
           this.getAttribute('support-url') ??
           `${docsOrigin.replace(/\/$/, '')}/docs/support`
@@ -1576,7 +1186,6 @@ class SupportAgentElement extends HTMLElement {
         send={this.hasAttribute('send')}
         starters={startersFrom(this.getAttribute('starters') ?? '')}
         keepHistory={this.getAttribute('history') !== 'off'}
-        gateway={this.getAttribute('gateway') ?? ''}
       />,
       this.root!,
     );
