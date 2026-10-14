@@ -36,7 +36,7 @@ await build({
 const {
   toBlocks, absolute, headings, readStream, revealStep, THINKING_HOLD, THINKING_BURST,
   titleOf, remember, whenSaid, forgetOne, resumable, ABOUT, isAboutQuestion, memoryOf, sentFrom,
-  startersFrom, DEFAULT_STARTERS, forModel, parseLlms, searchPages, pageUrl, markdownUrl, isHtmlDocument,
+  startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
 } = await import(out);
 
 // History: one conversation comes out, the rest stay in order.
