@@ -56,7 +56,7 @@ webhooks:
 
 ## Worked example, abbreviated
 
-This is a shortened sketch. The full, spec-checked page is `api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp.mdx`; read it before writing a workflow, and verify every field you name against the spec, as that page does.
+This is a shortened sketch. The full, spec-checked page is `docs/hie-cm/workflows/create-abha-aadhaar-otp.mdx`; read it before writing a workflow, and verify every field you name against the spec, as that page does.
 
 ```md
 ## When to use this
@@ -65,7 +65,7 @@ The patient has Aadhaar and the mobile linked to it. This produces a KYC-verifie
 
 ## Before you start
 
-- A client access token. See [Authorization](/api-reference/authorization/getting-started).
+- A client access token. See [Authorization](/api-sdk/auth/getting-started).
 - Your facility onboarded as a HIP.
 - The patient's consent to use Aadhaar, recorded on your side.
 

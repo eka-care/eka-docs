@@ -325,7 +325,7 @@ export const AbhaQuickstart = () => {
                 <pre className="eka-qs-pre">{entry.response}</pre>
               )}
               {!entry.ok && !entry.network && (
-                <p className="eka-qs-note">Check <a href="/api-reference/user-app/abdm-connect/errors">errors</a>.</p>
+                <p className="eka-qs-note">Check <a href="/docs/hie-cm/errors">errors</a>.</p>
               )}
             </div>
           </div>
@@ -346,7 +346,7 @@ export const AbhaQuickstart = () => {
         </ul>
         <p>
           The patient picks one and your app calls Auto Login with it and this <code>txn_id</code>, instead of creating a duplicate.
-          See <a href="/api-reference/user-app/abdm-connect/workflows/login-abha">Log in to an existing ABHA</a>. This runner stops here.
+          See <a href="/docs/hie-cm/workflows/login-abha">Log in to an existing ABHA</a>. This runner stops here.
         </p>
       </div>
     );
@@ -354,7 +354,7 @@ export const AbhaQuickstart = () => {
       <div className="eka-qs-callout">
         <p>
           <code>skip_state</code> is <code>confirm_mobile_otp</code>. The mobile you sent differs from the one linked to this Aadhaar, so an OTP went to it.
-          Verify it as in <a href="/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp#steps">the workflow's mobile verification step</a>.
+          Verify it as in <a href="/docs/hie-cm/workflows/create-abha-aadhaar-otp#steps">the workflow's mobile verification step</a>.
           This runner stops here. Start again with the Aadhaar-linked mobile to stay on the quickstart's path.
         </p>
       </div>
@@ -363,7 +363,7 @@ export const AbhaQuickstart = () => {
       <div className="eka-qs-callout">
         <p>
           <code>skip_state</code> is <code>{stop.state}</code>. This runner walks only the new-patient path. See the
-          {" "}<a href="/api-reference/user-app/abdm-connect/workflows/create-abha-aadhaar-otp">workflow page</a> for this branch.
+          {" "}<a href="/docs/hie-cm/workflows/create-abha-aadhaar-otp">workflow page</a> for this branch.
         </p>
       </div>
     );
@@ -493,7 +493,7 @@ export const AbhaQuickstart = () => {
               Later calls for this patient send <code>eka.oid</code> in the <code>X-Pt-Id</code> header.
             </p>
             <p>
-              Next, <a href="/api-reference/user-app/abdm-connect/workflows/link-care-context-hip">link a care context</a> to this ABHA,
+              Next, <a href="/docs/hie-cm/workflows/link-care-context-hip">link a care context</a> to this ABHA,
               or see <a href="#next">where to go next</a>.
             </p>
           </div>

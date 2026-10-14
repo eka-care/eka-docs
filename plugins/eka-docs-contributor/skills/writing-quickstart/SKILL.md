@@ -34,12 +34,12 @@ workflow: create-abha-aadhaar-otp
 
 ## The shape
 
-Follow docs.abdm.gov.in's "first fifteen minutes": a one-line promise, In short, Before you start, one numbered heading per call (`## 1. Get an access token`), How this fits your product, If a call fails, Next. Every step runs from the docs: open the API page and press **Try it** in Mintlify's playground, after authenticating once on Client Login (the pattern in `ekascribe/authenticate-and-try.mdx`). Each step carries the body to paste and what to copy for the next step; the curl equivalent goes in a collapsed `<Accordion title="Prefer curl?">`.
+Follow docs.abdm.gov.in's "first fifteen minutes": a one-line promise, In short, Before you start, one numbered heading per call (`## 1. Get an access token`), How this fits your product, If a call fails, Next. Every step runs from the docs: open the API page and press **Try it** in Mintlify's playground, after authenticating once on Client Login (the pattern in `docs/scribe/authenticate-and-try.mdx`). Each step carries the body to paste and what to copy for the next step; the curl equivalent goes in a collapsed `<Accordion title="Prefer curl?">`.
 
 ## Sections, in order
 
 1. **What you will have** at the end, in one sentence, and roughly how long it takes.
-2. **Before you start.** Get a token: link [Authorization](/api-reference/authorization/getting-started), do not repeat it. The sandbox base URL. Any test value the reader must use, from the testing page.
+2. **Before you start.** Get a token: link [Authorization](/api-sdk/auth/getting-started), do not repeat it. The sandbox base URL. Any test value the reader must use, from the testing page.
 3. **The calls.** A `<Steps>` block, one `<Step>` per call, each with: one sentence on what it does, the full request as a copy-pasteable `curl` (and the same in one SDK language if the product has an SDK, in `<CodeGroup>`), and the response trimmed to the fields that matter, with the field the next step needs called out. Use the spec's examples for both; do not invent values.
 4. **What just happened.** Three or four sentences mapping the calls to the product's concepts, linking the journey page.
 5. **Where next.** Three links: the workflow page this walked (for the branches and the failure table), the next workflow in the journey, and the testing page.

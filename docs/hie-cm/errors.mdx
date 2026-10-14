@@ -1,0 +1,199 @@
+---
+title: Error Code Mapping
+type: errors
+sidebarTitle: Errors
+icon: "circle-exclamation"
+---
+
+Error Code would match with the http status code in most cases.
+4XX indicates a user error and 5XX indicates a server side error.
+
+## By symptom
+
+Start here when you know what you see but not which code it is. Each symptom lists the likely causes, what to check, the codes involved and the workflow step it belongs to. {/* TODO: confirm: the order of causes by frequency; support data was not available, so causes are listed in the order the workflow pages give them. */}
+
+### OTP never arrives
+
+Belongs to: the Generate OTP step of [Create an ABHA with Aadhaar OTP](/docs/hie-cm/workflows/create-abha-aadhaar-otp), [Create an ABHA address with mobile OTP](/docs/hie-cm/workflows/create-abha-mobile-otp) and [Log in to an existing ABHA](/docs/hie-cm/workflows/login-abha).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The patient is checking the wrong phone. The Aadhaar OTP goes to the mobile linked to the Aadhaar, not the `mobile` you send. | Show the patient the masked number in `hint` from the init response. | none |
+| The OTP is delayed or lost. | Call the workflow's resend operation with the current `txn_id`, then use the `txn_id` it returns. {/* TODO: confirm: how long to wait before offering resend. */} | none |
+| Too many OTP requests in this transaction. | Tell the patient to try again in 30 minutes, then start again from Generate OTP. | `ABDM-1100` |
+| ABDM's SMS gateway is unavailable. | Retry later. | `ABDM-1004` |
+| In [Answer discovery and link old records](/docs/hie-cm/workflows/hip-discovery-and-link), your HIP sends this OTP itself. | Check your own SMS sending. | none |
+
+### The patient is locked out after entering OTPs
+
+Belongs to: the Verify OTP step of every ABHA creation, login and gateway session workflow.
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The OTP is wrong. | Ask the patient to re-enter it. {/* TODO: confirm: how many wrong attempts are allowed before ABDM-1100. */} | `MIS-1013`, `ABDM-1035` (OTP does not match, in [Discover and link records from a facility](/docs/hie-cm/workflows/phr-discover-and-link)) |
+| Too many wrong attempts or OTP requests. | Tell the patient to try again in 30 minutes. | `ABDM-1100` |
+| The patient is blocked. | Tell the patient to try again after 24 hours. | `ABDM-1027` |
+| The transaction expired. | Start again from Generate OTP. | `ABDM-1017`, `MIS-1026` |
+
+### Every call returns 401
+
+Belongs to: every call. See [Authorization](/api-sdk/auth/getting-started).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| Your access token has expired. | Get a new token with [Refresh token](/api-sdk/auth/refresh-token-v2) and retry. | HTTP `401` |
+| The token is missing from the request. | Send it as a Bearer token on every call. | HTTP `401` |
+
+{/* TODO: confirm: other causes of 401 on ABDM Connect, such as a client not enabled for ABDM Connect, or a production token used against sandbox. */}
+
+### Patient calls return 491
+
+Belongs to: [Hold the ABHA Gateway session](/docs/hie-cm/workflows/hold-gateway-session), and every patient-scoped call in the PHR workflows, such as [Approve, deny or revoke a consent in a PHR app](/docs/hie-cm/workflows/phr-act-on-consent) and [Manage the ABHA profile and KYC](/docs/hie-cm/workflows/manage-profile-and-kyc).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The patient's ABHA Gateway session has expired. | Run Session Init and Session Verify with a mobile OTP, then retry the call. See [User Session](/docs/hie-cm/session/getting-started). | HTTP `491` |
+| You called Session Status without the patient's id. | Send the patient's `oid` in `X-Pt-Id`. | not documented |
+
+{/* TODO: confirm: how long a gateway session lasts, so you can renew it before it expires. */}
+
+### A webhook never arrives
+
+Belongs to: every workflow that waits on an event. See [Webhooks](/docs/hie-cm/webhooks).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| Your endpoint is not registered with Eka, or is not reachable. | Check the registration with [Get webhooks](/api-sdk/webhooks/get-webhooks). Check the URL is public, uses HTTPS, and allows Eka's IP addresses. | none |
+| Your endpoint does not reply `200` within 5 seconds. | Reply first, then process. Eka retries on any other status. | none |
+| Your signature check rejects the event. | Compare your check with [Webhook signature](/docs/webhooks/webhook-signature). | none |
+| The event is not sent in your setup. `abha.hip_data_fetch` is sent only if you keep the health data yourself. `abha.hiu_data_push` is sent only if you manage the data on your side; if Eka stores it, read the records instead. | Check whether Eka stores the data for you. | none |
+| For `abha.hiu_data_push`: your public keyset is not registered. | Register it as in [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent). | none |
+| For UHI events: the result is late. | Read the result with the matching `GET`, as in [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation). {/* TODO: confirm: poll interval and timeout. */} | none |
+
+When `abha.created` does not arrive, use the Create response to proceed. {/* TODO: confirm: how long to wait for any event before treating it as lost. */}
+
+### A consent request never moves on
+
+Belongs to: the wait-for-status step of [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| The patient has not acted on the request yet. | The patient approves or denies it in their PHR app. | none |
+| `abha.consent_update` is not reaching you. | Check your webhook registration and signature check, then read the status from [Consent List](/api-sdk/hie-cm/consents/consent-list). | none |
+| The request expired before the patient acted. | Raise a new consent request; do not retry the old one. | `ABDM-1061` |
+| The patient denied the request. | Close the request on your side. | `ABDM-1062` |
+
+{/* TODO: confirm: the status values Consent List and abha.consent_update return, and how long a request stays open before it expires. */}
+
+### Records do not decrypt
+
+Belongs to: the decrypt step of [Receive and decrypt records as a HIU](/docs/hie-cm/workflows/hiu-receive-data), and the encrypt step of [Serve records on a fetch request](/docs/hie-cm/workflows/serve-data-on-fetch).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| As a HIU: you used a different key pair from the one registered for this consent. | Use the `private_key` and `nonce` registered at the time of the consent. Report the entry with `success` `false`. | none |
+| As a HIU: a field sent to Ecdh decrypt is not the Base64 value you received. | Send each field exactly as it came in the webhook or your store. | `ABDM-1006`, `ABDM-1010` |
+| As a HIP: you encrypted with the wrong receiver key or nonce. | Take the receiver key and nonce from `key_information` in this `abha.hip_data_fetch` event. | not documented |
+
+{/* TODO: confirm: how a HIP learns that the HIU failed to decrypt or verify the checksum. */}
+
+### A care context link reports ERRORED
+
+Belongs to: the wait-for-status step of [Link a care context as a HIP](/docs/hie-cm/workflows/link-care-context-hip).
+
+| Likely cause | What to check | Codes |
+|---|---|---|
+| ABDM rejected the link. | Read `data.error` in `abha.link_care_context`. Correct the request and link again. | `data.status` `ERRORED` |
+| The ABHA address or number is not recognised. | Check the `abha_address` saved on the patient record. | `ABDM-1051` |
+| The HIP ID is wrong. | Check the `X-Hip-Id` header against your onboarded HIP ID. | `ABDM-1035` (Invalid HIP ID) |
+| The gateway or a dependent service is down. | Retry later. | `ABDM-1019`, `ABDM-1024`, `ABDM-1048` |
+
+{/* TODO: confirm: the values data.error takes on ERRORED, what data.retry_count means, and whether Eka retries the link itself. */}
+
+## By code
+
+| code | message | abdm-code | abdm-message |
+| --- | --- | --- | --- |
+| 500 | Something went wrong | ABDM-1000 | Unable to connect the database |
+| 500 | No data found | ABDM-1001 | No data found |
+| 500 | Something went wrong | ABDM-1002 | Integrity violation |
+| 500 | Something went wrong | ABDM-1003 | Email Gateway is unavailable |
+| 500 | Something went wrong | ABDM-1004 | SMS Gateway is unavailable |
+| 500 | Something went wrong | ABDM-1005 | Invalid receiver |
+| 400 | Bad Request, invalid request | ABDM-1006 | Bad Request, invalid request Body |
+| 500 | Something went wrong | ABDM-1007 | Connection failed due to timeout |
+| 500 | Something went wrong | ABDM-1008 | SMS service currently disabled |
+| 500 | Something went wrong | ABDM-1009 | Email service currently disabled |
+| 400 | Validation failed | ABDM-1010 | Validation failed |
+| 500 | Something went wrong | ABDM-1011 | Gateway database unavailable |
+| 400 | No records found against the ABHA Address | ABDM-1012 | No records found against the ABHA Address |
+| 400 | Invalid ABHA Number | ABDM-1013 | Invalid ABHA Number |
+| 400 | Invalid Mobile Email | ABDM-1014 | Invalid Mobile Email |
+| 500 | Something went wrong | ABDM-1015 | Invalid Response |
+| 500 | Something went wrong | ABDM-1016 | Invalid TimeStamp |
+| 500 | Something went wrong | ABDM-1017 | Invalid TransactionId |
+| 500 | Unable to share the details with Hospital | ABDM-1018 | Share Profile database unavailable |
+| 500 | Something went wrong | ABDM-1019 | Dependent Service Unavailable |
+| 500 | Something went wrong | ABDM-1020 | Unknown database |
+| 500 | Something went wrong | ABDM-1021 | ABDM-1021 |
+| 500 | Too many requests | ABDM-1022 | Too many requests |
+| 500 | Something went wrong | ABDM-1023 | Invalid User |
+| 500 | Something went wrong | ABDM-1024 | Dependent service unavailable |
+| 500 | Something went wrong | ABDM-1025 | Invalid ServiceId |
+| 500 | Something went wrong | ABDM-1026 | Invalid Link Token |
+| 500 | You are blocked. Please try again after 24 hours. | ABDM-1027 | You are blocked. Please try again after 24 hours. |
+| 500 | Something went wrong | ABDM-1028 | HIP is unavailable |
+| 500 | Something went wrong | ABDM-1029 | Redis server is unavailable |
+| 400 | Something went wrong | ABDM-1030 | Invalid request ID |
+| 400 | Something went wrong | ABDM-1031 | Invalid request |
+| 400 | Something went wrong | ABDM-1032 | Invalid header |
+| 500 | Something went wrong | ABDM-1033 | HIU is unavailable |
+| 500 | Something went wrong | ABDM-1034 | Notification service unavailable |
+| 500 | Something went wrong | ABDM-1035 | Invalid HIP ID |
+| 400 | OTP doesn't match | ABDM-1035 | OTP does not matched |
+| 500 | Something went wrong | ABDM-1036 | Data does not matched |
+| 500 | Something went wrong | ABDM-1037 | Counter and Care context count mismatch |
+| 500 | Something went wrong | ABDM-1038 | ABHA address and Link token mismatch |
+| 500 | Something went wrong | ABDM-1039 | Invalid Consent request id |
+| 500 | Something went wrong | ABDM-1040 | Invalid HIU ID |
+| 500 | Something went wrong | ABDM-1041 | Invalid Acknowledgement |
+| 400 | Invalid request | ABDM-1042 | Provider Mandatory |
+| 500 | Something went wrong | ABDM-1043 | ABHA Address does not match with KYC details. |
+| 500 | Something went wrong | ABDM-1044 | Broadcast Failed |
+| 500 | Something went wrong | ABDM-1045 | Database Access is restricted |
+| 500 | Something went wrong | ABDM-1046 | Invalid Purpose |
+| 500 | Something went wrong | ABDM-1047 | Purpose does not exist |
+| 500 | Something went wrong | ABDM-1048 | Timeout |
+| 500 | Something went wrong | ABDM-1049 | Invalid Profile Share Intent Keys |
+| 500 | Something went wrong | ABDM-1050 | Invalid Profile Share Metadata Keys |
+| 500 | Something went wrong | ABDM-1051 | Invalid ABHA Number or ABHA Address |
+| 500 | Something went wrong | ABDM-1052 | Invalid TransactionId or response's requestId |
+| 500 | Something went wrong | ABDM-1053 | Data already exists |
+| 500 | Something went wrong | ABDM-1054 | Invalid Subscription Request Id |
+| 500 | Something went wrong | ABDM-1401 | HIP is not available |
+| 500 | Something went wrong | ABDM-1402 | Acknowledgement is not received from HIP |
+| 500 | Something went wrong | ABDM-9999 | Unknown exception |
+| 400 | Consent artefact expired | ABDM-1061 | Consent artefact expired |
+| 400 | Consent Not granted | ABDM-1062 | Consent Not granted |
+| 400 | Date Range given is invalid | ABDM-1063 | Date Range given is invalid |
+| 400 | Something went wrong | ABDM-1064 | request with this request id already exists |
+| 500 | Something went wrong | ABDM-1109 | ABHA DB service unavailable |
+| 500 | Something went wrong | ABDM-1108 | Notification DB service unavailable |
+| 500 | Something went wrong | ABDM-1205 | Document DB Gateway is unavailable |
+| 500 | Something went wrong | ABDM-1202 | Document Gateway is unavailable |
+| 500 | Something went wrong | ABDM-1200 | LGD Gateway is unavailable |
+| 500 | Something went wrong | ABDM-1201 | IDP Gateway is unavailable |
+| 500 | Something went wrong | ABDM-1101 | This ABHA Address already exists. Please create with unique ABHA Address |
+| 500 | Something went wrong | ABDM-1006 | Invalid combinations of scopes |
+| 500 | Something went wrong | ABDM-1100 | You have requested multiple OTPs Or Exceeded maximum number of attempts for OTP match in this transaction. Please try again in 30 minutes. |
+| 500 | ABHA User not found. | ABDM-1110 | ABHA User not found. |
+| 400 | Mobile number not found. | ABDM-1111 | Mobile number not found. |
+| 400 | Aadhaar details not found. | ABDM-1112 | Aadhaar details not found. |
+| 400 | Login via Password is not allowed | ABDM-1113 | Login via Password is not allowed |
+| 400 | Login via ABHA Number OTP is not allowed | ABDM-1114 | Login via ABHA Number OTP is not allowed |
+| 400 | Login via Aadhaar OTP is not allowed | ABDM-1115 | Login via Aadhaar OTP is not allowed |
+| 400 | Mobile number verification is pending. | ABDM-1102 | Mobile number verification is pending. |
+| 400 | The OTP that you have entered is incorrect. Please try again. | MIS-1013 | OTP(One Time Password) is invalid, Please enter the correct OTP. |
+| 500 | Transaction not found for UUID. | MIS-1026 | Transaction is not found for UUID. |
+| 400 | This account has already been claimed by the mobile number: `mobile_number` | EKA-1001 | This account has already been claimed by the mobile number: `mobile_number` |
+| 400 | This mobile number has already been claimed by another account. | EKA-1002 | Mobile number `mobile_number` has already been claimed by another account. |

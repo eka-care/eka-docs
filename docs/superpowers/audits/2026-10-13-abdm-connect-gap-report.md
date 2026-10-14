@@ -75,7 +75,7 @@ Operation lists use the spec's exact paths. "Lacks" is measured against the seve
 
 **Stale specs:** none. `registration.yml` is the only spec with ABDM paths; its filename is misleading for a 105-operation product surface.
 
-**Broken outbound links:** `blood-bank/getting-started.mdx` → `/api-reference/user-app/bloodbank/*` (no such folder). `flows/m1.mdx` → `/api-reference/authorization/client-login` labelled "Session API" (it is the partner token, not the ABHA session).
+**Broken outbound links:** `blood-bank/getting-started.mdx` → `/api-reference/user-app/bloodbank/*` (no such folder). `flows/m1.mdx` → `/api-sdk/auth/client-login` labelled "Session API" (it is the partner token, not the ABHA session).
 
 **Untyped pages:** all 48 non-reference pages (every page without `openapi:`).
 

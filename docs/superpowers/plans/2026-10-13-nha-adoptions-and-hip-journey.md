@@ -18,7 +18,7 @@ Check: `claude plugin validate --strict` passes; `grep -l "Already in place"` fi
 
 ## Task 2: Journey page and workflow stubs
 
-- Create `api-reference/user-app/abdm-connect/journeys/hip-register-patient-and-link-visit.mdx`, type `journey`, persona "Clinic receptionist", with the five sections, role and prerequisite stated, every API step linking a workflow.
+- Create `docs/hie-cm/journeys/hip-register-patient-and-link-visit.mdx`, type `journey`, persona "Clinic receptionist", with the five sections, role and prerequisite stated, every API step linking a workflow.
 - Create stubs under `api-reference/user-app/abdm-connect/workflows/` for: `login-abha`, `create-abha-aadhaar-otp`, `create-abha-mobile-otp`, `create-abha-face-auth`, `link-care-context-hip`, `serve-data-on-fetch`, `hip-scan-and-share`, `hip-discovery-and-link`. Each: full frontmatter (`journey`, `operations` from the audit table using the spec's exact paths, `webhooks` from the spec's keys), the seven section headings, one italic placeholder line each. The two that belong to other journeys (`hip-discovery-and-link`, `hip-scan-and-share`) point `journey` at this one for now with a TODO comment, since their journeys do not exist yet.
 - `docs.json`: under the ABDM Connect group, add "Journeys" (icon `route`) and "Workflows" (icon `diagram-project`) groups after Overview.
 - Overview page: add a "Journeys" section with the role to journeys table (HIP, HIU, PHR app, facility admin) linking the one journey that exists and the M2/M3/M4 guide pages otherwise, and three "I want to…" cards.

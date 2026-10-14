@@ -1,0 +1,196 @@
+---
+icon: "webhook"
+title: "Webhooks"
+description: "Every event ABDM Connect sends to your server, when it fires, and which workflow handles it."
+type: webhooks
+product: abdm-connect
+---
+
+ABDM is asynchronous. Many results never come back on the request you made. Eka sends them to your webhook endpoint as events. This page lists all 18 ABDM Connect events. Each event's own page carries its payload.
+
+## In short
+
+- Eka sends results that do not come back on your request to your webhook endpoint as events.
+- Your endpoint is a public HTTPS URL that accepts `POST` requests.
+- Every event has the same envelope; the fields inside `data` differ per event.
+- Verify `Eka-Webhook-Signature` with HMAC-SHA256 when you gave a signing key.
+- Reply `200` within 5 seconds, then do the work.
+
+## Delivery, signature and acknowledgement
+
+### Registering your endpoint
+
+Your endpoint is a public HTTPS URL that accepts `POST` requests. See [Getting started with webhooks](/api-sdk/webhooks/getting-started) and [Register a webhook](/api-sdk/webhooks/register-webhook).
+
+The [PHR webhooks guide](/docs/hie-cm/phr/webhooks) says there is no self-service API to register an ABDM webhook URL, and that you share your endpoint with Eka (console or support) before sandbox testing. {/* TODO: confirm: whether ABDM Connect events are registered through Register a webhook or by sharing the URL with Eka, and which event names or scopes to subscribe to. */}
+
+If your network restricts inbound traffic, allowlist Eka's production and staging IP addresses listed on [Register a webhook](/api-sdk/webhooks/register-webhook).
+
+### What every request carries
+
+Every event is a `POST` with two headers:
+
+- `Content-Type`: `application/json`
+- `Eka-Webhook-Signature`: present when you gave a signing key at registration
+
+The body has the same envelope for every event: `service`, `event` (the event name), `event_time`, `transaction_id`, `timestamp`, `business_id`, `client_id`, and `data`. The fields inside `data` differ per event; see each event's page.
+
+### Verifying the signature
+
+Eka signs the payload when you provide a signing key while registering the webhook. Without a key, Eka still sends the event, unsigned. You can use one key for all webhooks or a unique key per webhook.
+
+The ABDM Connect spec marks `Eka-Webhook-Signature` as required on every event, so whether Eka ever delivers an unsigned event is not yet confirmed. {/* TODO: confirm: is Eka-Webhook-Signature sent on every ABDM Connect event, or only when a signing key was given at registration? The 18 webhook definitions in registration.yml mark it required: true. */}
+
+The header has the form `t=TIMESTAMP,v1=SIGNATURE`. To verify it:
+
+1. Read `t` and `v1` from `Eka-Webhook-Signature`.
+2. Compute an HMAC-SHA256 over `TIMESTAMP.PAYLOAD` with your signing key.
+3. Compare your result with `v1`. If they match, the event came from Eka and was not changed.
+
+To block replayed events, reject a request whose `t` is older than your tolerance, for example 3 minutes. [Webhook signature](/docs/webhooks/webhook-signature) has example code.
+
+### Acknowledging
+
+Reply `200` within 5 seconds. Eka retries on any other status. Reply first, then do the work: decrypting records, building FHIR bundles or calling back Eka.
+
+{/* TODO: confirm: Eka's retry schedule, how many times it retries, and what happens after the last retry. */}
+
+{/* TODO: confirm: whether the envelope's transaction_id stays the same across retries of one event, so you can use it to ignore a repeated delivery. */}
+
+## ABHA
+
+### `abha.created`
+
+Fires when an ABHA address is created. Provision the patient in your database from this event, not only from the API response.
+
+- Payload: [ABHA Address Created](/docs/hie-cm/webhooks/abha-created)
+- Consumed by: [Create an ABHA with Aadhaar OTP](/docs/hie-cm/workflows/create-abha-aadhaar-otp), [Create an ABHA address with mobile OTP](/docs/hie-cm/workflows/create-abha-mobile-otp), [Create an ABHA with face authentication](/docs/hie-cm/workflows/create-abha-face-auth)
+
+## Health Information Provider (HIP)
+
+### `abha.link_care_context`
+
+Fires after you call the [Care Context Link API](/api-sdk/hie-cm/care-contexts/link/hip-linking), with the result. `data.status` is `LINKED` when the care context is registered with ABDM, or `ERRORED` with the reason in `data.error`.
+
+- Payload: [Care Context Linking Status](/docs/hie-cm/webhooks/link-care-context)
+- Consumed by: [Link a care context as a HIP](/docs/hie-cm/workflows/link-care-context-hip)
+
+### `abha.care_context_discover`
+
+Fires when a patient asks your facility, from a PHR app, for records not yet linked to their ABHA. Search your system with the details in `data` and answer with [On Discover](/api-sdk/hie-cm/care-contexts/discover/on_discover).
+
+- Payload: [Discovery Request Received](/docs/hie-cm/webhooks/discover-care-context)
+- Consumed by: [Answer discovery and link old records](/docs/hie-cm/workflows/hip-discovery-and-link)
+
+### `abha.care_context_discover_link_init`
+
+Fires when the patient chooses which discovered records to link. Generate an OTP, send it to the patient, and call [On Link Init](/api-sdk/hie-cm/care-contexts/discover/link_on_init).
+
+- Payload: [Link Initiation - Generate OTP](/docs/hie-cm/webhooks/discover-link-init)
+- Consumed by: [Answer discovery and link old records](/docs/hie-cm/workflows/hip-discovery-and-link)
+
+### `abha.context_discover_link_confirm`
+
+Fires when the patient submits the OTP. Check it against the OTP you sent, then call [On Link Confirm](/api-sdk/hie-cm/care-contexts/discover/link_on_confirm) with the care contexts to link.
+
+- Payload: [Link Confirmation - Verify OTP](/docs/hie-cm/webhooks/discover-link-confirm)
+- Consumed by: [Answer discovery and link old records](/docs/hie-cm/workflows/hip-discovery-and-link)
+
+### `abha.hip_data_fetch`
+
+Fires when a Health Information User (HIU) requests data for care contexts you linked. You receive it only if you do not store the health data on Eka. Encrypt the FHIR bundles with the `key_information` in the payload and push them with [Care Context Data On-Fetch](/api-sdk/hie-cm/care-contexts/data-on-fetch).
+
+- Payload: [Health Data Requested by HIU](/docs/hie-cm/webhooks/hip-data-fetch)
+- Consumed by: [Serve records on a fetch request](/docs/hie-cm/workflows/serve-data-on-fetch)
+
+### `abha.hip_profile_share`
+
+Fires when a patient scans your facility's QR code with a PHR app and shares their ABHA profile for an OPD token. `data.hip_code` is the counter id.
+
+- Payload: [Scan and Share Token Received](/docs/hie-cm/webhooks/hip-scan-and-share)
+- Consumed by: [Receive a scanned profile as a HIP](/docs/hie-cm/workflows/hip-scan-and-share)
+
+## Health Information User (HIU) and consent
+
+### `abha.consent_update`
+
+Fires whenever a consent changes, with the updated details. Expect it more than once for the same consent request; treat the latest status as current.
+
+- Payload: [Consent Update](/docs/hie-cm/webhooks/consent-update)
+- Consumed by: [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent), [Approve, deny or revoke a consent in a PHR app](/docs/hie-cm/workflows/phr-act-on-consent)
+
+### `abha.hiu_data_push`
+
+Fires when a HIP pushes encrypted health data for a consent you raised. You receive it only if you manage the data on your side.
+
+- Payload: [Health Data Received from HIP](/docs/hie-cm/webhooks/hiu-data-push)
+- Consumed by: [Receive and decrypt records as a HIU](/docs/hie-cm/workflows/hiu-receive-data)
+
+## Health locker
+
+### `abha.locker_created`
+
+Fires when a health locker is set up. Store `data.auto_approval_id` and `data.subscription_id`.
+
+- Payload: [Locker Created](/docs/hie-cm/webhooks/locker-created)
+- Consumed by: [Set up the patient's health locker](/docs/hie-cm/workflows/set-up-health-locker)
+
+### `abha.subscription_notify`
+
+Fires when a HIP links a new care context to an ABHA address you hold an active subscription for.
+
+- Payload: [New Care Context Linked (Subscription)](/docs/hie-cm/webhooks/subscription-notify)
+- Consumed by: [Set up the patient's health locker](/docs/hie-cm/workflows/set-up-health-locker)
+
+### `abha.subscription_modified`
+
+Fires whenever a subscription is updated.
+
+- Payload: [Subscription Updated](/docs/hie-cm/webhooks/subscription-modify)
+- Consumed by: [Set up the patient's health locker](/docs/hie-cm/workflows/set-up-health-locker)
+
+## Unified Health Interface (UHI) bookings
+
+Each UHI call starts a request and returns at once. The result arrives on one of these events. You can also read it with the matching `GET`.
+
+### `doctor.search.results`
+
+Fires with the results of [Search Doctors](/api-sdk/uhi/phys-cons/search-doctors).
+
+- Payload: [Search Doctors](/docs/uhi/webhooks/search-doctors)
+- Consumed by: [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation)
+
+### `doctor.slot.search.results`
+
+Fires with the results of a doctor's consultation slot search, [Search Slots](/api-sdk/uhi/phys-cons/search-slots).
+
+- Payload: [Search Slots](/docs/uhi/webhooks/search-slots)
+- Consumed by: [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation)
+
+### `booking.init`
+
+Fires with the result of [Init](/api-sdk/uhi/phys-cons/init): the quote, terms and payment details. {/* TODO: confirm: the source description says booking.init carries the response of the order status API, but links Booking Init. Confirm it fires for Init. */}
+
+- Payload: [Booking Init](/docs/uhi/webhooks/booking-init)
+- Consumed by: [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation)
+
+### `booking.confirm`
+
+Fires with the result of [Confirm](/api-sdk/uhi/phys-cons/confirm): the booking confirmation and its details.
+
+- Payload: [Booking Confirm](/docs/uhi/webhooks/booking-confirm)
+- Consumed by: [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation)
+
+### `booking.status`
+
+Fires with the result of [Order Status](/api-sdk/uhi/phys-cons/order-status): the booking's status and details.
+
+- Payload: [Booking Status](/docs/uhi/webhooks/booking-status)
+- Consumed by: [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation)
+
+### `booking.cancel`
+
+Fires when a booking cancellation requested through [Cancel](/api-sdk/uhi/phys-cons/cancel) completes. `data.status` carries the result.
+
+- Payload: [Booking Cancel](/docs/uhi/webhooks/booking-cancel)
+- Consumed by: [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation)

@@ -1,0 +1,136 @@
+---
+icon: "rocket"
+title: "Getting Started"
+sidebarTitle: "Webhooks API"
+---
+
+## What are Webhooks?
+
+A webhook (also called a web callback or HTTP push API) is a way for an app to provide other applications with real-time information. A webhook delivers data to other applications as it happens, meaning you get data immediately. Unlike typical APIs where you would need to poll for data very frequently in order to get it real-time. This makes webhooks much more efficient for both provider and consumer.
+
+
+## Webhook Implementation Strategy
+
+At Eka Care, we've chosen to implement webhooks by sending minimal information in the webhook payload, specifically the resource ID (appointment, rx, patient) and the action performed (e.g., created, modified, completed). This approach offers several advantages over sending complete appointment/prescription details in every webhook:
+
+### Technical Benefits
+
+1. **Reduced Payload Size:** Sending only essential information (appointment ID and action) significantly reduces the payload size. This leads to faster transmission times and lower bandwidth usage, especially important for systems handling a high volume of appointments.
+
+2. **Improved Scalability:** Smaller payloads allow our webhook system to handle a much higher number of events per second, ensuring better performance and scalability as our user base grows.
+
+3. **Flexibility for Future Changes:** By keeping the webhook payload minimal, we can easily add new fields or modify the appointment data structure without breaking existing integrations. This means third-party developers need to update their code only when they want to utilize new features.
+
+4. **Reduced Risk of Data Inconsistency:** Sending full details in webhooks could lead to race conditions where the data in the webhook might be outdated by the time it's processed. By encouraging API calls for the latest data, we ensure that third-party applications always have the most up-to-date information.
+
+### Security Considerations
+
+1. **Data Minimization:** Sending only the appointment ID adheres to the principle of data minimization, reducing the risk of sensitive information exposure in transit.
+
+2. **Granular Access Control:** Third-party applications can be granted specific API permissions, allowing for more fine-grained control over data access compared to receiving all details via webhooks.
+
+3. **Audit Trail:** By requiring API calls for detailed information, we can maintain a comprehensive audit trail of data access, enhancing security and compliance efforts.
+
+4. **Digital Signature:** We have implemented measures to secure message transmission and data integrity. We will add a [Digital Signature](/docs/webhooks/webhook-signature) (not encryption) to the payload if the developer has provided a key while registering the webhook. If a developer does not provide a key, we will still send the payload, but it will be unsigned. This will allow developers to verify the authenticity and integrity of the webhooks they receive.
+
+### Developer Experience
+
+1. **Consistent Data Retrieval:** Developers can use the same API call to get appointment details, whether triggered by a webhook or not, leading to more consistent and maintainable code.
+
+2. **Reduced Webhook Complexity:** Simpler webhook payloads are easier to parse and validate, reducing the likelihood of errors in webhook processing.
+
+3. **Flexibility in Data Retrieval:** Developers can choose which appointment details they need and when to fetch them, optimizing their application's performance and resource usage.
+
+
+These are the steps to get your application set up to receive webhook events from Eka Care:
+
+<Steps>
+
+<Step title="Set Up Webhook Endpoint">
+Create an endpoint on your server to receive webhook events. This endpoint should be able to handle POST requests.
+
+**Example Endpoint:** `https://your-app.com/api/webhooks`
+
+Ensure your endpoint is publicly accessible and can handle the expected load of incoming webhook events.
+</Step>
+
+<Step title="Register Webhook URL">
+[Register](./register-webhook) your webhook URL with Eka Care.
+
+- To register a new webhook, send a POST request to the appropriate endpoint.
+- Include the URL endpoint where you want to receive the webhook events.
+- Specify the types of events you are interested in.
+- Provide a secret key for security purposes.
+- Once registered, the system will start sending webhook events to the registered endpoint whenever the specified events occur.
+
+**Note:** Make sure to keep your webhook URL up to date if it changes.
+</Step>
+
+
+<Step title="Get All Registered Webhooks">
+[Get](./get-webhooks) a list of all registered webhooks.
+- To retrieve the details of registered webhooks, send a GET request to the webhook endpoint.
+- This request will return information about the webhook, including its ID, Endpoint, Scope, secret key, and timestamps for when it was created and last updated.
+- This is useful for verifying the current configuration of a webhook.
+
+</Step>
+
+
+<Step title="Delete Registered Webhook">
+[Delete](./delete-webhook) a registered webhook.
+
+- To delete a webhook, send a DELETE request to the appropriate endpoint.
+- This request will remove the webhook from our system.
+- It stops any further events from being sent to the previous endpoint.
+- This is useful for cleaning up webhooks that are no longer needed or were configured incorrectly.
+
+</Step>
+</Steps>
+
+[Sample](/docs/webhooks/webhook-samples) payloads that you will receive from Eka Care.
+
+---
+
+## Overview
+
+Webhooks provide a real-time notification system for events occurring within the Eka Care platform. By implementing webhook listeners, your application can immediately respond to events such as new appointments being created or prescriptions being issued.
+
+## Main Events
+
+- **Appointment Events:** Created, modified, or completed appointments.
+- **Prescription Events:** New prescriptions created.
+
+## Usage Notes
+
+- **IP Allowlisting:**
+For security and reliable delivery of webhook events, please allowlist the following Eka Care AWS IP addresses on your infrastructure. This ensures that only requests from Eka Care's servers are accepted by your webhook endpoint.
+
+
+    - **Production IPs:**
+        - `13.127.159.148/32`
+        - `52.66.111.19/32`
+        - `15.206.223.155/32`
+        - `3.6.124.126/32`
+
+    - **Staging IPs:**
+        - `3.6.115.57/32`
+        - `13.204.33.30/32`
+        - `43.204.151.111/32`
+
+- Ensure your webhook endpoint is secure and can handle the expected volume of incoming requests.
+- Implement proper error handling and retry logic in case of temporary failures.
+- Consider implementing a queueing system if you need to process a high volume of webhook events.
+- Always verify the authenticity of incoming webhook requests to prevent security issues.
+- Use the provided APIs to fetch full details after receiving a webhook, as the webhook payload may contain limited information.
+- If you plan to use the digital signature, provide a signing key and implement signature verification on your end.
+- Even without a digital signature, always implement additional security measures such as IP allowlisting and HTTPS to secure your webhook endpoint.
+
+## Example Workflow
+
+1. Receive a webhook notification for a new appointment.
+2. Extract the appointment ID from the webhook payload.
+3. Use the Get Appointment Details API to fetch comprehensive information about the appointment.
+4. Process the appointment information as needed in your application.
+5. Follow a similar process for prescription webhooks, using the appropriate API to fetch full prescription details.
+
+By leveraging webhooks, your application can maintain real-time synchronization with Eka Care's system, providing up-to-date information to your users and enabling immediate actions based on new events.

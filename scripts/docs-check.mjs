@@ -59,7 +59,7 @@ export function pageRules(content, type) {
 }
 const ALL_TYPES = new Set([...LADDER_TYPES, ...EXTRA_TYPES]);
 const METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options']);
-const SKIP_DIRS = new Set(['node_modules', '.git', 'plugins', 'docs']);
+const SKIP_DIRS = new Set(['node_modules', '.git', 'plugins', 'superpowers']);
 const USED_IN_START = '{/* used-in:start */}';
 const USED_IN_END = '{/* used-in:end */}';
 const ERROR_CODE_RE = /\b[A-Z]{2,}-\d{3,}\b/g;
@@ -132,7 +132,9 @@ export function checkProduct(repo, product, { fix = false, allSpecs = [] } = {})
   const webhooks = new Set(specs.flatMap((s) => [...s.webhooks]));
   const specText = specs.map((s) => s.text).join('\n');
 
-  const pages = loadPages(repo, root);
+  // A product's pages may span several folders (docs/<slug>/ and api-sdk/<slug>/).
+  const pageRoots = [root, ...(manifest.pages ?? []).map((d) => path.join(repo, d))].filter((d) => fs.existsSync(d));
+  const pages = [...new Map(pageRoots.flatMap((d) => loadPages(repo, d)).map((pg) => [pg.file, pg])).values()];
   const byType = (t) => pages.filter((p) => p.type === t);
   const journeys = byType('journey'), workflows = byType('workflow'), refs = byType('reference');
 
@@ -190,7 +192,7 @@ export function checkProduct(repo, product, { fix = false, allSpecs = [] } = {})
   }
   for (const [op, meta] of ops) {
     if (seen.has(op)) continue;
-    if (fix) { const url = createRefPage(repo, root, op, meta); fixed.push(`${url}: page created for ${op}`); }
+    if (fix) { const url = createRefPage(repo, manifest.new_reference_pages ? path.join(repo, manifest.new_reference_pages) : path.join(root, 'api-reference'), op, meta); fixed.push(`${url}: page created for ${op}`); }
     else W('coverage', `${op} has no reference page; run with --fix`);
   }
 
@@ -254,7 +256,7 @@ function createRefPage(repo, root, op, meta) {
   const [method, p] = op.split(' ');
   const tag = (meta.tags[0] ?? 'endpoints').toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const slug = (meta.operationId ?? `${method}-${p}`).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const file = path.join(root, 'api-reference', tag, `${slug}.mdx`);
+  const file = path.join(root, tag, `${slug}.mdx`);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `---\nopenapi: "/${meta.spec} ${op}"\n---\n`);
   return pageUrl(repo, file);

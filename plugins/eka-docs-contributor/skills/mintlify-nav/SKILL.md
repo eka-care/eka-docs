@@ -18,31 +18,24 @@ navigation.anchors[]      "Documentation", "API Reference", ... (left rail)
 
 Paths are repo-relative with no leading slash and no `.mdx`: `ekascribe/overview`.
 
-## A product's group
+## A product's place in the navigation
 
-One group per product, in ladder order. Journeys and workflows are nested groups so the sidebar reads like the ladder:
+`docs.json` is built by `scripts/build-nav.py`; do not hand-edit the navigation it writes. The shape:
 
 ```json
-{
-  "group": "ABDM Connect",
-  "icon": "id-card",
-  "pages": [
-    "abdm-connect/overview",
-    { "group": "Journeys", "icon": "route", "pages": ["abdm-connect/journeys/register-walk-in-patient"] },
-    "abdm-connect/quickstart",
-    { "group": "Workflows", "icon": "diagram-project", "pages": ["abdm-connect/workflows/create-abha-aadhaar-otp"] },
-    { "group": "API Reference", "icon": "code", "openapi": "abdm-connect/api-reference/openapi.yaml",
-      "pages": [ { "group": "Registration", "pages": ["abdm-connect/api-reference/registration/aadhaar-init"] } ] },
-    "abdm-connect/webhooks",
-    "abdm-connect/errors",
-    "abdm-connect/testing",
-    "abdm-connect/build-with-ai",
-    "abdm-connect/changelog"
-  ]
-}
+{ "products": [
+  { "product": "ABDM", "menu": [
+    { "item": "HIE-CM", "icon": "/images/icons/products/arrow-left-right.svg", "pages": [
+      { "group": "Get started", "pages": ["docs/hie-cm/about", "docs/hie-cm/quickstart"] },
+      { "group": "Journeys", "pages": ["docs/hie-cm/journeys/hip-register-patient-and-link-visit"] },
+      { "group": "Guides", "pages": [{ "group": "Create: ABHA (M1)", "root": "docs/hie-cm/flows/m1", "pages": ["..."] }] }
+    ] } ] },
+  { "product": "ABDM API", "menu": [
+    { "item": "HIE-CM API", "pages": ["api-sdk/hie-cm/overview", { "group": "Login", "pages": ["api-sdk/hie-cm/login/init"] }] } ] }
+] }
 ```
 
-`/product-new` writes this skeleton. The reference sub-groups mirror the spec's tags.
+Docs families hold `/docs/` pages; API families (`<family> API`) hold `/api-sdk/` pages. To add a product, put its pages under `docs/<slug>/` and `api-sdk/<slug>/`, add a menu item in the right family, then run `python3 scripts/build-nav.py`: it splits the API pages into the API twin, sets roots and icons, and regenerates the navbar links.
 
 ## Icons
 
@@ -53,7 +46,7 @@ One group per product, in ladder order. Journeys and workflows are nested groups
 Moving a page means a redirect, in the same pull request, in the top-level `redirects` array:
 
 ```json
-{ "source": "/api-reference/user-app/abdm-connect/overview", "destination": "/abdm-connect/overview", "permanent": true }
+{ "source": "/api-reference/user-app/abdm-connect/overview", "destination": "/api-sdk/hie-cm/overview", "permanent": true }
 ```
 
 A `:slug*` wildcard covers a folder. The existing array has examples for EkaScribe's move.

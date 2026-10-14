@@ -96,19 +96,19 @@ def build(d):
             'description': 'Scribe, agents and clinical models that turn speech and documents into structured care.',
             'menu': [
                 item('Scribe', 'waveform-lines', 'Consultations become structured notes',
-                     [{'group': 'Guides', 'pages': ['integrations/health-ai/ekascribe', 'api-reference/health-ai/ekascribe-link']}]
+                     [{'group': 'Guides', 'pages': ['docs/scribe/about', 'docs/scribe/ekascribe-link']}]
                      + scribe['groups']),
                 item('Agents', 'robot', 'MedAssist, Agent Kit and MCP servers',
-                     [{'group': 'Guides', 'pages': ['integrations/health-ai/medassist'] + pd['MCP']['pages']},
+                     [{'group': 'Guides', 'pages': ['docs/agents/medassist'] + pd['MCP']['pages']},
                       pages_of(find(healthai, 'MedAssist'))] + ai_tools['groups']),
                 item('Models', 'brain', 'Parsing, codification and assessments',
-                     [{'group': 'Guides', 'pages': ['integrations/health-ai/medical-document-parsing',
-                                                     'integrations/health-ai/medical-entity-codification']},
+                     [{'group': 'Guides', 'pages': ['docs/models/medical-document-parsing',
+                                                     'docs/models/medical-entity-codification']},
                       pages_of(find(healthai, 'Medical Document Parsing')),
                       pages_of(find(healthai, 'Medical Entity Codification')),
                       {'group': 'Eka MedAI research', 'pages': spotlight['pages']}]),
                 item('Datasets', 'database', 'Drugs, labs, protocols and medical knowledge',
-                     [{'group': 'Guides', 'pages': ['integrations/health-ai/medical-db']},
+                     [{'group': 'Guides', 'pages': ['docs/datasets/medical-db']},
                       take(nav, 'Datasets'), take(nav, 'Medical Knowledge-bases'), take(nav, 'Medical Database')]),
             ],
         },
@@ -117,12 +117,12 @@ def build(d):
             'description': 'Patients, appointments, admissions and billing, kept in one record your system reads and writes.',
             'menu': [
                 item('EMR', 'stethoscope', 'Patients, appointments and prescriptions',
-                     [{'group': 'Guides', 'pages': [x for x in pd['EMR']['pages'] if x != 'integrations/core-emr/payments']}, pd['Console'],
+                     [{'group': 'Guides', 'pages': [x for x in pd['EMR']['pages'] if x != 'docs/billing/payments']}, pd['Console'],
                       without(doctor, 'IPD API', 'Payments API')]),
                 item('IPD', 'bed-pulse', 'Admission, beds, nursing and discharge',
                      [pages_of(take(nav, 'Doctor Tool', 'IPD API'))]),
                 item('Billing', 'receipt', 'Charges, deposits, invoices and payments',
-                     [{'group': 'Guides', 'pages': ['integrations/core-emr/payments']},
+                     [{'group': 'Guides', 'pages': ['docs/billing/payments']},
                       pages_of(take(nav, 'Doctor Tool', 'Payments API'))]),
                 item('Health Records', 'file-medical', 'Records, cases and vitals on the patient\'s side',
                      [take(nav, 'Medical Records'), take(nav, 'User App')]),
@@ -133,7 +133,7 @@ def build(d):
             'description': 'ABHA, consent and record exchange across India\'s health stack, plus insurance claims.',
             'menu': [
                 item('HIE-CM', 'id-card', 'ABHA, care contexts, consent and records',
-                     [{'group': 'Get started', 'pages': ['integrations/interoperability/abdm'] + abdm_top},
+                     [{'group': 'Get started', 'pages': ['docs/hie-cm/about'] + abdm_top},
                       hie_journeys, hie_workflows]
                      + [g for n, g in sub.items() if n not in ('Journeys', 'Workflows', 'UHI', 'NHCX')]),
                 item('NHCX', 'shield-heart', 'Eligibility, pre-auth and insurance claims', [sub['NHCX']]),
@@ -168,7 +168,7 @@ def build(d):
     return {'products': products}
 
 
-API_INDEX = 'api-reference/introduction'
+API_INDEX = 'api-sdk/index'
 
 # Same icon per product as the landing page's Products menu (landing/index.html).
 ICONS = {
@@ -182,19 +182,19 @@ ICONS = {
 # API overview where one exists. Products not listed fall back to their first
 # reference page, then to API_INDEX.
 API_HOME = {
-    'Auth': 'api-reference/authorization/getting-started',
-    'Webhooks': 'api-reference/connect/webhooks/getting-started',
-    'Encryption': 'api-reference/end-to-end-encryption/guide',
-    'SDKs': 'SDKs/web-sdk/getting-started',
-    'Scribe': 'ekascribe/api-reference/sessions/overview',
-    'Agents': 'api-reference/health-ai/medassist/overview',
-    'Models': 'api-reference/health-ai/medical-document-parsing/introduction',
-    'Datasets': 'api-reference/datasets/overview',
-    'EMR': 'api-reference/doc-tool/Instructions/before-you-begin',
-    'Health Records': 'api-reference/user-app/records/create-overview',
-    'HIE-CM': 'api-reference/user-app/abdm-connect/overview',
-    'NHCX': 'api-reference/user-app/abdm-connect/nhcx/getting-started',
-    'UHI': 'api-reference/user-app/abdm-connect/blood-bank/getting-started',
+    'Auth': 'api-sdk/auth/getting-started',
+    'Webhooks': 'api-sdk/webhooks/getting-started',
+    'Encryption': 'docs/encryption/guide',
+    'SDKs': 'api-sdk/sdks/sdks/web-sdk/getting-started',
+    'Scribe': 'api-sdk/scribe/sessions/overview',
+    'Agents': 'api-sdk/agents/overview',
+    'Models': 'api-sdk/models/medical-document-parsing/introduction',
+    'Datasets': 'api-sdk/datasets/overview',
+    'EMR': 'api-sdk/emr/instructions/before-you-begin',
+    'Health Records': 'api-sdk/health-records/create-overview',
+    'HIE-CM': 'api-sdk/hie-cm/overview',
+    'NHCX': 'docs/nhcx/getting-started',
+    'UHI': 'docs/uhi/blood-bank/getting-started',
 }
 LINK_JS = 'api-reference-link.js'
 
@@ -356,21 +356,22 @@ def restructure_hiecm(item):
 # one section per product, then tag groups, then endpoints. Product sidebars keep
 # the docs. Each product's API overview page opens its section.
 API_DIVISION = 'API Reference'  # legacy single division, replaced by API families
+API_LABEL = 'API and SDKs'  # the navbar link into the API reference
 API_SUFFIX = ' API'  # the API Reference has one family per docs family: "AI API", "ABDM API", ...
 
 
 def is_api_family(fam):
     return fam['product'].endswith(API_SUFFIX) or fam['product'] == API_DIVISION
 API_SECTION_HOME = {
-    'HIE-CM': 'api-reference/user-app/abdm-connect/overview',
-    'Scribe': 'ekascribe/api-reference/sessions/overview',
-    'Agents': 'api-reference/health-ai/medassist/overview',
-    'Models': 'api-reference/health-ai/medical-document-parsing/introduction',
-    'Datasets': 'api-reference/datasets/overview',
-    'EMR': 'api-reference/doc-tool/Instructions/before-you-begin',
-    'Health Records': 'api-reference/user-app/records/create-overview',
-    'Auth': 'api-reference/authorization/getting-started',
-    'Webhooks': 'api-reference/connect/webhooks/getting-started',
+    'HIE-CM': 'api-sdk/hie-cm/overview',
+    'Scribe': 'api-sdk/scribe/sessions/overview',
+    'Agents': 'api-sdk/agents/overview',
+    'Models': 'api-sdk/models/medical-document-parsing/introduction',
+    'Datasets': 'api-sdk/datasets/overview',
+    'EMR': 'api-sdk/emr/instructions/before-you-begin',
+    'Health Records': 'api-sdk/health-records/create-overview',
+    'Auth': 'api-sdk/auth/getting-started',
+    'Webhooks': 'api-sdk/webhooks/getting-started',
 }
 
 
@@ -538,10 +539,49 @@ def reference_targets(products):
     return targets, page_map
 
 
+def align_areas(products):
+    """A page's sidebar follows its URL: /api-sdk/ pages belong to the product's
+    API twin, /docs/ pages to its docs side. Moves any page in the wrong one."""
+    api_items = {it['item'][:-len(API_SUFFIX)]: it for fam in products if is_api_family(fam)
+                 for it in fam['menu'] if it['item'].endswith(API_SUFFIX)}
+    for fam in products:
+        if is_api_family(fam):
+            continue
+        for it in fam['menu']:
+            if 'pages' not in it:
+                continue
+            kept, rest = [], []
+            for e in it['pages']:
+                k, r = take_pages(e, lambda p: p.startswith('api-sdk/'))
+                if k is not None:
+                    kept.append(k)
+                if r is not None:
+                    rest.append(r)
+            if not kept:
+                continue
+            twin = api_items.get(it['item'])
+            if twin is None:
+                api_fam = next(f for f in products if f['product'] == fam['product'] + API_SUFFIX)
+                twin = {'item': it['item'] + API_SUFFIX, 'icon': it.get('icon', 'code'),
+                        'description': it.get('description', ''), 'pages': []}
+                api_fam['menu'].append(twin)
+            sdk_pages = [p for e in kept for p in walk_pages(e)]
+            twin['pages'] = [e for e in twin['pages'] if not (isinstance(e, dict) and e.get('group') == 'SDKs')]
+            twin['pages'].append({'group': 'SDKs', 'icon': 'box-open', 'pages': sdk_pages})
+            it['pages'] = rest
+            if not rest:
+                it.pop('pages')
+                it['href'] = '/' + next(walk_pages(twin))
+
+
 def docs_targets(products):
     """Map every API Reference page to its product's first docs page."""
     docs = {it['item']: it for fam in products if not is_api_family(fam) for it in fam['menu']}
     out = {}
+    for name, it in docs.items():  # within the docs, Docs goes to the product's own first page
+        home = it.get('href', '').lstrip('/') or next(walk_pages(it), None)
+        for p in walk_pages(it):
+            out['/' + p] = '/' + home
     for fam in products:
         if not is_api_family(fam):
             continue
@@ -549,7 +589,7 @@ def docs_targets(products):
             twin = docs.get(it['item'][:-len(API_SUFFIX)]) if it['item'].endswith(API_SUFFIX) else None
             home = (twin.get('href', '').lstrip('/') or next(walk_pages(twin), None)) if twin else None
             for p in walk_pages(it):
-                out['/' + p] = '/' + (home or 'user-guides/get-started')
+                out['/' + p] = '/' + (home or 'docs/get-started/overview')
     return out
 
 
@@ -563,22 +603,23 @@ def write_link_js(page_map, in_api=(), docs_map=None):
 (function () {{
   var MAP = {json.dumps(page_map, separators=(',', ':'))};
   var FALLBACK = "/{API_INDEX}";
+  var API_LABEL = "{API_LABEL}";
   var API = new Set({json.dumps(list(in_api), separators=(',', ':'))});
   var DOCS = {json.dumps(docs_map or {}, separators=(',', ':'))};
   function here() {{ return window.location.pathname.replace(/\\/$/, ""); }}
   // The navbar's "API Reference" and "Docs" links follow the product you are in.
   function target(label) {{
-    if (label === "Docs") return DOCS[here()] || "/user-guides/get-started";
+    if (label === "Docs") return DOCS[here()] || "/docs/get-started/overview";
     return MAP[here()] || FALLBACK;
   }}
   function labelOf(a) {{
     if (!a || !a.closest("header, nav, #navbar")) return null;
     var t = a.textContent.trim();
-    return t === "API Reference" || t === "Docs" ? t : null;
+    return t === API_LABEL || t === "Docs" ? t : null;
   }}
   function update() {{
     // In the API Reference the product picker shows the API families; elsewhere the docs families.
-    document.documentElement.classList.toggle("eka-api-mode", API.has(window.location.pathname.replace(/\\/$/, "")));
+    document.documentElement.classList.toggle("eka-api-mode", here().indexOf("/api-sdk/") === 0 || API.has(here()));
     document.querySelectorAll("a").forEach(function (a) {{
       var l = labelOf(a);
       if (l) a.setAttribute("href", target(l));
@@ -643,7 +684,7 @@ def set_page_icons(products):
         if not m or re.search(r'^(icon|openapi):', m.group(1), re.M):
             continue
         meta = page_meta(page)
-        key = page.split(ABDM, 1)[-1] if page.startswith(ABDM) else None
+        key = page.split('docs/hie-cm/', 1)[-1] if page.startswith('docs/hie-cm/') else None
         icon = PAGE_ICONS.get(key) if key else None
         icon = icon or pick_icon(meta.get('sidebarTitle', ''), meta.get('title', ''), page.split('/')[-1],
                          default=DEFAULT_PAGE_ICON)
@@ -676,14 +717,12 @@ def main():
     gs_pages = gs[0]['pages'] if isinstance(gs[0], dict) else gs
     if API_INDEX not in set(walk_pages(new)):
         gs_pages.insert(1, API_INDEX)
-    glossary = 'user-guides/glossary'
+    glossary = 'docs/get-started/glossary'
     if open_ok(glossary) and glossary not in set(walk_pages(new)):
         gs_pages.insert(2, glossary)
-    links = d['navbar'].setdefault('links', [])
-    if not any(l.get('label') == 'API Reference' for l in links):
-        links.insert(0, {'label': 'API Reference', 'href': '/' + API_INDEX})
-    if not any(l.get('label') == 'Docs' for l in links):
-        links.insert(0, {'label': 'Docs', 'href': '/user-guides/get-started'})
+    links = [l for l in d['navbar'].setdefault('links', []) if l.get('label') not in ('API Reference', API_LABEL, 'Docs')]
+    d['navbar']['links'] = [{'label': 'Docs', 'href': '/docs/get-started/overview'},
+                            {'label': API_LABEL, 'href': '/' + API_INDEX}] + links
     for fam in new['products']:
         for it in fam['menu']:
             if is_api_family(fam) or 'href' in it:
@@ -696,6 +735,7 @@ def main():
             # so every section title can be its own page.
             it['pages'] = entries
     split_api(new['products'])
+    align_areas(new['products'])
     for _ in range(5):  # shape until nothing changes, so one run gives the final tree
         before = json.dumps(new)
         for fam in new['products']:

@@ -26,6 +26,6 @@ Over budget means too wide: split the page or move scope to an existing page; ne
 1. Plugin and check (main session): skills `docs-strategy`, `writing-style`, `writing-journeys`, `writing-workflows`, `writing-quickstart`; `scripts/docs-check.mjs` rules `budget`, `in-short`, `sentence`, `em-dash`, `first-heading` with tests; plugin 0.2.0.
 2. Navigation (main session): `scripts/build-nav.py` sets a group's `root` to its landing page (removed from `pages`), and gives every group and every non-endpoint page an icon (endpoint pages keep Mintlify's method badge).
 3. Content, three writers in parallel: In short on every page above 300 words, sentences over 35 words split, scope moved off over-budget pages; split proposals reported.
-4. Quickstart writer: rebuilt on the first-fifteen-minutes shape using the Mintlify Try it playground (the pattern `ekascribe/authenticate-and-try.mdx` already uses).
-5. Glossary writer: `user-guides/glossary.mdx`, terms and definitions only from repo pages, linked from Platform > Get started and HIE-CM.
+4. Quickstart writer: rebuilt on the first-fifteen-minutes shape using the Mintlify Try it playground (the pattern `docs/scribe/authenticate-and-try.mdx` already uses).
+5. Glossary writer: `docs/get-started/glossary.mdx`, terms and definitions only from repo pages, linked from Platform > Get started and HIE-CM.
 6. Verify: check, MDX compile, preview; commit.

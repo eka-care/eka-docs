@@ -27,7 +27,7 @@ If they answer "just guess" to any item, draft it from the spec and mark it `<!-
 
 Create, from the answers, exactly the ladder in `docs-strategy`:
 
-- `<slug>/product.yaml` with every field filled, `enforce: false`.
+- `product.yaml` beside the spec, with every field filled, `pages: [docs/<slug>, api-sdk/<slug>]`, `new_reference_pages: api-sdk/<slug>`, `enforce: false`. Guides go under `docs/<slug>/`, reference and SDK pages under `api-sdk/<slug>/` (see `docs-strategy`, Routes and folders).
 - `overview.mdx`, `quickstart.mdx`, `webhooks.mdx`, `errors.mdx`, `testing.mdx`, `build-with-ai.mdx`, `changelog.mdx`: correct `type`, a real `title` and `description`, every section heading the skill names, and one italic line under each heading saying what goes there. Never an empty file. The overview carries "One <persona>, every journey" (a short narrative that walks the journeys from the interview in order), an "I want to…" `<CardGroup>` with one card per journey, and a role to journeys table built from the audiences. The errors page carries "By code" and "By symptom" headings.
 - One `journeys/<slug>.mdx` per journey and one `workflows/<slug>.mdx` per workflow, with full frontmatter (`journey`, `operations`, `webhooks` filled from the interview and matched against the spec), section headings, and the sequence diagram drafted from the operations.
 - If there is no spec: `api-reference/openapi.yaml` with `openapi: 3.1.0`, `info`, `servers`, `securitySchemes`, and one path item per endpoint named, each with `operationId`, `summary`, `tags`, and empty request and response placeholders.

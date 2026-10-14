@@ -1,0 +1,117 @@
+---
+icon: "flask"
+title: "Testing"
+description: "Run every ABDM Connect journey against sandbox before you go live."
+type: testing
+product: abdm-connect
+---
+
+Run the happy path of every journey you support against sandbox before you go live. Each item below links the workflow's own Test it checklist, which also covers the failure cases.
+
+## In short
+
+- Run the happy path of every journey you support against sandbox before you go live.
+- Sandbox is `https://api.dev.eka.care`; production is `https://api.eka.care`.
+- Log in with your API client to get an access token, and refresh it on a `401`.
+- Share a webhook endpoint that sandbox can reach with Eka before you start.
+- Each item links the workflow's own Test it checklist.
+
+## Sandbox
+
+| Setting | Value |
+|---|---|
+| Sandbox base URL | `https://api.dev.eka.care` |
+| Production base URL | `https://api.eka.care` |
+| Authentication | Bearer token in the `Authorization` header on every call |
+
+The base URLs are the spec's `Stage/Sandbox` and `Production` servers.
+
+## Sandbox credentials
+
+1. Create an Eka account and a workspace. See [Setting up your Eka account](/api-sdk/auth/getting-started#setting-up-your-eka-account).
+2. In the [Eka Developer Console](https://console.eka.care), open **Manage API Credentials** and create an API client. Copy the `client_id` and `client_secret`. The secret is shown once.
+3. Log in with [Client login](/api-sdk/auth/client-login) to get an access token and a refresh token.
+4. When a call returns `401`, the access token has expired. Get a new one with [Refresh token](/api-sdk/auth/refresh-token-v2).
+
+{/* TODO: confirm: whether the same console client works against https://api.dev.eka.care, or sandbox needs separate credentials; and how a client is enabled for ABDM Connect. */}
+
+{/* TODO: confirm: how a sandbox facility gets a HIP ID for testing, and whether Eka provides one. */}
+
+You also need a webhook endpoint that sandbox can reach. Share it with Eka before you start, and allowlist the staging IP addresses if your network restricts inbound traffic. See [Webhooks](/docs/hie-cm/webhooks).
+
+## Test data
+
+{/* TODO: confirm: sandbox test values for each journey: Aadhaar numbers and their OTPs, mobile numbers, an existing ABHA address and ABHA number for login, a facility HFR ID, an HPR test professional, HIP and HIU ids for consent, and a UHI test doctor. None are published in these docs yet. */}
+
+## Happy paths
+
+### Register a walk-in patient and link the visit
+
+[Journey](/docs/hie-cm/journeys/hip-register-patient-and-link-visit)
+
+- [ ] [Log in to an existing ABHA](/docs/hie-cm/workflows/login-abha#test-it), for a patient who has one
+- [ ] [Create an ABHA with Aadhaar OTP](/docs/hie-cm/workflows/create-abha-aadhaar-otp#test-it), for a patient who has none
+- [ ] [Link a care context as a HIP](/docs/hie-cm/workflows/link-care-context-hip#test-it)
+- [ ] Optional: [Create an ABHA address with mobile OTP](/docs/hie-cm/workflows/create-abha-mobile-otp#test-it)
+- [ ] Optional: [Create an ABHA with face authentication](/docs/hie-cm/workflows/create-abha-face-auth#test-it)
+- [ ] Optional: [Receive a scanned profile as a HIP](/docs/hie-cm/workflows/hip-scan-and-share#test-it)
+- [ ] If you keep the clinical data yourself: [Serve records on a fetch request](/docs/hie-cm/workflows/serve-data-on-fetch#test-it)
+
+### Let a patient claim their old records
+
+[Journey](/docs/hie-cm/journeys/hip-answer-discovery)
+
+- [ ] [Answer discovery and link old records](/docs/hie-cm/workflows/hip-discovery-and-link#test-it)
+- [ ] If you keep the clinical data yourself: [Serve records on a fetch request](/docs/hie-cm/workflows/serve-data-on-fetch#test-it)
+
+### Fetch a patient's records with consent
+
+[Journey](/docs/hie-cm/journeys/hiu-fetch-records-with-consent)
+
+- [ ] [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent#test-it)
+- [ ] [Receive and decrypt records as a HIU](/docs/hie-cm/workflows/hiu-receive-data#test-it)
+
+{/* TODO: confirm: how to approve a sandbox consent request as the patient, for example through the sandbox PHR app or a PHR app built on ABDM Connect. */}
+
+### Gather every health record in a PHR app
+
+[Journey](/docs/hie-cm/journeys/phr-patient-aggregates-records)
+
+- [ ] [Create an ABHA with Aadhaar OTP](/docs/hie-cm/workflows/create-abha-aadhaar-otp#test-it) or [Log in to an existing ABHA](/docs/hie-cm/workflows/login-abha#test-it)
+- [ ] [Hold the ABHA Gateway session](/docs/hie-cm/workflows/hold-gateway-session#test-it)
+- [ ] [Manage the ABHA profile and KYC](/docs/hie-cm/workflows/manage-profile-and-kyc#test-it)
+- [ ] [Discover and link records from a facility](/docs/hie-cm/workflows/phr-discover-and-link#test-it)
+- [ ] [List a patient's linked records](/docs/hie-cm/workflows/phr-list-records#test-it)
+- [ ] [Approve, deny or revoke a consent in a PHR app](/docs/hie-cm/workflows/phr-act-on-consent#test-it)
+- [ ] [Set up the patient's health locker](/docs/hie-cm/workflows/set-up-health-locker#test-it)
+- [ ] [Share a profile at a facility counter](/docs/hie-cm/workflows/phr-scan-and-share#test-it)
+
+### Onboard a facility and its professionals to ABDM
+
+[Journey](/docs/hie-cm/journeys/facility-onboard-to-abdm)
+
+- [ ] [Create an HPR ID with Aadhaar OTP](/docs/hie-cm/workflows/create-hpr-id#test-it)
+- [ ] [Register and onboard a facility](/docs/hie-cm/workflows/register-hfr#test-it)
+- [ ] Optional: [Log in to HPR with a mobile OTP](/docs/hie-cm/workflows/hpr-mobile-login#test-it)
+
+### Book an in-person doctor visit over UHI
+
+[Journey](/docs/uhi/journeys/uhi-book-physical-consultation)
+
+- [ ] [Log in to an existing ABHA](/docs/hie-cm/workflows/login-abha#test-it)
+- [ ] [Book a physical consultation over UHI](/docs/uhi/workflows/uhi-book-consultation#test-it)
+- [ ] Optional: [Search blood banks over UHI](/docs/uhi/workflows/blood-bank-search#test-it)
+
+### Pay an open bill by scanning the counter QR
+
+[Journey](/docs/uhi/journeys/uhi-scan-and-pay)
+
+- [ ] [Log in to an existing ABHA](/docs/hie-cm/workflows/login-abha#test-it)
+- [ ] [Pay an open order with Scan and Pay](/docs/uhi/workflows/scan-and-pay#test-it)
+
+## Before go-live
+
+- [ ] Every webhook your workflows consume arrives, its signature verifies, and your endpoint replies `200` within 5 seconds.
+- [ ] Your error handling matches [Error codes](/docs/hie-cm/errors), including the By symptom section.
+
+{/* TODO: confirm: the go-live process for ABDM Connect: who signs off, whether ABDM certification is required for each milestone, and how production credentials are issued. */}

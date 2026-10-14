@@ -32,27 +32,32 @@ Authentication is shared and lives once under `api-reference/authorization/`. Qu
 
 Rungs 1, 2 and 4 are the functional knowledge that is usually missing. Rung 5 is what usually exists. Rungs 1, 2, 4 and 7 are mandatory before a product counts as documented.
 
-## Folder layout
+## Routes and folders
+
+A page's URL is its file path, so the folders are the routes. Every product has two, with the product slug alone (lowercase, no family):
 
 ```
-<product>/
-  product.yaml
-  overview.mdx                 type: overview
-  quickstart.mdx               type: quickstart
-  journeys/<slug>.mdx          type: journey
-  workflows/<slug>.mdx         type: workflow
-  api-reference/openapi.yaml
-  api-reference/<tag>/<operation>.mdx   openapi: "..."
-  webhooks.mdx                 type: webhooks
-  errors.mdx                   type: errors
-  testing.mdx                  type: testing
-  build-with-ai.mdx            type: build-with-ai
-  changelog.mdx                type: changelog
-  sdks/*.mdx                   type: sdk
-  resources/*.mdx              type: resource
+docs/<slug>/                     guides: what you read to understand and build
+  overview.mdx                   type: overview (or about.mdx, type: guide)
+  quickstart.mdx                 type: quickstart
+  journeys/<journey>.mdx         type: journey
+  workflows/<workflow>.mdx       type: workflow
+  webhooks.mdx                   type: webhooks
+  errors.mdx                     type: errors
+  testing.mdx                    type: testing
+  changelog.mdx                  type: changelog
+  resources/*.mdx                type: resource
+api-sdk/<slug>/                  reference: what you look up while building
+  overview.mdx                   the API overview, first page of the product's API
+  <tag>/<operation>.mdx          openapi: "..."
+  sdks/*.mdx                     type: sdk
 ```
 
-A product that has not moved yet (ABDM Connect lives under `api-reference/user-app/abdm-connect/`) uses the `root` key in its manifest. Do not move a product's folder as a side effect of another task; it is its own project with redirects.
+Slugs in use: `scribe`, `agents`, `models`, `datasets`, `emr`, `ipd`, `billing`, `health-records`, `hie-cm`, `nhcx`, `uhi`, `get-started`, `auth`, `webhooks`, `encryption`, `sdks`. `/api-sdk/index` is the all-products API index.
+
+The family (AI, Information Management, ABDM, Platform) is never in the URL: families are renamed and products move between them, and the picker already shows the family. The product's spec and `product.yaml` stay where they are; `product.yaml` lists the page folders under `pages:` and where `--fix` creates reference pages under `new_reference_pages:`.
+
+Moving a page means a permanent redirect from its old URL in `docs.json`, in the same pull request. `scripts/route-map.json` records the move made on 2026-10-14 from the old `api-reference/…`, `integrations/…` and product-folder paths.
 
 ## Frontmatter
 
@@ -73,7 +78,7 @@ Every ladder page follows the budgets, the In short rule and the sentence limits
 - keeps every product's sidebar to three levels (section, group, page) in one order: Get started, Journeys, Workflows, Guides (one group per milestone or area, its overview as the title), Webhooks, Resources (errors, testing, SDKs, changelog). HIE-CM is built this way by `restructure_hiecm`; other products move to it as they come onto the ladder
 - moves every endpoint page into a separate **API Reference** that mirrors the docs: four API families (AI API, Information Management API, ABDM API, Platform API), one API product per docs product (Scribe API, HIE-CM API, ...) with its own sidebar opened by the product's API overview (`API_SECTION_HOME`), then spec-tag sections, then endpoints. The product picker shows the docs families in the docs and the API families in the API Reference (`api-reference-link.js` sets `html.eka-api-mode`). The navbar **Docs** and **API Reference** links move between a product's docs and its API. A product with no docs pages left (IPD) links straight to its API. Platform API starts with **All APIs**, the generated index
 
-Re-run it after moving groups in `docs.json`; never hand-edit what it generates (`api-reference-link.js`, `api-reference/introduction.mdx`).
+Re-run it after moving groups in `docs.json`; never hand-edit what it generates (`api-reference-link.js`, `api-sdk/index.mdx`).
 
 Every page sets `icon:` in its frontmatter (a Font Awesome name). API endpoint pages are the exception: Mintlify shows their HTTP method badge in that place.
 
