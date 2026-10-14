@@ -17,7 +17,7 @@ await build({
                export {startersFrom, DEFAULT_STARTERS} from './src/starters';
                export {forModel} from './src/transcript';
                export {parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';
-               export {mount} from './src/mount';`,
+               export {mount, install} from './src/mount';`,
     resolveDir: import.meta.dirname,
     loader: 'ts',
   },
@@ -39,7 +39,7 @@ const {
   toBlocks, absolute, headings, mockTransport, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
-  mount,
+  mount, install,
 } = await import(out);
 
 // History: one conversation comes out, the rest stay in order.
@@ -208,6 +208,21 @@ assert.equal(a, b, 'mount is idempotent');
 assert.equal(doc.body.children.length, 1);
 assert.equal(a.tagName, 'EKA-ASK-AI');
 assert.equal(a.getAttribute('auth-token'), null, 'auth-token is left unset');
+
+// install: a script evaluated twice adds one set of listeners and one interval.
+const calls = {listen: 0, interval: 0, define: 0};
+const defined = new Map();
+const win = {
+  customElements: {get: (n) => defined.get(n), define: (n, c) => { calls.define++; defined.set(n, c); }},
+  addEventListener: () => calls.listen++,
+  setInterval: () => calls.interval++,
+  setTimeout: () => 0,
+};
+const page = {...fakeDocument(), readyState: 'complete', addEventListener: () => calls.listen++};
+assert.equal(install(win, page), true);
+assert.equal(install(win, page), false, 'second install is a no-op');
+assert.deepEqual(calls, {listen: 2, interval: 1, define: 1});
+assert.equal(page.body.children.length, 1);
 
 // Last: this replaces a global the tests above may rely on.
 // history keeps the session pair; blocked storage never throws

@@ -21,20 +21,34 @@ export function mount(doc: Document = document): HTMLElement {
   return element;
 }
 
-// Guarded so a test can import mount() where there is no DOM.
-if (typeof document !== 'undefined') {
-  if (!customElements.get('eka-ask-ai')) {
-    customElements.define('eka-ask-ai', SupportAgentElement);
+/** Set on the window once the listeners and the interval are in place. */
+const INSTALLED = '__ekaAskAiInstalled';
+
+/**
+ * Defines the element and keeps one mounted. Installs its listeners and its
+ * interval once per window, so a page that evaluates the script twice still
+ * has one set. Returns false where it was already installed.
+ */
+export function install(win: Window = window, doc: Document = document): boolean {
+  const marked = win as Window & {[INSTALLED]?: boolean};
+  if (marked[INSTALLED]) return false;
+  marked[INSTALLED] = true;
+  if (!win.customElements.get('eka-ask-ai')) {
+    win.customElements.define('eka-ask-ai', SupportAgentElement);
   }
   const run = () => {
-    if (document.body) mount();
+    if (doc.body) mount(doc);
   };
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run);
+  if (doc.readyState === 'loading') {
+    doc.addEventListener('DOMContentLoaded', run);
   } else {
     run();
   }
-  window.addEventListener('mintlify:navigate', () => setTimeout(run, 0));
-  window.addEventListener('popstate', run);
-  setInterval(run, 1000);
+  win.addEventListener('mintlify:navigate', () => win.setTimeout(run, 0));
+  win.addEventListener('popstate', run);
+  win.setInterval(run, 1000);
+  return true;
 }
+
+// Guarded so a test can import this module where there is no DOM.
+if (typeof document !== 'undefined') install();
