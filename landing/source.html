@@ -475,7 +475,7 @@ footer .fl a:hover{color:var(--ink)}
 }
 @media (max-width:767px){
   .brand span{display:none}
-  .navright kbd,.navright .nconsole{display:none}
+  .navright kbd{display:none}
   .sec{padding-top:112px}
   .pairs{grid-template-columns:1fr;row-gap:56px}
   .prod.l,.prod.r{grid-column:1;align-items:center;text-align:center;background:var(--bg);padding:16px 0;z-index:1}
@@ -517,8 +517,7 @@ footer .fl a:hover{color:var(--ink)}
   <div class="navright">
     <button class="ghostbtn" aria-label="Search the docs"><svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M228.24,219.76l-51.38-51.38a86.15,86.15,0,1,0-8.48,8.48l51.38,51.38a6,6,0,0,0,8.48-8.48ZM38,112a74,74,0,1,1,74,74A74.09,74.09,0,0,1,38,112Z"/></svg><kbd>⌘K</kbd></button>
     <button class="ghostbtn" id="theme" aria-label="Switch colour theme"><svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232.13,143.64a6,6,0,0,0-6-1.49A90.07,90.07,0,0,1,113.86,29.85a6,6,0,0,0-7.49-7.48A102.88,102.88,0,0,0,54.48,58.68,102,102,0,0,0,197.32,201.52a102.88,102.88,0,0,0,36.31-51.89A6,6,0,0,0,232.13,143.64Zm-42,48.29a90,90,0,0,1-126-126A90.9,90.9,0,0,1,99.65,37.66,102.06,102.06,0,0,0,218.34,156.35,90.9,90.9,0,0,1,190.1,191.93Z"/></svg></button>
-    <a class="ghostbtn nconsole" href="https://console.eka.care">Console</a>
-    <a class="btn btn-primary btn-sm" href="https://console.eka.care">Get API keys</a>
+    <a class="btn btn-primary btn-sm" href="https://console.eka.care">Build Now</a>
   </div>
 </nav>
 </div>
@@ -874,6 +873,12 @@ const SCENES={
       {id:"scan",side:"r",label:"Scan and share",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/scan-and-share/getting-started",ui:doneRow("Token 42 issued","At the registration desk"),code:`eka.abdm.scanAndShare.token(qr)`},
       {id:"claim",side:"r",label:"NHCX claims",product:"NHCX",fam:"abdm",url:"/api-sdk/nhcx/submit-preauth",ui:doneRow("Pre-auth approved","Claim ready to submit"),code:`eka.nhcx.preauth.submit(claim)`}]}
 };
+/* Where a part's docs live. A part whose page is in the API reference opens its product's first docs page instead
+   (each product's first page in docs.json), so every way out of Assemble lands in the docs. */
+const PRODUCT_DOCS={"EMR":"/docs/emr/patients","Scribe":"/docs/scribe/about","Models":"/docs/models/medical-document-parsing",
+  "Agents":"/docs/agents/medassist","Datasets":"/docs/datasets/medical-db","Billing":"/docs/billing/payments",
+  "Health Records":"/docs/health-records/upload-records","HIE-CM":"/docs/hie-cm/about","NHCX":"/docs/nhcx/getting-started"};
+const docsOf=m=>BASE+(m.url.startsWith("/docs/")?m.url:PRODUCT_DOCS[m.product]||m.url);
 let sceneKey="mr",MODULES=[],L=-446,R=274;
 // Each scene keeps its own progress.
 // Progress lives in memory; storage only restores it on the next visit, and may be unavailable.
@@ -912,7 +917,7 @@ function lead(m,on){
   const mx=(x1+x2)/2;p.setAttribute("d",`M${x1} ${y1} C${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);requestAnimationFrame(()=>p.classList.add("on"));
 }
 function makePart(m){
-  const a=document.createElement("a");a.className="part reveal";a.dataset.id=m.id;a.dataset.fam=m.fam;a.href=BASE+m.url;
+  const a=document.createElement("a");a.className="part reveal";a.dataset.id=m.id;a.dataset.fam=m.fam;a.href=docsOf(m);
   a.style.setProperty("--x",m.pos[0]+"px");a.style.setProperty("--y",m.pos[1]+"px");
   a.setAttribute("aria-label",`Add ${m.label} to the app and open the ${m.product} docs`);
   a.innerHTML=`<div class="tag"><b>${m.label}</b><span>${m.product}</span></div><div class="ui">${m.ui}</div>`;
@@ -924,12 +929,15 @@ function makePart(m){
   draggable(a,m);
   $("#rail").appendChild(a);
   const s=slotOf(m.id);
-  s.addEventListener("click",()=>{if(s.classList.contains("filled"))remove(m)});
+  let tap=null;
+  s.addEventListener("click",e=>{if(!s.classList.contains("filled"))return;clearTimeout(tap);
+    if(e.detail>1){tap=null;open(docsOf(m),"_blank","noopener");return}
+    tap=setTimeout(()=>{tap=null;remove(m)},260)});
   s.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&s.classList.contains("filled")){e.preventDefault();remove(m)}});
 }
-function fillSlot(m){const s=slotOf(m.id);s.classList.remove("preview");s.classList.add("filled");s.tabIndex=0;s.setAttribute("role","button");s.setAttribute("aria-label",`Remove ${m.label} from the app`);
+function fillSlot(m){const s=slotOf(m.id);s.classList.remove("preview");s.classList.add("filled");s.tabIndex=0;s.setAttribute("role","button");s.setAttribute("aria-label",`Remove ${m.label} from the app`);s.title=`Click to remove. Double-click for the ${m.product} docs.`;
   if(!s.querySelector(".ui")){const d=document.createElement("div");d.className="ui";d.innerHTML=m.ui;s.appendChild(d)}}
-function emptySlot(m){const s=slotOf(m.id);s.classList.remove("filled");["tabindex","role","aria-label"].forEach(x=>s.removeAttribute(x));s.querySelector(".ui")?.remove()}
+function emptySlot(m){const s=slotOf(m.id);s.classList.remove("filled");["tabindex","role","aria-label","title"].forEach(x=>s.removeAttribute(x));s.querySelector(".ui")?.remove()}
 let lastAdded=null;
 function renderCode(){
   const head=[`<span class="ln"><span class="k">import</span> { Eka } <span class="k">from</span> <span class="c">"@eka-care/sdk"</span></span>`,`<span class="ln"><span class="k">const</span> eka = <span class="k">new</span> Eka({ clientId })</span>`];
@@ -1001,7 +1009,7 @@ function remove(m){
   const a=p.getBoundingClientRect();fly(p,a,poseIn(a,b),poseAt(a),()=>p.classList.remove("gone"));
 }
 function route(m){const t=$("#toast"),a=$("#toastLink");$("#toastText").textContent=`${m.label} clipped in.`;
-  a.href=BASE+m.url;a.innerHTML=`${m.product} docs `+`<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M220.24,132.24l-72,72a6,6,0,0,1-8.48-8.48L201.51,134H40a6,6,0,0,1,0-12H201.51L139.76,60.24a6,6,0,0,1,8.48-8.48l72,72A6,6,0,0,1,220.24,132.24Z"/></svg>`;
+  a.href=docsOf(m);a.innerHTML=`${m.product} docs `+`<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M220.24,132.24l-72,72a6,6,0,0,1-8.48-8.48L201.51,134H40a6,6,0,0,1,0-12H201.51L139.76,60.24a6,6,0,0,1,8.48-8.48l72,72A6,6,0,0,1,220.24,132.24Z"/></svg>`;
   t.classList.remove("show");void t.offsetWidth;t.classList.add("show");clearTimeout(pending);
   pending=setTimeout(()=>t.classList.remove("show"),7000)}
 function cancelRoute(){clearTimeout(pending);pending=null;$("#toast").classList.remove("show")}
