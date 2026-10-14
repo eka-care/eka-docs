@@ -753,7 +753,9 @@ def card_of(entry):
     """One journey card: a page, or a nested group opening its root or first page."""
     if isinstance(entry, str):
         meta = page_meta(entry)
-        return [meta.get('sidebarTitle') or meta.get('title') or entry.split('/')[-1], '/' + entry, lucide(meta.get('icon'))]
+        # An untitled page gets Mintlify's own label: the file name with dashes as spaces, first letter capitalised.
+        slug = entry.split('/')[-1].replace('-', ' ').replace('_', ' ')
+        return [meta.get('sidebarTitle') or meta.get('title') or slug[:1].upper() + slug[1:], '/' + entry, lucide(meta.get('icon'))]
     first = next(walk_pages(entry), None)
     return [entry['group'], '/' + first, lucide(entry.get('icon'))] if first else None
 
