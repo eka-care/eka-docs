@@ -1,102 +1,71 @@
 ---
+type: overview
 icon: "rocket"
-title: Get Started
-description: <font color='blue' size="3"><b>SIGN UP. BUILD. DEPLOY. 🚀 </b> </font>
-sidebarTitle: "Get started with Eka"
+title: "Build with Eka"
+sidebarTitle: "Build with Eka"
+description: "Get your keys, authenticate once, then pick the solution that fits what you are building."
 ---
 
+Every Eka product uses the same keys and the same access token. Get them once, then build with any product: the scribe, records, agents, models or ABDM.
 
-<hr
-  style={{
-    border: 'none',
-    borderTop: '1px solid rgba(211, 8, 8, 1)',
-    margin: '48px 0'
-  }}
-/>
-
----
-<h2 style={{ color: '#5042BD' }}>Eka Connect</h2>
+## Get your API keys
 
 <Steps>
-    <Step title="ONBOARDING">
-         **STEP 1: Sign Up for an API Key**
-        
-         To get started, you need to sign up for an API key. This key will authenticate your requests and give you access to our API. Ping us and we will provide you with the required API Keys.
-     
-            **Pre-requisites**
-                <Columns cols={2}>
-                    <div className="eka-card-wrapper">
-                        <Card title="Client ID" href="/api-sdk/auth/client-login">
-                        <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45' }}>
-                            A unique identifier assigned to a third-party application interacting with Eka's API.
-                        </p>
-                        </Card>
-                    </div>
+  <Step title="Create a client in the console">
+    Sign in to the [Eka Care console](https://console.eka.care) and create a client. You get two values.
 
-                    <div className="eka-card-wrapper">
-                        <Card title="Client Secret" href="/api-sdk/auth/client-login">
-                        <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45' }}>
-                            It is a confidential key, similar to a password used alongside the Client ID.
-                        </p>
-                        </Card>
-                    </div>
-                </Columns>
-
-             **Obtain the Client ID and Client Secret**
-
-             - Login to your Eka Care Control Panel at [Console](https://console.eka.care) and create client_id and client_secret
-             - If you’re building an app for doctors or patients, you can either integrate Eka Accounts using end-to-end OIDC or request an API key from your healthcare provider’s workspace for access. [Hub](https://hub.eka.care/account/account/apitoken/)
-             - For support or more details, contact us at ekaconnect@eka.care
-
-        **STEP 2: Set Up Your Environment**
-
-            Before making API calls, ensure your environment is properly set up. We recommend using the following tools and libraries:
-            - <b>HTTP Client</b>: Use tools like Postman, cURL, or any HTTP client library in your preferred programming language.
-            - <b>Base URL</b>: All API requests should be directed to https://api.eka.care
-    </Step>
-    <Step title="AUTHENTICATION">
-        Eka Connect’s API authentication securely verifies users and applications, ensuring only authorized access to sensitive healthcare data.
-       
-        **How to Authenticate with EKA’s API**
-
-        1. Short Lived Token 
-        
-        <Columns cols={3}>
-                <div className="eka-card-wrapper">
-                    <Card title="1. Get Access Token" href="/api-sdk/auth/client-login">
-                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45' }}>
-                        Authenticate your app using the login API with your Client ID and Client Secret to receive the required access tokens.
-                    </p>
-                    </Card>
-                </div>
-                
-                <div className="eka-card-wrapper">
-                    <Card title="2. Use Access Token" href="/api-sdk/auth/refresh-token-v2">
-                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45' }}>
-                        Pass the access token in the Authorization header with each API request to confirm your app’s access to Eka services.
-                    </p>
-                    </Card>
-                </div>
-
-                <div className="eka-card-wrapper">
-                    <Card title="3. Handle Token Expiration" href="/api-sdk/auth/refresh-token-v2">
-                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45' }}>
-                        Access tokens expire for security reasons and return a <b>401 Unauthorized error</b>, use the Refresh Token API to generate a new access token.
-                    </p>
-                    </Card>
-                </div>
-            </Columns>
-       
-        - **Access Token**: A short-lived token (usually <b>30 minutes</b>) sent with each API request to authorize your app, refreshed using the Refresh Token API.([Access Token API](https://developer.eka.care/api-sdk/auth/client-login))
-        - **Refresh Token**: A longer-lived token that helps you get a new Access Token when the old one expires, without having to log in again. ([Refresh Token API](/api-sdk/auth/refresh-token-v2))
-        
-        2. Long Lived Token  : ([Long Lived Token](https://developer.eka.care/api-sdk/auth/getting-started)) section. 
-    
-    </Step>
-    <Step title="INTEGRATION">
-        We recommend reviewing our products before starting integration and selecting the one that best fits your use case.
-        
-        See you in the ([Eka Products](/docs/get-started/eka-products)) section. 
-    </Step>
+    <CardGroup cols={2}>
+      <Card title="Client ID" icon="id-card" href="/api-sdk/auth/client-login">
+        Identifies your application to Eka's APIs.
+      </Card>
+      <Card title="Client Secret" icon="key" href="/api-sdk/auth/client-login">
+        A confidential key, like a password, used with the client ID.
+      </Card>
+    </CardGroup>
+  </Step>
+  <Step title="Building for doctors or patients?">
+    Integrate Eka accounts with OpenID Connect (OIDC), or ask the healthcare provider for an API key from their [workspace](https://hub.eka.care/account/account/apitoken/).
+  </Step>
+  <Step title="Set up your client">
+    Send every request to `https://api.eka.care`. Any HTTP client works: Postman, cURL or the library for your language.
+  </Step>
 </Steps>
- 
+
+<Note>
+  For keys or help, write to [ekaconnect@eka.care](mailto:ekaconnect@eka.care).
+</Note>
+
+## Authenticate
+
+<Steps>
+  <Step title="Get an access token">
+    Call [client login](/api-sdk/auth/client-login) with your client ID and client secret. You get an access token and a refresh token.
+  </Step>
+  <Step title="Send it with every request">
+    Put the access token in the `Authorization` header of each API call.
+  </Step>
+  <Step title="Refresh it when it expires">
+    The access token lasts about 30 minutes. A `401 Unauthorized` means it has expired: call [refresh token](/api-sdk/auth/refresh-token-v2) for a new one.
+  </Step>
+</Steps>
+
+For server-to-server work that should not refresh every half hour, use a [long-lived token](/api-sdk/auth/getting-started#long-lived-access-token).
+
+## Pick a solution
+
+<CardGroup cols={2}>
+  <Card title="Scribe and medical records" icon="notes-medical" href="/docs/solutions/scribe-and-medical-records">
+    Turn a consultation into a note, a prescription and a saved record.
+  </Card>
+  <Card title="Patient experiences and agents" icon="comments" href="/docs/solutions/patient-experiences-and-agents">
+    Agents and apps that book, take payments, remind and share reports.
+  </Card>
+  <Card title="Clinical intelligence" icon="brain" href="/docs/solutions/clinical-intelligence">
+    Read reports, code clinical terms and ground your AI in medical data.
+  </Card>
+  <Card title="ABDM" icon="landmark" href="/docs/solutions/abdm">
+    ABHA, linked records, consent, claims and the UHI network.
+  </Card>
+</CardGroup>
+
+Not sure where your product fits? [Eka products](/docs/get-started/eka-products) lists every product, and the [glossary](/docs/get-started/glossary) explains the terms the docs use.
