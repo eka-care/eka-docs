@@ -117,6 +117,27 @@ const PANEL_MAX = 960;
 const PANEL_WIDTH_KEY = 'eka-ask-ai-width';
 
 /**
+ * The remembered width, or 0 where there is none. Storage can be blocked
+ * outright (Safari's private mode, a sandboxed frame), and the panel then
+ * opens at its default width rather than not at all.
+ */
+function savedWidth(): number {
+  try {
+    return Number(localStorage.getItem(PANEL_WIDTH_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function keepWidth(width: number): void {
+  try {
+    localStorage.setItem(PANEL_WIDTH_KEY, String(width));
+  } catch {
+    // Blocked: the width holds for this visit and is not remembered.
+  }
+}
+
+/**
  * True while the left edge is being dragged, and for the click that ends the
  * drag. The panel closes on a click that lands on the dialog itself, which is
  * how a click on the backdrop dismisses it, and a drag that finishes anywhere
@@ -147,7 +168,7 @@ function ResizeGrip({dialog}: {dialog: {current: HTMLDialogElement | null}}) {
   // a re-render per pointer move is a re-render of everything in the panel,
   // and one of the things in the panel is a diagram.
   useEffect(() => {
-    const saved = Number(localStorage.getItem(PANEL_WIDTH_KEY));
+    const saved = savedWidth();
     if (saved >= PANEL_MIN && dialog.current) {
       dialog.current.style.setProperty('--aa-panel-width', `${saved}px`);
     }
@@ -181,7 +202,7 @@ function ResizeGrip({dialog}: {dialog: {current: HTMLDialogElement | null}}) {
       window.removeEventListener('pointerup', stop);
       window.removeEventListener('pointercancel', stop);
       const set = panel.style.getPropertyValue('--aa-panel-width');
-      if (set) localStorage.setItem(PANEL_WIDTH_KEY, String(parseInt(set, 10)));
+      if (set) keepWidth(parseInt(set, 10));
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop);
@@ -206,7 +227,7 @@ function ResizeGrip({dialog}: {dialog: {current: HTMLDialogElement | null}}) {
         const now = dialog.current.getBoundingClientRect().width;
         const width = Math.min(Math.max(now + step, PANEL_MIN), PANEL_MAX);
         dialog.current.style.setProperty('--aa-panel-width', `${width}px`);
-        localStorage.setItem(PANEL_WIDTH_KEY, String(width));
+        keepWidth(width);
       }}>
       <span class="ask-ai__grip-bar" aria-hidden="true" />
     </div>
@@ -441,15 +462,17 @@ function Panel({
     el.style.overflowY = el.scrollHeight > height ? 'auto' : 'hidden';
   }, [draft]);
 
-  // Leaving the page mid-answer stops the delivery rather than leaving it to
-  // run against a component nobody is watching.
-  useEffect(
-    () => () => {
+  // A new transport (the agent or its token changed) has never been started,
+  // so the next question starts or resumes the session on it. Leaving the
+  // page mid-answer stops the delivery rather than leaving it to run against
+  // a component nobody is watching.
+  useEffect(() => {
+    started.current = false;
+    return () => {
       transport.detach();
       if (frame.current) cancelAnimationFrame(frame.current);
-    },
-    [transport],
-  );
+    };
+  }, [transport]);
 
   /**
    * Writes the conversation on screen into this browser's history, once it
