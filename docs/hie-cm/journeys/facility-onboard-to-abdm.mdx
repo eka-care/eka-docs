@@ -1,0 +1,47 @@
+---
+icon: "hospital"
+title: "Onboard a facility and its professionals to ABDM"
+description: "A facility admin or HMS vendor registers the clinic's doctors in HPR, registers the clinic in HFR, and onboards the clinic to Eka so it can act as a HIP."
+type: journey
+product: abdm-connect
+persona: Facility admin or HMS vendor
+---
+
+## In short
+
+- Register each professional in HPR, then the clinic in HFR, then onboard the clinic to Eka.
+- It is a one-time setup per facility, plus one HPR registration per professional.
+- At least one registered professional is needed before the facility can be registered.
+- Onboarding returns the HIP ID your HMS uses from then on.
+- Every patient-facing journey starts only after this one has finished.
+
+## Who and when
+
+A facility admin at a clinic, or the HMS vendor setting the clinic up, who wants the clinic to take part in ABDM through Eka. The clinic is about to go live on an HMS integrated with ABDM Connect. No patient visit can be linked or shared until two things are true. Its doctors have Healthcare Professional Registry (HPR) IDs, and the clinic has a Health Facility Registry (HFR) ID onboarded on Eka. This is a one-time setup per facility, plus one HPR registration per professional.
+
+**Already in place:** nothing on ABDM. You need Eka API credentials for your HMS ([Authorization](/api-sdk/auth/getting-started)), the professionals' Aadhaar numbers and the mobiles linked to them, and the facility's details. Every patient-facing journey, such as [Register a walk-in patient and link the visit](/docs/hie-cm/journeys/hip-register-patient-and-link-visit), starts only after this one has finished.
+
+## What they want
+
+"Get our doctors and our clinic registered with ABDM once, correctly, so we can start linking patient records from the next OPD."
+
+## The steps
+
+1. The admin lists the professionals who practise at the clinic. At least one registered professional is needed before the facility can be registered.
+2. Each professional who has no HPR ID creates one from inside the HMS. They give their Aadhaar number and read out the OTP sent to the mobile linked to it. The HMS checks that the mobile they give matches Aadhaar and whether an HPR ID already exists. If none exists, it offers suggested IDs to choose from. → workflow: [Create an HPR ID with Aadhaar OTP](/docs/hie-cm/workflows/create-hpr-id)
+3. The HMS saves each professional's HPR ID on their staff record.
+4. The admin searches the registry for the facility by its HFR ID. If the facility is not there, the HMS registers it. The HMS then links the facility to the Eka Bridge and onboards it to Eka. Eka returns the HIP ID the HMS uses from then on. → workflow: [Register and onboard a facility](/docs/hie-cm/workflows/register-hfr)
+5. The admin confirms the facility shows as onboarded and switches on ABDM features for front-desk staff.
+
+## What they have at the end
+
+Every professional at the clinic has an HPR ID, held on their staff record in the HMS. The facility has an HFR ID, is linked to the Eka Bridge, and is onboarded on Eka as a Health Information Provider (HIP). The HMS holds the facility's HIP ID and its Scan and Share URL. Front-desk staff can now register patients and link visits.
+
+## Branches
+
+- **The professional already has an HPR ID.** The existence check returns it and creation is skipped; the HMS saves the existing ID. → same workflow, existing-ID branch of [Create an HPR ID with Aadhaar OTP](/docs/hie-cm/workflows/create-hpr-id)
+- **The mobile the professional gives does not match Aadhaar.** The verification step fails and the professional cannot continue with that mobile. → same workflow, mobile verification step
+- **A returning professional signs in with their mobile instead of Aadhaar.** They receive an OTP on their mobile and the HMS checks their HPR ID. → workflow: [Log in to HPR with a mobile OTP](/docs/hie-cm/workflows/hpr-mobile-login)
+- **The facility is already in HFR.** The search finds it, so the HMS skips registration and goes straight to linking and onboarding. → same workflow, existing-facility branch of [Register and onboard a facility](/docs/hie-cm/workflows/register-hfr)
+- **The facility was registered on the ABDM portal by hand.** The admin registered the HPR ID and HFR ID on the [ABDM portal](https://nhpr.abdm.gov.in/nhpr/v4/login) and waited for approval. They then entered the Eka Bridge ID under Software Linkage there. The HMS only needs the final onboarding step. → same workflow, last step of [Register and onboard a facility](/docs/hie-cm/workflows/register-hfr)
+- **The HFR registration is waiting for approval.** On the portal route the HFR ID arrives only after approval. Onboarding to Eka waits until then. {/* TODO: confirm: does an HFR registered through the onboard API also wait for approval, and how does the HMS learn it was approved? */}

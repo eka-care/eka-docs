@@ -1,0 +1,49 @@
+---
+icon: "qrcode"
+title: "Pay an open bill by scanning the counter QR"
+description: "A patient at a facility's billing counter scans its QR code with a PHR app, picks an open bill and pays it from their phone."
+type: journey
+product: abdm-connect
+persona: Patient at a facility billing counter
+---
+
+## In short
+
+- The patient scans the counter QR, and your app shares their ABHA profile with the facility.
+- The facility returns the patient's open orders, and the patient picks what to pay.
+- Your app receives a payment link, and the patient pays on it.
+- Your app then fetches the transaction details and shows a receipt link.
+
+## Who and when
+
+A patient standing at the billing or registration counter of a hospital, clinic or lab. They have a bill to settle: a consultation, a test, a procedure. The counter shows a QR code for the facility. Rather than queue to pay, the patient scans the QR with a Personal Health Record (PHR) app built on Eka, and pays from their phone.
+
+**Already in place:** your app is a PHR app. The patient has an ABHA and is logged in on your app. That means you hold Eka's id for the patient ([Log in to an existing ABHA](/docs/hie-cm/workflows/login-abha)). The facility is a Health Information Provider (HIP) on ABDM and displays a Scan and Pay QR at the counter.
+
+{/* TODO: confirm: what must the facility's HMS have in place to answer Scan and Pay requests, and which journey covers that side? */}
+
+## What they want
+
+"Let me pay this bill from my phone without waiting in line, and give me a receipt."
+
+## The steps
+
+1. The patient scans the QR code at the counter with your app. The QR carries the facility's HIP ID and the counter ID.
+2. Your app shares the patient's ABHA profile with the facility and asks for the patient's open orders. → workflow: [Pay an open order with Scan and Pay](/docs/uhi/workflows/scan-and-pay)
+3. The facility returns the unpaid orders for this patient, grouped by category with each service and its amount. Your app shows them. → same workflow
+4. The patient selects what they want to pay for. Your app sends the selection and receives a payment link with the amount due. → same workflow
+5. The patient pays on the payment link. This is a human step on the payment page.
+6. Your app fetches the transaction details and shows the payment status and a receipt link. → same workflow
+
+## What they have at the end
+
+The selected bill is paid. The patient holds a receipt link and a transaction id for the payment. The transaction details tie the payment to the patient's ABHA address and the facility's order number.
+
+{/* TODO: confirm: how does the facility counter learn that the payment succeeded: from Eka, from the payment provider, or from its own HMS? */}
+
+## Branches
+
+- **The patient has no open order at this facility.** The open order list comes back empty, and the patient pays at the counter as usual. → same workflow, open order step
+- **The facility does not answer, or answers with an error.** The request ends in an error, with an error code and message. → same workflow, "When it fails"
+- **The payment fails or the patient abandons the payment page.** The transaction details show a status other than paid. {/* TODO: confirm: can the patient retry with the same request, or must they scan again? */} → same workflow, transaction details step
+- **The patient is not logged in on your app.** Log them in first. → workflow: [Log in to an existing ABHA](/docs/hie-cm/workflows/login-abha)

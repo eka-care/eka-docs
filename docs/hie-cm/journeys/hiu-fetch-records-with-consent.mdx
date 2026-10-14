@@ -1,0 +1,49 @@
+---
+icon: "file-import"
+title: "Fetch a patient's records with consent"
+description: "An insurer or referral platform asks a patient for consent, and the patient's records arrive from every facility that holds them."
+type: journey
+product: abdm-connect
+persona: Insurer or referral platform acting as HIU
+---
+
+## In short
+
+- Register your public key once, then raise a consent request for the patient's records.
+- The patient approves the request in their PHR app.
+- Each HIP sends the approved records; your platform decrypts them and tells Eka which it could read.
+- If Eka stores the records for you, you read them from Eka instead.
+
+## Who and when
+
+An operations team at an insurer, or a coordinator on a referral platform, whose software is integrated with Eka as a Health Information User (HIU). A patient files a claim, or is referred to a specialist, and the team needs the patient's past records: prescriptions, discharge summaries, lab reports. The records sit at hospitals and clinics that are Health Information Providers (HIPs). The team cannot read them until the patient agrees.
+
+**Already in place:** your software acts as a HIU. How to onboard as a HIU is not yet documented; for the facility ID, see facility onboarding in [Onboard a facility to ABDM](/docs/hie-cm/journeys/facility-onboard-to-abdm). {/* TODO: confirm: the steps to onboard on Eka as a HIU. */} Your server can receive Eka webhooks. The patient has an ABHA. The visits you want are linked to it as care contexts at the HIPs that hold them ([Register a walk-in patient and link the visit](/docs/hie-cm/journeys/hip-register-patient-and-link-visit)).
+
+## What they want
+
+"Get this patient's records from the hospitals that treated them, with their permission, without chasing paper."
+
+## The steps
+
+1. Before the first request, your platform registers the public key that HIPs use to encrypt records for you. This happens once, and again whenever you rotate the key. → workflow: [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent)
+2. The coordinator asks the patient for their ABHA address and explains why the records are needed.
+3. The coordinator raises a consent request: which patient, for what purpose, which record types, which date range, and which facilities. → workflow: [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent)
+4. The patient sees the request in their PHR app and approves it, choosing which records to share. This is the patient's action, not yours.
+5. Your platform learns that the consent is granted and shows the request as approved. → same workflow, wait for the status update
+6. Each HIP sends the approved records. Your platform decrypts them, checks each one, and tells Eka which records it could read. → workflow: [Receive and decrypt records as a HIU](/docs/hie-cm/workflows/hiu-receive-data)
+7. The coordinator or underwriter reads the records in your platform.
+
+## What they have at the end
+
+Your platform holds the patient's FHIR records for the care contexts the patient approved, decrypted, each tied to the consent that authorised it. You hold the consent id and its status, so you can show an auditor what the patient agreed to and for how long. Eka has been told which records arrived intact.
+
+## Branches
+
+- **The patient denies the request.** The status update says so and no records arrive. Close the request in your platform and tell the coordinator. → same workflow, denied branch of [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent)
+- **The patient does not respond.** The request stays pending and can expire unanswered. → same workflow, expiry branch
+- **Eka stores the records for you.** Nothing arrives on a webhook. You read each approved care context from Eka's records product instead. → workflow: [Receive and decrypt records as a HIU](/docs/hie-cm/workflows/hiu-receive-data), "Eka stores the data" branch
+- **One HIP is down or never sends.** Records arrive from the other HIPs; the missing one does not. → same workflow, failure table
+- **A record fails to decrypt or its checksum does not match.** You report it as failed to Eka for that care context. → same workflow, acknowledge step
+- **The patient revokes consent later.** The status update says so. Stop using the records from that HIP. → same workflow, revoked branch of [Request a patient's consent as a HIU](/docs/hie-cm/workflows/hiu-request-consent)
+- **The visit was never linked at the HIP.** The consent cannot cover it. The patient asks the facility to link it, or claims it from their PHR app. → journey: [Register a walk-in patient and link the visit](/docs/hie-cm/journeys/hip-register-patient-and-link-visit)

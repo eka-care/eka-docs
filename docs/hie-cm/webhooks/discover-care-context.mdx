@@ -1,0 +1,56 @@
+---
+icon: "folder-tree"
+title: Discovery Request Received
+type: guide
+---
+
+This webhook is triggered when a user requests discovery of unlinked care contexts from your HIP. Use the provided user information (ABHA address, mobile number, name, demographics) to search for and return matching unlinked care contexts within your system.
+
+<Note>
+After receiving this webhook, search your system for matching unlinked care contexts and respond by calling the [On Discover API](/api-sdk/hie-cm/care-contexts/discover/on_discover).
+</Note>
+
+### Request
+**Headers:**
+
+- `Eka-Webhook-Signature`: `<Eka Webhook Signature>`  [Refer: Webhook Signature](/docs/webhooks/webhook-signature)
+- `Content-Type`: `application/json`
+
+**Body:**
+
+```json
+{
+  "service": "abdm",
+  "event": "abha.care_context_discover",
+  "event_time": 1750317863,
+  "transaction_id": "<webhook transaction id>",
+  "timestamp": 1750317863,
+  "business_id": "77237637763817",
+  "client_id": "77237637763817",
+  "data": {
+    "abha_address": "gajendrasingh5445@sbx",
+    "gender": "M",
+    "identifiers": [
+      {
+        "type": "MOBILE",
+        "value": "6260413674"
+      },
+      {
+        "type": "ABHA_NUMBER",
+        "value": ""
+      },
+      {
+        "type": "abhaAddress",
+        "value": "gajendrasingh5445@sbx"
+      }
+    ],
+    "patient_name": "Gajendra Singh",
+    "request_id": "a273f8af-3b8e-42ed-8847-fbdb2e4207c3",
+    "txn_id": "1fe0a9d8-6737-471a-87b4-867d45707db5",
+    "year_of_birth": 2001,
+    "hip_id": "<partner hip id>",
+    "oid": "<eka user id>",
+    "partner_patient_id": "<partner user id>"
+  }
+}
+```

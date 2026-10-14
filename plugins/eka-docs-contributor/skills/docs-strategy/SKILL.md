@@ -1,0 +1,137 @@
+---
+name: docs-strategy
+description: The binding structure of product documentation on developer.eka.care, the product ladder. Ten page types every product carries in a fixed order, three extra types that are allowed, the frontmatter each needs, the product.yaml manifest, and the rules docs-check enforces. Use whenever deciding where a page goes, what a product is missing, what type a page is, why docs-check failed, or before scaffolding anything.
+---
+
+# Docs Strategy: the product ladder
+
+## Why
+
+A product's docs used to be a pile of endpoint pages. A reader could not tell what the product was for, who used it, or which calls made up a real workflow. The ladder fixes the shape so every product answers the same questions in the same order, and so a Claude Code plugin can be scaffolded from the pages.
+
+## The ladder
+
+One top-level folder per product (`ekascribe/` is the model). In reading order:
+
+| Rung | `type` | Answers | Count |
+|---|---|---|---|
+| 1 | `overview` | What is this, who is it for, what can I build, key concepts. Carries one patient's story across the journeys, "I want to…" cards that each link a journey, and a role to journeys table | 1 |
+| 2 | `journey` | A real person's end-to-end story through the product, in product terms | 1+ |
+| 3 | `quickstart` | First successful call in under ten minutes | 1 |
+| 4 | `workflow` | One journey step as an ordered sequence of API calls | 1+ per journey |
+| 5 | `reference` | One page per operation, generated from OpenAPI (implicit: any page with `openapi:` frontmatter) | 1 per operation |
+| 6 | `webhooks` | Every event the product emits, payload, when it fires, which workflow consumes it | 1 |
+| 7 | `errors` | Every error code, its meaning, what the integrator should do, plus a "By symptom" section for what the integrator sees (OTP never arrives, callback never arrives) | 1 |
+| 8 | `testing` | Sandbox, credentials, test data, the happy paths to run before go-live | 1 |
+| 9 | `build-with-ai` | How to install the product's plugin and MCP, what each skill does | 1 |
+| 10 | `changelog` | Dated entries, newest first | 1 |
+
+Allowed but never required: `sdk` (a client library page), `resource` (FHIR structure, ngrok, IP allowlisting), `guide` (explanatory and none of the above). One `guide` is recommended for every product with more than a few workflows: **Build it well**, covering which calls are safe to retry and which must never be repeated, deduplicating webhooks, and what the screen should say on each failure.
+
+Authentication is shared and lives once under `api-reference/authorization/`. Quickstarts link to it; they do not repeat it.
+
+Rungs 1, 2 and 4 are the functional knowledge that is usually missing. Rung 5 is what usually exists. Rungs 1, 2, 4 and 7 are mandatory before a product counts as documented.
+
+## Routes and folders
+
+A page's URL is its file path, so the folders are the routes. Every product has two, with the product slug alone (lowercase, no family):
+
+```
+docs/<slug>/                     guides: what you read to understand and build
+  overview.mdx                   type: overview (or about.mdx, type: guide)
+  quickstart.mdx                 type: quickstart
+  journeys/<journey>.mdx         type: journey
+  workflows/<workflow>.mdx       type: workflow
+  webhooks.mdx                   type: webhooks
+  errors.mdx                     type: errors
+  testing.mdx                    type: testing
+  changelog.mdx                  type: changelog
+  resources/*.mdx                type: resource
+api-sdk/<slug>/                  reference: what you look up while building
+  overview.mdx                   the API overview, first page of the product's API
+  <tag>/<operation>.mdx          openapi: "..."
+  sdks/*.mdx                     type: sdk
+```
+
+Slugs in use: `scribe`, `agents`, `models`, `datasets`, `emr`, `ipd`, `billing`, `health-records`, `hie-cm`, `nhcx`, `uhi`, `get-started`, `auth`, `webhooks`, `encryption`, `sdks`. `/api-sdk/index` is the all-products API index.
+
+The family (AI, Information Management, ABDM, Platform) is never in the URL: families are renamed and products move between them, and the picker already shows the family. The product's spec and `product.yaml` stay where they are; `product.yaml` lists the page folders under `pages:` and where `--fix` creates reference pages under `new_reference_pages:`.
+
+Moving a page means a permanent redirect from its old URL in `docs.json`, in the same pull request. `scripts/route-map.json` records the move made on 2026-10-14 from the old `api-reference/…`, `integrations/…` and product-folder paths.
+
+## Frontmatter
+
+Every page: `title`, `description` (Mintlify needs both), and `type` (unless it has `openapi:`). Mintlify ignores unknown keys, so the machine fields cost nothing.
+
+Quickstart pages add `workflow` (the slug of the one workflow the quickstart walks through; see `writing-quickstart`). Workflow pages add `product`, `journey` (the journey page's file slug), `operations` (list of `METHOD /path`, must exist in the spec), `webhooks` (event names, must exist in the spec's `webhooks`). Full shape in `writing-workflows`.
+
+## Page rules
+
+Every ladder page follows the budgets, the In short rule and the sentence limits in `writing-style`. `docs-check` reports them; the sentence, em dash and first-heading rules fail an enforced product.
+
+## Navigation shape
+
+`scripts/build-nav.py` builds `docs.json` from the families on the landing page (AI, Information Management, ABDM, Platform), each a Mintlify product with a menu of products. It also:
+
+- makes each section's landing page its title: a group whose first page is an overview, intro or getting-started page gets it as `root`, so there is no separate "Overview" row under the title; a group with only one page becomes that page
+- gives every group an icon, from its name
+- keeps every product's sidebar to three levels (section, group, page) in one order: Get started, Journeys, Workflows, Guides (one group per milestone or area, its overview as the title), Webhooks, Resources (errors, testing, SDKs, changelog). HIE-CM is built this way by `restructure_hiecm`; other products move to it as they come onto the ladder
+- moves every endpoint page into a separate **API Reference** that mirrors the docs: four API families (AI API, Information Management API, ABDM API, Platform API), one API product per docs product (Scribe API, HIE-CM API, ...) with its own sidebar opened by the product's API overview (`API_SECTION_HOME`), then spec-tag sections, then endpoints. The product picker shows the docs families in the docs and the API families in the API Reference (`api-reference-link.js` sets `html.eka-api-mode`). The navbar **Docs** and **API Reference** links move between a product's docs and its API. A product with no docs pages left (IPD) links straight to its API. Platform API starts with **All APIs**, the generated index
+
+Re-run it after moving groups in `docs.json`; never hand-edit what it generates (`api-reference-link.js`, `api-sdk/index.mdx`).
+
+Every page sets `icon:` in its frontmatter (a Font Awesome name). API endpoint pages are the exception: Mintlify shows their HTTP method badge in that place.
+
+## The manifest
+
+`<product>/product.yaml`:
+
+```yaml
+slug: abdm-connect
+name: ABDM Connect
+owner: abdm-team
+audiences: [HIS vendors, labs, insurers, PHR apps]
+root: api-reference/user-app/abdm-connect   # only if the folder is not the manifest's own
+openapi:
+  - registration.yml                         # relative to root; several allowed
+plugin: abdm-connect                         # the product plugin's name, once it exists
+enforce: false                               # true once the product passes the check
+```
+
+It is the registry: which products exist, where the spec is, whether the check blocks. Nothing else is derived from it.
+
+## The check
+
+`npm run docs:check [slug] [--fix]`, source `scripts/docs-check.mjs`, runs on every pull request. Exit code 1 only when a product with `enforce: true` fails.
+
+Fail
+
+- Operations exist but no `journey` page, or no `workflow` page
+- A workflow `operations` entry the spec does not define, or a `journey` that does not exist
+- A page with no `type`, or a type outside the thirteen
+- A reference page whose operation is not in the spec
+- No `overview` or `errors` page
+- `<ParamField>` or `<ResponseField>` on a reference page (a hand-written schema)
+
+Warn
+
+- An operation no workflow names; a journey no workflow points at
+- An error code on the errors page absent from every response example
+- No `testing` or `build-with-ai` page
+- A bare `openapi: METHOD /path` that matches more than one spec in the repo
+- A stale or missing "Used in" block
+- A quickstart that demonstrates no workflow: no `workflow:` frontmatter naming a workflow page, and no call to any workflow's operation in its body
+
+`--fix` writes the "Used in" block on every reference page (between `{/* used-in:start */}` and `{/* used-in:end */}`, never edited by hand), rewrites bare `openapi:` to the file-prefixed form, and creates a bare page for every operation that has none.
+
+## Placing a thing
+
+| Proposal | Where |
+|---|---|
+| A new endpoint | The spec first, then `/api-sync` creates its page |
+| A sequence of calls that achieves something | A workflow page |
+| Who uses this and why | The overview (short) or a journey (long) |
+| A gotcha about one endpoint | Notes under that reference page's frontmatter |
+| An error code | The spec's response example and the errors page |
+| A client library | `sdks/`, type `sdk` |
+| Something for the agent only | The product plugin, pointing at the page that holds the fact |
