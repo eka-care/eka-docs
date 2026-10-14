@@ -633,15 +633,14 @@ def root_groups(products):
 
 
 # ---------- Tabs ----------
-# Each product has its own tab bar: Documentation (its docs sidebar), APIs & SDKs (its API reference), Changelog
-# where it has one, and Cook Book where it has recipes. Get started's Changelog tab holds the platform-wide feed. The script still builds docs families and separate API families ("AI API", ...); tabify()
+# Each product has its own tab bar: Documentation (its docs sidebar), APIs & SDKs (its API reference), Release Notes
+# where it has a changelog, and Cook Book where it has recipes. Get started's Release Notes tab holds the platform-wide
+# feed: the changelog, Weekly Updates and Under the Hood. The script still builds docs families and separate API families ("AI API", ...); tabify()
 # folds each API item into its product as a tab just before docs.json is written, and untab() reverses that on the
 # next run, so routes (/docs/<product>/, /api-sdk/<product>/) and every derived file stay as they were.
-DOCS_TAB, API_TAB, CHANGELOG_TAB, RECIPES_TAB = 'Documentation', 'APIs & SDKs', 'Changelog', 'Cook Book'
+DOCS_TAB, API_TAB, CHANGELOG_TAB, RECIPES_TAB = 'Documentation', 'APIs & SDKs', 'Release Notes', 'Cook Book'
 CHANGELOGS = {
-    'Get started': ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood',
-                    'docs/get-started/release-notes-2026-04-06', 'docs/get-started/weekly-update-2026-04-06',
-                    'docs/get-started/under-the-hood-march-2026'],
+    'Get started': ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood'],
     'Scribe': ['docs/get-started/ekascribe-changelog', 'docs/get-started/ekascribe'],
     'Agents': ['docs/get-started/ekaagents-changelog', 'docs/get-started/eka-agents'],
     'EMR': ['docs/get-started/emr-changelog'],
