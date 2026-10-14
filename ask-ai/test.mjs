@@ -15,7 +15,7 @@ await build({
                export {ABOUT, isAboutQuestion} from './src/about';
                export {startersFrom, DEFAULT_STARTERS} from './src/starters';
                export {forModel, memoryOf, sentFrom} from './src/transcript';
-               export {parseLlms, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';`,
+               export {parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';`,
     resolveDir: import.meta.dirname,
     loader: 'ts',
   },
@@ -101,22 +101,26 @@ const shown = forModel([
 assert.deepEqual(shown.map((t) => t.text), ['q1', 'a1', 'q2'], 'the about pair is dropped whole');
 for (let i = 1; i < shown.length; i += 1) assert.notEqual(shown[i].from, shown[i - 1].from);
 
-// Pages: llms.txt parsed to paths, re-rooted on the widget's own docs origin.
-const llms = [
-  '# ABDM Developer Portal', '',
-  '- [Gateway session](https://abdm-docs.example.com/docs/hiecm/v3/api/gateway): Every call carries a token.',
-  '- [M2 Health Information Provider](https://abdm-docs.example.com/docs/hiecm/v3/milestones/m2/): Link records.',
-  '- [Care context](https://abdm-docs.example.com/docs/hiecm/v3/concepts/care-context): A visit or episode.',
-  '- [Duplicate](https://abdm-docs.example.com/docs/hiecm/v3/api/gateway): again',
-  '- [Module list](https://abdm-docs.example.com/llms/m2.txt): not a page',
+// Pages: Eka's nested llms.txt parsed to paths, re-rooted on the widget's own docs origin.
+const eka = [
+  '- [Documentation (584 pages)](https://developer.eka.care/_llms/documentation.txt): Documentation.',
+  '- [Changelog](https://developer.eka.care/changelog.md): Latest updates.',
+  "- [Get Started](https://developer.eka.care/user-guides/get-started.md): <font color='blue'>SIGN UP</font>",
+  '- [Get Started](https://developer.eka.care/user-guides/get-started.md): dup',
 ].join('\n');
-const entries = parseLlms(llms);
-assert.deepEqual(entries.map((e) => e.path), [
-  '/docs/hiecm/v3/api/gateway', '/docs/hiecm/v3/milestones/m2', '/docs/hiecm/v3/concepts/care-context',
-], 'docs pages only, no trailing slash, no duplicates');
-assert.equal(entries[1].description, 'Link records.');
+assert.deepEqual(parseLlms(eka).map((e) => e.path), ['/changelog', '/user-guides/get-started']);
+assert.equal(parseLlms(eka)[1].description, 'SIGN UP', 'HTML tags stripped from descriptions');
+assert.deepEqual(parseIndex(eka), ['/_llms/documentation.txt']);
+assert.equal(markdownUrl('https://developer.eka.care', '/user-guides/get-started'),
+  'https://developer.eka.care/user-guides/get-started.md');
+const entries = parseLlms([
+  '- [Care context](https://developer.eka.care/concepts/care-context.md): A visit or episode.',
+  '- [Link records](https://developer.eka.care/guides/link.md): Link records.',
+  '- [Gateway session](https://developer.eka.care/api/gateway.md): Every call carries a token.',
+].join('\n'));
+assert.deepEqual(entries.map((e) => e.path), ['/concepts/care-context', '/guides/link', '/api/gateway'], 'stored without .md');
 assert.equal(searchPages(entries, 'care')[0].title, 'Care context', 'a word starting the title wins');
-assert.equal(searchPages(entries, 'records')[0].title, 'M2 Health Information Provider', 'the description counts too');
+assert.equal(searchPages(entries, 'token')[0].title, 'Gateway session', 'the description counts too');
 assert.deepEqual(searchPages(entries, 'care gateway'), [], 'every word must match');
 assert.deepEqual(searchPages(entries, '   '), []);
 assert.doesNotThrow(() => searchPages(entries, '(m2 [ *'), 'regex characters are safe');

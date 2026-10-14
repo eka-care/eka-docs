@@ -12,23 +12,44 @@ export type PageEntry = {title: string; path: string; description: string};
 
 const LINE = /^- \[([^\]]+)\]\(([^)\s]+)\)(?::\s*(.*))?$/;
 
+const pathOf = (link: string): string | null => {
+  try {
+    return new URL(link, 'https://placeholder.invalid').pathname;
+  } catch {
+    return null;
+  }
+};
+
+const links = (text: string) =>
+  text.split('\n').flatMap((raw) => {
+    const m = LINE.exec(raw.trim());
+    const path = m && pathOf(m[2]);
+    return m && path ? [{title: m[1], path, description: (m[3] ?? '').replace(/<[^>]*>/g, '').trim()}] : [];
+  });
+
+/** Every page a list links to: any path ending in `.md`, kept without it. */
 export function parseLlms(text: string): PageEntry[] {
   const out: PageEntry[] = [];
   const seen = new Set<string>();
-  for (const raw of text.split('\n')) {
-    const m = LINE.exec(raw.trim());
-    if (!m) continue;
-    let path: string;
-    try {
-      path = new URL(m[2], 'https://placeholder.invalid').pathname.replace(/\/$/, '');
-    } catch {
-      continue;
-    }
-    if (!path.startsWith('/docs/') || seen.has(path)) continue;
+  for (const link of links(text)) {
+    if (!link.path.endsWith('.md')) continue;
+    const path = link.path.slice(0, -3).replace(/\/$/, '');
+    if (!path || seen.has(path)) continue;
     seen.add(path);
-    out.push({title: m[1], path, description: (m[3] ?? '').trim()});
+    out.push({...link, path});
   }
   return out;
+}
+
+/** The further lists a list points to, which live under /_llms/ and end in `.txt`. */
+export function parseIndex(text: string): string[] {
+  return [
+    ...new Set(
+      links(text)
+        .map((link) => link.path)
+        .filter((path) => path.startsWith('/_llms/') && path.endsWith('.txt')),
+    ),
+  ];
 }
 
 const escape = (word: string) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -82,15 +103,32 @@ export function isHtmlDocument(text: string): boolean {
 
 let pages: Promise<PageEntry[]> | null = null;
 
+const textOf = (url: string) =>
+  fetch(url).then((res) => (res.ok ? res.text() : Promise.reject(new Error(`status ${res.status}`))));
+
+/** Pages from the lists a text points to, following them `depth` levels down. A list that fails is skipped. */
+async function listed(origin: string, text: string, depth: number): Promise<PageEntry[]> {
+  const found = parseLlms(text);
+  if (depth === 0) return found;
+  const more = await Promise.allSettled(
+    parseIndex(text).map((path) => textOf(`${origin}${path}`).then((body) => listed(origin, body, depth - 1))),
+  );
+  for (const one of more) if (one.status === 'fulfilled') found.push(...one.value);
+  const seen = new Set<string>();
+  return found.filter((e) => !seen.has(e.path) && !!seen.add(e.path));
+}
+
 /**
- * The page list, fetched once per page load. A failed fetch is not cached,
- * so the next search tries again rather than staying empty.
+ * The page list, fetched once per page load. The site's llms.txt points to
+ * lists of its own, which can point to more, so they are followed two levels
+ * down. A failed top-level fetch is not cached, so the next search tries
+ * again rather than staying empty.
  */
 export function loadPages(docsOrigin: string): Promise<PageEntry[]> {
   if (!pages) {
-    pages = fetch(`${trim(docsOrigin)}/llms.txt`)
-      .then((res) => (res.ok ? res.text() : Promise.reject(new Error(`status ${res.status}`))))
-      .then(parseLlms)
+    const origin = trim(docsOrigin);
+    pages = textOf(`${origin}/llms.txt`)
+      .then((text) => listed(origin, text, 2))
       .catch((err) => {
         pages = null;
         throw err;
