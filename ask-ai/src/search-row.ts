@@ -63,7 +63,7 @@ function set(el: HTMLElement, prop: string, value: string) {
   if (el.style.getPropertyValue(prop) !== value) el.style.setProperty(prop, value);
 }
 
-function createRow(doc: Document, input: HTMLInputElement, onAsk: (q: string) => void): HTMLButtonElement {
+function createRow(doc: Document, onAsk: (q: string) => void): HTMLButtonElement {
   const row = doc.createElement('button');
   row.type = 'button';
   row.tabIndex = -1;
@@ -86,7 +86,11 @@ function createRow(doc: Document, input: HTMLInputElement, onAsk: (q: string) =>
   row.append(icon, label, hint);
   // Keep focus, and with it the caret and Mintlify's keys, in the input.
   row.addEventListener('mousedown', (e) => e.preventDefault());
-  row.addEventListener('click', () => askFrom(input, onAsk));
+  // The input of the moment: Mintlify can swap it while this row stays put.
+  row.addEventListener('click', () => {
+    const current = doc.getElementById('search-input') as HTMLInputElement | null;
+    if (current) askFrom(current, onAsk);
+  });
   row.addEventListener('mouseenter', () => set(row, 'background', `color-mix(in srgb, ${accent(doc)} 10%, transparent)`));
   row.addEventListener('mouseleave', () => set(row, 'background', 'transparent'));
   return row;
@@ -107,7 +111,7 @@ export function ensureRow(doc: Document, onAsk: (q: string) => void): void {
   const dialog = input.closest('[role=dialog]');
   const scope: ParentNode = dialog ?? input.parentElement ?? doc;
   let row = scope.querySelector<HTMLButtonElement>(`button[${ROW}]`);
-  if (!row) row = createRow(doc, input, onAsk);
+  if (!row) row = createRow(doc, onAsk);
 
   // Directly before the results list, or after the input's row until there is one.
   const listbox = scope.querySelector('[role=listbox]');
