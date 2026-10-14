@@ -1,3 +1,122 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400..600&display=swap");
+
+/* Theme, after the landing page (landing/index.html): monochrome ink, one faded dot field,
+   and Eka blue used the way the landing page's watermark uses it: softly.
+   Only Mintlify's named hooks are used here: ids (#background-color, #sidebar,
+   #content-side-layout, #page-title, #content), component classes (.callout, .card) and
+   data-component-part. If Mintlify renames one, that piece falls back to Mintlify's own
+   style; nothing else depends on it.
+   --eka-accent-wash is the watermark itself (Eka blue at 7%). --eka-accent, Eka blue at 45%, is
+   for lines, markers and icons. Links and highlights use --eka-accent-ink, Eka blue at
+   80% (softer than full strength, about 3.5:1 on the page).
+   Buttons and "you are here" marks are lilac, from the landing page's AI family colour
+   (#7C5CFF). A primary button is tonal: --eka-lilac-tint behind --eka-lilac text, edged
+   with --eka-lilac-edge. A secondary button is a neutral outline. --eka-lilac (5.5:1 on
+   the tint) is also docs.json's primary colour, which Mintlify uses for the label above
+   each title and the active sidebar and contents rows.
+   --eka-heading is the landing headline's colour: ink with 30% Eka blue. */
+:root {
+  --eka-accent: #98B4FC;
+  --eka-accent-ink: #4C7EFE;
+  --eka-lilac: #5B45C9;
+  --eka-lilac-tint: rgba(124, 92, 255, .12);
+  --eka-lilac-edge: rgba(124, 92, 255, .22);
+  --eka-neutral-edge: #D4D4D0;
+  --eka-accent-wash: rgba(33, 95, 255, .07);
+  --eka-heading: color-mix(in srgb, #141413 70%, #215FFF);
+  --eka-line: #E7E7E4;
+  --eka-surface: #FFFFFF;
+  --eka-dot: rgba(147, 147, 142, .13);
+  --eka-mono: "Geist Mono", ui-monospace, "SF Mono", monospace;
+}
+.dark {
+  --eka-accent: #445C9D;
+  --eka-accent-ink: #6B93FF;
+  --eka-lilac: #B6A8FF;
+  --eka-lilac-tint: rgba(160, 140, 255, .14);
+  --eka-lilac-edge: rgba(160, 140, 255, .25);
+  --eka-neutral-edge: rgba(255, 255, 255, .18);
+  --eka-accent-wash: rgba(107, 147, 255, .07);
+  --eka-heading: color-mix(in srgb, #EDEDEC 70%, #6B93FF);
+  --eka-line: rgba(255, 255, 255, .08);
+  --eka-surface: #111111;
+  --eka-dot: rgba(255, 255, 255, .045);
+}
+
+/* The dot field: drawn on Mintlify's fixed background layer, faded towards the edges. */
+#background-color::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(circle, var(--eka-dot) .95px, transparent 1.25px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 40%, #000 30%, transparent 100%);
+          mask-image: radial-gradient(ellipse 75% 70% at 50% 40%, #000 30%, transparent 100%);
+}
+
+/* Headings: the landing headline's weight and colour. Mintlify sets the title at 600. */
+#page-title, #content :is(h1, h2, h3, h4) {
+  font-weight: 420 !important;
+  font-optical-sizing: auto;
+  color: var(--eka-heading) !important;
+}
+
+/* Hairlines divide the page into its three columns: sidebar, page, table of contents. */
+#sidebar { border-right: 1px solid var(--eka-line); }
+#content-side-layout { border-left: 1px solid var(--eka-line); }
+
+/* A section ends with a pair of hairlines that run from the sidebar divider to the
+   table of contents divider. Only the page's own h2s (direct children of #content);
+   card titles are h2s too. The offsets are the gaps Mintlify leaves between the text
+   column and each divider, measured as constant from 1024px to 1700px: 43px on the
+   left, 52px on the right once the table of contents shows (1280px), 4px before. If
+   Mintlify changes its padding the lines stop a little short or run a little long;
+   below 1024px there are no dividers and the lines span the text. */
+#content > h2 {
+  position: relative;
+  margin-top: 3.5rem;
+  padding-top: 2.5rem;
+}
+#content > h2::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px; pointer-events: none;
+  background:
+    linear-gradient(var(--eka-line), var(--eka-line)) 0 0 / 100% 1px no-repeat,
+    linear-gradient(var(--eka-line), var(--eka-line)) 0 100% / 100% 1px no-repeat;
+}
+@media (min-width: 1024px) { #content > h2::before { left: -43px; right: -4px; } }
+@media (min-width: 1280px) { #content > h2::before { right: -52px; } }
+
+/* Links in the page body: blue text and a softer blue underline (Mintlify draws the
+   underline in the primary colour, now lilac). */
+#content a.link:not(.eka-postman-btn) { color: var(--eka-accent-ink) !important; border-bottom-color: color-mix(in srgb, var(--eka-accent-ink) 45%, transparent) !important; }
+#content a.link:not(.eka-postman-btn):hover { border-bottom-color: var(--eka-accent-ink) !important; }
+
+/* The navbar's Get Started button, tonal like every primary button. Mintlify draws it as
+   a solid primary-colour layer under white text; this repaints both. If Mintlify changes
+   the markup, it falls back to solid deep lilac with white text (6.0:1). */
+#topbar-cta-button a > span:first-child { background: var(--eka-lilac-tint) !important; box-shadow: inset 0 0 0 1px var(--eka-lilac-edge); }
+#topbar-cta-button a :is(span, svg) { color: var(--eka-lilac) !important; }
+
+#content :is(code, pre), [data-component-part="code-block-root"] { font-family: var(--eka-mono); }
+
+/* Note and info callouts take the accent; warning, danger, tip and check keep their colours. */
+.callout:is([data-callout-type="note"], [data-callout-type="info"]) {
+  border: 1px solid var(--eka-line) !important;
+  border-left: 2px solid var(--eka-accent) !important;
+  border-radius: 0 12px 12px 0 !important;
+  background: var(--eka-surface) !important;
+}
+.callout:is([data-callout-type="note"], [data-callout-type="info"]) [data-component-part="callout-icon"] { color: var(--eka-accent-ink); }
+
+#content .card { border-color: var(--eka-line) !important; transition: border-color .15s ease, transform .15s ease; }
+#content a.card:hover, #content a:hover > .card { border-color: var(--eka-accent) !important; transform: translateY(-2px); }
+#content [data-component-part="card-icon"] { color: var(--eka-accent-ink) !important; fill: var(--eka-accent-ink) !important; }
+
+[data-component-part="step-indicator"] {
+  background: var(--eka-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--eka-accent) !important;
+  color: var(--eka-accent-ink) !important;
+  font-family: var(--eka-mono);
+}
+
 .eka-card-wrapper {
   border-radius: 14px;
   transition: transform 0.15s ease;
@@ -8,13 +127,13 @@
 }
 
 .eka-card-wrapper:hover > * {
-  box-shadow: 0 12px 28px rgba(80, 66, 189, 0.22);
-  border-color: #5042BD;
+  box-shadow: 0 12px 28px rgba(94, 106, 152, 0.16);
+  border-color: var(--eka-accent);
 }
 
 .eka-divider {
   border: none;
-  border-top: 1px solid rgba(80, 66, 189, 0.25);
+  border-top: 1px solid var(--eka-line);
   margin: 48px 0;
 }
 
@@ -49,18 +168,18 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border: 1px solid #6B5CE0;
+  border: 1px solid var(--eka-neutral-edge);
   border-radius: 8px;
   font-size: 15px;
   font-weight: 500;
-  color: #5042BD;
+  color: #141413;
   background: transparent;
   text-decoration: none;
   transition: background 0.15s ease;
 }
-.eka-postman-btn:hover { background: rgba(107, 92, 224, 0.08); }
-.eka-postman-btn-primary { color: #fff; background: #6B5CE0; }
-.eka-postman-btn-primary:hover { background: #5042BD; }
+.eka-postman-btn:hover { background: rgba(20, 20, 19, .04); }
+.eka-postman-btn-primary { color: var(--eka-lilac); background: var(--eka-lilac-tint); border-color: var(--eka-lilac-edge); }
+.eka-postman-btn-primary:hover { background: rgba(124, 92, 255, .18); }
 .eka-postman-link {
   display: flex;
   align-items: center;
@@ -91,16 +210,16 @@
   border: none;
   cursor: pointer;
 }
-.eka-postman-link button:hover { color: #5042BD; }
+.eka-postman-link button:hover { color: var(--eka-accent-ink); }
 .eka-postman-note { margin-top: 12px; font-size: 14px; color: #6B7280; }
 .eka-postman-error { margin: -4px 0 12px; font-size: 14px; color: #B42318; }
 .dark .eka-postman-error { color: #F97066; }
 .dark .eka-postman { border-color: rgba(255, 255, 255, 0.12); }
 .dark .eka-postman-text { color: #D1D5DB; }
-.dark .eka-postman-btn { color: #A79CF5; border-color: #8A7CF0; }
-.dark .eka-postman-btn:hover { background: rgba(138, 124, 240, 0.12); }
-.dark .eka-postman-btn-primary { color: #fff; background: #6B5CE0; border-color: #6B5CE0; }
-.dark .eka-postman-btn-primary:hover { background: #5042BD; }
+.dark .eka-postman-btn { color: #EDEDEC; border-color: var(--eka-neutral-edge); }
+.dark .eka-postman-btn:hover { background: rgba(255, 255, 255, .05); }
+.dark .eka-postman-btn-primary { color: var(--eka-lilac); background: var(--eka-lilac-tint); border-color: var(--eka-lilac-edge); }
+.dark .eka-postman-btn-primary:hover { background: rgba(160, 140, 255, .20); }
 .dark .eka-postman-link { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); }
 .dark .eka-postman-link code { color: #E5E7EB; background: rgba(255, 255, 255, 0.06); }
 .dark .eka-postman-link button, .dark .eka-postman-note { color: #9CA3AF; }
