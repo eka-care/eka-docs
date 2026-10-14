@@ -28,7 +28,6 @@ configuration.
 | `api-base`    | The chat server's origin. Absent leaves the panel a labelled mock.        |
 | `docs-origin` | Where citations resolve. Defaults to the host page's own origin, which is right only on the docs site. |
 | `support-url` | Where the mock's "use support" link points. Defaults to `<docs-origin>/docs/support`. |
-| `launcher`    | `none` supplies your own trigger instead of the built-in chip.            |
 | `ground`      | `light` or `dark`. The element reads the host page's background and sets this itself; set it to override that reading. |
 | `question`    | Seeds the composer when the panel opens on an empty box. Nothing is sent; the reader still presses send. The docs site fills it from whatever is in the search field. |
 | `starters`    | The empty state's openers, one per line, at most five, shown as pills under the greeting. A line may be `label \| question`, so the pill stays two or three words while the question it asks is whole; a line with no bar is its own label. Absent keeps the widget's own general set. |
@@ -41,7 +40,13 @@ as `markdown`, which is what a static host's app shell looks like when it
 answers for a missing page, is refused as a failed attachment rather than sent.
 
 `show()` and `hide()` on the element do the same as setting and removing
-`open`, for a host that prefers a method call.
+`open`, for a host that prefers a method call. `ask(question)` opens the panel
+and asks the question at once.
+
+The script mounts one element on its own, at the end of `body`, if the page
+has none, and checks again on Mintlify's client-side navigation. The element
+draws a floating "Ask AI" bar at the foot of the page, hidden while the panel
+is open; the bar is what calls `ask()`.
 
 ### Attachments
 

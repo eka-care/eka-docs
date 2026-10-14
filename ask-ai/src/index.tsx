@@ -1,7 +1,7 @@
 import {Fragment, render} from 'preact';
 import {useEffect, useMemo, useRef, useState} from 'preact/hooks';
 import ChatMarkdown, {CopyButton, absolute, headings} from './markdown';
-import {ChevronRight, FileText, Paperclip, Plus, Sparkles, X} from './icons';
+import {ChevronRight, FileText, Paperclip, Plus, X} from './icons';
 import {createTransport, UNREACHABLE, type SessionRef} from './transport';
 import {revealStep} from './pacing';
 import {
@@ -21,6 +21,7 @@ import {ABOUT, isAboutQuestion} from './about';
 import {Composer, type Menu} from './Composer';
 import {HistoryList} from './HistoryList';
 import {Welcome} from './Welcome';
+import {FloatingBar} from './FloatingBar';
 import {ThinkingOrb} from './orb/frosted-orb';
 import {startersFrom, type Starter} from './starters';
 import {isHtmlDocument, markdownUrl, pageUrl, type PageEntry} from './pages';
@@ -80,6 +81,8 @@ function attachExtras(setTurns: Setter, extras: Extras) {
   });
 }
 
+type Asked = {text: string; n: number};
+
 type PanelProps = {
   agentId: string;
   authToken: string;
@@ -88,6 +91,9 @@ type PanelProps = {
   onClose: () => void;
   question: string;
   send: boolean;
+  /** A question asked from the floating bar, numbered so asking the same
+      words twice still asks twice. */
+  asked: Asked | null;
   starters: Starter[];
   /** False where the host asked not to keep conversations in its origin. */
   keepHistory: boolean;
@@ -245,6 +251,7 @@ function Panel({
   onAttach,
   question,
   send,
+  asked,
   starters,
   keepHistory,
   supportUrl,
@@ -286,6 +293,7 @@ function Panel({
   const session = useRef<SessionRef | undefined>(undefined);
   const started = useRef(false);
   const autoAsked = useRef<string | null>(null);
+  const barAsked = useRef(0);
   const dialog = useRef<HTMLDialogElement>(null);
   const thread = useRef<HTMLDivElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
@@ -386,6 +394,16 @@ function Panel({
     autoAsked.current = question;
     void ask(question);
   }, [open, question, send]);
+
+  // A question from the floating bar is asked at once. While an earlier
+  // answer is still arriving it waits in the composer instead, so it is not
+  // lost and the reader sends it when that answer is done.
+  useEffect(() => {
+    if (!open || !asked || barAsked.current === asked.n) return;
+    barAsked.current = asked.n;
+    if (busy) setDraft(asked.text);
+    else void ask(asked.text);
+  }, [open, asked]);
 
   // The dialog's own state is the source of truth for the browser; the `open`
   // prop drives it. Escape and the backdrop fire "close", which is where the
@@ -945,12 +963,12 @@ function Widget({
   authToken,
   docsOrigin,
   supportUrl,
-  launcher,
-  shortcut,
   open,
   page,
   onDetach,
   onAttach,
+  onAsk,
+  asked,
   question,
   send,
   starters,
@@ -961,12 +979,12 @@ function Widget({
   authToken: string;
   docsOrigin: string;
   supportUrl: string;
-  launcher: boolean;
-  shortcut: string;
   open: boolean;
   page: PageAttachment | null;
   onDetach: () => void;
   onAttach: (page: PageAttachment) => void;
+  onAsk: (question: string) => void;
+  asked: Asked | null;
   question: string;
   send: boolean;
   starters: Starter[];
@@ -979,28 +997,7 @@ function Widget({
   };
   return (
     <>
-      {launcher && (
-        <button
-          type="button"
-          class="ask-ai__launcher"
-          aria-label="Ask AI"
-          onClick={() => {
-            // Re-asserted rather than simply set: a browser can honour its
-            // own close request for the dialog and leave this attribute
-            // standing, and a launcher that then sets what is already set
-            // would change nothing and open nothing.
-            host.removeAttribute('open');
-            host.setAttribute('open', '');
-          }}>
-          <Sparkles />
-          {/* The label goes when the bar gets narrow; the mark carries it. */}
-          <span class="ask-ai__launcher-label">Ask AI</span>
-          {/* The host's own key for this, if it has bound one. A reader who
-              never looks in a menu learns the shortcut from the thing it
-              opens or not at all. */}
-          {shortcut && <kbd class="ask-ai__launcher-key">{shortcut}</kbd>}
-        </button>
-      )}
+      <FloatingBar hidden={open} onAsk={onAsk} />
       <Panel
         agentId={agentId}
         authToken={authToken}
@@ -1009,6 +1006,7 @@ function Widget({
         open={open}
         question={question}
         send={send}
+        asked={asked}
         starters={starters}
         keepHistory={keepHistory}
         onClose={close}
@@ -1028,9 +1026,6 @@ function Widget({
  *   auth-token   the token that assistant is reached with
  *   docs-origin  where citations resolve, since "/docs/..." is wrong on
  *                every host except the docs site itself
- *   launcher     "none" to supply your own trigger and drive `open`
- *   shortcut     the key the host has bound to open the panel, shown on the
- *                launcher; the host binds it, this only says what it is
  *   open         present while the panel is showing; the element removes it
  *                and fires a "close" event when the reader dismisses it
  *   question     seeds the composer when the panel opens with an empty box,
@@ -1045,9 +1040,10 @@ function Widget({
  *                hold what readers type turns the list off here. Off also
  *                means a reload starts a fresh conversation
  *
- * One thing is set by method rather than attribute: attachPage({title, url,
- * markdown}) gives the conversation the page the reader is looking at, and
- * attachPage(null) takes it off again. A page of Markdown does not belong in
+ * Two things are done by method rather than attribute. ask(question) opens
+ * the panel and asks at once; the floating bar at the foot of the page is
+ * what calls it. attachPage({title, url, markdown}) gives the conversation
+ * the page the reader is looking at, and attachPage(null) takes it off again. A page of Markdown does not belong in
  * an attribute, and the host is the only one that knows where its own pages
  * are published, so it fetches and hands over the text.
  *
@@ -1078,14 +1074,17 @@ function groundOf(): 'light' | 'dark' {
     : 'light';
 }
 
-class SupportAgentElement extends HTMLElement {
+// HTMLElement only exists in a browser. A stand-in elsewhere lets a test
+// import the module that defines the element without defining it.
+const Base: typeof HTMLElement =
+  typeof HTMLElement === 'undefined' ? (class {} as typeof HTMLElement) : HTMLElement;
+
+export class SupportAgentElement extends Base {
   static observedAttributes = [
     'agent-id',
     'auth-token',
     'docs-origin',
     'support-url',
-    'launcher',
-    'shortcut',
     'open',
     'question',
     'send',
@@ -1096,6 +1095,7 @@ class SupportAgentElement extends HTMLElement {
 
   private root: ShadowRoot | null = null;
   private page: PageAttachment | null = null;
+  private asked: Asked | null = null;
 
   connectedCallback() {
     if (!this.root) {
@@ -1105,20 +1105,6 @@ class SupportAgentElement extends HTMLElement {
       this.root.append(style);
       // An embedder who sets this themselves is taken at their word.
       if (!this.hasAttribute('ground')) this.setAttribute('ground', groundOf());
-      // The site's accent stands in for the fallback palette's. Set inline on
-      // the host because the stylesheet is a text import, so it cannot see the
-      // build-time globals. A page that defines --accent still wins.
-      const accent =
-        this.getAttribute('ground') === 'dark' ? __EKA_ACCENT_DARK__ : __EKA_ACCENT__;
-      this.style.setProperty('--aa-fb-accent', accent);
-      this.style.setProperty(
-        '--aa-fb-accent-soft',
-        `color-mix(in srgb, ${accent} 12%, transparent)`,
-      );
-      this.style.setProperty(
-        '--aa-fb-accent-line',
-        `color-mix(in srgb, ${accent} 40%, transparent)`,
-      );
     }
     this.paint();
   }
@@ -1135,6 +1121,18 @@ class SupportAgentElement extends HTMLElement {
   /** Closes the panel. */
   hide() {
     this.removeAttribute('open');
+  }
+
+  /** Opens the panel and asks `question` at once. */
+  ask(question: string) {
+    const text = question.trim();
+    if (!text) return;
+    this.asked = {text, n: (this.asked?.n ?? 0) + 1};
+    // Re-asserted rather than simply set: a browser can honour its own close
+    // request for the dialog and leave this attribute standing, and setting
+    // what is already set would change nothing and open nothing.
+    this.removeAttribute('open');
+    this.setAttribute('open', '');
   }
 
   /**
@@ -1155,6 +1153,21 @@ class SupportAgentElement extends HTMLElement {
   }
 
   private paint() {
+    // The site's accent stands in for the fallback palette's. Set inline on
+    // the host because the stylesheet is a text import, so it cannot see the
+    // build-time globals. A page that defines --accent still wins. Here
+    // rather than once, so a later change of ground takes its accent with it.
+    const accent =
+      this.getAttribute('ground') === 'dark' ? __EKA_ACCENT_DARK__ : __EKA_ACCENT__;
+    this.style.setProperty('--aa-fb-accent', accent);
+    this.style.setProperty(
+      '--aa-fb-accent-soft',
+      `color-mix(in srgb, ${accent} 12%, transparent)`,
+    );
+    this.style.setProperty(
+      '--aa-fb-accent-line',
+      `color-mix(in srgb, ${accent} 40%, transparent)`,
+    );
     const docsOrigin =
       this.getAttribute('docs-origin') ?? window.location.origin;
     render(
@@ -1167,12 +1180,12 @@ class SupportAgentElement extends HTMLElement {
           this.getAttribute('support-url') ??
           `${docsOrigin.replace(/\/$/, '')}/docs/support`
         }
-        launcher={this.getAttribute('launcher') !== 'none'}
-        shortcut={this.getAttribute('shortcut') ?? ''}
         open={this.hasAttribute('open')}
         page={this.page}
         onDetach={() => this.attachPage(null)}
         onAttach={(found) => this.attachPage(found)}
+        onAsk={(text) => this.ask(text)}
+        asked={this.asked}
         question={this.getAttribute('question') ?? ''}
         send={this.hasAttribute('send')}
         starters={startersFrom(this.getAttribute('starters') ?? '')}
@@ -1181,13 +1194,4 @@ class SupportAgentElement extends HTMLElement {
       this.root!,
     );
   }
-}
-
-// Guarded so the bundle can be imported where there is no DOM, which is what
-// a test and a server-side render both do.
-if (
-  typeof customElements !== 'undefined' &&
-  !customElements.get('eka-ask-ai')
-) {
-  customElements.define('eka-ask-ai', SupportAgentElement);
 }

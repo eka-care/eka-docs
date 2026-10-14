@@ -16,7 +16,8 @@ await build({
                export {ABOUT, isAboutQuestion} from './src/about';
                export {startersFrom, DEFAULT_STARTERS} from './src/starters';
                export {forModel} from './src/transcript';
-               export {parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';`,
+               export {parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';
+               export {mount} from './src/mount';`,
     resolveDir: import.meta.dirname,
     loader: 'ts',
   },
@@ -38,6 +39,7 @@ const {
   toBlocks, absolute, headings, mockTransport, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
+  mount,
 } = await import(out);
 
 // History: one conversation comes out, the rest stay in order.
@@ -186,6 +188,26 @@ assert.equal(after, 0, 'detach stops delivery');
 // No agent id is the mock; an agent id is Synapse, which is not wired yet.
 assert.equal(createTransport({}).isMock, true);
 assert.throws(() => createTransport({agentId: 'a1'}), /Synapse transport not wired yet/);
+
+// mount: one element per document, however often the script runs.
+function fakeDocument() {
+  const children = [];
+  const element = (tag) => {
+    const attrs = new Map();
+    return {tagName: tag.toUpperCase(), setAttribute: (k, v) => attrs.set(k, String(v)), getAttribute: (k) => attrs.get(k) ?? null};
+  };
+  return {
+    body: {children, append: (...nodes) => children.push(...nodes)},
+    createElement: element,
+    querySelector: (tag) => children.find((c) => c.tagName === tag.toUpperCase()) ?? null,
+  };
+}
+const doc = fakeDocument();
+const a = mount(doc); const b = mount(doc);
+assert.equal(a, b, 'mount is idempotent');
+assert.equal(doc.body.children.length, 1);
+assert.equal(a.tagName, 'EKA-ASK-AI');
+assert.equal(a.getAttribute('auth-token'), null, 'auth-token is left unset');
 
 // Last: this replaces a global the tests above may rely on.
 // history keeps the session pair; blocked storage never throws

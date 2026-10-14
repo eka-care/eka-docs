@@ -14,7 +14,7 @@ const {colors} = JSON.parse(
 );
 
 await build({
-  entryPoints: [join(import.meta.dirname, 'src/index.tsx')],
+  entryPoints: [join(import.meta.dirname, 'src/mount.ts')],
   bundle: true,
   format: 'iife',
   target: ['es2022'],
