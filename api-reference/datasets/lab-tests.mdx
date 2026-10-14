@@ -14,6 +14,46 @@ Your lab test catalog is everything your clinicians can order: laboratory tests,
 - `panel_members` when `kind` is `panel`
 </Note>
 
+## Tests, results and panels
+
+Every row in this catalog is something a clinician can order, and also describes the result it produces. A row takes one of three shapes:
+
+- **A single test returns one result.** Fasting Blood Sugar returns one number, in mg/dL. Set `kind` to what it is (`laboratory`, `imaging`, `functional` or `special_test`) and describe its result with `result_type` and, for numbers, `unit`.
+- **A panel is ordered as one test but returns several results, one per member test.** A Complete Blood Count returns hemoglobin, WBC count, platelet count and more. Each of those is its own row in your catalog, and the panel's row lists them in `panel_members`. The panel itself has no single result, so its `result_type` is `na`.
+- **A package is a commercial bundle**, like a full body checkup, made up of tests and panels. Its `result_type` is `na`. Listing its contents in `panel_members` is optional.
+
+<Warning>
+Don't upload a panel as if it were a single test. A row like `Complete Blood Count, laboratory, numerical, cells/mcL` says a CBC produces one number in one unit, which it doesn't. Create the panel and its member tests as shown below.
+</Warning>
+
+### Creating a panel
+
+<Steps>
+  <Step title="Add a row for each member test">
+    Each member is an ordinary test with its own `lab_test_id`, `kind`, `result_type`, `specimen` and `unit`. For a CBC: Hemoglobin, WBC Count, Platelet Count, and so on.
+  </Step>
+  <Step title="Add the panel row">
+    Set `kind` to `panel` and `result_type` to `na`. Put the member test names in `panel_members` and their `lab_test_id`s in `panel_member_ids`, both separated by `|` and in the same order.
+  </Step>
+  <Step title="Upload the members and the panel together">
+    Send them in the same file or request. Eka doesn't check that every id in `panel_member_ids` exists in your catalog, so make sure each one matches a member row.
+  </Step>
+</Steps>
+
+```csv cbc-panel.csv
+lab_test_id,name,loinc,kind,result_type,discipline,specimen,unit,panel_members,panel_member_ids
+LAB1001,Hemoglobin,718-7,laboratory,numerical,hematology,Blood,g/dL,,
+LAB1002,WBC Count,6690-2,laboratory,numerical,hematology,Blood,cells/mcL,,
+LAB1003,Platelet Count,777-3,laboratory,numerical,hematology,Blood,cells/mcL,,
+LAB1010,Complete Blood Count,58410-2,panel,na,hematology,Blood,,Hemoglobin|WBC Count|Platelet Count,LAB1001|LAB1002|LAB1003
+```
+
+A member test can belong to more than one panel, and can also be ordered on its own. It stays a single row, listed in each panel that includes it.
+
+<Tip>
+If you map rows to Eka ids, map each member test as well as the panel. Features that work with result values, such as calculators, need the individual tests mapped.
+</Tip>
+
 ## Columns
 
 | Column | Required | What it means | Allowed values | Example |
@@ -47,8 +87,9 @@ Your lab test catalog is everything your clinicians can order: laboratory tests,
 | A test with a text result, like blood group | `laboratory` | `string` | `specimen` |
 | An X-ray, ultrasound or scan | `imaging` | `na` | `body_part`, `laterality`, `view` if you have them |
 | A measurement taken on the patient, like blood pressure or ECG | `functional` | `numerical` or `na` | `unit` if numerical |
-| A group of tests ordered together, like a lipid profile | `panel` | `na` | `panel_members` |
-| A bundled health check, like a full body checkup | `package` | `na` | |
+| A non-routine test, like genetic or molecular testing | `special_test` | whatever its result is | `specimen` and `unit` if they apply |
+| One order that returns several results, like a CBC or lipid profile | `panel` | `na` | `panel_members`, plus a row for each member |
+| A commercial bundle of tests and panels, like a full body checkup | `package` | `na` | `panel_members` (optional) |
 
 <Warning>
 `kind` and `result_type` must be written exactly as shown, in lowercase. `Laboratory` or `Numerical` is rejected.
@@ -58,11 +99,14 @@ Your lab test catalog is everything your clinicians can order: laboratory tests,
 
 ```csv lab-tests.csv
 lab_test_id,name,ekaid,display_name,aliases,loinc,kind,result_type,discipline,specimen,unit,unit_id,panel_members,panel_member_ids,method,body_part,laterality,view,is_active
-LAB1001,Complete Blood Count,,Complete Blood Count,CBC,58410-2,laboratory,numerical,hematology,Blood,cells/mcL,UNIT-CELLS-MCL,,,,,,,true
-LAB1002,Fasting Blood Sugar,,Fasting Blood Sugar,FBS|Fasting Sugar,1558-6,laboratory,numerical,biochemistry,Blood,mg/dL,UNIT-MG-DL,,,,,,,true
-LAB1003,Chest X-Ray,,Chest X-Ray,CXR|Chest Xray,36643-5,imaging,na,,,,,,,,Chest,Bilateral,PA,true
-LAB1004,Blood Pressure,,Blood Pressure,BP,85354-9,functional,numerical,cardiology,,mmHg,UNIT-MMHG,,,,,,,true
-LAB1005,Basic Metabolic Panel,,Basic Metabolic Panel,BMP,24323-8,panel,na,biochemistry,,,,Fasting Blood Sugar|Sodium|Potassium,LAB1002|LAB2001|LAB2002,,,,,true
+LAB1001,Hemoglobin,,Hemoglobin,Hb|HGB,718-7,laboratory,numerical,hematology,Blood,g/dL,UNIT-G-DL,,,,,,,true
+LAB1002,WBC Count,,WBC Count,TLC|Total Leukocyte Count,6690-2,laboratory,numerical,hematology,Blood,cells/mcL,UNIT-CELLS-MCL,,,,,,,true
+LAB1003,Platelet Count,,Platelet Count,PLT,777-3,laboratory,numerical,hematology,Blood,cells/mcL,UNIT-CELLS-MCL,,,,,,,true
+LAB1010,Complete Blood Count,,Complete Blood Count,CBC|Hemogram,58410-2,panel,na,hematology,Blood,,,Hemoglobin|WBC Count|Platelet Count,LAB1001|LAB1002|LAB1003,,,,,true
+LAB1004,Fasting Blood Sugar,,Fasting Blood Sugar,FBS|Fasting Sugar,1558-6,laboratory,numerical,biochemistry,Blood,mg/dL,UNIT-MG-DL,,,,,,,true
+LAB1005,Chest X-Ray,,Chest X-Ray,CXR|Chest Xray,36643-5,imaging,na,,,,,,,,Chest,Bilateral,PA,true
+LAB1006,Blood Pressure,,Blood Pressure,BP,85354-9,functional,numerical,cardiology,,mmHg,UNIT-MMHG,,,,,,,true
+LAB1020,Full Body Checkup,,Full Body Checkup,,,package,na,,,,,Complete Blood Count|Fasting Blood Sugar|Chest X-Ray,LAB1010|LAB1004|LAB1005,,,,,true
 ```
 
 The smallest valid row for an imaging test needs only the four mandatory columns:
@@ -79,23 +123,24 @@ The same records sent to [Create or update records](/api-reference/datasets/writ
 ```json
 [
   {
-    "lab_test_id": "LAB1002",
-    "name": "Fasting Blood Sugar",
-    "aliases": ["FBS", "Fasting Sugar"],
-    "loinc": "1558-6",
+    "lab_test_id": "LAB1001",
+    "name": "Hemoglobin",
+    "aliases": ["Hb", "HGB"],
+    "loinc": "718-7",
     "kind": "laboratory",
     "result_type": "numerical",
-    "discipline": ["biochemistry"],
+    "discipline": ["hematology"],
     "specimen": "Blood",
-    "unit": "mg/dL"
+    "unit": "g/dL"
   },
   {
-    "lab_test_id": "LAB1005",
-    "name": "Basic Metabolic Panel",
+    "lab_test_id": "LAB1010",
+    "name": "Complete Blood Count",
+    "aliases": ["CBC", "Hemogram"],
     "kind": "panel",
     "result_type": "na",
-    "panel_members": ["Fasting Blood Sugar", "Sodium", "Potassium"],
-    "panel_member_ids": ["LAB1002", "LAB2001", "LAB2002"]
+    "panel_members": ["Hemoglobin", "WBC Count", "Platelet Count"],
+    "panel_member_ids": ["LAB1001", "LAB1002", "LAB1003"]
   }
 ]
 ```
@@ -104,5 +149,7 @@ The same records sent to [Create or update records](/api-reference/datasets/writ
 
 - **A laboratory test without `specimen`, or a numerical one without `unit`.** The whole upload is rejected; the error names the row and the column.
 - **A panel without `panel_members`.** List the member test names, separated by `|`.
+- **A panel uploaded as one numerical test.** Make it a `panel` and add its member tests as rows; see [Creating a panel](#creating-a-panel).
+- **`panel_members` and `panel_member_ids` in different orders or lengths.** The first name goes with the first id, the second with the second, and so on.
 - **Capitalised `kind` or `result_type`.** Use the lowercase values exactly as listed.
 - **A wrong `ekaid`.** Eka stores the id you send without checking it. A wrong id can attach your results to the wrong Eka test, so check each mapping against Eka's reference list.
