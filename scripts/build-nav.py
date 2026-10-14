@@ -355,7 +355,12 @@ def restructure_hiecm(item):
 # The API reference is its own division, like docs.stripe.com/api: one sidebar,
 # one section per product, then tag groups, then endpoints. Product sidebars keep
 # the docs. Each product's API overview page opens its section.
-API_DIVISION = 'API Reference'
+API_DIVISION = 'API Reference'  # legacy single division, replaced by API families
+API_SUFFIX = ' API'  # the API Reference has one family per docs family: "AI API", "ABDM API", ...
+
+
+def is_api_family(fam):
+    return fam['product'].endswith(API_SUFFIX) or fam['product'] == API_DIVISION
 API_SECTION_HOME = {
     'HIE-CM': 'api-reference/user-app/abdm-connect/overview',
     'Scribe': 'ekascribe/api-reference/sessions/overview',
@@ -414,10 +419,14 @@ def flatten(node, depth):
 
 
 def split_api(products):
-    if any(p['product'] == API_DIVISION for p in products):
+    """Move endpoint pages out of each docs product into its API twin. The API
+    Reference mirrors the docs picker: one family per docs family, one product
+    per docs product, each with a sidebar of its own."""
+    if any(is_api_family(p) for p in products):
         return
-    sections = []
+    api_families = []
     for fam in products:
+        api_items = []
         for it in fam['menu']:
             home = API_SECTION_HOME.get(it['item'])
             keep = lambda p, home=home: is_reference(p) or p == home
@@ -430,29 +439,31 @@ def split_api(products):
                     rest.append(r)
             if not kept:
                 continue
-            drop_home = lambda e: e if isinstance(e, str) else {**e, 'pages': [x for x in (drop_home(y) for y in e['pages']) if x and x != home]}
+            drop_home = lambda e, home=home: e if isinstance(e, str) else {**e, 'pages': [x for x in (drop_home(y) for y in e['pages']) if x and x != home]}
             nonempty = lambda e: isinstance(e, str) or e['pages'] or e.get('root')
             kept = [x for x in (drop_home(e) for e in kept) if x and x != home and nonempty(x)]
-            # A section holding one wrapper group (HIE-CM's "API reference", NHCX's
-            # "NHCX") lists that group's children directly.
+            # One wrapper group (HIE-CM's "API reference", NHCX's "NHCX") lists its children directly.
             while len(kept) == 1 and isinstance(kept[0], dict):
                 kept = ([kept[0]['root']] if kept[0].get('root') else []) + kept[0]['pages']
             body = [x for x in (drop_home(e) for e in flatten({'pages': kept}, 2)) if x != home and (isinstance(x, str) or x['pages'])]
-            section_pages = ([home] if home else []) + body
-            sections.append({'group': it['item'], 'icon': ICONS_FA.get(it['item'], 'code'), 'pages': section_pages})
+            api_items.append({'item': it['item'] + API_SUFFIX, 'icon': it.get('icon', 'code'),
+                              'description': it.get('description', ''), 'pages': ([home] if home else []) + body})
             it['pages'] = rest
             if not rest:
                 it.pop('pages')
-                it['href'] = '/' + next(p for p in walk_pages(section_pages))
-    index = [API_INDEX] if API_INDEX in set(walk_pages(products)) else []
-    if index:
+                it['href'] = '/' + next(walk_pages(api_items[-1]))
+        if api_items:
+            api_families.append({'product': fam['product'] + API_SUFFIX, 'icon': fam.get('icon', 'code'),
+                                 'description': fam.get('description', ''), 'menu': api_items})
+    if API_INDEX in set(walk_pages(products)):
         for fam in products:
             for it in fam['menu']:
                 if 'pages' in it:
                     it['pages'] = [x for x in (take_pages(e, lambda p: p != API_INDEX)[0] for e in it['pages']) if x is not None]
-    products.append({'product': API_DIVISION, 'icon': 'code', 'description': 'Every endpoint, by product',
-                     'menu': [{'item': API_DIVISION, 'icon': 'code', 'description': 'Every endpoint, by product',
-                               'pages': index + sections}]})
+        platform = next(f for f in api_families if f['product'] == 'Platform' + API_SUFFIX)
+        platform['menu'].insert(0, {'item': 'All APIs', 'icon': '/images/icons/products/code.svg',
+                                    'description': 'Every Eka API, by product', 'pages': [API_INDEX]})
+    products.extend(api_families)
 
 
 # Font Awesome stand-ins for the product icons, for API section headers.
@@ -509,47 +520,78 @@ def is_reference(page):
 
 
 def reference_targets(products):
-    """Each product's first page in the API Reference division, and a map from
-    every page to it. Pages inside the division map to their own section."""
-    api = next((p for p in products if p['product'] == API_DIVISION), None)
-    sections = {s['group']: s for s in api['menu'][0]['pages'] if isinstance(s, dict)} if api else {}
+    """Each docs product's first page in its API twin, a map from every page to
+    it, and the set of pages inside the API Reference (for the picker)."""
+    twins = {it['item'][:-len(API_SUFFIX)]: it for fam in products if is_api_family(fam)
+             for it in fam['menu'] if it['item'].endswith(API_SUFFIX)}
     targets, page_map = [], {}
     for fam in products:
-        if fam['product'] == API_DIVISION:
+        if is_api_family(fam):
             continue
         for it in fam['menu']:
-            sec = sections.get(it['item'])
-            first = next(walk_pages(sec), None) if sec else None
+            twin = twins.get(it['item'])
+            first = next(walk_pages(twin), None) if twin else None
             targets.append((fam['product'], it['item'], it.get('description', ''), first))
-            for p in list(walk_pages(it)) + (list(walk_pages(sec)) if sec else []):
+            for p in list(walk_pages(it)) + (list(walk_pages(twin)) if twin else []):
                 page_map['/' + p] = '/' + first if first else '/' + API_INDEX
+    page_map['/' + API_INDEX] = '/' + API_INDEX
     return targets, page_map
 
 
-def write_link_js(page_map):
+def docs_targets(products):
+    """Map every API Reference page to its product's first docs page."""
+    docs = {it['item']: it for fam in products if not is_api_family(fam) for it in fam['menu']}
+    out = {}
+    for fam in products:
+        if not is_api_family(fam):
+            continue
+        for it in fam['menu']:
+            twin = docs.get(it['item'][:-len(API_SUFFIX)]) if it['item'].endswith(API_SUFFIX) else None
+            home = (twin.get('href', '').lstrip('/') or next(walk_pages(twin), None)) if twin else None
+            for p in walk_pages(it):
+                out['/' + p] = '/' + (home or 'user-guides/get-started')
+    return out
+
+
+def api_pages(products):
+    return sorted('/' + p for fam in products if is_api_family(fam) for p in walk_pages(fam))
+
+
+def write_link_js(page_map, in_api=(), docs_map=None):
     body = f'''// Generated by scripts/build-nav.py. Do not edit.
 // Points the navbar "API Reference" link at the current product's reference.
 (function () {{
   var MAP = {json.dumps(page_map, separators=(',', ':'))};
   var FALLBACK = "/{API_INDEX}";
-  function target() {{
-    return MAP[window.location.pathname.replace(/\\/$/, "")] || FALLBACK;
+  var API = new Set({json.dumps(list(in_api), separators=(',', ':'))});
+  var DOCS = {json.dumps(docs_map or {}, separators=(',', ':'))};
+  function here() {{ return window.location.pathname.replace(/\\/$/, ""); }}
+  // The navbar's "API Reference" and "Docs" links follow the product you are in.
+  function target(label) {{
+    if (label === "Docs") return DOCS[here()] || "/user-guides/get-started";
+    return MAP[here()] || FALLBACK;
   }}
-  function isButton(a) {{
-    return a && a.textContent.trim() === "API Reference" && a.closest("header, nav, #navbar");
+  function labelOf(a) {{
+    if (!a || !a.closest("header, nav, #navbar")) return null;
+    var t = a.textContent.trim();
+    return t === "API Reference" || t === "Docs" ? t : null;
   }}
   function update() {{
+    // In the API Reference the product picker shows the API families; elsewhere the docs families.
+    document.documentElement.classList.toggle("eka-api-mode", API.has(window.location.pathname.replace(/\\/$/, "")));
     document.querySelectorAll("a").forEach(function (a) {{
-      if (isButton(a)) a.setAttribute("href", target());
+      var l = labelOf(a);
+      if (l) a.setAttribute("href", target(l));
     }});
   }}
   // The site router navigates by the link's original address, so take the click first.
   document.addEventListener("click", function (e) {{
     var a = e.target.closest && e.target.closest("a");
-    if (!isButton(a) || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    var l = labelOf(a);
+    if (!l || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    window.location.assign(target());
+    window.location.assign(target(l));
   }}, true);
   window.addEventListener("mintlify:navigate", function () {{ setTimeout(update, 0); }});
   window.addEventListener("popstate", update);
@@ -640,9 +682,11 @@ def main():
     links = d['navbar'].setdefault('links', [])
     if not any(l.get('label') == 'API Reference' for l in links):
         links.insert(0, {'label': 'API Reference', 'href': '/' + API_INDEX})
+    if not any(l.get('label') == 'Docs' for l in links):
+        links.insert(0, {'label': 'Docs', 'href': '/user-guides/get-started'})
     for fam in new['products']:
         for it in fam['menu']:
-            if fam['product'] == API_DIVISION or 'href' in it:
+            if is_api_family(fam) or 'href' in it:
                 continue
             if it['item'] == 'HIE-CM' and any(isinstance(e, dict) and e.get('group') == 'Milestone 1' for e in it.get('pages', []) + it.get('groups', [])):
                 restructure_hiecm(it)
@@ -655,7 +699,7 @@ def main():
     for _ in range(5):  # shape until nothing changes, so one run gives the final tree
         before = json.dumps(new)
         for fam in new['products']:
-            if fam['product'] != API_DIVISION:
+            if not is_api_family(fam):
                 for it in fam['menu']:
                     if it.get('pages'):
                         it['pages'] = [shape(e) for e in it['pages']]
@@ -664,7 +708,7 @@ def main():
     if '--page-icons' in sys.argv:
         set_page_icons(new['products'])
     targets, page_map = reference_targets(new['products'])
-    write_link_js(page_map)
+    write_link_js(page_map, api_pages(new['products']), docs_targets(new['products']))
     write_index(targets)
     d['navigation'] = new
     json.dump(d, open(DOCS, 'w'), indent=2, ensure_ascii=False)
