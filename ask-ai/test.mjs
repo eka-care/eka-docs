@@ -9,7 +9,7 @@ const out = join(tmpdir(), `abdm-widget-test-${process.pid}.mjs`);
 await build({
   stdin: {
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
-               export {mockTransport} from './src/mock-transport';
+               export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport} from './src/transport';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
@@ -37,7 +37,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -188,6 +188,11 @@ await new Promise((resolve) => t.send({text: 'hi', files: []}, {
 }));
 assert.match(got.text, /mock/i, 'a mock reply says it is a mock');
 assert.equal(got.tips.length, 2);
+assert.ok(!/support page/i.test(got.text), 'the mock does not send readers to a support page');
+assert.ok(!/\u2014/.test(got.text), 'no em dash in the mock reply');
+// A tip is never the question just asked, however it was spaced or cased.
+assert.deepEqual(tipsAfter('  how do I   get an API KEY? '), ['What can the Ask AI assistant do?']);
+assert.equal(tipsAfter('Something else').length, 2);
 assert.equal(got.done, 1);
 assert.ok(got.progress.length >= 1);
 // detach: nothing more arrives

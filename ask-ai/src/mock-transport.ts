@@ -26,8 +26,15 @@ function replyTo(message: OutgoingMessage): string[] {
     ...message.files.map((file) => `the file ${file.name}`),
   ].filter(Boolean);
   if (extras.length) pieces.push(`It came with ${extras.join(' and ')}. `);
-  pieces.push('For a real answer, use the support page.');
+  // Ends on what was said, the last piece carrying no trailing space.
+  pieces[pieces.length - 1] = pieces[pieces.length - 1].trimEnd();
   return pieces;
+}
+
+/** The tips, less any that is the question just asked. */
+export function tipsAfter(asked: string): string[] {
+  const plain = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
+  return TIPS.filter((tip) => plain(tip) !== plain(asked));
 }
 
 export function mockTransport(opts: {delayMs?: number} = {}): Transport {
@@ -53,7 +60,7 @@ export function mockTransport(opts: {delayMs?: number} = {}): Transport {
       const steps: (() => void)[] = [
         () => handlers.onProgress('Searching the Eka docs'),
         ...replyTo(message).map((piece) => () => handlers.onText(piece)),
-        () => handlers.onTips(TIPS),
+        () => handlers.onTips(tipsAfter(message.text)),
         () => handlers.onDone(),
       ];
       steps.forEach((step, index) => {
