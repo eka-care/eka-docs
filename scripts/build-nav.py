@@ -118,7 +118,7 @@ def build(d):
         },
         {
             'product': 'Integrations', 'icon': 'folder-open',
-            'description': "Read patients, visits, admissions and payments from Eka's EMR into your own tools.",
+            'description': "Bring schedules, admissions and billing from Eka's EMR into the tools your team uses.",
             'menu': [
                 item('EMR', 'stethoscope', 'Patients, appointments and prescriptions',
                      [{'group': 'Guides', 'pages': [x for x in pd['EMR']['pages'] if x != 'docs/billing/payments']}, pd['Console'],
