@@ -117,8 +117,8 @@ def build(d):
             ],
         },
         {
-            'product': 'Information Management', 'icon': 'folder-open',
-            'description': 'Patients, appointments, admissions and billing, kept in one record your system reads and writes.',
+            'product': 'Integrations', 'icon': 'folder-open',
+            'description': "Read patients, visits, admissions and payments from Eka's EMR into your own tools.",
             'menu': [
                 item('EMR', 'stethoscope', 'Patients, appointments and prescriptions',
                      [{'group': 'Guides', 'pages': [x for x in pd['EMR']['pages'] if x != 'docs/billing/payments']}, pd['Console'],

@@ -55,7 +55,7 @@ api-sdk/<slug>/                  reference: what you look up while building
 
 Slugs in use: `scribe`, `agents`, `models`, `datasets`, `emr`, `ipd`, `billing`, `health-records`, `hie-cm`, `nhcx`, `uhi`, `get-started`, `auth`, `webhooks`, `encryption`, `sdks`. `/api-sdk/index` is the all-products API index.
 
-The family (AI, Information Management, ABDM, Platform) is never in the URL: families are renamed and products move between them, and the picker already shows the family. The product's spec and `product.yaml` stay where they are; `product.yaml` lists the page folders under `pages:` and where `--fix` creates reference pages under `new_reference_pages:`.
+The family (AI, Integrations, ABDM, Platform) is never in the URL: families are renamed and products move between them, and the picker already shows the family. The product's spec and `product.yaml` stay where they are; `product.yaml` lists the page folders under `pages:` and where `--fix` creates reference pages under `new_reference_pages:`.
 
 Moving a page means a permanent redirect from its old URL in `docs.json`, in the same pull request. `scripts/route-map.json` records the move made on 2026-10-14 from the old `api-reference/…`, `integrations/…` and product-folder paths.
 
@@ -71,12 +71,12 @@ Every ladder page follows the budgets, the In short rule and the sentence limits
 
 ## Navigation shape
 
-`scripts/build-nav.py` builds `docs.json` from the families on the landing page (AI, Information Management, ABDM, Platform), each a Mintlify product with a menu of products. It also:
+`scripts/build-nav.py` builds `docs.json` from the families on the landing page (AI, Integrations, ABDM, Platform), each a Mintlify product with a menu of products. It also:
 
 - makes each section's landing page its title: a group whose first page is an overview, intro or getting-started page gets it as `root`, so there is no separate "Overview" row under the title; a group with only one page becomes that page
 - gives every group an icon, from its name
 - keeps every product's sidebar to three levels (section, group, page) in one order: Get started, Journeys, Workflows, Guides (one group per milestone or area, its overview as the title), Webhooks, Resources (errors, testing, SDKs, changelog). HIE-CM is built this way by `restructure_hiecm`; other products move to it as they come onto the ladder
-- moves every endpoint page into a separate **API Reference** that mirrors the docs: four API families (AI API, Information Management API, ABDM API, Platform API), one API product per docs product (Scribe API, HIE-CM API, ...) with its own sidebar opened by the product's API overview (`API_SECTION_HOME`), then spec-tag sections, then endpoints. The product picker shows the docs families in the docs and the API families in the API Reference (`api-reference-link.js` sets `html.eka-api-mode`). The navbar **Docs** and **API Reference** links move between a product's docs and its API. A product with no docs pages left (IPD) links straight to its API. Platform API starts with **All APIs**, the generated index
+- moves every endpoint page into a separate **API Reference** that mirrors the docs: four API families (AI API, Integrations API, ABDM API, Platform API), one API product per docs product (Scribe API, HIE-CM API, ...) with its own sidebar opened by the product's API overview (`API_SECTION_HOME`), then spec-tag sections, then endpoints. The product picker shows the docs families in the docs and the API families in the API Reference (`api-reference-link.js` sets `html.eka-api-mode`). The navbar **Docs** and **API Reference** links move between a product's docs and its API. A product with no docs pages left (IPD) links straight to its API. Platform API starts with **All APIs**, the generated index
 
 Re-run it after moving groups in `docs.json`; never hand-edit what it generates (`api-reference-link.js`, `api-sdk/index.mdx`).
 
