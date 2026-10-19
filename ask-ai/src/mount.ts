@@ -38,7 +38,18 @@ export function install(win: Window = window, doc: Document = document): boolean
     win.customElements.define('eka-ask-ai', SupportAgentElement);
   }
   const run = () => {
-    if (doc.body) mount(doc);
+    if (doc.body) (mount(doc) as SupportAgentElement).refreshGround?.();
+  };
+  // The ground under the bar changes when the page scrolls onto another
+  // section or a theme toggle is pressed; read it again, at most once a frame.
+  let groundQueued = false;
+  const ground = () => {
+    if (groundQueued) return;
+    groundQueued = true;
+    win.requestAnimationFrame(() => {
+      groundQueued = false;
+      run();
+    });
   };
   // The search dialog is rendered on open and dropped on close, so the Ask AI
   // row is put back whenever the page changes, at most once a frame.
@@ -63,6 +74,13 @@ export function install(win: Window = window, doc: Document = document): boolean
   }
   win.addEventListener('mintlify:navigate', () => win.setTimeout(run, 0));
   win.addEventListener('popstate', run);
+  win.addEventListener('scroll', ground, {passive: true});
+  // A theme toggle may fade its background in, so look again once it settles.
+  win.addEventListener('click', () => {
+    ground();
+    win.setTimeout(ground, 400);
+  });
+  win.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', ground);
   win.setInterval(run, 1000);
   return true;
 }

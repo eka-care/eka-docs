@@ -1062,19 +1062,32 @@ function Widget({
  * history="off" exists.
  */
 /**
- * Which way the host page's ground runs, read from the first ancestor that
- * actually paints a background. The panel's fallback palette follows the page
- * it is on rather than the reader's operating system: a light page on a
- * machine set to dark is still a light page, and a dark panel dropped into it
- * looks like a bug. Where nothing paints, the system preference decides.
+ * Which way a painted background runs, from its computed colour: null where
+ * it paints nothing, so the caller keeps looking further down.
  */
-function groundOf(): 'light' | 'dark' {
-  for (let el: HTMLElement | null = document.body; el; el = el.parentElement) {
-    const parts = /^rgba?\(([^)]+)\)/.exec(getComputedStyle(el).backgroundColor);
-    if (!parts) continue;
-    const [r, g, b, a = 1] = parts[1].split(',').map(Number);
-    if (!a) continue;
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128 ? 'dark' : 'light';
+export function groundOfColor(background: string): 'light' | 'dark' | null {
+  const parts = /^rgba?\(([^)]+)\)/.exec(background);
+  if (!parts) return null;
+  const [r, g, b, a = 1] = parts[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+  if (!a) return null;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128 ? 'dark' : 'light';
+}
+
+/**
+ * Which way the host page's ground runs where the bar sits: the first thing
+ * under the foot of the viewport that actually paints a background. Read
+ * there, not from body, because a page can paint its own ground over the
+ * site's: the landing page has its own light and dark, independent of the
+ * site theme. A light page on a machine set to dark is still a light page,
+ * and a dark bar dropped into it looks like a bug. Where nothing paints, the
+ * system preference decides.
+ */
+function groundOf(host: Element): 'light' | 'dark' {
+  const under = document.elementsFromPoint(window.innerWidth / 2, window.innerHeight - 45);
+  for (const el of [...under, document.body, document.documentElement]) {
+    if (!el || el === host) continue;
+    const ground = groundOfColor(getComputedStyle(el).backgroundColor);
+    if (ground) return ground;
   }
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
@@ -1102,6 +1115,7 @@ export class SupportAgentElement extends Base {
   private root: ShadowRoot | null = null;
   private page: PageAttachment | null = null;
   private asked: Asked | null = null;
+  private autoGround = false;
 
   connectedCallback() {
     if (!this.root) {
@@ -1110,9 +1124,21 @@ export class SupportAgentElement extends Base {
       style.textContent = css;
       this.root.append(style);
       // An embedder who sets this themselves is taken at their word.
-      if (!this.hasAttribute('ground')) this.setAttribute('ground', groundOf());
+      this.autoGround = !this.hasAttribute('ground');
     }
+    this.refreshGround();
     this.paint();
+  }
+
+  /**
+   * Reads the page's ground again. The page can change under the bar, by a
+   * theme toggle or by scrolling onto a section with another background, so
+   * the mount calls this whenever either may have happened.
+   */
+  refreshGround() {
+    if (!this.autoGround) return;
+    const ground = groundOf(this);
+    if (this.getAttribute('ground') !== ground) this.setAttribute('ground', ground);
   }
 
   attributeChangedCallback() {

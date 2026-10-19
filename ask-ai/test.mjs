@@ -12,6 +12,7 @@ await build({
                export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport} from './src/transport';
                export {pastHero} from './src/FloatingBar';
+               export {groundOfColor} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
@@ -38,7 +39,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, pastHero, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, pastHero, groundOfColor, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -251,6 +252,15 @@ assert.equal(pastHero(heroAt(600)), false, 'hero on screen: the bar waits');
 assert.equal(pastHero(heroAt(1)), false, 'a sliver of hero still counts');
 assert.equal(pastHero(heroAt(0)), true, 'hero scrolled away: the bar shows');
 assert.equal(pastHero(heroAt(-300)), true);
+
+// Ground: read from the colour actually painted, so the landing page's own
+// light ground wins over the site's or the system's dark.
+assert.equal(groundOfColor('rgb(250, 250, 249)'), 'light');
+assert.equal(groundOfColor('rgb(10, 10, 10)'), 'dark');
+assert.equal(groundOfColor('rgba(0, 0, 0, 0)'), null, 'transparent paints nothing');
+assert.equal(groundOfColor('rgba(255, 255, 255, 0.8)'), 'light');
+assert.equal(groundOfColor('rgb(10 10 10 / 0.9)'), 'dark', 'space syntax');
+assert.equal(groundOfColor('transparent'), null);
 assert.throws(() => createTransport({agentId: 'a1'}), /Synapse transport not wired yet/);
 
 // mount: one element per document, however often the script runs.
@@ -287,7 +297,7 @@ const win = {
 const page = {...fakeDocument(), readyState: 'complete', addEventListener: () => calls.listen++};
 assert.equal(install(win, page), true);
 assert.equal(install(win, page), false, 'second install is a no-op');
-assert.deepEqual(calls, {listen: 2, interval: 1, define: 1, observe: 1});
+assert.deepEqual(calls, {listen: 4, interval: 1, define: 1, observe: 1});
 assert.equal(page.body.children.length, 1);
 
 // Last: this replaces a global the tests above may rely on.
