@@ -16,6 +16,10 @@ A webhook has a size limit, and a single HIP push can be larger than that. Every
 2. If `content` is empty, fetch the entry with the [Fetch data push entry API](/api-reference/user-app/abdm-connect/care-contexts/data-push-entry), passing `data.transaction_id` and the entry's `content_ref`.
 3. Decrypt `content` with `key_information` and your private key, whether it came inline or from the API, and verify `checksum`.
 
+<Warning>
+An entry can be fetched for **5 minutes** after the webhook is sent. After that it is deleted and the API returns `404`, so fetch entries as soon as you receive the webhook.
+</Warning>
+
 <Note>
 We recommend fetching every entry through the [Fetch data push entry API](/api-reference/user-app/abdm-connect/care-contexts/data-push-entry). Inline `content` may be removed from this webhook in a future version.
 </Note>
@@ -78,7 +82,7 @@ We recommend fetching every entry through the [Fetch data push entry API](/api-r
         - `checksum` Checksum of the plain-text FHIR data, to verify after decryption.
         - `content` The encrypted FHIR data. Empty when the entry did not fit in the webhook; see [Large pushes](#large-pushes).
         - `media` Media type of the decrypted data, `application/fhir+json`.
-        - `content_ref` Reference to fetch this entry with the [Fetch data push entry API](/api-reference/user-app/abdm-connect/care-contexts/data-push-entry). Always present.
+        - `content_ref` Reference to fetch this entry with the [Fetch data push entry API](/api-reference/user-app/abdm-connect/care-contexts/data-push-entry). Always present. Valid for 5 minutes after the webhook is sent.
     - **`key_information`** : Contains the cryptographic key material and related parameters required for secure ECDH-based key exchange between HIU and HIP.
         - `crypto_alg` The cryptographic algorithm used for key exchange (e.g., "ECDH").
         - `curve` The elliptic curve used in ECDH key generation (e.g., "Curve25519", "P-256").
