@@ -11,6 +11,7 @@ await build({
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
                export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport} from './src/transport';
+               export {pastHero} from './src/FloatingBar';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
@@ -37,7 +38,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, pastHero, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -241,6 +242,15 @@ assert.equal(after, 0, 'detach stops delivery');
 }
 // No agent id is the mock; an agent id is Synapse, which is not wired yet.
 assert.equal(createTransport({}).isMock, true);
+
+// The bar: shown where there is no hero, and on the landing page only once
+// the hero's bottom edge has left the top of the viewport.
+const heroAt = (bottom) => ({getBoundingClientRect: () => ({bottom})});
+assert.equal(pastHero(null), true, 'no hero: the bar shows');
+assert.equal(pastHero(heroAt(600)), false, 'hero on screen: the bar waits');
+assert.equal(pastHero(heroAt(1)), false, 'a sliver of hero still counts');
+assert.equal(pastHero(heroAt(0)), true, 'hero scrolled away: the bar shows');
+assert.equal(pastHero(heroAt(-300)), true);
 assert.throws(() => createTransport({agentId: 'a1'}), /Synapse transport not wired yet/);
 
 // mount: one element per document, however often the script runs.

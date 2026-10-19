@@ -45,8 +45,9 @@ and asks the question at once.
 
 The script mounts one element on its own, at the end of `body`, if the page
 has none, and checks again on Mintlify's client-side navigation. The element
-draws a floating "Ask AI" bar at the foot of the page, hidden while the panel
-is open; the bar is what calls `ask()`.
+draws a compact "Ask AI" bar at the foot of the page, hidden while the panel
+is open; the bar is what calls `ask()`. On a page with an element `#hero` (the
+landing page) the bar stays hidden until the hero has scrolled out of view.
 
 ### Attachments
 

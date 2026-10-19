@@ -99,6 +99,7 @@
 
 /* One line at the foot of every page to ask in. It opens the panel with the
    question asked, and steps aside while the panel is open. */
+/* Compact, after Fern's: 360px by 42px, 14px type. */
 .ask-ai__float {
   position: fixed;
   left: 50%;
@@ -107,20 +108,37 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: min(560px, calc(100vw - 32px));
-  padding: 0.375rem 0.375rem 0.375rem 1rem;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 32px));
+  height: 42px;
+  padding: 6px 6px 6px 12px;
   border: 1px solid var(--aa-border);
   border-radius: 999px;
   background: var(--aa-surface);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -12px rgb(0 0 0 / 0.18);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.06);
   font-family: var(--aa-font-sans);
   transform: translateX(-50%);
-  animation: aa-float-in var(--aa-dur-normal) var(--aa-ease-out);
-  transition: border-color var(--aa-dur-fast) var(--aa-ease-out);
+  transition:
+    opacity var(--aa-dur-normal) var(--aa-ease-out),
+    transform var(--aa-dur-normal) var(--aa-ease-out),
+    visibility 0s linear 0s,
+    border-color var(--aa-dur-fast) var(--aa-ease-out);
 }
 
 .ask-ai__float[hidden] {
   display: none;
+}
+
+/* Waiting for the hero to scroll away: out of sight, out of the tab order. */
+.ask-ai__float.is-away {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition:
+    opacity var(--aa-dur-normal) var(--aa-ease-out),
+    transform var(--aa-dur-normal) var(--aa-ease-out),
+    visibility 0s linear var(--aa-dur-normal);
 }
 
 .ask-ai__float:focus-within {
@@ -134,20 +152,19 @@
 }
 
 .ask-ai__float-mark svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
-/* 1rem, because a phone zooms the page into any smaller field it focuses. */
 .ask-ai__float-input {
   flex: 1 1 auto;
   min-width: 0;
-  height: 2.25rem;
+  height: 100%;
   padding: 0;
   border: 0;
   background: none;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 14px;
   color: var(--aa-heading);
 }
 
@@ -164,8 +181,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -173,6 +190,11 @@
   color: var(--aa-accent-contrast);
   cursor: pointer;
   transition: opacity var(--aa-dur-fast) var(--aa-ease-out);
+}
+
+.ask-ai__float-send svg {
+  width: 14px;
+  height: 14px;
 }
 
 .ask-ai__float-send:disabled {
@@ -185,23 +207,22 @@
   outline-offset: 2px;
 }
 
-@keyframes aa-float-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 8px);
-  }
-}
-
 @media (max-width: 767px) {
   .ask-ai__float {
     bottom: 16px;
   }
+
+  /* 16px, because a phone zooms the page into any smaller field it focuses. */
+  .ask-ai__float-input {
+    font-size: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ask-ai__float {
-    animation: none;
-    transition: none;
+  .ask-ai__float,
+  .ask-ai__float.is-away {
+    transform: translateX(-50%);
+    transition: visibility 0s;
   }
 }
 
