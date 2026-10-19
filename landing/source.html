@@ -100,11 +100,13 @@ nav{height:64px;max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-
 .mi .pi svg{width:15px;height:15px;stroke-width:1.5}
 .mi b{display:block;font-size:.84rem;font-weight:550;color:var(--ink)}
 .mi span{display:block;font-size:.74rem;color:var(--ink-3);line-height:1.4;margin-top:1px}
-/* The whole platform leads the Products menu: full width and highlighted in the tonal lilac of the primary buttons. */
-.mi.wide{grid-column:1 / -1;margin-bottom:4px;background:var(--btn);box-shadow:inset 0 0 0 1px var(--btn-edge)}
+/* The menu closes on a call to learn about the whole platform: full width, in the tonal lilac of the primary buttons,
+   with an arrow. Nobody builds the whole platform, so it follows the products rather than leading them. */
+.mi.wide{grid-column:1 / -1;margin-top:4px;align-items:center;background:var(--btn);box-shadow:inset 0 0 0 1px var(--btn-edge)}
 .mi.wide:hover,.mi.wide:focus-visible{background:var(--btn-hover)}
 .mi.wide b{color:var(--btn-ink)}
 .mi.wide .pi{border-color:var(--btn-edge);color:var(--btn-ink)}
+.mi.wide .go{flex:none;margin-left:auto;width:16px;height:16px;color:var(--btn-ink)}
 .mcol h4{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.64rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:4px 10px 6px}
 .mcol h4 i{width:7px;height:7px;border-radius:50%;background:var(--fam)}
 .mcol .mi .pi{color:var(--fam)}
@@ -1316,7 +1318,8 @@ unlock(Object.keys(SCENES).flatMap(k=>k===sceneKey?built:loadBuilt(k)));
   const SOL_PAGE={mr:"/docs/scribe/overview",ag:"/docs/products/agents",px:"/docs/products/patient-experiences",
     ci:"/docs/products/clinical-intelligence",abdm:"/docs/products/abdm",all:"/docs/get-started/overview"};
   const META=k=>SCENES[k]||{ag:{name:"Agents",who:"Agents with a purpose, built on Eka's clinical tools"}}[k];
-  sol.innerHTML=["all","mr","ag","px","ci","abdm"].map(k=>`<a class="mi${k==="all"?" wide":""}" role="menuitem" href="${SOL_PAGE[k]}"><span class="pi">${SCENE_SVG[k]}</span><div><b>${META(k).name}</b><span>${META(k).who}</span></div></a>`).join("");
+  sol.innerHTML=["mr","ag","px","ci","abdm"].map(k=>`<a class="mi" role="menuitem" href="${SOL_PAGE[k]}"><span class="pi">${SCENE_SVG[k]}</span><div><b>${META(k).name}</b><span>${META(k).who}</span></div></a>`).join("")+
+    `<a class="mi wide" role="menuitem" href="${SOL_PAGE.all}"><span class="pi">${SCENE_SVG.all}</span><div><b>Know more about the platform</b><span>How the products share keys, patients and medical knowledge</span></div>${CHEV("M5 12h14M13 6l6 6-6 6").replace("<svg ",'<svg class="go" ')}</a>`;
   const prod=$("#mega-prod");
   const INT_MENU=[["Integrations","int",[["EMR","/docs/emr/patients","clipboard-list","Appointments, visits and clinic activity"],
       ["IPD","/api-sdk/ipd/setup/get-ipd-setup-data","bed-double","Admissions, beds and discharge"],["Billing","/docs/billing/payments","receipt","Invoices and payments"]]],
