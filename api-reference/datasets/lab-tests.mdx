@@ -1,9 +1,9 @@
 ---
-title: "Lab tests"
+title: "Labs"
 description: "What you can upload for each lab test, imaging study, panel or package, which columns are mandatory, and the values each one accepts."
 ---
 
-Your lab test catalog is everything your clinicians can order: laboratory tests, imaging, functional tests, panels and packages. Each row is one orderable item, identified by your own id. Use `type=lab_test` with the API, or pick **Lab Tests** in the console.
+Your lab catalog is everything your clinicians can order: laboratory tests, imaging, functional tests, panels and packages. Each row is one orderable item, identified by your own id. Use `type=lab_test` with the API, or pick **Labs** in the console.
 
 <Note>
 **Always mandatory:** `lab_test_id`, `name`, `kind` and `result_type`.
@@ -11,8 +11,20 @@ Your lab test catalog is everything your clinicians can order: laboratory tests,
 **Mandatory in some cases:**
 - `specimen` when `kind` is `laboratory`
 - `unit` when `result_type` is `numerical`
-- `panel_members` when `kind` is `panel`
+- `panel_member_ids` (or, for older panels, `panel_members`) when `kind` is `panel`
 </Note>
+
+## In the console
+
+The **Labs** tab shows your catalog three ways:
+
+| View | Shows |
+|---|---|
+| **Investigations** | Every lab: everything a doctor can order. |
+| **Parameters** | Labs that return a value (`result_type` other than `na`), not counting panels and packages. |
+| **Panels** | Labs whose `kind` is `panel`. Open one to see its members, add members by searching your labs, or remove them. |
+
+In the console a panel can only be saved when every member is a lab in your catalog.
 
 ## Tests, results and panels
 
@@ -33,10 +45,10 @@ Don't upload a panel as if it were a single test. A row like `Complete Blood Cou
     Each member is an ordinary test with its own `lab_test_id`, `kind`, `result_type`, `specimen` and `unit`. For a CBC: Hemoglobin, WBC Count, Platelet Count, and so on.
   </Step>
   <Step title="Add the panel row">
-    Set `kind` to `panel` and `result_type` to `na`. Put the member test names in `panel_members` and their `lab_test_id`s in `panel_member_ids`, both separated by `|` and in the same order.
+    Set `kind` to `panel` and `result_type` to `na`. Put the members' `lab_test_id`s in `panel_member_ids`, separated by `|`. You don't need to fill in `panel_members`: Eka sets it from the members' names, in the same order.
   </Step>
   <Step title="Upload the members and the panel together">
-    Send them in the same file or request. Eka doesn't check that every id in `panel_member_ids` exists in your catalog, so make sure each one matches a member row.
+    Send them in the same file or request, or add the members first. Every id in `panel_member_ids` must be a lab already in your catalog or a row in the same upload; otherwise that panel is rejected with an error naming the id. A member can't itself be a panel or a package.
   </Step>
 </Steps>
 
@@ -70,8 +82,8 @@ If you map rows to Eka ids, map each member test as well as the panel. Features 
 | `specimen` | When `kind` is `laboratory` | The sample the test runs on. | Text, up to 100 characters | `Blood`, `Urine` |
 | `unit` | When `result_type` is `numerical` | Unit the result is reported in. | Text, up to 32 characters | `mg/dL` |
 | `unit_id` | No | Your id for that unit. | Text, up to 64 characters | `UNIT-MG-DL` |
-| `panel_members` | When `kind` is `panel` | Names of the tests in the panel. | Several values separated by `\|` | `Sodium\|Potassium\|Chloride` |
-| `panel_member_ids` | No | Your ids for those tests, in the same order. | Several values separated by `\|` | `LAB2001\|LAB2002\|LAB2003` |
+| `panel_members` | No | Names of the tests in the panel. Filled in for you from the members when you send `panel_member_ids`. | Several values separated by `\|` | `Sodium\|Potassium\|Chloride` |
+| `panel_member_ids` | When `kind` is `panel` | The `lab_test_id`s of the tests in the panel. Each must be a lab in your catalog or a row in the same upload. | Several values separated by `\|` | `LAB2001\|LAB2002\|LAB2003` |
 | `method` | No | Testing method. | Text, up to 100 characters | `ELISA`, `CHEMILUMINESCENCE (CLIA)` |
 | `body_part` | No | Imaging only: the body part. | Text, up to 100 characters | `Chest` |
 | `laterality` | No | Imaging only: which side. | Text, up to 32 characters | `Left`, `Bilateral` |
@@ -88,8 +100,8 @@ If you map rows to Eka ids, map each member test as well as the panel. Features 
 | An X-ray, ultrasound or scan | `imaging` | `na` | `body_part`, `laterality`, `view` if you have them |
 | A measurement taken on the patient, like blood pressure or ECG | `functional` | `numerical` or `na` | `unit` if numerical |
 | A non-routine test, like genetic or molecular testing | `special_test` | whatever its result is | `specimen` and `unit` if they apply |
-| One order that returns several results, like a CBC or lipid profile | `panel` | `na` | `panel_members`, plus a row for each member |
-| A commercial bundle of tests and panels, like a full body checkup | `package` | `na` | `panel_members` (optional) |
+| One order that returns several results, like a CBC or lipid profile | `panel` | `na` | `panel_member_ids`, plus a row for each member |
+| A commercial bundle of tests and panels, like a full body checkup | `package` | `na` | `panel_member_ids` (optional) |
 
 <Warning>
 `kind` and `result_type` must be written exactly as shown, in lowercase. `Laboratory` or `Numerical` is rejected.
@@ -118,7 +130,7 @@ LAB1003,Chest X-Ray,imaging,na
 
 ## Example JSON
 
-The same records sent to [Create or update records](/api-reference/datasets/write). In JSON, multi-value fields are lists.
+The CBC panel and its members sent to [Create or update records](/api-reference/datasets/write). In JSON, multi-value fields are lists. The panel sends only `panel_member_ids`; Eka fills in `panel_members` from the members.
 
 ```json
 [
@@ -134,12 +146,27 @@ The same records sent to [Create or update records](/api-reference/datasets/writ
     "unit": "g/dL"
   },
   {
+    "lab_test_id": "LAB1002",
+    "name": "WBC Count",
+    "kind": "laboratory",
+    "result_type": "numerical",
+    "specimen": "Blood",
+    "unit": "cells/mcL"
+  },
+  {
+    "lab_test_id": "LAB1003",
+    "name": "Platelet Count",
+    "kind": "laboratory",
+    "result_type": "numerical",
+    "specimen": "Blood",
+    "unit": "cells/mcL"
+  },
+  {
     "lab_test_id": "LAB1010",
     "name": "Complete Blood Count",
     "aliases": ["CBC", "Hemogram"],
     "kind": "panel",
     "result_type": "na",
-    "panel_members": ["Hemoglobin", "WBC Count", "Platelet Count"],
     "panel_member_ids": ["LAB1001", "LAB1002", "LAB1003"]
   }
 ]
@@ -148,8 +175,9 @@ The same records sent to [Create or update records](/api-reference/datasets/writ
 ## Common mistakes
 
 - **A laboratory test without `specimen`, or a numerical one without `unit`.** The whole upload is rejected; the error names the row and the column.
-- **A panel without `panel_members`.** List the member test names, separated by `|`.
+- **A panel without members.** List the member ids in `panel_member_ids`, separated by `|`.
+- **A member id that isn't in your catalog.** The error reads `LAB9999 is not a lab in this catalog`. Add that lab first, include it in the same upload, or fix the id.
 - **A panel uploaded as one numerical test.** Make it a `panel` and add its member tests as rows; see [Creating a panel](#creating-a-panel).
-- **`panel_members` and `panel_member_ids` in different orders or lengths.** The first name goes with the first id, the second with the second, and so on.
+- **Changing a linked panel's members by name.** Once a panel has `panel_member_ids`, send new ids to change its members; an update with only `panel_members` is rejected.
 - **Capitalised `kind` or `result_type`.** Use the lowercase values exactly as listed.
 - **A wrong `ekaid`.** Eka stores the id you send without checking it. A wrong id can attach your results to the wrong Eka test, so check each mapping against Eka's reference list.
