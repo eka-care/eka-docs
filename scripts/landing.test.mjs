@@ -120,3 +120,10 @@ test('every Build Now link opens in a new tab', () => {
   assert.ok(links.length >= 2, `${links.length} Build Now links`);
   for (const a of links) assert.match(a, /target="_blank" rel="noopener"/, a.slice(0, 90));
 });
+
+test('the closing section has only Build Now, and the steps run 01 to 04', () => {
+  assert.ok(!html.includes('closeCta'));
+  assert.ok(!html.includes('Open the recipe'));
+  // 02 · Assemble is a label inside the Choose section, so the section markers read 01, 03, 04.
+  assert.deepEqual([...html.matchAll(/data-step="(\d\d) · /g)].map((m) => m[1]), ['01', '03', '04']);
+});
