@@ -15,7 +15,8 @@
 - Families, in order: `Solutions`, `Integrations`, `Resources`.
 - Solutions items, in order: `Scribe`, `Document Parsing`, `Agents`, `Medical Knowledge`, `Patient Experiences`, `ABDM Connect`, `NHCX`, `UHI`.
 - Integrations items, in order: `Overview`, `Eka EMR`, `IPD`, `Billing`, `Health Records`.
-- Resources items, in order: `Get started`, `Auth`, `Webhooks`, `Encryption`, `SDKs`, `All APIs`, `Research`, `Changelog`.
+- Resources items, in order: `Get started`, `Auth`, `Encryption`, `All APIs`, `Research`, `Changelog`.
+- The Platform `Webhooks` and `SDKs` items are removed. Their pages go into product `APIs & SDKs` tabs per the spec's table: the Webhooks docs, API and Webhook SDK → Eka EMR, Android EkaScribe SDK → Scribe, Android Records SDK → Health Records, TypeScript and Python SDKs → Eka EMR.
 - Item tabs: `Documentation`, `APIs & SDKs`, `Changelog`. There is no `Cook Book` tab and no `Release Notes` tab.
 - Product sidebar order: Overview, Get started, Guides, Webhooks, Build with AI, Resources. A section with nothing in it is left out.
 - Every page listed in `docs.json` today appears exactly once afterwards.
@@ -57,6 +58,7 @@
   - `test_research_moved`: `docs/models/spotlight` is under the `Research` item and nowhere under `Document Parsing`.
   - `test_patient_experiences`: the `Patient Experiences` item's pages equal `['docs/products/patient-experiences']`, and that page is not under `Get started`.
   - `test_tabs`: after `tabify()`, no item has a tab named `Release Notes` or `Cook Book`, and `Changelog` is an item under `Resources`.
+  - `test_platform_split`: `Resources` has no `Webhooks` or `SDKs` item. `api-sdk/webhooks/register-webhook`, `docs/webhooks/webhook-signature`, `api-sdk/sdks/sdks/backend/webhook-sdk`, `api-sdk/sdks/sdks/web-sdk/getting-started` and `api-sdk/sdks/sdks/backend/ekapython-sdk` sit in Eka EMR's `APIs & SDKs` tab. `api-sdk/sdks/sdks/android/ekascribe` sits in Scribe's, and `api-sdk/sdks/sdks/android/medical-records` in Health Records'.
 - [ ] **Step 2: Run the tests and confirm they fail.** Run `python3 -m unittest scripts/test_build_nav.py -v`. Expected: FAIL with `AttributeError: ... regroup`.
 - [ ] **Step 3: Implement.**
   - **Families.** Docs families `AI` and `ABDM` merge into `Solutions` (icon `sparkles`, description "Build your own tools on Eka's APIs, MCP servers and SDKs."). `Platform` becomes `Resources`. The API twins (`AI API`, `ABDM API`, `Platform API`) follow with `API_SUFFIX`.
@@ -68,7 +70,7 @@
   - **Name-keyed constants.** Rename keys in `ICONS`, `API_HOME`, `API_SECTION_HOME`, `ICONS_FA`, `CHANGELOGS` and `RECIPES`, in the `restructure_hiecm` guard, and in the two `'Platform'` lookups.
   - **Icons.** `Patient Experiences` uses `comments`, `Research` uses `star` and `Changelog` uses `clock-rotate-left`. Vendor the Lucide SVGs under `images/icons/products/` as the other items do.
   - **Invariant.** In `main()`, assert the page multiset is unchanged around `regroup()` on every run, and exit 1 with the dropped or duplicated paths otherwise.
-- [ ] **Step 4: Run the tests and confirm they pass.** Run `python3 -m unittest scripts/test_build_nav.py -v`. Expected: 6 passed.
+- [ ] **Step 4: Run the tests and confirm they pass.** Run `python3 -m unittest scripts/test_build_nav.py -v`. Expected: 7 passed.
 - [ ] **Step 5: Regenerate and check the result.**
   - Run `python3 scripts/build-nav.py && node scripts/build-landing.mjs`. Expected: no `dropped` or `duplicate` lines.
   - Run `npx mint broken-links`. Expected: no links broken that were not broken before. Record the baseline count first with `git stash`.
@@ -220,12 +222,14 @@
 - [ ] **Step 1: Write the failing test.** `scripts/landing.test.mjs` extracts the `GROUPS` literal and the generated `J` from `landing/source.html`.
   - `every GROUPS entry resolves in J`: for each `[family, item]`, `J[family][item]` exists.
   - `nav labels`: the three `.nvb` button texts equal `['Solutions', 'Integrations', 'Resources']`.
+  - `resources menu`: `#mega-res` contains no `Docs`, `API reference`, `Cookbook` or `SDKs` item, and does contain `Auth`, `Encryption` and `Research`. `INT_MENU` has no `Platform` group.
 - [ ] **Step 2: Run it.** Run `node --test scripts/landing.test.mjs`. Expected: FAIL, because `GROUPS` still names `AI` and `Platform`, and the first button reads `Products`.
 - [ ] **Step 3: Implement.**
   - **Nav.** Rename `Products` to `Solutions`.
   - **Solutions menu.** It lists the Solutions items under two headings, AI and ABDM. It keeps the closing "Know more about the platform" link.
   - **Integrations menu.** It lists the four Integrations items plus Overview. The Platform column leaves it.
-  - **Resources menu.** It gains Research (`/docs/models/spotlight`) and Changelog.
+  - **Resources menu.** Remove the Learn column. Two columns remain: **Platform** (Auth → `/docs/auth/invite-flow`, Encryption → `/docs/encryption/guide`) and **Stay current** (Changelog, Under the hood, Research → `/docs/models/spotlight`, Developer Discord, Open source).
+  - **Integrations menu.** Remove the Platform column from `INT_MENU`.
   - **Product grid.** Lede: "Eight solutions to build with, on one platform." Cells: Scribe, Agents, and Patient Experiences (one link to its overview). The Clinical intelligence cell becomes "Medical records and knowledge", with Document Parsing and Medical Knowledge. The ABDM cell holds ABDM Connect, NHCX and UHI. Remove the per-product sub-tiles other than these.
   - **Journey `GROUPS`.** Rekey to `Solutions`, `Integrations` and `Resources` and the new item names.
   - **Footer.** Four columns: Solutions, Integrations, Resources, Community (Discord, GitHub). Mirror the same links in `docs.json` `footer.links`.

@@ -88,8 +88,22 @@ that solution's page. Nothing is copied.
 
 ### Resources (shared by every product)
 
-Get started, Auth, Webhooks, Encryption, SDKs (all), All APIs, **Research (Spotlight)**,
-and Changelog (all products). Discord and GitHub stay as links on the navbar and in the footer.
+Get started, Auth, Encryption, All APIs, **Research (Spotlight)**, and Changelog (all
+products). Discord and GitHub stay as links on the navbar and in the footer.
+
+Webhooks and SDKs are not Resources items (Abha, 2026-10-21). Each page moves into the
+"APIs & SDKs" tab of the product it serves:
+
+| Page | Goes to |
+|---|---|
+| Webhooks: register, list, delete, signature, samples, glossary, Webhook SDK | Eka EMR (its events are appointment, prescription and receipt). Scribe's docs link to it for `v2rx.completed` |
+| Android EkaScribe SDK | Scribe |
+| Android Records SDK | Health Records |
+| TypeScript SDK (appointments, patients, medications) | Eka EMR |
+| Python SDK (`ekacare`) | Eka EMR. *My call:* most of its modules are EMR |
+| `api-sdk/sdks/sdks/ekacare-mcp` (a stub) | Folded into the MedAI Tools MCP pages |
+
+Page URLs stay the same. Only the navigation changes.
 
 ### Where Spotlight is today
 
@@ -220,7 +234,12 @@ The Agents sidebar's "Tools" group then holds only Echo Agent Kit and Synapse.
 - Integrations strip: four tiles (EMR, IPD, Billing, Health Records). EMR's tile says it has an MCP server.
 - One trust line under the hero: DPDP compliant, hosted in India. **Open item:** the
   wording is not settled, so this line ships only after Abha confirms it.
-- Resources strip gains Research (Spotlight).
+- Resources menu: the "Learn" column goes (its Docs, API reference, Cookbook and SDKs
+  links each landed on one product's page). It has two columns. **Platform** holds Auth
+  and Encryption. **Stay current** holds Changelog, Under the hood, Research (Spotlight),
+  Developer Discord and Open source. *My call:* Research sits in Stay current because
+  Spotlight is a page of releases.
+- Integrations menu: the Platform column goes. It lists the Integrations items only.
 - Footer: a proper footer block with Solutions, Integrations, Resources and Community
   columns, in the landing page and in `docs.json` `footer.links`.
 - Patient Experiences is one Solutions tile. Its overview page links to the products in
