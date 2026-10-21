@@ -1,0 +1,102 @@
+"""Tests for scripts/build-nav.py. Run: python3 -m unittest scripts/test_build_nav.py"""
+import copy
+import importlib.util
+import json
+import os
+import unittest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+spec = importlib.util.spec_from_file_location('build_nav', os.path.join(ROOT, 'scripts', 'build-nav.py'))
+nav = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(nav)
+
+SOLUTIONS = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'Patient Experiences',
+             'ABDM Connect', 'NHCX', 'UHI']
+INTEGRATIONS = ['Eka EMR', 'IPD', 'Billing', 'Health Records']
+RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Research', 'Changelog']
+
+
+def untabbed():
+    d = json.load(open(os.path.join(ROOT, 'docs.json')))
+    products = copy.deepcopy(d['navigation']['products'])
+    nav.untab(products)
+    return products
+
+
+def item(products, family, name):
+    fam = next(f for f in products if f['product'] == family)
+    return next(i for i in fam['menu'] if i['item'] == name)
+
+
+def docs_families(products):
+    return [f for f in products if not nav.is_api_family(f)]
+
+
+class Regroup(unittest.TestCase):
+    def setUp(self):
+        self.before = untabbed()
+        self.products = copy.deepcopy(self.before)
+        nav.regroup(self.products)
+
+    def test_families(self):
+        nav.tabify(self.products)
+        fams = docs_families(self.products)
+        self.assertEqual([f['product'] for f in fams], ['Solutions', 'Integrations', 'Resources'])
+        names = {f['product']: [i['item'] for i in f['menu']] for f in fams}
+        self.assertEqual(names['Solutions'], SOLUTIONS)
+        self.assertEqual(names['Integrations'][-4:], INTEGRATIONS)
+        self.assertEqual(names['Resources'], RESOURCES)
+
+    def test_pages_preserved(self):
+        # Every page docs.json lists today, tabs included, is listed exactly once afterwards.
+        listed = nav.page_multiset(json.load(open(os.path.join(ROOT, 'docs.json')))['navigation'])
+        nav.tabify(self.products)
+        after = nav.page_multiset(self.products)
+        self.assertEqual(sorted(listed - after), [])
+        self.assertEqual(sorted(after - listed), [])
+        self.assertEqual([p for p, n in after.items() if n > 1], [])
+
+    def test_idempotent(self):
+        twice = copy.deepcopy(self.products)
+        nav.regroup(twice)
+        self.assertEqual(json.dumps(twice), json.dumps(self.products))
+
+    def test_research_moved(self):
+        research = set(nav.walk_pages(item(self.products, 'Resources', 'Research')))
+        self.assertIn('docs/models/spotlight', research)
+        parsing = set(nav.walk_pages(item(self.products, 'Solutions', 'Document Parsing')))
+        self.assertNotIn('docs/models/spotlight', parsing)
+
+    def test_patient_experiences(self):
+        px = item(self.products, 'Solutions', 'Patient Experiences')
+        self.assertEqual(list(nav.walk_pages(px)), ['docs/products/patient-experiences'])
+        gs = set(nav.walk_pages(item(self.products, 'Resources', 'Get started')))
+        self.assertNotIn('docs/products/patient-experiences', gs)
+
+    def test_tabs(self):
+        nav.tabify(self.products)
+        tabs = {t['tab'] for f in self.products for i in f['menu'] for t in i.get('tabs', [])}
+        self.assertNotIn('Release Notes', tabs)
+        self.assertNotIn('Cook Book', tabs)
+        self.assertIn('Changelog', [i['item'] for i in next(f for f in self.products if f['product'] == 'Resources')['menu']])
+
+    def test_platform_split(self):
+        nav.tabify(self.products)
+        res = [i['item'] for i in next(f for f in self.products if f['product'] == 'Resources')['menu']]
+        self.assertNotIn('Webhooks', res)
+        self.assertNotIn('SDKs', res)
+
+        def api_tab(family, name):
+            it = item(self.products, family, name)
+            return set(nav.walk_pages(next(t['pages'] for t in it['tabs'] if t['tab'] == nav.API_TAB)))
+        emr = api_tab('Integrations', 'Eka EMR')
+        for p in ('api-sdk/webhooks/register-webhook', 'docs/webhooks/webhook-signature',
+                  'api-sdk/sdks/sdks/backend/webhook-sdk', 'api-sdk/sdks/sdks/web-sdk/getting-started',
+                  'api-sdk/sdks/sdks/backend/ekapython-sdk'):
+            self.assertIn(p, emr)
+        self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Solutions', 'Scribe'))
+        self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Integrations', 'Health Records'))
+
+
+if __name__ == '__main__':
+    unittest.main()

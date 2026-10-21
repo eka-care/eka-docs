@@ -14,6 +14,7 @@ listed today must appear exactly once afterwards; --check enforces that.
 import json
 import re
 import sys
+from collections import Counter
 
 DOCS = 'docs.json'
 ABDM = 'api-reference/user-app/abdm-connect/'
@@ -176,10 +177,14 @@ API_INDEX = 'api-sdk/index'
 
 # Same icon per product as the landing page's Products menu (landing/index.html).
 ICONS = {
-    'Scribe': 'mic', 'Agents': 'bot', 'Models': 'brain-circuit', 'Datasets': 'database',
-    'EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
-    'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Get started': 'rocket', 'Auth': 'key-round', 'Webhooks': 'webhook', 'Encryption': 'lock', 'SDKs': 'code',
+    'Scribe': 'mic', 'Agents': 'bot', 'Document Parsing': 'brain-circuit', 'Medical Knowledge': 'database',
+    'Patient Experiences': 'messages-square',
+    'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
+    'ABDM Connect': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
+    'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
+    # build() still names the legacy items; regroup() renames them.
+    'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list', 'HIE-CM': 'arrow-left-right',
+    'Webhooks': 'webhook', 'SDKs': 'code',
 }
 
 # Where the navbar "API Reference" button lands for each product: the product's
@@ -192,11 +197,11 @@ API_HOME = {
     'SDKs': 'api-sdk/sdks/sdks/web-sdk/getting-started',
     'Scribe': 'api-sdk/scribe/sessions/overview',
     'Agents': 'api-sdk/agents/overview',
-    'Models': 'api-sdk/models/medical-document-parsing/introduction',
-    'Datasets': 'api-sdk/datasets/overview',
-    'EMR': 'api-sdk/emr/instructions/before-you-begin',
+    'Document Parsing': 'api-sdk/models/medical-document-parsing/introduction',
+    'Medical Knowledge': 'api-sdk/datasets/overview',
+    'Eka EMR': 'api-sdk/emr/instructions/before-you-begin',
     'Health Records': 'api-sdk/health-records/create-overview',
-    'HIE-CM': 'api-sdk/hie-cm/overview',
+    'ABDM Connect': 'api-sdk/hie-cm/overview',
     'NHCX': 'docs/nhcx/getting-started',
     'UHI': 'docs/uhi/blood-bank/getting-started',
 }
@@ -367,12 +372,12 @@ API_SUFFIX = ' API'  # the API Reference has one family per docs family: "AI API
 def is_api_family(fam):
     return fam['product'].endswith(API_SUFFIX) or fam['product'] == API_DIVISION
 API_SECTION_HOME = {
-    'HIE-CM': 'api-sdk/hie-cm/overview',
+    'ABDM Connect': 'api-sdk/hie-cm/overview',
     'Scribe': 'api-sdk/scribe/sessions/overview',
     'Agents': 'api-sdk/agents/overview',
-    'Models': 'api-sdk/models/medical-document-parsing/introduction',
-    'Datasets': 'api-sdk/datasets/overview',
-    'EMR': 'api-sdk/emr/instructions/before-you-begin',
+    'Document Parsing': 'api-sdk/models/medical-document-parsing/introduction',
+    'Medical Knowledge': 'api-sdk/datasets/overview',
+    'Eka EMR': 'api-sdk/emr/instructions/before-you-begin',
     'Health Records': 'api-sdk/health-records/create-overview',
     'Auth': 'api-sdk/auth/getting-started',
     'Webhooks': 'api-sdk/webhooks/getting-started',
@@ -465,15 +470,15 @@ def split_api(products):
             for it in fam['menu']:
                 if 'pages' in it:
                     it['pages'] = [x for x in (take_pages(e, lambda p: p != API_INDEX)[0] for e in it['pages']) if x is not None]
-        platform = next(f for f in api_families if f['product'] == 'Platform' + API_SUFFIX)
+        platform = next(f for f in api_families if f['product'] == 'Resources' + API_SUFFIX)
         platform['menu'].insert(0, {'item': 'All APIs', 'icon': '/images/icons/products/code.svg',
                                     'description': 'Every Eka API, by product', 'pages': [API_INDEX]})
     products.extend(api_families)
 
 
 # Font Awesome stand-ins for the product icons, for API section headers.
-ICONS_FA = {'Scribe': 'microphone', 'Agents': 'robot', 'Models': 'brain', 'Datasets': 'database', 'EMR': 'clipboard-list',
-            'IPD': 'bed', 'Billing': 'receipt', 'Health Records': 'folder-open', 'HIE-CM': 'arrow-right-arrow-left',
+ICONS_FA = {'Scribe': 'microphone', 'Agents': 'robot', 'Document Parsing': 'brain', 'Medical Knowledge': 'database', 'Eka EMR': 'clipboard-list',
+            'IPD': 'bed', 'Billing': 'receipt', 'Health Records': 'folder-open', 'ABDM Connect': 'arrow-right-arrow-left',
             'NHCX': 'shield-heart', 'UHI': 'network-wired', 'Auth': 'key', 'Webhooks': 'webhook'}
 
 
@@ -633,25 +638,24 @@ def root_groups(products):
 
 
 # ---------- Tabs ----------
-# Each product has its own tab bar: Documentation (its docs sidebar), APIs & SDKs (its API reference), Release Notes
-# where it has a changelog, and Cook Book where it has recipes. Get started's Release Notes tab holds the platform-wide
-# feed: the changelog, Weekly Updates and Under the Hood. The script still builds docs families and separate API families ("AI API", ...); tabify()
+# Each product has its own tab bar: Documentation (its docs sidebar), APIs & SDKs (its API reference) and Changelog
+# where it has one. Recipes join the product's Documentation as a Recipes group (regroup()), and the platform-wide
+# feed (the changelog, Weekly Updates and Under the Hood) is Resources' Changelog item. The script still builds docs families and separate API families ("AI API", ...); tabify()
 # folds each API item into its product as a tab just before docs.json is written, and untab() reverses that on the
 # next run, so routes (/docs/<product>/, /api-sdk/<product>/) and every derived file stay as they were.
-DOCS_TAB, API_TAB, CHANGELOG_TAB, RECIPES_TAB = 'Documentation', 'APIs & SDKs', 'Release Notes', 'Cook Book'
+DOCS_TAB, API_TAB, CHANGELOG_TAB = 'Documentation', 'APIs & SDKs', 'Changelog'
 CHANGELOGS = {
-    'Get started': ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood'],
     'Scribe': ['docs/get-started/ekascribe-changelog', 'docs/get-started/ekascribe'],
     'Agents': ['docs/get-started/ekaagents-changelog', 'docs/get-started/eka-agents'],
-    'EMR': ['docs/get-started/emr-changelog'],
+    'Eka EMR': ['docs/get-started/emr-changelog'],
     'Billing': ['docs/billing/changelog'],
     'Health Records': ['docs/health-records/changelog'],
-    'HIE-CM': ['docs/hie-cm/changelog'],
+    'ABDM Connect': ['docs/hie-cm/changelog'],
 }
 RECIPES = {
-    'EMR': ['docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management'],
-    'Datasets': ['docs/get-started/whats-possible/medicine-lookup'],
-    'Models': ['docs/get-started/whats-possible/health-assessment'],
+    'Eka EMR': ['docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management'],
+    'Medical Knowledge': ['docs/get-started/whats-possible/medicine-lookup'],
+    'Document Parsing': ['docs/get-started/whats-possible/health-assessment'],
 }
 
 
@@ -695,14 +699,14 @@ def tabify(products):
                 tabs.append({'tab': API_TAB, 'pages': twin['pages']})
             if CHANGELOGS.get(it['item']):
                 tabs.append({'tab': CHANGELOG_TAB, 'pages': [{'group': CHANGELOG_TAB, 'pages': CHANGELOGS[it['item']]}]})
-            if RECIPES.get(it['item']):
-                tabs.append({'tab': RECIPES_TAB, 'pages': [{'group': RECIPES_TAB, 'pages': RECIPES[it['item']]}]})
             it.pop('href', None)
             it['tabs'] = tabs
             menu.append(it)
         # An API item with no docs product (All APIs) joins the family with only its API tab.
         for t in by_name.values():
             menu.append({**{k: v for k, v in t.items() if k != 'pages'}, 'tabs': [{'tab': API_TAB, 'pages': t['pages']}]})
+        order = next((names for name, _, _, names in FAMILIES if name == fam['product']), [])
+        menu.sort(key=lambda it: order.index(it['item']) if it['item'] in order else len(order))
         out.append({**fam, 'menu': menu})
     products[:] = out
 
@@ -732,6 +736,162 @@ def untab(products):
         apis.append({'product': fam['product'] + API_SUFFIX, 'icon': fam.get('icon', 'code'),
                      'description': fam.get('description', ''), 'menu': amenu})
     products[:] = docs + [f for f in apis if f['menu']]
+
+
+# ---------- Families ----------
+# Three families: Solutions (what you build with), Integrations (for people already on an Eka product) and Resources
+# (what every product shares). regroup() moves the tree build() made, or the one already in docs.json, into that
+# shape. It moves pages and never rewrites them, and running it again changes nothing.
+FAMILIES = [
+    ('Solutions', 'sparkles', "Build your own tools on Eka's APIs, MCP servers and SDKs.",
+     ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'Patient Experiences', 'ABDM Connect', 'NHCX', 'UHI']),
+    ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
+     ['Eka EMR', 'IPD', 'Billing', 'Health Records']),
+    ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
+     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Research', 'Changelog']),
+]
+RENAME_ITEMS = {'Models': 'Document Parsing', 'Datasets': 'Medical Knowledge', 'HIE-CM': 'ABDM Connect', 'EMR': 'Eka EMR'}
+NEW_ITEMS = {
+    'Patient Experiences': 'A booking site, a patient agent and the records patients keep, from several Eka products',
+    'Research': 'Open models, datasets and research for AI in Indian healthcare',
+    'Changelog': 'What changed across Eka, week by week',
+}
+PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
+# Webhooks and SDKs are not Resources items: each page joins the API tab of the product it serves.
+API_MOVES = {
+    'Eka EMR': ('Webhook setup', ['api-sdk/webhooks/getting-started', 'api-sdk/webhooks/register-webhook',
+                                  'api-sdk/webhooks/get-webhooks', 'api-sdk/webhooks/delete-webhook',
+                                  'docs/webhooks/webhook-signature', 'docs/webhooks/webhook-samples',
+                                  'docs/webhooks/glossary', 'api-sdk/sdks/sdks/backend/webhook-sdk']),
+}
+SDK_MOVES = {
+    'Scribe': ['api-sdk/sdks/sdks/android/ekascribe'],
+    'Health Records': ['api-sdk/sdks/sdks/android/medical-records'],
+    'Eka EMR': ['api-sdk/sdks/sdks/web-sdk/getting-started', 'api-sdk/sdks/sdks/backend/ekapython-sdk'],
+    'Medical Knowledge': ['api-sdk/sdks/sdks/ekacare-mcp'],
+}
+# Extra pages in each product's Build with AI group (its MCP servers, files for coding agents).
+BUILD_WITH_AI = {}
+
+
+def page_multiset(tree):
+    return Counter(walk_pages(tree))
+
+
+def remove_pages(entries, drop):
+    """entries without the pages in drop; groups left empty go too."""
+    out = []
+    for e in entries:
+        if isinstance(e, str):
+            if e not in drop:
+                out.append(e)
+            continue
+        e = {**e, 'pages': remove_pages(e.get('pages', []), drop)}
+        if e.get('root') in drop:
+            e.pop('root')
+        if e['pages'] or e.get('root'):
+            out.append(e)
+    return out
+
+
+def take_group(entries, name):
+    """(the group called name, entries without it), searching nested groups."""
+    for i, e in enumerate(entries):
+        if isinstance(e, dict) and 'group' in e:
+            if e['group'] == name:
+                return e, entries[:i] + entries[i + 1:]
+            found, rest = take_group(e.get('pages', []), name)
+            if found:
+                return found, entries[:i] + [{**e, 'pages': rest}] + entries[i + 1:]
+    return None, entries
+
+
+def add_to_group(entries, name, pages):
+    """Append pages to the top-level group called name, creating it last if missing."""
+    for e in entries:
+        if isinstance(e, dict) and e.get('group') == name:
+            e['pages'] = e.get('pages', []) + [p for p in pages if p not in e.get('pages', [])]
+            return entries
+    return entries + [{'group': name, 'pages': list(pages)}]
+
+
+def regroup(products):
+    fams = {f['product']: f for f in products}
+    items = {}  # (api?, name) -> item, across every family
+    for f in products:
+        api = is_api_family(f)
+        for it in f['menu']:
+            if it.get('pages'):
+                it['pages'] = unwrap(it, it['pages'])
+            name = it['item'][:-len(API_SUFFIX)] if api and it['item'].endswith(API_SUFFIX) else it['item']
+            new = RENAME_ITEMS.get(name, name)
+            if new != name:
+                it['item'] = new + (API_SUFFIX if api and it['item'] != name else '')
+                if it.get('icon', '').startswith('/images/icons/products/'):
+                    it['icon'] = f'/images/icons/products/{ICONS[new]}.svg'
+            items[(api, new)] = it
+    everything = set(walk_pages(products))
+
+    def docs(name):
+        return items.get((False, name))
+
+    def api(name):
+        return items.get((True, name))
+
+    # Research: the Spotlight group leaves Document Parsing whole.
+    if not docs('Research'):
+        dp = docs('Document Parsing')
+        group, dp['pages'] = take_group(dp.get('pages', []), 'Eka MedAI research')
+        if group:
+            items[(False, 'Research')] = {'item': 'Research', 'pages': [group]}
+    # Patient Experiences: its overview leaves Get started's Products group.
+    px = 'docs/products/patient-experiences'
+    if not docs('Patient Experiences') and px in everything:
+        gs = docs('Get started')
+        gs['pages'] = remove_pages(gs['pages'], {px})
+        items[(False, 'Patient Experiences')] = {'item': 'Patient Experiences', 'pages': [px]}
+    # Changelog: the platform-wide feed, which no tab carries any more.
+    if not docs('Changelog'):
+        items[(False, 'Changelog')] = {'item': 'Changelog', 'pages': list(PLATFORM_FEED)}
+    # Webhooks and SDKs go to the products they serve.
+    for name, (group, pages) in API_MOVES.items():
+        target = api(name)
+        moving = [p for p in pages if p in everything or p in walk_pages(target)]
+        for key in [(False, 'Webhooks'), (True, 'Webhooks')]:
+            if key in items:
+                items[key]['pages'] = remove_pages(items[key].get('pages', []), set(moving))
+        target['pages'] = add_to_group(remove_pages(target['pages'], set(moving)), group, moving)
+    for name, pages in SDK_MOVES.items():
+        for key in [(True, 'SDKs')]:
+            if key in items:
+                items[key]['pages'] = remove_pages(items[key].get('pages', []), set(pages))
+        target = api(name)
+        target['pages'] = add_to_group(remove_pages(target['pages'], set(pages)), 'SDKs', pages)
+    # Recipes join their product's Documentation.
+    for name, pages in RECIPES.items():
+        it = docs(name)
+        if it is not None and not set(pages) & set(walk_pages(it)):
+            it['pages'] = it.get('pages', []) + [{'group': 'Recipes', 'pages': list(pages)}]
+
+    out = []
+    for suffix in ('', API_SUFFIX):
+        for fam, icon, description, names in FAMILIES:
+            menu = []
+            for name in names:
+                it = items.get((bool(suffix), name))
+                if it is None or (suffix and not it.get('pages')):
+                    continue
+                if not suffix and name in NEW_ITEMS:
+                    it.setdefault('icon', f'/images/icons/products/{ICONS[name]}.svg')
+                    it.setdefault('description', NEW_ITEMS[name])
+                if not suffix and not it.get('pages') and 'href' not in it and not api(name):
+                    continue
+                menu.append(it)
+            if menu:
+                old = fams.get(fam + suffix, {})
+                out.append({**old, 'product': fam + suffix, 'icon': old.get('icon', icon),
+                            'description': description, 'menu': menu})
+    products[:] = out
 
 
 def write_index(targets):
@@ -883,6 +1043,7 @@ def set_page_icons(products):
 
 def main():
     d = json.load(open(DOCS))
+    listed = page_multiset(d['navigation'])
     if 'products' in d['navigation']:
         new = d['navigation']  # already built: only regenerate the derived files
         untab(new['products'])
@@ -901,7 +1062,8 @@ def main():
             sys.exit(1)
         if '--check' in sys.argv:
             return
-    get_started = next(f for f in new['products'] if f['product'] == 'Platform')['menu'][0]
+    regroup(new['products'])
+    get_started = next(f for f in new['products'] if f['product'] == 'Resources')['menu'][0]
     gs = get_started.get('pages') or get_started.get('groups')
     gs_pages = gs[0]['pages'] if isinstance(gs[0], dict) else gs
     if API_INDEX not in set(walk_pages(new)):
@@ -916,7 +1078,7 @@ def main():
         for it in fam['menu']:
             if is_api_family(fam) or 'href' in it:
                 continue
-            if it['item'] == 'HIE-CM' and any(isinstance(e, dict) and e.get('group') == 'Milestone 1' for e in it.get('pages', []) + it.get('groups', [])):
+            if it['item'] == 'ABDM Connect' and any(isinstance(e, dict) and e.get('group') == 'Milestone 1' for e in it.get('pages', []) + it.get('groups', [])):
                 restructure_hiecm(it)
             entries = [shape(g) for g in unwrap(it, it.pop('groups', it.pop('pages', [])))]
             # Entries go in `pages`, not `groups`: Mintlify honours a group's
@@ -950,6 +1112,15 @@ def main():
     write_index(targets)
     write_journey(new['products'])
     tabify(new['products'])
+    # Every page listed before is listed exactly once now (the API index may be added).
+    after = page_multiset(new)
+    dropped, added = sorted(listed - after), sorted(set(after - listed) - {API_INDEX})
+    dupes = sorted(p for p, n in after.items() if n > 1)
+    if dropped or added or dupes:
+        for label, ps in (('dropped', dropped), ('added', added), ('duplicate', dupes)):
+            for x in ps[:20]:
+                print(f'  {label}: {x}')
+        sys.exit(1)
     d['navigation'] = new
     json.dump(d, open(DOCS, 'w'), indent=2, ensure_ascii=False)
     open(DOCS, 'a').write('\n')
