@@ -181,7 +181,7 @@ ICONS = {
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Overview': 'compass', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
+    'Understanding Integrations': 'compass', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -759,24 +759,25 @@ FAMILIES = [
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
     ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
-     ['Overview', 'Eka EMR', 'Medical Scribe', 'IPD', 'Billing', 'Health Records']),
+     ['Understanding Integrations', 'Medical Scribe', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
     ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
      ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Models on Hugging Face',
       'Datasets on Hugging Face', 'Changelog']),
 ]
 RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medical Document Parsing',
                 'Scribe': 'Medical Scribe', 'Agents': 'Medical Agents', 'Datasets': 'Medical Knowledge',
-                'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR'}
+                'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR', 'Overview': 'Understanding Integrations'}
 NEW_ITEMS = {
     'Cookbook': 'Worked examples that combine Eka products',
     'Research': 'Open models, datasets and research for AI in Indian healthcare',
     'Changelog': 'What changed across Eka, week by week',
-    'Overview': 'Which integration you need, by the Eka product you use',
+    'Understanding Integrations': 'Which integration you need, by the Eka product you use',
 }
 INTEGRATIONS_HOME = 'docs/integrations/overview'
 COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
             'docs/get-started/whats-possible/medical-records-from-any-source',
             'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
+            'docs/get-started/whats-possible/mcp-connectors',
             'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
             'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
 PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
@@ -811,6 +812,8 @@ DESCRIPTIONS = {
     'Medical Scribe': 'Consultations become structured notes that complete the chart',
     'Medical Document Parsing': 'Lab reports and discharge summaries become structured data',
     'Medical Agents': 'A ready-made medical assistant, a kit to build your own agent, and SDKs to embed them',
+    'Understanding Integrations': 'For teams already on an Eka product: connect Eka EMR, IPD, Billing and Health Records '
+                                  'to your own systems through the same APIs developers build with',
 }
 # What each product's Build with AI group holds besides its overview (docs/<folder>/build-with-ai): its MCP servers
 # and the files it gives coding agents. The group sits before the product's Resources group, or last.
@@ -850,7 +853,7 @@ def place_build_with_ai(entries, contents, home=None):
 
 def allowed_additions():
     """Pages this script may add to the navigation: the indexes and overviews it owns."""
-    return {API_INDEX, INTEGRATIONS_HOME, *COOKBOOK[:4]} | set(BUILD_WITH_AI_HOME.values())
+    return {API_INDEX, INTEGRATIONS_HOME, *COOKBOOK[:4], 'docs/get-started/whats-possible/mcp-connectors'} | set(BUILD_WITH_AI_HOME.values())
 
 
 def page_multiset(tree):
@@ -936,8 +939,8 @@ def regroup(products):
                 it['pages'] = remove_pages(it['pages'], recipes)
         items[(False, 'Cookbook')] = {**items.get((False, 'Cookbook'), {}), 'item': 'Cookbook', 'pages': list(COOKBOOK)}
     # Integrations' Overview: one page that sends each integration to the APIs it uses.
-    if not docs('Overview') and open_ok(INTEGRATIONS_HOME):
-        items[(False, 'Overview')] = {'item': 'Overview', 'pages': [INTEGRATIONS_HOME]}
+    if not docs('Understanding Integrations') and open_ok(INTEGRATIONS_HOME):
+        items[(False, 'Understanding Integrations')] = {'item': 'Understanding Integrations', 'pages': [INTEGRATIONS_HOME]}
     # Changelog: the platform-wide feed, which no tab carries any more.
     if not docs('Changelog'):
         items[(False, 'Changelog')] = {'item': 'Changelog', 'pages': list(PLATFORM_FEED)}

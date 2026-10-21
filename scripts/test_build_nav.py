@@ -12,12 +12,13 @@ spec.loader.exec_module(nav)
 
 CLINICAL = ['Medical Scribe', 'Medical Document Parsing', 'Medical Agents', 'Medical Knowledge']
 ABDM = ['HIE-CM', 'NHCX', 'UHI']
-INTEGRATIONS = ['Overview', 'Eka EMR', 'Medical Scribe', 'IPD', 'Billing', 'Health Records']
+INTEGRATIONS = ['Understanding Integrations', 'Medical Scribe', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
 RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Models on Hugging Face',
              'Datasets on Hugging Face', 'Changelog']
 RECIPES = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
            'docs/get-started/whats-possible/medical-records-from-any-source',
            'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
+           'docs/get-started/whats-possible/mcp-connectors',
            'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
            'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
 
@@ -165,7 +166,8 @@ class BuildWithAI(unittest.TestCase):
     def test_integrations_overview(self):
         fam = next(f for f in self.products if f['product'] == 'Integrations')
         first = fam['menu'][0]
-        self.assertEqual(first['item'], 'Overview')
+        self.assertEqual(first['item'], 'Understanding Integrations')
+        self.assertTrue(first['description'].startswith('For teams already on an Eka product'))
         self.assertEqual(list(nav.walk_pages(first)), ['docs/integrations/overview'])
 
     def test_example_languages_kept(self):
