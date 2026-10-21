@@ -10,10 +10,12 @@ spec = importlib.util.spec_from_file_location('build_nav', os.path.join(ROOT, 's
 nav = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(nav)
 
-SOLUTIONS = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'Patient Experiences',
-             'ABDM Connect', 'NHCX', 'UHI']
+SOLUTIONS = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'ABDM Connect', 'NHCX', 'UHI']
 INTEGRATIONS = ['Eka EMR', 'IPD', 'Billing', 'Health Records']
-RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Research', 'Changelog']
+RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']
+RECIPES = ['docs/get-started/cookbook', 'docs/products/patient-experiences',
+           'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
+           'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
 
 
 def untabbed():
@@ -53,7 +55,7 @@ class Regroup(unittest.TestCase):
         nav.tabify(self.products)
         after = nav.page_multiset(self.products)
         self.assertEqual(sorted(listed - after), [])
-        self.assertEqual(sorted(after - listed), [])
+        self.assertEqual(sorted(set(after - listed) - nav.allowed_additions()), [])
         self.assertEqual([p for p, n in after.items() if n > 1], [])
 
     def test_idempotent(self):
@@ -67,11 +69,12 @@ class Regroup(unittest.TestCase):
         parsing = set(nav.walk_pages(item(self.products, 'Solutions', 'Document Parsing')))
         self.assertNotIn('docs/models/spotlight', parsing)
 
-    def test_patient_experiences(self):
-        px = item(self.products, 'Solutions', 'Patient Experiences')
-        self.assertEqual(list(nav.walk_pages(px)), ['docs/products/patient-experiences'])
-        gs = set(nav.walk_pages(item(self.products, 'Resources', 'Get started')))
-        self.assertNotIn('docs/products/patient-experiences', gs)
+    def test_cookbook(self):
+        cook = list(nav.walk_pages(item(self.products, 'Resources', 'Cookbook')))
+        self.assertEqual(cook, RECIPES)
+        elsewhere = [p for f in self.products for i in f['menu'] if i['item'] != 'Cookbook'
+                     for p in nav.walk_pages(i) if p in RECIPES]
+        self.assertEqual(elsewhere, [])
 
     def test_tabs(self):
         nav.tabify(self.products)

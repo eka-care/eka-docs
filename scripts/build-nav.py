@@ -178,7 +178,7 @@ API_INDEX = 'api-sdk/index'
 # Same icon per product as the landing page's Products menu (landing/index.html).
 ICONS = {
     'Scribe': 'mic', 'Agents': 'bot', 'Document Parsing': 'brain-circuit', 'Medical Knowledge': 'database',
-    'Patient Experiences': 'messages-square',
+    'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'ABDM Connect': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
     'Overview': 'compass', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
@@ -640,7 +640,7 @@ def root_groups(products):
 
 # ---------- Tabs ----------
 # Each product has its own tab bar: Documentation (its docs sidebar), APIs & SDKs (its API reference) and Changelog
-# where it has one. Recipes join the product's Documentation as a Recipes group (regroup()), and the platform-wide
+# where it has one. Recipes are Resources' Cookbook item (regroup()), and the platform-wide
 # feed (the changelog, Weekly Updates and Under the Hood) is Resources' Changelog item. The script still builds docs families and separate API families ("AI API", ...); tabify()
 # folds each API item into its product as a tab just before docs.json is written, and untab() reverses that on the
 # next run, so routes (/docs/<product>/, /api-sdk/<product>/) and every derived file stay as they were.
@@ -745,20 +745,23 @@ def untab(products):
 # shape. It moves pages and never rewrites them, and running it again changes nothing.
 FAMILIES = [
     ('Solutions', 'sparkles', "Build your own tools on Eka's APIs, MCP servers and SDKs.",
-     ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'Patient Experiences', 'ABDM Connect', 'NHCX', 'UHI']),
+     ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'ABDM Connect', 'NHCX', 'UHI']),
     ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
      ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
     ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
-     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Research', 'Changelog']),
+     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']),
 ]
 RENAME_ITEMS = {'Models': 'Document Parsing', 'Datasets': 'Medical Knowledge', 'HIE-CM': 'ABDM Connect', 'EMR': 'Eka EMR'}
 NEW_ITEMS = {
-    'Patient Experiences': 'A booking site, a patient agent and the records patients keep, from several Eka products',
+    'Cookbook': 'Worked examples that combine Eka products',
     'Research': 'Open models, datasets and research for AI in Indian healthcare',
     'Changelog': 'What changed across Eka, week by week',
     'Overview': 'Which integration you need, by the Eka product you use',
 }
 INTEGRATIONS_HOME = 'docs/integrations/overview'
+COOKBOOK = ['docs/get-started/cookbook', 'docs/products/patient-experiences',
+            'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
+            'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
 PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
 # Webhooks and SDKs are not Resources items: each page joins the API tab of the product it serves.
 API_MOVES = {
@@ -806,6 +809,11 @@ def place_build_with_ai(entries, contents, home=None):
     if entries and isinstance(entries[-1], dict) and entries[-1].get('group') == 'Resources':
         at -= 1
     return entries[:at] + [group] + entries[at:]
+
+
+def allowed_additions():
+    """Pages this script may add to the navigation: the indexes and overviews it owns."""
+    return {API_INDEX, INTEGRATIONS_HOME, COOKBOOK[0]} | set(BUILD_WITH_AI_HOME.values())
 
 
 def page_multiset(tree):
@@ -878,12 +886,14 @@ def regroup(products):
         group, dp['pages'] = take_group(dp.get('pages', []), 'Eka MedAI research')
         if group:
             items[(False, 'Research')] = {'item': 'Research', 'pages': [group]}
-    # Patient Experiences: its overview leaves Get started's Products group.
-    px = 'docs/products/patient-experiences'
-    if not docs('Patient Experiences') and px in everything:
-        gs = docs('Get started')
-        gs['pages'] = remove_pages(gs['pages'], {px})
-        items[(False, 'Patient Experiences')] = {'item': 'Patient Experiences', 'pages': [px]}
+    # Cookbook: every recipe in one place. Patient Experiences combines several products, so it is a recipe too.
+    if open_ok(COOKBOOK[0]):
+        recipes = set(COOKBOOK)
+        items.pop((False, 'Patient Experiences'), None)
+        for (is_api, _), it in items.items():
+            if not is_api and it.get('pages'):
+                it['pages'] = remove_pages(it['pages'], recipes)
+        items[(False, 'Cookbook')] = {**items.get((False, 'Cookbook'), {}), 'item': 'Cookbook', 'pages': list(COOKBOOK)}
     # Integrations' Overview: one page that sends each integration to the APIs it uses.
     if not docs('Overview') and open_ok(INTEGRATIONS_HOME):
         items[(False, 'Overview')] = {'item': 'Overview', 'pages': [INTEGRATIONS_HOME]}
@@ -920,11 +930,6 @@ def regroup(products):
             it = items[(False, name)] = {**{k: v for k, v in api(name).items() if k != 'pages'}, 'item': name}
         it.pop('href', None)
         it['pages'] = place_build_with_ai(it.get('pages', []), json.loads(json.dumps(contents)), home)
-    # Recipes join their product's Documentation.
-    for name, pages in RECIPES.items():
-        it = docs(name)
-        if it is not None and not set(pages) & set(walk_pages(it)):
-            it['pages'] = it.get('pages', []) + [{'group': 'Recipes', 'pages': list(pages)}]
 
     out = []
     for suffix in ('', API_SUFFIX):
@@ -1168,7 +1173,7 @@ def main():
     # Every page listed before is listed exactly once now. Only the API index, the Integrations overview and Build
     # with AI overviews may be added.
     after = page_multiset(new)
-    dropped, added = sorted(listed - after), sorted(set(after - listed) - {API_INDEX, INTEGRATIONS_HOME} - set(BUILD_WITH_AI_HOME.values()))
+    dropped, added = sorted(listed - after), sorted(set(after - listed) - allowed_additions())
     dupes = sorted(p for p, n in after.items() if n > 1)
     if dropped or added or dupes:
         for label, ps in (('dropped', dropped), ('added', added), ('duplicate', dupes)):

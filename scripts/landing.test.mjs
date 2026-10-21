@@ -32,17 +32,17 @@ test('nav labels', () => {
 test('resources menu', () => {
   const res = grab(/<div class="mega mega-res"[\s\S]*?<\/div><\/div>\n/, 'mega-res');
   const names = [...res.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
-  for (const gone of ['Docs', 'API reference', 'Cookbook', 'SDKs']) assert.ok(!names.includes(gone), gone);
-  for (const kept of ['Auth', 'Encryption', 'Research', 'Changelog']) assert.ok(names.includes(kept), kept);
+  for (const gone of ['Docs', 'API reference', 'SDKs']) assert.ok(!names.includes(gone), gone);
+  for (const kept of ['Cookbook', 'Auth', 'Encryption', 'Research', 'Changelog']) assert.ok(names.includes(kept), kept);
   const menu = run(INT_MENU, 'INT_MENU');
   assert.ok(!menu.some(([group]) => group === 'Platform'));
 });
 
-test('product grid holds eight solutions', () => {
+test('product grid holds seven solutions', () => {
   const grid = grab(/<section class="sec" id="products">[\s\S]*?<\/section>/, 'products');
-  const tiles = [...grid.matchAll(/<a class="pl"[\s\S]*?<b>([^<]+)</g)].map((m) => m[1]);
-  assert.deepEqual(tiles, ['Scribe', 'Agents', 'Patient Experiences', 'Document Parsing', 'Medical Knowledge',
-    'ABDM Connect', 'NHCX', 'UHI']);
+  const solutions = grid.replace(/<div class="prod[^"]*" id="p-cook">[\s\S]*?<\/div>\n    <\/div>/, '');
+  const tiles = [...solutions.matchAll(/<a class="pl"[\s\S]*?<b>([^<]+)</g)].map((m) => m[1]);
+  assert.deepEqual(tiles, ['Scribe', 'Agents', 'Document Parsing', 'Medical Knowledge', 'ABDM Connect', 'NHCX', 'UHI']);
 });
 
 test('solutions menu groups are Clinical Intelligence and ABDM', () => {
@@ -57,4 +57,11 @@ test('every product switcher icon has a mask rule in styles.css', () => {
     .filter((i) => i?.startsWith('/images/icons/products/')).map((i) => i.split('/').pop()));
   const missing = [...icons].filter((i) => !css.includes(`:has(img[src$="/${i}"])::after`)).sort();
   assert.deepEqual(missing, []);
+});
+
+test('the solutions menu does not list Patient Experiences', () => {
+  const src = grab(/const SOL_MENU=\[[\s\S]*?\]\]\]\];\n/, 'SOL_MENU');
+  const names = run(src, 'SOL_MENU').flatMap(([, , items]) => items.map(([n]) => n));
+  assert.ok(!names.includes('Patient Experiences'));
+  assert.equal(names.length, 7);
 });
