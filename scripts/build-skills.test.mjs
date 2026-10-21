@@ -71,3 +71,10 @@ test('build is deterministic', () => {
   assert.ok(files(a).length > 10);
   for (const f of files(a)) assert.equal(fs.readFileSync(path.join(a, f), 'utf8'), fs.readFileSync(path.join(b, f), 'utf8'), f);
 });
+
+test('a product is described by its own overview, not its Build with AI page', () => {
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-ipd-'));
+  build({ out });
+  const skill = fs.readFileSync(path.join(out, 'plugins/eka-ipd/skills/eka-ipd/SKILL.md'), 'utf8');
+  assert.ok(!skill.includes('Set up a coding agent'), 'IPD skill describes itself with its Build with AI page');
+});

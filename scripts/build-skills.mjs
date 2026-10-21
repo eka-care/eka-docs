@@ -71,7 +71,8 @@ export function apiPagesOf(docs, name) {
 
 function docsHomeOf(docs, name) {
   const tab = (findItem(docs, name)?.tabs ?? []).find((t) => t.tab === 'Documentation');
-  return tab ? walkPages(tab.pages)[0] : null;
+  // The product's own overview: its Build with AI pages describe the tools, not the product.
+  return tab ? walkPages(tab.pages).find((p) => !p.includes('/build-with-ai')) ?? null : null;
 }
 
 function readPage(root, page) {
