@@ -32,7 +32,7 @@ test('resources menu', () => {
   const res = grab(/<div class="mega mega-res"[\s\S]*?<\/div><\/div>\n/, 'mega-res');
   const names = [...res.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
   for (const gone of ['Docs', 'API reference', 'SDKs']) assert.ok(!names.includes(gone), gone);
-  for (const kept of ['Cookbook', 'Auth', 'Encryption', 'Research', 'Changelog']) assert.ok(names.includes(kept), kept);
+  for (const kept of ['Cookbook', 'Auth', 'Encryption', 'Research', 'Models on Hugging Face', 'Datasets on Hugging Face', 'Changelog']) assert.ok(names.includes(kept), kept);
 });
 
 test('product grid holds seven solutions', () => {
@@ -58,7 +58,7 @@ test('the Solutions and Integrations menus are the docs product switcher', () =>
   const walk = (n) => (typeof n === 'string' ? [n] : Array.isArray(n) ? n.flatMap(walk)
     : [...(n.root ? [n.root] : []), ...walk(n.pages ?? n.tabs ?? [])]);
   const want = docs.navigation.products.filter((f) => ['Clinical AI', 'ABDM Connect', 'Integrations'].includes(f.product))
-    .map((f) => [f.product, f.menu.map((i) => [i.item, '/' + walk(i.tabs[0].pages)[0], i.icon.split('/').pop().replace('.svg', ''), i.description])]);
+    .map((f) => [f.product, f.menu.map((i) => [i.item, i.href ? i.href.replace('https://developer.eka.care', '') : '/' + walk(i.tabs[0].pages)[0], i.icon.split('/').pop().replace('.svg', ''), i.description])]);
   const menus = JSON.parse(grab(/const NAV_MENUS=(.*);\n/, 'NAV_MENUS').replace(/^const NAV_MENUS=/, '').replace(/;\n$/, ''));
   assert.deepEqual(menus, want);
   assert.match(html, /const SOL_MENU=NAV_MENUS\.filter/);

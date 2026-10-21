@@ -564,6 +564,8 @@ def reference_targets(products):
         if is_api_family(fam):
             continue
         for it in fam['menu']:
+            if (fam['product'], it['item']) in LINK_ITEMS:  # listed under the solution it links to
+                continue
             twin = twins.get(it['item'])
             first = next(walk_pages(twin), None) if twin else None
             targets.append((fam['product'], it['item'], it.get('description', ''), first))
@@ -692,6 +694,9 @@ def tabify(products):
         by_name = {t['item']: t for t in twins['menu']}
         menu = []
         for it in fam['menu']:
+            if (fam['product'], it['item']) in LINK_ITEMS:
+                menu.append(it)
+                continue
             tabs = []
             if it.get('pages'):
                 tabs.append({'tab': DOCS_TAB, 'pages': it.pop('pages')})
@@ -754,9 +759,10 @@ FAMILIES = [
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
     ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
-     ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
+     ['Overview', 'Eka EMR', 'Medical Scribe', 'IPD', 'Billing', 'Health Records']),
     ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
-     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']),
+     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Models on Hugging Face',
+      'Datasets on Hugging Face', 'Changelog']),
 ]
 RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medical Document Parsing',
                 'Scribe': 'Medical Scribe', 'Agents': 'Medical Agents', 'Datasets': 'Medical Knowledge',
@@ -785,6 +791,26 @@ SDK_MOVES = {
     'Medical Scribe': ['api-sdk/sdks/sdks/android/ekascribe'],
     'Health Records': ['api-sdk/sdks/sdks/android/medical-records'],
     'Eka EMR': ['api-sdk/sdks/sdks/web-sdk/getting-started', 'api-sdk/sdks/sdks/backend/ekapython-sdk'],
+}
+# An integration that uses a solution's API opens that solution's docs instead of copying them. Mintlify's switcher only
+# follows a full URL on a link entry (it opens in a new tab); the landing page uses the same link relative to the site.
+SITE = 'https://developer.eka.care'
+LINK_ITEMS = {
+    ('Integrations', 'Medical Scribe'): {'href': SITE + '/docs/scribe/overview#how-it-works',
+                                         'icon': '/images/icons/products/mic.svg',
+                                         'description': 'Voice in, structured notes out, from the Eka product you use'},
+    ('Resources', 'Models on Hugging Face'): {'href': 'https://huggingface.co/collections/ekacare/ekacare-public-healthcare-llms',
+                                              'icon': '/images/icons/products/package.svg',
+                                              'description': "Eka's open models, with their weights"},
+    ('Resources', 'Datasets on Hugging Face'): {'href': 'https://huggingface.co/collections/ekacare/ekacare-medical-public-datasets',
+                                                'icon': '/images/icons/products/database.svg',
+                                                'description': "Eka's open medical datasets and benchmarks"},
+}
+# The switcher's one line for each product, in plain words rather than internal names.
+DESCRIPTIONS = {
+    'Medical Scribe': 'Consultations become structured notes that complete the chart',
+    'Medical Document Parsing': 'Lab reports and discharge summaries become structured data',
+    'Medical Agents': 'A ready-made medical assistant, a kit to build your own agent, and SDKs to embed them',
 }
 # What each product's Build with AI group holds besides its overview (docs/<folder>/build-with-ai): its MCP servers
 # and the files it gives coding agents. The group sits before the product's Resources group, or last.
@@ -874,6 +900,8 @@ def regroup(products):
     for f in products:
         api = is_api_family(f)
         for it in f['menu']:
+            if (f['product'], it['item']) in LINK_ITEMS:  # a link, rebuilt below; the product it opens lives elsewhere
+                continue
             if it.get('pages'):
                 it['pages'] = unwrap(it, it['pages'])
             name = it['item'][:-len(API_SUFFIX)] if api and it['item'].endswith(API_SUFFIX) else it['item']
@@ -882,6 +910,8 @@ def regroup(products):
                 it['item'] = new + (API_SUFFIX if api and it['item'] != name else '')
                 if it.get('icon', '').startswith('/images/icons/products/'):
                     it['icon'] = f'/images/icons/products/{ICONS[new]}.svg'
+            if new in DESCRIPTIONS:
+                it['description'] = DESCRIPTIONS[new]
             items[(api, new)] = it
     everything = set(walk_pages(products))
 
@@ -947,6 +977,10 @@ def regroup(products):
         for fam, icon, description, names in FAMILIES:
             menu = []
             for name in names:
+                if (fam, name) in LINK_ITEMS:
+                    if not suffix:
+                        menu.append({'item': name, **LINK_ITEMS[(fam, name)]})
+                    continue
                 it = items.get((bool(suffix), name))
                 if it is None or (suffix and not it.get('pages')):
                     continue
@@ -1089,7 +1123,7 @@ def write_menus(products):
     for fam in products:
         if fam['product'] not in LANDING_MENUS:
             continue
-        rows = [[it['item'], '/' + next(walk_pages(it['tabs'][0]['pages'])),
+        rows = [[it['item'], it['href'].removeprefix(SITE) if it.get('href') else '/' + next(walk_pages(it['tabs'][0]['pages'])),
                  it['icon'].rsplit('/', 1)[-1].removesuffix('.svg'), it.get('description', '')] for it in fam['menu']]
         menus.append([fam['product'], rows])
     line = 'const NAV_MENUS=' + json.dumps(menus, ensure_ascii=False, separators=(',', ':')) + ';\n'

@@ -12,8 +12,9 @@ spec.loader.exec_module(nav)
 
 CLINICAL = ['Medical Scribe', 'Medical Document Parsing', 'Medical Agents', 'Medical Knowledge']
 ABDM = ['HIE-CM', 'NHCX', 'UHI']
-INTEGRATIONS = ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
-RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']
+INTEGRATIONS = ['Overview', 'Eka EMR', 'Medical Scribe', 'IPD', 'Billing', 'Health Records']
+RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Models on Hugging Face',
+             'Datasets on Hugging Face', 'Changelog']
 RECIPES = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
            'docs/get-started/whats-possible/medical-records-from-any-source',
            'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
@@ -178,6 +179,24 @@ class BuildWithAI(unittest.TestCase):
     def test_a_product_opens_on_its_api_when_its_docs_are_only_build_with_ai(self):
         ipd = item(self.products, 'Integrations', 'IPD')
         self.assertEqual(ipd['tabs'][0]['tab'], nav.API_TAB)
+
+    def test_scribe_in_integrations_opens_how_it_works(self):
+        it = item(self.products, 'Integrations', 'Medical Scribe')
+        self.assertEqual(it.get('href'), 'https://developer.eka.care/docs/scribe/overview#how-it-works')
+        self.assertNotIn('tabs', it)
+
+    def test_hugging_face_links_in_resources(self):
+        self.assertEqual(item(self.products, 'Resources', 'Models on Hugging Face')['href'],
+                         'https://huggingface.co/collections/ekacare/ekacare-public-healthcare-llms')
+        self.assertEqual(item(self.products, 'Resources', 'Datasets on Hugging Face')['href'],
+                         'https://huggingface.co/collections/ekacare/ekacare-medical-public-datasets')
+
+    def test_plain_language_descriptions(self):
+        want = {'Medical Scribe': 'Consultations become structured notes that complete the chart',
+                'Medical Document Parsing': 'Lab reports and discharge summaries become structured data',
+                'Medical Agents': 'A ready-made medical assistant, a kit to build your own agent, and SDKs to embed them'}
+        for name, desc in want.items():
+            self.assertEqual(item(self.products, 'Clinical AI', name)['description'], desc)
 
 
 if __name__ == '__main__':
