@@ -49,3 +49,12 @@ test('solutions menu groups are Clinical Intelligence and ABDM', () => {
   const src = grab(/const SOL_MENU=\[[\s\S]*?\]\]\]\];\n/, 'SOL_MENU');
   assert.deepEqual([...run(src, 'SOL_MENU').map(([group]) => group)], ['Clinical Intelligence', 'ABDM']);
 });
+
+test('every product switcher icon has a mask rule in styles.css', () => {
+  const css = fs.readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
+  const icons = new Set(docs.navigation.products.flatMap((f) => f.menu.map((i) => i.icon))
+    .filter((i) => i?.startsWith('/images/icons/products/')).map((i) => i.split('/').pop()));
+  const missing = [...icons].filter((i) => !css.includes(`:has(img[src$="/${i}"])::after`)).sort();
+  assert.deepEqual(missing, []);
+});
