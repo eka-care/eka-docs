@@ -12,7 +12,7 @@ spec.loader.exec_module(nav)
 
 CLINICAL = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']
 ABDM = ['HIE-CM', 'NHCX', 'UHI']
-INTEGRATIONS = ['Eka EMR', 'IPD', 'Billing', 'Health Records']
+INTEGRATIONS = ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
 RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']
 RECIPES = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
            'docs/get-started/whats-possible/medical-records-from-any-source',
@@ -46,11 +46,11 @@ class Regroup(unittest.TestCase):
     def test_families(self):
         nav.tabify(self.products)
         fams = docs_families(self.products)
-        self.assertEqual([f['product'] for f in fams], ['Clinical Intelligence', 'ABDM Connect', 'Integrations', 'Resources'])
+        self.assertEqual([f['product'] for f in fams], ['Clinical AI', 'ABDM Connect', 'Integrations', 'Resources'])
         names = {f['product']: [i['item'] for i in f['menu']] for f in fams}
-        self.assertEqual(names['Clinical Intelligence'], CLINICAL)
+        self.assertEqual(names['Clinical AI'], CLINICAL)
         self.assertEqual(names['ABDM Connect'], ABDM)
-        self.assertEqual(names['Integrations'][-4:], INTEGRATIONS)
+        self.assertEqual(names['Integrations'], INTEGRATIONS)
         self.assertEqual(names['Resources'], RESOURCES)
 
     def test_pages_preserved(self):
@@ -70,7 +70,7 @@ class Regroup(unittest.TestCase):
     def test_research_moved(self):
         research = set(nav.walk_pages(item(self.products, 'Resources', 'Research')))
         self.assertIn('docs/models/spotlight', research)
-        parsing = set(nav.walk_pages(item(self.products, 'Clinical Intelligence', 'Document Parsing')))
+        parsing = set(nav.walk_pages(item(self.products, 'Clinical AI', 'Document Parsing')))
         self.assertNotIn('docs/models/spotlight', parsing)
 
     def test_cookbook(self):
@@ -101,7 +101,7 @@ class Regroup(unittest.TestCase):
                   'api-sdk/sdks/sdks/backend/webhook-sdk', 'api-sdk/sdks/sdks/web-sdk/getting-started',
                   'api-sdk/sdks/sdks/backend/ekapython-sdk'):
             self.assertIn(p, emr)
-        self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Clinical Intelligence', 'Scribe'))
+        self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Clinical AI', 'Scribe'))
         self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Integrations', 'Health Records'))
 
 
@@ -129,9 +129,9 @@ class BuildWithAI(unittest.TestCase):
 
     def test_build_with_ai_groups(self):
         self.assertIn('docs/emr/build-with-ai/mcp-server/introduction', self.group('Integrations', 'Eka EMR'))
-        self.assertIn('docs/datasets/build-with-ai/mcp-server/introduction', self.group('Clinical Intelligence', 'Medical Knowledge'))
-        self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Clinical Intelligence', 'Scribe'))
-        agents = set(nav.walk_pages(item(self.products, 'Clinical Intelligence', 'Agents')))
+        self.assertIn('docs/datasets/build-with-ai/mcp-server/introduction', self.group('Clinical AI', 'Medical Knowledge'))
+        self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Clinical AI', 'Scribe'))
+        agents = set(nav.walk_pages(item(self.products, 'Clinical AI', 'Agents')))
         self.assertFalse({p for p in agents if 'mcp-server' in p or 'medai-tools-mcp' in p})
 
     def test_redirects_cover_moves(self):
@@ -150,8 +150,8 @@ class BuildWithAI(unittest.TestCase):
         self.assertEqual(stale, [])
 
     def test_build_with_ai_overviews(self):
-        folders = {('Clinical Intelligence', 'Scribe'): 'scribe', ('Clinical Intelligence', 'Document Parsing'): 'models',
-                   ('Clinical Intelligence', 'Agents'): 'agents', ('Clinical Intelligence', 'Medical Knowledge'): 'datasets',
+        folders = {('Clinical AI', 'Scribe'): 'scribe', ('Clinical AI', 'Document Parsing'): 'models',
+                   ('Clinical AI', 'Agents'): 'agents', ('Clinical AI', 'Medical Knowledge'): 'datasets',
                    ('ABDM Connect', 'HIE-CM'): 'hie-cm', ('ABDM Connect', 'NHCX'): 'nhcx', ('ABDM Connect', 'UHI'): 'uhi',
                    ('Integrations', 'Eka EMR'): 'emr', ('Integrations', 'IPD'): 'ipd',
                    ('Integrations', 'Billing'): 'billing', ('Integrations', 'Health Records'): 'health-records'}
@@ -170,6 +170,14 @@ class BuildWithAI(unittest.TestCase):
     def test_example_languages_kept(self):
         self.assertEqual(self.docs['api']['examples']['languages'],
                          ['bash', 'python', 'typescript', 'java', 'csharp', 'ruby'])
+
+    def test_api_index_lists_each_product_once(self):
+        index = open(os.path.join(ROOT, 'api-sdk/index.mdx')).read()
+        self.assertEqual(index.count('title="Scribe"'), 1)
+
+    def test_a_product_opens_on_its_api_when_its_docs_are_only_build_with_ai(self):
+        ipd = item(self.products, 'Integrations', 'IPD')
+        self.assertEqual(ipd['tabs'][0]['tab'], nav.API_TAB)
 
 
 if __name__ == '__main__':

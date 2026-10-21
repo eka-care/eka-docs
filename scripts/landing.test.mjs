@@ -57,7 +57,7 @@ test('the Solutions and Integrations menus are the docs product switcher', () =>
   const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
   const walk = (n) => (typeof n === 'string' ? [n] : Array.isArray(n) ? n.flatMap(walk)
     : [...(n.root ? [n.root] : []), ...walk(n.pages ?? n.tabs ?? [])]);
-  const want = docs.navigation.products.filter((f) => ['Clinical Intelligence', 'ABDM Connect', 'Integrations'].includes(f.product))
+  const want = docs.navigation.products.filter((f) => ['Clinical AI', 'ABDM Connect', 'Integrations'].includes(f.product))
     .map((f) => [f.product, f.menu.map((i) => [i.item, '/' + walk(i.tabs[0].pages)[0], i.icon.split('/').pop().replace('.svg', ''), i.description])]);
   const menus = JSON.parse(grab(/const NAV_MENUS=(.*);\n/, 'NAV_MENUS').replace(/^const NAV_MENUS=/, '').replace(/;\n$/, ''));
   assert.deepEqual(menus, want);

@@ -701,6 +701,11 @@ def tabify(products):
             if CHANGELOGS.get(it['item']):
                 tabs.append({'tab': CHANGELOG_TAB, 'pages': [{'group': CHANGELOG_TAB, 'pages': CHANGELOGS[it['item']]}]})
             it.pop('href', None)
+            # A product whose docs are only its Build with AI page opens on its API reference.
+            docs_tab = next((t for t in tabs if t['tab'] == DOCS_TAB), None)
+            if docs_tab and all('build-with-ai' in p for p in walk_pages(docs_tab['pages'])) \
+                    and any(t['tab'] == API_TAB for t in tabs):
+                tabs.sort(key=lambda t: t['tab'] != API_TAB)
             it['tabs'] = tabs
             menu.append(it)
         # An API item with no docs product (All APIs) joins the family with only its API tab.
@@ -740,11 +745,11 @@ def untab(products):
 
 
 # ---------- Families ----------
-# Four families, as the landing page's menus show them: Solutions is Clinical Intelligence and ABDM Connect (what you build
+# Four families, as the landing page's menus show them: Solutions is Clinical AI and ABDM Connect (what you build
 # with), then Integrations (for people already on an Eka product) and Resources (what every product shares). regroup() moves the tree build() made, or the one already in docs.json, into that
 # shape. It moves pages and never rewrites them, and running it again changes nothing.
 FAMILIES = [
-    ('Clinical Intelligence', 'sparkles', 'Scribe, document parsing, agents and medical knowledge to build your own tools.',
+    ('Clinical AI', 'sparkles', 'Scribe, document parsing, agents and medical knowledge to build your own tools.',
      ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']),
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
@@ -1072,7 +1077,7 @@ def write_journey(products):
     open(LANDING_HTML, 'w').write(src[:start] + block + src[end:])
 
 
-LANDING_MENUS = ['Clinical Intelligence', 'ABDM Connect', 'Integrations']
+LANDING_MENUS = ['Clinical AI', 'ABDM Connect', 'Integrations']
 
 
 def write_menus(products):
