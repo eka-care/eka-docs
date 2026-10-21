@@ -304,3 +304,19 @@ The Agents sidebar's "Tools" group then holds only Echo Agent Kit and Synapse.
 4. ABDM Connect MCP server and plugin: list them, and say clearly that they cover M1 only for now.
 5. DPDP and India-hosted wording: **open item**.
 6. SDKs: keep "APIs & SDKs" as one tab.
+
+## Changes after the first build (Abha, 2026-10-21)
+
+- **Switcher families match the landing menus.** The docs product switcher has four
+  families: Clinical Intelligence (Scribe, Document Parsing, Agents, Medical Knowledge),
+  ABDM (ABDM Connect, NHCX, UHI), Integrations and Resources. The landing page's Solutions
+  menu shows the first two as its columns. `scripts/build-nav.py` writes the switcher into
+  the landing page as `NAV_MENUS`, so the menus can't drift from the docs.
+- **Patient Experiences is a recipe.** It combines several products and has no API of its
+  own. A Cookbook item under Resources holds every recipe, and the product sidebars no
+  longer carry recipes.
+- **Scenes are use cases, each with a recipe.** The landing scene picker offers ABDM-enabled
+  HIS, Medical records from any source, Clinically intelligent HIS and Patient experiences.
+  "The whole platform" is gone. Each scene's link opens its Cookbook recipe, which walks
+  through building it and links to each product's docs.
+- **Footer.** The footer columns are the switcher's families, plus Resources and Community.

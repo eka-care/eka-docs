@@ -740,12 +740,14 @@ def untab(products):
 
 
 # ---------- Families ----------
-# Three families: Solutions (what you build with), Integrations (for people already on an Eka product) and Resources
-# (what every product shares). regroup() moves the tree build() made, or the one already in docs.json, into that
+# Four families, as the landing page's menus show them: Solutions is Clinical Intelligence and ABDM (what you build
+# with), then Integrations (for people already on an Eka product) and Resources (what every product shares). regroup() moves the tree build() made, or the one already in docs.json, into that
 # shape. It moves pages and never rewrites them, and running it again changes nothing.
 FAMILIES = [
-    ('Solutions', 'sparkles', "Build your own tools on Eka's APIs, MCP servers and SDKs.",
-     ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'ABDM Connect', 'NHCX', 'UHI']),
+    ('Clinical Intelligence', 'sparkles', 'Scribe, document parsing, agents and medical knowledge to build your own tools.',
+     ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']),
+    ('ABDM', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
+     ['ABDM Connect', 'NHCX', 'UHI']),
     ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
      ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
     ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
@@ -759,7 +761,9 @@ NEW_ITEMS = {
     'Overview': 'Which integration you need, by the Eka product you use',
 }
 INTEGRATIONS_HOME = 'docs/integrations/overview'
-COOKBOOK = ['docs/get-started/cookbook', 'docs/products/patient-experiences',
+COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
+            'docs/get-started/whats-possible/medical-records-from-any-source',
+            'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
             'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
             'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
 PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
@@ -813,7 +817,7 @@ def place_build_with_ai(entries, contents, home=None):
 
 def allowed_additions():
     """Pages this script may add to the navigation: the indexes and overviews it owns."""
-    return {API_INDEX, INTEGRATIONS_HOME, COOKBOOK[0]} | set(BUILD_WITH_AI_HOME.values())
+    return {API_INDEX, INTEGRATIONS_HOME, *COOKBOOK[:4]} | set(BUILD_WITH_AI_HOME.values())
 
 
 def page_multiset(tree):
@@ -1068,6 +1072,31 @@ def write_journey(products):
     open(LANDING_HTML, 'w').write(src[:start] + block + src[end:])
 
 
+LANDING_MENUS = ['Clinical Intelligence', 'ABDM', 'Integrations']
+
+
+def write_menus(products):
+    """The landing page's Solutions and Integrations menus are the docs product switcher: the same families, items,
+    order, icons, descriptions and first pages. Written as const NAV_MENUS into landing/source.html."""
+    menus = []
+    for fam in products:
+        if fam['product'] not in LANDING_MENUS:
+            continue
+        rows = [[it['item'], '/' + next(walk_pages(it['tabs'][0]['pages'])),
+                 it['icon'].rsplit('/', 1)[-1].removesuffix('.svg'), it.get('description', '')] for it in fam['menu']]
+        menus.append([fam['product'], rows])
+    line = 'const NAV_MENUS=' + json.dumps(menus, ensure_ascii=False, separators=(',', ':')) + ';\n'
+    src = open(LANDING_HTML).read()
+    if 'const NAV_MENUS=' in src:
+        start = src.index('const NAV_MENUS=')
+        src = src[:start] + line + src[src.index('\n', start) + 1:]
+    else:
+        at = src.index('/* ================= Nav menus')
+        src = (src[:at] + '/* const NAV_MENUS is written by scripts/build-nav.py from docs.json: the docs product switcher. */\n'
+               + line + src[at:])
+    open(LANDING_HTML, 'w').write(src)
+
+
 def open_ok(page):
     try:
         open(page + '.mdx').close()
@@ -1170,6 +1199,7 @@ def main():
     write_index(targets)
     write_journey(new['products'])
     tabify(new['products'])
+    write_menus(new['products'])
     # Every page listed before is listed exactly once now. Only the API index, the Integrations overview and Build
     # with AI overviews may be added.
     after = page_multiset(new)

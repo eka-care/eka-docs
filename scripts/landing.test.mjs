@@ -10,8 +10,7 @@ const grab = (re, what) => {
   return m[0];
 };
 const J = grab(/const J=\{.*?\};\n/, 'J');
-const GROUPS = grab(/const GROUPS=\{[\s\S]*?\};\n/, 'GROUPS');
-const INT_MENU = grab(/const INT_MENU=\[[\s\S]*?\]\]\]\];\n/, 'INT_MENU');
+const GROUPS = grab(/const GROUPS=.*;\n/, 'GROUPS');
 const run = (src, expr) => vm.runInNewContext(`${src}\n${expr}`);
 
 test('every GROUPS entry resolves in J', () => {
@@ -34,8 +33,6 @@ test('resources menu', () => {
   const names = [...res.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
   for (const gone of ['Docs', 'API reference', 'SDKs']) assert.ok(!names.includes(gone), gone);
   for (const kept of ['Cookbook', 'Auth', 'Encryption', 'Research', 'Changelog']) assert.ok(names.includes(kept), kept);
-  const menu = run(INT_MENU, 'INT_MENU');
-  assert.ok(!menu.some(([group]) => group === 'Platform'));
 });
 
 test('product grid holds seven solutions', () => {
@@ -45,10 +42,6 @@ test('product grid holds seven solutions', () => {
   assert.deepEqual(tiles, ['Scribe', 'Agents', 'Document Parsing', 'Medical Knowledge', 'ABDM Connect', 'NHCX', 'UHI']);
 });
 
-test('solutions menu groups are Clinical Intelligence and ABDM', () => {
-  const src = grab(/const SOL_MENU=\[[\s\S]*?\]\]\]\];\n/, 'SOL_MENU');
-  assert.deepEqual([...run(src, 'SOL_MENU').map(([group]) => group)], ['Clinical Intelligence', 'ABDM']);
-});
 
 test('every product switcher icon has a mask rule in styles.css', () => {
   const css = fs.readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
@@ -59,9 +52,38 @@ test('every product switcher icon has a mask rule in styles.css', () => {
   assert.deepEqual(missing, []);
 });
 
-test('the solutions menu does not list Patient Experiences', () => {
-  const src = grab(/const SOL_MENU=\[[\s\S]*?\]\]\]\];\n/, 'SOL_MENU');
-  const names = run(src, 'SOL_MENU').flatMap(([, , items]) => items.map(([n]) => n));
-  assert.ok(!names.includes('Patient Experiences'));
-  assert.equal(names.length, 7);
+
+test('the Solutions and Integrations menus are the docs product switcher', () => {
+  const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
+  const walk = (n) => (typeof n === 'string' ? [n] : Array.isArray(n) ? n.flatMap(walk)
+    : [...(n.root ? [n.root] : []), ...walk(n.pages ?? n.tabs ?? [])]);
+  const want = docs.navigation.products.filter((f) => ['Clinical Intelligence', 'ABDM', 'Integrations'].includes(f.product))
+    .map((f) => [f.product, f.menu.map((i) => [i.item, '/' + walk(i.tabs[0].pages)[0], i.icon.split('/').pop().replace('.svg', ''), i.description])]);
+  const menus = JSON.parse(grab(/const NAV_MENUS=(.*);\n/, 'NAV_MENUS').replace(/^const NAV_MENUS=/, '').replace(/;\n$/, ''));
+  assert.deepEqual(menus, want);
+  assert.match(html, /const SOL_MENU=NAV_MENUS\.filter/);
+  assert.match(html, /const INT_MENU=NAV_MENUS\.filter/);
+});
+
+test('the scene picker offers the four scenes, each opening its Cookbook recipe', () => {
+  const order = run(grab(/const SCENE_ORDER=\[.*?\];\n/, 'SCENE_ORDER'), 'SCENE_ORDER');
+  assert.deepEqual([...order], ['abdm', 'mr', 'ci', 'px']);
+  const scenes = grab(/const SCENES=\{[\s\S]*?\n\};\n/, 'SCENES');
+  const names = [...scenes.matchAll(/^  [a-z]+:\{name:"([^"]+)"/gm)].map((m) => m[1]);
+  assert.deepEqual(names, ['ABDM-enabled HIS', 'Medical records from any source', 'Clinically intelligent HIS', 'Patient experiences']);
+  const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
+  const cookbook = JSON.stringify(docs.navigation.products.flatMap((f) => f.menu).find((i) => i.item === 'Cookbook'));
+  for (const m of scenes.matchAll(/next:\["[^"]+","\/([^"]+)"\]/g)) assert.ok(cookbook.includes(`"${m[1]}"`), m[1]);
+  assert.ok(!/whole platform/i.test(scenes));
+});
+
+test('every scene lays out exactly the parts it has', () => {
+  const src = grab(/const SCENES=\{[\s\S]*?\n\};\n/, 'SCENES');
+  const scenes = run('const WAVE="",CHECK="";' + src, 'SCENES');
+  for (const [k, sc] of Object.entries(scenes)) {
+    const cells = new Set(sc.areas.match(/[a-z]+/g));
+    const body = sc.parts.filter((m) => !m.head).map((m) => m.id);
+    assert.deepEqual([...cells].sort(), [...new Set(body)].sort(), k);
+    assert.ok(sc.parts.every((m) => m.url.startsWith('/')), k);
+  }
 });

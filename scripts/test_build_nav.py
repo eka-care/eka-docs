@@ -10,10 +10,13 @@ spec = importlib.util.spec_from_file_location('build_nav', os.path.join(ROOT, 's
 nav = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(nav)
 
-SOLUTIONS = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'ABDM Connect', 'NHCX', 'UHI']
+CLINICAL = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']
+ABDM = ['ABDM Connect', 'NHCX', 'UHI']
 INTEGRATIONS = ['Eka EMR', 'IPD', 'Billing', 'Health Records']
 RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']
-RECIPES = ['docs/get-started/cookbook', 'docs/products/patient-experiences',
+RECIPES = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
+           'docs/get-started/whats-possible/medical-records-from-any-source',
+           'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
            'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
            'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
 
@@ -43,9 +46,10 @@ class Regroup(unittest.TestCase):
     def test_families(self):
         nav.tabify(self.products)
         fams = docs_families(self.products)
-        self.assertEqual([f['product'] for f in fams], ['Solutions', 'Integrations', 'Resources'])
+        self.assertEqual([f['product'] for f in fams], ['Clinical Intelligence', 'ABDM', 'Integrations', 'Resources'])
         names = {f['product']: [i['item'] for i in f['menu']] for f in fams}
-        self.assertEqual(names['Solutions'], SOLUTIONS)
+        self.assertEqual(names['Clinical Intelligence'], CLINICAL)
+        self.assertEqual(names['ABDM'], ABDM)
         self.assertEqual(names['Integrations'][-4:], INTEGRATIONS)
         self.assertEqual(names['Resources'], RESOURCES)
 
@@ -66,7 +70,7 @@ class Regroup(unittest.TestCase):
     def test_research_moved(self):
         research = set(nav.walk_pages(item(self.products, 'Resources', 'Research')))
         self.assertIn('docs/models/spotlight', research)
-        parsing = set(nav.walk_pages(item(self.products, 'Solutions', 'Document Parsing')))
+        parsing = set(nav.walk_pages(item(self.products, 'Clinical Intelligence', 'Document Parsing')))
         self.assertNotIn('docs/models/spotlight', parsing)
 
     def test_cookbook(self):
@@ -97,7 +101,7 @@ class Regroup(unittest.TestCase):
                   'api-sdk/sdks/sdks/backend/webhook-sdk', 'api-sdk/sdks/sdks/web-sdk/getting-started',
                   'api-sdk/sdks/sdks/backend/ekapython-sdk'):
             self.assertIn(p, emr)
-        self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Solutions', 'Scribe'))
+        self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Clinical Intelligence', 'Scribe'))
         self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Integrations', 'Health Records'))
 
 
@@ -125,9 +129,9 @@ class BuildWithAI(unittest.TestCase):
 
     def test_build_with_ai_groups(self):
         self.assertIn('docs/emr/build-with-ai/mcp-server/introduction', self.group('Integrations', 'Eka EMR'))
-        self.assertIn('docs/datasets/build-with-ai/mcp-server/introduction', self.group('Solutions', 'Medical Knowledge'))
-        self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Solutions', 'Scribe'))
-        agents = set(nav.walk_pages(item(self.products, 'Solutions', 'Agents')))
+        self.assertIn('docs/datasets/build-with-ai/mcp-server/introduction', self.group('Clinical Intelligence', 'Medical Knowledge'))
+        self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Clinical Intelligence', 'Scribe'))
+        agents = set(nav.walk_pages(item(self.products, 'Clinical Intelligence', 'Agents')))
         self.assertFalse({p for p in agents if 'mcp-server' in p or 'medai-tools-mcp' in p})
 
     def test_redirects_cover_moves(self):
@@ -146,9 +150,9 @@ class BuildWithAI(unittest.TestCase):
         self.assertEqual(stale, [])
 
     def test_build_with_ai_overviews(self):
-        folders = {('Solutions', 'Scribe'): 'scribe', ('Solutions', 'Document Parsing'): 'models',
-                   ('Solutions', 'Agents'): 'agents', ('Solutions', 'Medical Knowledge'): 'datasets',
-                   ('Solutions', 'ABDM Connect'): 'hie-cm', ('Solutions', 'NHCX'): 'nhcx', ('Solutions', 'UHI'): 'uhi',
+        folders = {('Clinical Intelligence', 'Scribe'): 'scribe', ('Clinical Intelligence', 'Document Parsing'): 'models',
+                   ('Clinical Intelligence', 'Agents'): 'agents', ('Clinical Intelligence', 'Medical Knowledge'): 'datasets',
+                   ('ABDM', 'ABDM Connect'): 'hie-cm', ('ABDM', 'NHCX'): 'nhcx', ('ABDM', 'UHI'): 'uhi',
                    ('Integrations', 'Eka EMR'): 'emr', ('Integrations', 'IPD'): 'ipd',
                    ('Integrations', 'Billing'): 'billing', ('Integrations', 'Health Records'): 'health-records'}
         for (family, name), folder in folders.items():
