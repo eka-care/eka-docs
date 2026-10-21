@@ -11,7 +11,7 @@ nav = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(nav)
 
 CLINICAL = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']
-ABDM = ['ABDM Connect', 'NHCX', 'UHI']
+ABDM = ['HIE-CM', 'NHCX', 'UHI']
 INTEGRATIONS = ['Eka EMR', 'IPD', 'Billing', 'Health Records']
 RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']
 RECIPES = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
@@ -46,10 +46,10 @@ class Regroup(unittest.TestCase):
     def test_families(self):
         nav.tabify(self.products)
         fams = docs_families(self.products)
-        self.assertEqual([f['product'] for f in fams], ['Clinical Intelligence', 'ABDM', 'Integrations', 'Resources'])
+        self.assertEqual([f['product'] for f in fams], ['Clinical Intelligence', 'ABDM Connect', 'Integrations', 'Resources'])
         names = {f['product']: [i['item'] for i in f['menu']] for f in fams}
         self.assertEqual(names['Clinical Intelligence'], CLINICAL)
-        self.assertEqual(names['ABDM'], ABDM)
+        self.assertEqual(names['ABDM Connect'], ABDM)
         self.assertEqual(names['Integrations'][-4:], INTEGRATIONS)
         self.assertEqual(names['Resources'], RESOURCES)
 
@@ -152,7 +152,7 @@ class BuildWithAI(unittest.TestCase):
     def test_build_with_ai_overviews(self):
         folders = {('Clinical Intelligence', 'Scribe'): 'scribe', ('Clinical Intelligence', 'Document Parsing'): 'models',
                    ('Clinical Intelligence', 'Agents'): 'agents', ('Clinical Intelligence', 'Medical Knowledge'): 'datasets',
-                   ('ABDM', 'ABDM Connect'): 'hie-cm', ('ABDM', 'NHCX'): 'nhcx', ('ABDM', 'UHI'): 'uhi',
+                   ('ABDM Connect', 'HIE-CM'): 'hie-cm', ('ABDM Connect', 'NHCX'): 'nhcx', ('ABDM Connect', 'UHI'): 'uhi',
                    ('Integrations', 'Eka EMR'): 'emr', ('Integrations', 'IPD'): 'ipd',
                    ('Integrations', 'Billing'): 'billing', ('Integrations', 'Health Records'): 'health-records'}
         for (family, name), folder in folders.items():

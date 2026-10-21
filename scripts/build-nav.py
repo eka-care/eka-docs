@@ -180,10 +180,10 @@ ICONS = {
     'Scribe': 'mic', 'Agents': 'bot', 'Document Parsing': 'brain-circuit', 'Medical Knowledge': 'database',
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
-    'ABDM Connect': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
+    'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
     'Overview': 'compass', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
-    'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list', 'HIE-CM': 'arrow-left-right',
+    'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
 }
 
@@ -201,7 +201,7 @@ API_HOME = {
     'Medical Knowledge': 'api-sdk/datasets/overview',
     'Eka EMR': 'api-sdk/emr/instructions/before-you-begin',
     'Health Records': 'api-sdk/health-records/create-overview',
-    'ABDM Connect': 'api-sdk/hie-cm/overview',
+    'HIE-CM': 'api-sdk/hie-cm/overview',
     'NHCX': 'docs/nhcx/getting-started',
     'UHI': 'docs/uhi/blood-bank/getting-started',
 }
@@ -372,7 +372,7 @@ API_SUFFIX = ' API'  # the API Reference has one family per docs family: "AI API
 def is_api_family(fam):
     return fam['product'].endswith(API_SUFFIX) or fam['product'] == API_DIVISION
 API_SECTION_HOME = {
-    'ABDM Connect': 'api-sdk/hie-cm/overview',
+    'HIE-CM': 'api-sdk/hie-cm/overview',
     'Scribe': 'api-sdk/scribe/sessions/overview',
     'Agents': 'api-sdk/agents/overview',
     'Document Parsing': 'api-sdk/models/medical-document-parsing/introduction',
@@ -478,7 +478,7 @@ def split_api(products):
 
 # Font Awesome stand-ins for the product icons, for API section headers.
 ICONS_FA = {'Scribe': 'microphone', 'Agents': 'robot', 'Document Parsing': 'brain', 'Medical Knowledge': 'database', 'Eka EMR': 'clipboard-list',
-            'IPD': 'bed', 'Billing': 'receipt', 'Health Records': 'folder-open', 'ABDM Connect': 'arrow-right-arrow-left',
+            'IPD': 'bed', 'Billing': 'receipt', 'Health Records': 'folder-open', 'HIE-CM': 'arrow-right-arrow-left',
             'NHCX': 'shield-heart', 'UHI': 'network-wired', 'Auth': 'key', 'Webhooks': 'webhook'}
 
 
@@ -651,7 +651,7 @@ CHANGELOGS = {
     'Eka EMR': ['docs/get-started/emr-changelog'],
     'Billing': ['docs/billing/changelog'],
     'Health Records': ['docs/health-records/changelog'],
-    'ABDM Connect': ['docs/hie-cm/changelog'],
+    'HIE-CM': ['docs/hie-cm/changelog'],
 }
 RECIPES = {
     'Eka EMR': ['docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management'],
@@ -740,20 +740,20 @@ def untab(products):
 
 
 # ---------- Families ----------
-# Four families, as the landing page's menus show them: Solutions is Clinical Intelligence and ABDM (what you build
+# Four families, as the landing page's menus show them: Solutions is Clinical Intelligence and ABDM Connect (what you build
 # with), then Integrations (for people already on an Eka product) and Resources (what every product shares). regroup() moves the tree build() made, or the one already in docs.json, into that
 # shape. It moves pages and never rewrites them, and running it again changes nothing.
 FAMILIES = [
     ('Clinical Intelligence', 'sparkles', 'Scribe, document parsing, agents and medical knowledge to build your own tools.',
      ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']),
-    ('ABDM', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
-     ['ABDM Connect', 'NHCX', 'UHI']),
+    ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
+     ['HIE-CM', 'NHCX', 'UHI']),
     ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
      ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
     ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
      ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']),
 ]
-RENAME_ITEMS = {'Models': 'Document Parsing', 'Datasets': 'Medical Knowledge', 'HIE-CM': 'ABDM Connect', 'EMR': 'Eka EMR'}
+RENAME_ITEMS = {'Models': 'Document Parsing', 'Datasets': 'Medical Knowledge', 'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR'}
 NEW_ITEMS = {
     'Cookbook': 'Worked examples that combine Eka products',
     'Research': 'Open models, datasets and research for AI in Indian healthcare',
@@ -796,7 +796,7 @@ BUILD_WITH_AI = {
 BUILD_WITH_AI_HOME = {
     'Scribe': 'docs/scribe/build-with-ai', 'Document Parsing': 'docs/models/build-with-ai',
     'Agents': 'docs/agents/build-with-ai', 'Medical Knowledge': 'docs/datasets/build-with-ai',
-    'ABDM Connect': 'docs/hie-cm/build-with-ai', 'NHCX': 'docs/nhcx/build-with-ai', 'UHI': 'docs/uhi/build-with-ai',
+    'HIE-CM': 'docs/hie-cm/build-with-ai', 'NHCX': 'docs/nhcx/build-with-ai', 'UHI': 'docs/uhi/build-with-ai',
     'Eka EMR': 'docs/emr/build-with-ai', 'IPD': 'docs/ipd/build-with-ai', 'Billing': 'docs/billing/build-with-ai',
     'Health Records': 'docs/health-records/build-with-ai',
 }
@@ -1072,7 +1072,7 @@ def write_journey(products):
     open(LANDING_HTML, 'w').write(src[:start] + block + src[end:])
 
 
-LANDING_MENUS = ['Clinical Intelligence', 'ABDM', 'Integrations']
+LANDING_MENUS = ['Clinical Intelligence', 'ABDM Connect', 'Integrations']
 
 
 def write_menus(products):
@@ -1165,7 +1165,7 @@ def main():
         for it in fam['menu']:
             if is_api_family(fam) or 'href' in it:
                 continue
-            if it['item'] == 'ABDM Connect' and any(isinstance(e, dict) and e.get('group') == 'Milestone 1' for e in it.get('pages', []) + it.get('groups', [])):
+            if it['item'] == 'HIE-CM' and any(isinstance(e, dict) and e.get('group') == 'Milestone 1' for e in it.get('pages', []) + it.get('groups', [])):
                 restructure_hiecm(it)
             entries = [shape(g) for g in unwrap(it, it.pop('groups', it.pop('pages', [])))]
             # Entries go in `pages`, not `groups`: Mintlify honours a group's
