@@ -92,3 +92,10 @@ test('docs.json footer fits Mintlify (at most 4 link columns)', () => {
   const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
   assert.ok(docs.footer.links.length <= 4, `${docs.footer.links.length} columns`);
 });
+
+test('the scene strip stays centred however long the scene description is', () => {
+  // The description row spans the grid and can widen it; equal flexible side columns keep the strip in the middle.
+  assert.match(html, /\.scenes\{[^}]*grid-template-columns:minmax\(36px,1fr\) auto minmax\(36px,1fr\)/);
+  assert.match(html, /\.snav\.prev\{justify-self:end\}/);
+  assert.match(html, /\.snav\.next\{justify-self:start\}/);
+});
