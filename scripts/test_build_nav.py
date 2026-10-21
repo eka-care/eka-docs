@@ -10,7 +10,7 @@ spec = importlib.util.spec_from_file_location('build_nav', os.path.join(ROOT, 's
 nav = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(nav)
 
-CLINICAL = ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']
+CLINICAL = ['Medical Scribe', 'Medical Document Parsing', 'Medical Agents', 'Medical Knowledge']
 ABDM = ['HIE-CM', 'NHCX', 'UHI']
 INTEGRATIONS = ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
 RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']
@@ -70,7 +70,7 @@ class Regroup(unittest.TestCase):
     def test_research_moved(self):
         research = set(nav.walk_pages(item(self.products, 'Resources', 'Research')))
         self.assertIn('docs/models/spotlight', research)
-        parsing = set(nav.walk_pages(item(self.products, 'Clinical AI', 'Document Parsing')))
+        parsing = set(nav.walk_pages(item(self.products, 'Clinical AI', 'Medical Document Parsing')))
         self.assertNotIn('docs/models/spotlight', parsing)
 
     def test_cookbook(self):
@@ -101,7 +101,7 @@ class Regroup(unittest.TestCase):
                   'api-sdk/sdks/sdks/backend/webhook-sdk', 'api-sdk/sdks/sdks/web-sdk/getting-started',
                   'api-sdk/sdks/sdks/backend/ekapython-sdk'):
             self.assertIn(p, emr)
-        self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Clinical AI', 'Scribe'))
+        self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Clinical AI', 'Medical Scribe'))
         self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Integrations', 'Health Records'))
 
 
@@ -130,8 +130,8 @@ class BuildWithAI(unittest.TestCase):
     def test_build_with_ai_groups(self):
         self.assertIn('docs/emr/build-with-ai/mcp-server/introduction', self.group('Integrations', 'Eka EMR'))
         self.assertIn('docs/datasets/build-with-ai/mcp-server/introduction', self.group('Clinical AI', 'Medical Knowledge'))
-        self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Clinical AI', 'Scribe'))
-        agents = set(nav.walk_pages(item(self.products, 'Clinical AI', 'Agents')))
+        self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Clinical AI', 'Medical Scribe'))
+        agents = set(nav.walk_pages(item(self.products, 'Clinical AI', 'Medical Agents')))
         self.assertFalse({p for p in agents if 'mcp-server' in p or 'medai-tools-mcp' in p})
 
     def test_redirects_cover_moves(self):
@@ -150,8 +150,8 @@ class BuildWithAI(unittest.TestCase):
         self.assertEqual(stale, [])
 
     def test_build_with_ai_overviews(self):
-        folders = {('Clinical AI', 'Scribe'): 'scribe', ('Clinical AI', 'Document Parsing'): 'models',
-                   ('Clinical AI', 'Agents'): 'agents', ('Clinical AI', 'Medical Knowledge'): 'datasets',
+        folders = {('Clinical AI', 'Medical Scribe'): 'scribe', ('Clinical AI', 'Medical Document Parsing'): 'models',
+                   ('Clinical AI', 'Medical Agents'): 'agents', ('Clinical AI', 'Medical Knowledge'): 'datasets',
                    ('ABDM Connect', 'HIE-CM'): 'hie-cm', ('ABDM Connect', 'NHCX'): 'nhcx', ('ABDM Connect', 'UHI'): 'uhi',
                    ('Integrations', 'Eka EMR'): 'emr', ('Integrations', 'IPD'): 'ipd',
                    ('Integrations', 'Billing'): 'billing', ('Integrations', 'Health Records'): 'health-records'}
@@ -173,7 +173,7 @@ class BuildWithAI(unittest.TestCase):
 
     def test_api_index_lists_each_product_once(self):
         index = open(os.path.join(ROOT, 'api-sdk/index.mdx')).read()
-        self.assertEqual(index.count('title="Scribe"'), 1)
+        self.assertEqual(index.count('title="Medical Scribe"'), 1)
 
     def test_a_product_opens_on_its_api_when_its_docs_are_only_build_with_ai(self):
         ipd = item(self.products, 'Integrations', 'IPD')

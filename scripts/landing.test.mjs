@@ -39,7 +39,7 @@ test('product grid holds seven solutions', () => {
   const grid = grab(/<section class="sec" id="products">[\s\S]*?<\/section>/, 'products');
   const solutions = grid.replace(/<div class="prod[^"]*" id="p-cook">[\s\S]*?<\/div>\n    <\/div>/, '');
   const tiles = [...solutions.matchAll(/<a class="pl"[\s\S]*?<b>([^<]+)</g)].map((m) => m[1]);
-  assert.deepEqual(tiles, ['Scribe', 'Agents', 'Document Parsing', 'Medical Knowledge', 'HIE-CM', 'NHCX', 'UHI']);
+  assert.deepEqual(tiles, ['Medical Scribe', 'Medical Agents', 'Medical Document Parsing', 'Medical Knowledge', 'HIE-CM', 'NHCX', 'UHI']);
 });
 
 

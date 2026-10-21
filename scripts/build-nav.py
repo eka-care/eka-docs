@@ -177,7 +177,7 @@ API_INDEX = 'api-sdk/index'
 
 # Same icon per product as the landing page's Products menu (landing/index.html).
 ICONS = {
-    'Scribe': 'mic', 'Agents': 'bot', 'Document Parsing': 'brain-circuit', 'Medical Knowledge': 'database',
+    'Medical Scribe': 'mic', 'Medical Agents': 'bot', 'Medical Document Parsing': 'brain-circuit', 'Medical Knowledge': 'database',
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
@@ -195,9 +195,9 @@ API_HOME = {
     'Webhooks': 'api-sdk/webhooks/getting-started',
     'Encryption': 'docs/encryption/guide',
     'SDKs': 'api-sdk/sdks/sdks/web-sdk/getting-started',
-    'Scribe': 'api-sdk/scribe/sessions/overview',
-    'Agents': 'api-sdk/agents/overview',
-    'Document Parsing': 'api-sdk/models/medical-document-parsing/introduction',
+    'Medical Scribe': 'api-sdk/scribe/sessions/overview',
+    'Medical Agents': 'api-sdk/agents/overview',
+    'Medical Document Parsing': 'api-sdk/models/medical-document-parsing/introduction',
     'Medical Knowledge': 'api-sdk/datasets/overview',
     'Eka EMR': 'api-sdk/emr/instructions/before-you-begin',
     'Health Records': 'api-sdk/health-records/create-overview',
@@ -373,9 +373,9 @@ def is_api_family(fam):
     return fam['product'].endswith(API_SUFFIX) or fam['product'] == API_DIVISION
 API_SECTION_HOME = {
     'HIE-CM': 'api-sdk/hie-cm/overview',
-    'Scribe': 'api-sdk/scribe/sessions/overview',
-    'Agents': 'api-sdk/agents/overview',
-    'Document Parsing': 'api-sdk/models/medical-document-parsing/introduction',
+    'Medical Scribe': 'api-sdk/scribe/sessions/overview',
+    'Medical Agents': 'api-sdk/agents/overview',
+    'Medical Document Parsing': 'api-sdk/models/medical-document-parsing/introduction',
     'Medical Knowledge': 'api-sdk/datasets/overview',
     'Eka EMR': 'api-sdk/emr/instructions/before-you-begin',
     'Health Records': 'api-sdk/health-records/create-overview',
@@ -477,7 +477,7 @@ def split_api(products):
 
 
 # Font Awesome stand-ins for the product icons, for API section headers.
-ICONS_FA = {'Scribe': 'microphone', 'Agents': 'robot', 'Document Parsing': 'brain', 'Medical Knowledge': 'database', 'Eka EMR': 'clipboard-list',
+ICONS_FA = {'Medical Scribe': 'microphone', 'Medical Agents': 'robot', 'Medical Document Parsing': 'brain', 'Medical Knowledge': 'database', 'Eka EMR': 'clipboard-list',
             'IPD': 'bed', 'Billing': 'receipt', 'Health Records': 'folder-open', 'HIE-CM': 'arrow-right-arrow-left',
             'NHCX': 'shield-heart', 'UHI': 'network-wired', 'Auth': 'key', 'Webhooks': 'webhook'}
 
@@ -646,8 +646,8 @@ def root_groups(products):
 # next run, so routes (/docs/<product>/, /api-sdk/<product>/) and every derived file stay as they were.
 DOCS_TAB, API_TAB, CHANGELOG_TAB = 'Documentation', 'APIs & SDKs', 'Changelog'
 CHANGELOGS = {
-    'Scribe': ['docs/get-started/ekascribe-changelog', 'docs/get-started/ekascribe'],
-    'Agents': ['docs/get-started/ekaagents-changelog', 'docs/get-started/eka-agents'],
+    'Medical Scribe': ['docs/get-started/ekascribe-changelog', 'docs/get-started/ekascribe'],
+    'Medical Agents': ['docs/get-started/ekaagents-changelog', 'docs/get-started/eka-agents'],
     'Eka EMR': ['docs/get-started/emr-changelog'],
     'Billing': ['docs/billing/changelog'],
     'Health Records': ['docs/health-records/changelog'],
@@ -656,7 +656,7 @@ CHANGELOGS = {
 RECIPES = {
     'Eka EMR': ['docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management'],
     'Medical Knowledge': ['docs/get-started/whats-possible/medicine-lookup'],
-    'Document Parsing': ['docs/get-started/whats-possible/health-assessment'],
+    'Medical Document Parsing': ['docs/get-started/whats-possible/health-assessment'],
 }
 
 
@@ -750,7 +750,7 @@ def untab(products):
 # shape. It moves pages and never rewrites them, and running it again changes nothing.
 FAMILIES = [
     ('Clinical AI', 'sparkles', 'Scribe, document parsing, agents and medical knowledge to build your own tools.',
-     ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge']),
+     ['Medical Scribe', 'Medical Document Parsing', 'Medical Agents', 'Medical Knowledge']),
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
     ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
@@ -758,7 +758,9 @@ FAMILIES = [
     ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
      ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Changelog']),
 ]
-RENAME_ITEMS = {'Models': 'Document Parsing', 'Datasets': 'Medical Knowledge', 'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR'}
+RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medical Document Parsing',
+                'Scribe': 'Medical Scribe', 'Agents': 'Medical Agents', 'Datasets': 'Medical Knowledge',
+                'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR'}
 NEW_ITEMS = {
     'Cookbook': 'Worked examples that combine Eka products',
     'Research': 'Open models, datasets and research for AI in Indian healthcare',
@@ -780,7 +782,7 @@ API_MOVES = {
                                   'docs/webhooks/glossary', 'api-sdk/sdks/sdks/backend/webhook-sdk']),
 }
 SDK_MOVES = {
-    'Scribe': ['api-sdk/sdks/sdks/android/ekascribe'],
+    'Medical Scribe': ['api-sdk/sdks/sdks/android/ekascribe'],
     'Health Records': ['api-sdk/sdks/sdks/android/medical-records'],
     'Eka EMR': ['api-sdk/sdks/sdks/web-sdk/getting-started', 'api-sdk/sdks/sdks/backend/ekapython-sdk'],
 }
@@ -788,7 +790,7 @@ SDK_MOVES = {
 # and the files it gives coding agents. The group sits before the product's Resources group, or last.
 BUILD_WITH_AI_GROUP = 'Build with AI'
 BUILD_WITH_AI = {
-    'Scribe': ['docs/scribe/build-with-ai/claude-md'],
+    'Medical Scribe': ['docs/scribe/build-with-ai/claude-md'],
     'Medical Knowledge': [{'group': 'MCP server', 'root': 'docs/datasets/build-with-ai/mcp-server/introduction',
                            'pages': [f'docs/datasets/build-with-ai/mcp-server/{p}'
                                      for p in ('quickstart', 'tools', 'authentication')]}],
@@ -799,8 +801,8 @@ BUILD_WITH_AI = {
 
 # Each product's Build with AI overview, the root of that group.
 BUILD_WITH_AI_HOME = {
-    'Scribe': 'docs/scribe/build-with-ai', 'Document Parsing': 'docs/models/build-with-ai',
-    'Agents': 'docs/agents/build-with-ai', 'Medical Knowledge': 'docs/datasets/build-with-ai',
+    'Medical Scribe': 'docs/scribe/build-with-ai', 'Medical Document Parsing': 'docs/models/build-with-ai',
+    'Medical Agents': 'docs/agents/build-with-ai', 'Medical Knowledge': 'docs/datasets/build-with-ai',
     'HIE-CM': 'docs/hie-cm/build-with-ai', 'NHCX': 'docs/nhcx/build-with-ai', 'UHI': 'docs/uhi/build-with-ai',
     'Eka EMR': 'docs/emr/build-with-ai', 'IPD': 'docs/ipd/build-with-ai', 'Billing': 'docs/billing/build-with-ai',
     'Health Records': 'docs/health-records/build-with-ai',
@@ -891,7 +893,7 @@ def regroup(products):
 
     # Research: the Spotlight group leaves Document Parsing whole.
     if not docs('Research'):
-        dp = docs('Document Parsing')
+        dp = docs('Medical Document Parsing')
         group, dp['pages'] = take_group(dp.get('pages', []), 'Eka MedAI research')
         if group:
             items[(False, 'Research')] = {'item': 'Research', 'pages': [group]}

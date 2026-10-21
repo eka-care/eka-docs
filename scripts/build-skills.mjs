@@ -31,9 +31,9 @@ const SKIP_DIRS = new Set(['node_modules', '.git', '.superpowers', '.claude', 'p
 
 // ABDM Connect has its own plugin (abdm-connect, eka-abdm marketplace), so it gets no generated one here.
 export const PRODUCTS = [
-  { item: 'Scribe', slug: 'scribe' },
-  { item: 'Document Parsing', slug: 'document-parsing' },
-  { item: 'Agents', slug: 'agents' },
+  { item: 'Medical Scribe', slug: 'scribe' },
+  { item: 'Medical Document Parsing', slug: 'document-parsing' },
+  { item: 'Medical Agents', slug: 'agents' },
   { item: 'Medical Knowledge', slug: 'medical-knowledge' },
   { item: 'Eka EMR', slug: 'emr' },
   { item: 'IPD', slug: 'ipd' },
