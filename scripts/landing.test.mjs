@@ -87,3 +87,8 @@ test('every scene lays out exactly the parts it has', () => {
     assert.ok(sc.parts.every((m) => m.url.startsWith('/')), k);
   }
 });
+
+test('docs.json footer fits Mintlify (at most 4 link columns)', () => {
+  const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
+  assert.ok(docs.footer.links.length <= 4, `${docs.footer.links.length} columns`);
+});
