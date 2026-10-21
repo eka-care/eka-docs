@@ -116,6 +116,8 @@ export function operationOf(frontmatter, specs) {
 
 // ---------- writing ----------
 
+// "Eka EMR" is already branded; "Scribe" becomes "Eka Scribe".
+const branded = (name) => (name.startsWith('Eka ') ? name : `Eka ${name}`);
 const cell = (s) => String(s ?? '').replace(/\s*\u2014\s*/g, ', ').replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim();
 const firstSentence = (s) => cell(s).split(/(?<=\.)\s/)[0];
 
@@ -178,18 +180,30 @@ export function integrateMd(product, operations, specs, guides) {
     `# Integrate ${product.item}`, '',
     'The calls themselves: where they live, what they need in their headers, every operation, and one request written out in full.', ''];
 
-  const hosts = [];
-  for (const f of used) for (const s of specs.get(f).servers ?? []) {
-    const line = `- \`${s.url}\`${s.description ? ' ' + cell(s.description) : ''}`;
-    if (!hosts.includes(line)) hosts.push(line);
+  // Hosts once per URL, with the first description any spec gives it.
+  const hosts = new Map();
+  for (const f of used) for (const sv of specs.get(f).servers ?? []) {
+    if (!hosts.has(sv.url)) hosts.set(sv.url, `- \`${sv.url}\`${sv.description ? ' ' + cell(sv.description) : ''}`);
   }
-  out.push('## Hosts', '', ...(hosts.length ? hosts : ['The specs name no host. Use the one on the operation\'s page.']), '');
+  out.push('## Hosts', '', ...(hosts.size ? hosts.values() : ['The specs name no host. Use the one on the operation\'s page.']), '');
 
-  const auth = [];
-  for (const f of used) for (const [name, s] of Object.entries(specs.get(f).components?.securitySchemes ?? {})) {
-    const line = schemeLine(name, s);
-    if (!auth.includes(line)) auth.push(line);
+  // Only the schemes the listed operations ask for (their own security, else their spec's default).
+  // When two specs give one scheme name different meanings, each line says whose operations it is for.
+  const seen = new Map(); // line -> specs using it
+  for (const o of operations) {
+    const spec = specs.get(o.spec);
+    const schemes = spec.components?.securitySchemes ?? {};
+    const reqs = opDoc(specs, o).security ?? spec.security;
+    const names = reqs ? reqs.flatMap((r) => Object.keys(r)) : Object.keys(schemes);
+    for (const name of names) {
+      if (!schemes[name]) continue;
+      const line = schemeLine(name, schemes[name]);
+      if (!seen.has(line)) seen.set(line, { name, specs: new Set() });
+      seen.get(line).specs.add(o.spec);
+    }
   }
+  const clash = (name) => [...seen.values()].filter((v) => v.name === name).length > 1;
+  const auth = [...seen].map(([line, v]) => (clash(v.name) ? `${line} For operations in ${[...v.specs].sort().map((f) => `\`${f}\``).join(', ')}.` : line));
   const headers = new Set();
   for (const o of operations) {
     const spec = specs.get(o.spec);
@@ -237,12 +251,12 @@ export function skillMd(product, overview, jobs) {
   return [
     '---',
     `name: eka-${product.slug}`,
-    `description: Use when building against Eka ${product.item}${desc ? ': ' + desc.replace(/\.$/, '') : ''}. Carries the hosts, auth and headers, and every ${product.item} operation with a link to its page on developer.eka.care.`,
+    `description: Use when building against ${branded(product.item)}${desc ? ': ' + desc.replace(/\.$/, '') : ''}. Carries the hosts, auth and headers, and every ${product.item} operation with a link to its page on developer.eka.care.`,
     '---',
     '',
     `<!-- ${GENERATED}. Do not edit by hand. -->`,
     '',
-    `# Eka ${product.item}`,
+    `# ${branded(product.item)}`,
     '',
     `Generated from developer.eka.care. Every fact below comes from a page there, which is the place to look when this file does not carry enough. This file is a snapshot: fetch it again from ${rawSkillUrl(product.slug)} when it is older than the work you are doing.`,
     '',
@@ -268,9 +282,9 @@ export function skillMd(product, overview, jobs) {
 function pluginJson(product, overview) {
   return JSON.stringify({
     name: `eka-${product.slug}`,
-    displayName: `Eka ${product.item}`,
+    displayName: branded(product.item),
     version: '0.1.0',
-    description: `Reference skill for building against Eka ${product.item}: hosts, auth and headers, and every operation, generated from developer.eka.care.`,
+    description: `Reference skill for building against ${branded(product.item)}: hosts, auth and headers, and every operation, generated from developer.eka.care.`,
     author: { name: 'Eka Care', url: SITE },
     license: 'MIT',
     keywords: ['eka', product.slug, 'agent-skills', 'api'],
@@ -300,21 +314,24 @@ export function build({ root = ROOT, out = ROOT, check = false } = {}) {
       else guides.push({ page, title: fm.sidebarTitle || fm.title || fm.heading || page });
     }
     if (!operations.length) continue;
-    const home = docsHomeOf(docs, product.item);
+    // The menu's one-line description is written for this product; its first page may be about one part of it.
     const item = findItem(docs, product.item);
-    const overview = { title: product.item, description: (home && readPage(root, home)?.description) || item.description || '' };
+    const home = docsHomeOf(docs, product.item);
+    const overview = { title: product.item, description: item.description || (home && readPage(root, home)?.description) || '' };
     const dir = skillDir(product.slug);
     files.set(`plugins/eka-${product.slug}/.claude-plugin/plugin.json`, pluginJson(product, overview));
     files.set(`${dir}/SKILL.md`, skillMd(product, overview, ['integrate']));
     files.set(`${dir}/references/integrate.md`, integrateMd(product, operations, specs, guides));
     plugins.push({ name: `eka-${product.slug}`, source: `./plugins/eka-${product.slug}`,
-      description: `Reference skill for Eka ${product.item}: every operation, its hosts, auth and headers.` });
+      description: `Reference skill for ${branded(product.item)}: every operation, its hosts, auth and headers.` });
   }
 
   const mpFile = '.claude-plugin/marketplace.json';
   const mp = JSON.parse(fs.readFileSync(path.join(root, mpFile), 'utf8'));
   const names = new Set(plugins.map((p) => p.name));
-  mp.plugins = [...mp.plugins.filter((p) => !names.has(p.name)), ...plugins].sort((a, b) => (a.name < b.name ? -1 : 1));
+  // Generated entries (eka-*) are rebuilt from this run; others, such as eka-docs-contributor, are kept as they are.
+  const generated = (n) => n.startsWith('eka-') && n !== 'eka-docs-contributor';
+  mp.plugins = [...mp.plugins.filter((p) => !names.has(p.name) && !generated(p.name)), ...plugins].sort((a, b) => (a.name < b.name ? -1 : 1));
   files.set(mpFile, JSON.stringify(mp, null, 2) + '\n');
 
   const changed = [];
@@ -328,7 +345,20 @@ export function build({ root = ROOT, out = ROOT, check = false } = {}) {
       fs.writeFileSync(full, body);
     }
   }
-  return { written: [...files.keys()], changed, ambiguous, unresolved };
+  // Files under a generated plugin that this run did not produce: a product that lost its operations, or a retired job
+  // file. They are reported, never deleted here; removing published skills is a person's call.
+  const stale = [];
+  const pluginsDir = path.join(out, 'plugins');
+  if (fs.existsSync(pluginsDir)) {
+    for (const d of fs.readdirSync(pluginsDir)) {
+      if (!d.startsWith('eka-') || d === 'eka-docs-contributor') continue;
+      for (const f of fs.readdirSync(path.join(pluginsDir, d), { recursive: true })) {
+        const rel = `plugins/${d}/${String(f).split(path.sep).join('/')}`;
+        if (fs.statSync(path.join(out, rel)).isFile() && !files.has(rel)) stale.push(rel);
+      }
+    }
+  }
+  return { written: [...files.keys()], changed, stale: stale.sort(), ambiguous, unresolved };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -336,8 +366,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const r = build({ check });
   for (const a of r.ambiguous) console.error(`ambiguous: ${a}`);
   for (const u of r.unresolved) console.error(`unresolved: ${u}`);
-  if (check && r.changed.length) {
-    console.error(`skills out of date (run npm run skills:build):\n  ${r.changed.join('\n  ')}`);
+  if (r.stale.length) console.error(`stale (no longer generated; delete them or restore their source):\n  ${r.stale.join('\n  ')}`);
+  if (check && (r.changed.length || r.stale.length)) {
+    if (r.changed.length) console.error(`skills out of date (run npm run skills:build):\n  ${r.changed.join('\n  ')}`);
     process.exit(1);
   }
   console.log(`${r.written.length} files, ${r.changed.length} ${check ? 'would change' : 'written'}`);

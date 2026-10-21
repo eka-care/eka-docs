@@ -8,7 +8,6 @@ The calls themselves: where they live, what they need in their headers, every op
 
 - `https://api.eka.care` Production server
 - `https://api.dev.eka.care` Development server
-- `https://api.eka.care` Production
 
 ## Auth and headers
 

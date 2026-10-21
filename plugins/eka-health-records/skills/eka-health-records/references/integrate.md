@@ -8,16 +8,14 @@ The calls themselves: where they live, what they need in their headers, every op
 
 - `https://api.eka.care` Production server
 - `https://api.dev.eka.care` Development server
-- `https://api.eka.care`
-- `https://api.dev.eka.care`
 
 ## Auth and headers
 
 Get a token first: [Authentication](https://developer.eka.care/api-sdk/auth/getting-started).
 
-- `auth`: HTTP bearer. Send `Authorization: Bearer <token>`.
+- `auth`: HTTP bearer. Send `Authorization: Bearer <token>`. For operations in `api-reference/health-ai/ekascribe/voice.yaml`, `api-reference/user-app/records/records.yaml`.
 - `bearerAuth`: HTTP bearer. Send `Authorization: Bearer <token>`.
-- `auth`: API key in the `auth` header.
+- `auth`: API key in the `auth` header. For operations in `api-reference/user-app/vitals/vitals.yaml`.
 - `authToken`: HTTP bearer. Send `Authorization: Bearer <token>`.
 
 Headers that some operations require:

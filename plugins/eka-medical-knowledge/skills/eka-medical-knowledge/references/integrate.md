@@ -8,8 +8,6 @@ The calls themselves: where they live, what they need in their headers, every op
 
 - `https://api.eka.care` Production
 - `https://api.dev.eka.care` Stage/Sandbox
-- `https://api.dev.eka.care` Staging Server
-- `https://api.eka.care` Prod Server
 
 ## Auth and headers
 
