@@ -516,7 +516,8 @@ def shape(node):
     node.setdefault('icon', GROUP_ICONS.get(node['group']) or pick_icon(node['group'], default=DEFAULT_GROUP_ICON))
     if not node['pages'] and node.get('root'):
         return node['root']
-    if 'root' not in node and len(node['pages']) == 1 and isinstance(node['pages'][0], str):
+    if 'root' not in node and len(node['pages']) == 1 and isinstance(node['pages'][0], str) \
+            and node['group'] != BUILD_WITH_AI_GROUP:  # a product's Build with AI stays a section of its own
         return node['pages'][0]
     return node
 
@@ -768,10 +769,32 @@ SDK_MOVES = {
     'Scribe': ['api-sdk/sdks/sdks/android/ekascribe'],
     'Health Records': ['api-sdk/sdks/sdks/android/medical-records'],
     'Eka EMR': ['api-sdk/sdks/sdks/web-sdk/getting-started', 'api-sdk/sdks/sdks/backend/ekapython-sdk'],
-    'Medical Knowledge': ['api-sdk/sdks/sdks/ekacare-mcp'],
 }
-# Extra pages in each product's Build with AI group (its MCP servers, files for coding agents).
-BUILD_WITH_AI = {}
+# What each product's Build with AI group holds besides its overview (docs/<folder>/build-with-ai): its MCP servers
+# and the files it gives coding agents. The group sits before the product's Resources group, or last.
+BUILD_WITH_AI_GROUP = 'Build with AI'
+BUILD_WITH_AI = {
+    'Scribe': ['docs/scribe/build-with-ai/claude-md'],
+    'Medical Knowledge': [{'group': 'MCP server', 'root': 'docs/datasets/build-with-ai/mcp-server/introduction',
+                           'pages': [f'docs/datasets/build-with-ai/mcp-server/{p}'
+                                     for p in ('quickstart', 'tools', 'authentication')]}],
+    'Eka EMR': [{'group': 'MCP server', 'root': 'docs/emr/build-with-ai/mcp-server/introduction',
+                 'pages': [f'docs/emr/build-with-ai/mcp-server/{p}'
+                           for p in ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]}],
+}
+
+
+def place_build_with_ai(entries, contents):
+    """entries with the Build with AI group set to contents, before a trailing Resources group."""
+    old, entries = take_group(entries, BUILD_WITH_AI_GROUP)
+    group = {**(old or {}), 'group': BUILD_WITH_AI_GROUP, 'pages': contents}
+    group.pop('root', None)
+    if old and old.get('root'):
+        group['root'] = old['root']
+    at = len(entries)
+    if entries and isinstance(entries[-1], dict) and entries[-1].get('group') == 'Resources':
+        at -= 1
+    return entries[:at] + [group] + entries[at:]
 
 
 def page_multiset(tree):
@@ -867,6 +890,14 @@ def regroup(products):
                 items[key]['pages'] = remove_pages(items[key].get('pages', []), set(pages))
         target = api(name)
         target['pages'] = add_to_group(remove_pages(target['pages'], set(pages)), 'SDKs', pages)
+    # Build with AI: the product's AI tools leave wherever they were listed.
+    for name, contents in BUILD_WITH_AI.items():
+        moving = set(walk_pages(contents))
+        for (is_api, _), it in items.items():
+            if not is_api and it.get('pages'):
+                it['pages'] = remove_pages(it['pages'], moving)
+        it = docs(name)
+        it['pages'] = place_build_with_ai(it.get('pages', []), json.loads(json.dumps(contents)))
     # Recipes join their product's Documentation.
     for name, pages in RECIPES.items():
         it = docs(name)

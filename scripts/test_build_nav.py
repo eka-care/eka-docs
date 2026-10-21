@@ -98,5 +98,50 @@ class Regroup(unittest.TestCase):
         self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Integrations', 'Health Records'))
 
 
+EMR_MCP = ['introduction', 'remote-mcp', 'local-mcp', 'supported-tools', 'authentication']
+MEDAI_MCP = ['introduction', 'quickstart', 'tools', 'authentication']
+MOVES = {**{f'docs/agents/mcp-server/{p}': f'docs/emr/build-with-ai/mcp-server/{p}' for p in EMR_MCP},
+         **{f'docs/agents/medai-tools-mcp/{p}': f'docs/datasets/build-with-ai/mcp-server/{p}' for p in MEDAI_MCP},
+         'docs/scribe/api-integration': 'docs/scribe/build-with-ai/claude-md',
+         'docs/agents/mcp-for-emr': 'docs/emr/build-with-ai/mcp-server/introduction',
+         'docs/agents/mcp-for-indian-treatment-protocol-search': 'docs/datasets/build-with-ai/mcp-server/introduction',
+         'api-sdk/sdks/sdks/ekacare-mcp': 'docs/datasets/build-with-ai/mcp-server/introduction'}
+
+
+class BuildWithAI(unittest.TestCase):
+    def setUp(self):
+        self.docs = json.load(open(os.path.join(ROOT, 'docs.json')))
+        self.products = self.docs['navigation']['products']
+
+    def group(self, family, name):
+        it = item(self.products, family, name)
+        tab = next(t for t in it['tabs'] if t['tab'] == nav.DOCS_TAB)
+        found, _ = nav.take_group(tab['pages'], 'Build with AI')
+        self.assertIsNotNone(found, f'{name} has no Build with AI group')
+        return set(nav.walk_pages(found))
+
+    def test_build_with_ai_groups(self):
+        self.assertIn('docs/emr/build-with-ai/mcp-server/introduction', self.group('Integrations', 'Eka EMR'))
+        self.assertIn('docs/datasets/build-with-ai/mcp-server/introduction', self.group('Solutions', 'Medical Knowledge'))
+        self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Solutions', 'Scribe'))
+        agents = set(nav.walk_pages(item(self.products, 'Solutions', 'Agents')))
+        self.assertFalse({p for p in agents if 'mcp-server' in p or 'medai-tools-mcp' in p})
+
+    def test_redirects_cover_moves(self):
+        redirects = {r['source']: r for r in self.docs['redirects']}
+        for old, new in MOVES.items():
+            r = redirects.get('/' + old)
+            self.assertIsNotNone(r, old)
+            self.assertEqual(r['destination'], '/' + new)
+            self.assertTrue(r.get('permanent'))
+            self.assertTrue(os.path.exists(os.path.join(ROOT, new + '.mdx')), new)
+            self.assertFalse(os.path.exists(os.path.join(ROOT, old + '.mdx')), old)
+
+    def test_old_redirects_rechained(self):
+        moved = {'/' + p for p in MOVES}
+        stale = [r['source'] for r in self.docs['redirects'] if r['destination'] in moved]
+        self.assertEqual(stale, [])
+
+
 if __name__ == '__main__':
     unittest.main()
