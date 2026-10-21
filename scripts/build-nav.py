@@ -783,14 +783,23 @@ BUILD_WITH_AI = {
                            for p in ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]}],
 }
 
+# Each product's Build with AI overview, the root of that group.
+BUILD_WITH_AI_HOME = {
+    'Scribe': 'docs/scribe/build-with-ai', 'Document Parsing': 'docs/models/build-with-ai',
+    'Agents': 'docs/agents/build-with-ai', 'Medical Knowledge': 'docs/datasets/build-with-ai',
+    'ABDM Connect': 'docs/hie-cm/build-with-ai', 'NHCX': 'docs/nhcx/build-with-ai', 'UHI': 'docs/uhi/build-with-ai',
+    'Eka EMR': 'docs/emr/build-with-ai', 'IPD': 'docs/ipd/build-with-ai', 'Billing': 'docs/billing/build-with-ai',
+    'Health Records': 'docs/health-records/build-with-ai',
+}
 
-def place_build_with_ai(entries, contents):
+
+def place_build_with_ai(entries, contents, home=None):
     """entries with the Build with AI group set to contents, before a trailing Resources group."""
     old, entries = take_group(entries, BUILD_WITH_AI_GROUP)
     group = {**(old or {}), 'group': BUILD_WITH_AI_GROUP, 'pages': contents}
     group.pop('root', None)
-    if old and old.get('root'):
-        group['root'] = old['root']
+    if home:
+        group['root'] = home
     at = len(entries)
     if entries and isinstance(entries[-1], dict) and entries[-1].get('group') == 'Resources':
         at -= 1
@@ -891,13 +900,21 @@ def regroup(products):
         target = api(name)
         target['pages'] = add_to_group(remove_pages(target['pages'], set(pages)), 'SDKs', pages)
     # Build with AI: the product's AI tools leave wherever they were listed.
-    for name, contents in BUILD_WITH_AI.items():
-        moving = set(walk_pages(contents))
+    for name in sorted(set(BUILD_WITH_AI) | set(BUILD_WITH_AI_HOME)):
+        contents = BUILD_WITH_AI.get(name, [])
+        home = BUILD_WITH_AI_HOME.get(name)
+        home = home if home and open_ok(home) else None
+        moving = set(walk_pages(contents)) | ({home} if home else set())
+        if not moving:
+            continue
         for (is_api, _), it in items.items():
             if not is_api and it.get('pages'):
                 it['pages'] = remove_pages(it['pages'], moving)
         it = docs(name)
-        it['pages'] = place_build_with_ai(it.get('pages', []), json.loads(json.dumps(contents)))
+        if it is None:  # a product with only an API tab (IPD) gains Documentation
+            it = items[(False, name)] = {**{k: v for k, v in api(name).items() if k != 'pages'}, 'item': name}
+        it.pop('href', None)
+        it['pages'] = place_build_with_ai(it.get('pages', []), json.loads(json.dumps(contents)), home)
     # Recipes join their product's Documentation.
     for name, pages in RECIPES.items():
         it = docs(name)
@@ -1143,9 +1160,9 @@ def main():
     write_index(targets)
     write_journey(new['products'])
     tabify(new['products'])
-    # Every page listed before is listed exactly once now (the API index may be added).
+    # Every page listed before is listed exactly once now. Only the API index and Build with AI overviews may be added.
     after = page_multiset(new)
-    dropped, added = sorted(listed - after), sorted(set(after - listed) - {API_INDEX})
+    dropped, added = sorted(listed - after), sorted(set(after - listed) - {API_INDEX} - set(BUILD_WITH_AI_HOME.values()))
     dupes = sorted(p for p, n in after.items() if n > 1)
     if dropped or added or dupes:
         for label, ps in (('dropped', dropped), ('added', added), ('duplicate', dupes)):

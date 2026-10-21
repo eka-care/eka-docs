@@ -142,6 +142,18 @@ class BuildWithAI(unittest.TestCase):
         stale = [r['source'] for r in self.docs['redirects'] if r['destination'] in moved]
         self.assertEqual(stale, [])
 
+    def test_build_with_ai_overviews(self):
+        folders = {('Solutions', 'Scribe'): 'scribe', ('Solutions', 'Document Parsing'): 'models',
+                   ('Solutions', 'Agents'): 'agents', ('Solutions', 'Medical Knowledge'): 'datasets',
+                   ('Solutions', 'ABDM Connect'): 'hie-cm', ('Solutions', 'NHCX'): 'nhcx', ('Solutions', 'UHI'): 'uhi',
+                   ('Integrations', 'Eka EMR'): 'emr', ('Integrations', 'IPD'): 'ipd',
+                   ('Integrations', 'Billing'): 'billing', ('Integrations', 'Health Records'): 'health-records'}
+        for (family, name), folder in folders.items():
+            it = item(self.products, family, name)
+            tab = next((t for t in it['tabs'] if t['tab'] == nav.DOCS_TAB), None)
+            self.assertIsNotNone(tab, f'{name} has no Documentation tab')
+            self.assertIn(f'docs/{folder}/build-with-ai', set(nav.walk_pages(tab['pages'])), name)
+
 
 if __name__ == '__main__':
     unittest.main()
