@@ -35,11 +35,26 @@ test('resources menu', () => {
   for (const kept of ['Cookbook', 'Auth', 'Encryption', 'Research', 'Models on Hugging Face', 'Datasets on Hugging Face', 'Changelog']) assert.ok(names.includes(kept), kept);
 });
 
-test('product grid holds seven solutions', () => {
-  const grid = grab(/<section class="sec" id="products">[\s\S]*?<\/section>/, 'products');
-  const solutions = grid.replace(/<div class="prod[^"]*" id="p-cook">[\s\S]*?<\/div>\n    <\/div>/, '');
-  const tiles = [...solutions.matchAll(/<a class="pl"[\s\S]*?<b>([^<]+)</g)].map((m) => m[1]);
-  assert.deepEqual(tiles, ['Medical Scribe', 'Medical Agents', 'Medical Document Parsing', 'Medical Knowledge', 'HIE-CM', 'NHCX', 'UHI']);
+test('the product grid is gone and the journey is step 03', () => {
+  assert.ok(!html.includes('id="products"'));
+  assert.match(html, /<section class="sec" id="journey">\s*<div class="sec-head">\s*<div class="node" data-anchor data-step="03 · Build">/);
+});
+
+test('every product in the journey has a sketch on its sheet', () => {
+  const j = run(J, 'J');
+  const art = run(grab(/const ART=\{[\s\S]*?\};\n/, 'ART'), 'ART');
+  const sketches = new Set([...grab(/const SK=\{[\s\S]*?\n\};/, 'SK').matchAll(/^ {1,2}(\w+)\(rc,a\)/gm)].map((m) => m[1]));
+  const missing = [];
+  for (const fam of Object.keys(j)) for (const p of Object.keys(j[fam])) if (!sketches.has(art[p])) missing.push(`${p} -> ${art[p]}`);
+  assert.deepEqual(missing, []);
+});
+
+test('the menu data exists before the journey reads it', () => {
+  assert.ok(html.indexOf('const NAV_MENUS=') < html.indexOf('/* ================= Developer journey'));
+});
+
+test('clipping a part updates the pad', () => {
+  assert.match(grab(/function unlock\(ids\)\{[\s\S]*?\n\}\n/, 'unlock'), /journeyLit\(\)/);
 });
 
 
@@ -98,4 +113,10 @@ test('the scene strip stays centred however long the scene description is', () =
   assert.match(html, /\.scenes\{[^}]*grid-template-columns:minmax\(36px,1fr\) auto minmax\(36px,1fr\)/);
   assert.match(html, /\.snav\.prev\{justify-self:end\}/);
   assert.match(html, /\.snav\.next\{justify-self:start\}/);
+});
+
+test('every Build Now link opens in a new tab', () => {
+  const links = [...html.matchAll(/<a [^>]*>(?:(?!<\/a>)[\s\S])*Build Now(?:(?!<\/a>)[\s\S])*<\/a>/g)].map((m) => m[0]);
+  assert.ok(links.length >= 2, `${links.length} Build Now links`);
+  for (const a of links) assert.match(a, /target="_blank" rel="noopener"/, a.slice(0, 90));
 });

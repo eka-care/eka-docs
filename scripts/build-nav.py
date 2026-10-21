@@ -1082,6 +1082,8 @@ def journey(products):
             continue
         J[fam['product']] = prods = {}
         for it in fam['menu']:
+            if (fam['product'], it['item']) in LINK_ITEMS:  # a link elsewhere, not a product with docs of its own
+                continue
             pages = it.get('pages')
             if not pages:
                 twin = api.get(it['item'])
