@@ -154,6 +154,12 @@ class BuildWithAI(unittest.TestCase):
             self.assertIsNotNone(tab, f'{name} has no Documentation tab')
             self.assertIn(f'docs/{folder}/build-with-ai', set(nav.walk_pages(tab['pages'])), name)
 
+    def test_integrations_overview(self):
+        fam = next(f for f in self.products if f['product'] == 'Integrations')
+        first = fam['menu'][0]
+        self.assertEqual(first['item'], 'Overview')
+        self.assertEqual(list(nav.walk_pages(first)), ['docs/integrations/overview'])
+
 
 if __name__ == '__main__':
     unittest.main()

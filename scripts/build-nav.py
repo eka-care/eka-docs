@@ -181,7 +181,7 @@ ICONS = {
     'Patient Experiences': 'messages-square',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'ABDM Connect': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
+    'Overview': 'compass', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list', 'HIE-CM': 'arrow-left-right',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -747,7 +747,7 @@ FAMILIES = [
     ('Solutions', 'sparkles', "Build your own tools on Eka's APIs, MCP servers and SDKs.",
      ['Scribe', 'Document Parsing', 'Agents', 'Medical Knowledge', 'Patient Experiences', 'ABDM Connect', 'NHCX', 'UHI']),
     ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
-     ['Eka EMR', 'IPD', 'Billing', 'Health Records']),
+     ['Overview', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
     ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
      ['Get started', 'Auth', 'Encryption', 'All APIs', 'Research', 'Changelog']),
 ]
@@ -756,7 +756,9 @@ NEW_ITEMS = {
     'Patient Experiences': 'A booking site, a patient agent and the records patients keep, from several Eka products',
     'Research': 'Open models, datasets and research for AI in Indian healthcare',
     'Changelog': 'What changed across Eka, week by week',
+    'Overview': 'Which integration you need, by the Eka product you use',
 }
+INTEGRATIONS_HOME = 'docs/integrations/overview'
 PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
 # Webhooks and SDKs are not Resources items: each page joins the API tab of the product it serves.
 API_MOVES = {
@@ -882,6 +884,9 @@ def regroup(products):
         gs = docs('Get started')
         gs['pages'] = remove_pages(gs['pages'], {px})
         items[(False, 'Patient Experiences')] = {'item': 'Patient Experiences', 'pages': [px]}
+    # Integrations' Overview: one page that sends each integration to the APIs it uses.
+    if not docs('Overview') and open_ok(INTEGRATIONS_HOME):
+        items[(False, 'Overview')] = {'item': 'Overview', 'pages': [INTEGRATIONS_HOME]}
     # Changelog: the platform-wide feed, which no tab carries any more.
     if not docs('Changelog'):
         items[(False, 'Changelog')] = {'item': 'Changelog', 'pages': list(PLATFORM_FEED)}
@@ -1160,9 +1165,10 @@ def main():
     write_index(targets)
     write_journey(new['products'])
     tabify(new['products'])
-    # Every page listed before is listed exactly once now. Only the API index and Build with AI overviews may be added.
+    # Every page listed before is listed exactly once now. Only the API index, the Integrations overview and Build
+    # with AI overviews may be added.
     after = page_multiset(new)
-    dropped, added = sorted(listed - after), sorted(set(after - listed) - {API_INDEX} - set(BUILD_WITH_AI_HOME.values()))
+    dropped, added = sorted(listed - after), sorted(set(after - listed) - {API_INDEX, INTEGRATIONS_HOME} - set(BUILD_WITH_AI_HOME.values()))
     dupes = sorted(p for p, n in after.items() if n > 1)
     if dropped or added or dupes:
         for label, ps in (('dropped', dropped), ('added', added), ('duplicate', dupes)):
