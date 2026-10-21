@@ -160,6 +160,10 @@ class BuildWithAI(unittest.TestCase):
         self.assertEqual(first['item'], 'Overview')
         self.assertEqual(list(nav.walk_pages(first)), ['docs/integrations/overview'])
 
+    def test_example_languages_kept(self):
+        self.assertEqual(self.docs['api']['examples']['languages'],
+                         ['bash', 'python', 'typescript', 'java', 'csharp', 'ruby'])
+
 
 if __name__ == '__main__':
     unittest.main()
