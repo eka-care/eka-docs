@@ -44,3 +44,8 @@ test('product grid holds eight solutions', () => {
   assert.deepEqual(tiles, ['Scribe', 'Agents', 'Patient Experiences', 'Document Parsing', 'Medical Knowledge',
     'ABDM Connect', 'NHCX', 'UHI']);
 });
+
+test('solutions menu groups are Clinical Intelligence and ABDM', () => {
+  const src = grab(/const SOL_MENU=\[[\s\S]*?\]\]\]\];\n/, 'SOL_MENU');
+  assert.deepEqual([...run(src, 'SOL_MENU').map(([group]) => group)], ['Clinical Intelligence', 'ABDM']);
+});
