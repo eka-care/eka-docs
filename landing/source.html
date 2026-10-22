@@ -825,49 +825,49 @@ const SCENES={
     areas:'"scan scan" "link consent" "records records" "claim claim"',rows:"66px 92px 66px 62px",
     outcome:"Riya checks in with her ABHA, and her records follow her between hospitals with her consent.",next:["ABDM-enabled HIS recipe","/docs/get-started/whats-possible/abdm-enabled-his"],journey:["ABDM Connect","HIE-CM"],
     parts:[
-      {id:"abha",side:"l",label:"ABHA login",product:"HIE-CM",fam:"abdm",head:true,url:"/docs/hie-cm/flows/m1",
+      {id:"abha",build:"/docs/hie-cm/workflows/login-abha",side:"l",label:"ABHA login",product:"HIE-CM",fam:"abdm",head:true,url:"/docs/hie-cm/flows/m1",
         ui:`<div class="row"><span class="av">RK</span><span class="t1">riya.k@abdm</span>${CHECK}</div>`},
-      {id:"scan",side:"l",label:"Scan and share",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/scan-and-share/getting-started",
+      {id:"scan",build:"/docs/hie-cm/workflows/hip-scan-and-share",side:"l",label:"Scan and share",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/scan-and-share/getting-started",
         ui:`<div class="kv"><span class="t1">Token 42</span><span class="v">Counter 2</span></div><div class="t2">Registered from a QR scan</div>`},
-      {id:"link",side:"l",label:"Link the visit",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m2",
+      {id:"link",build:"/docs/hie-cm/workflows/link-care-context-hip",side:"l",label:"Link the visit",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m2",
         ui:`<div class="kv"><span class="t1">OPD visit, 14 Oct</span><span class="v">Linked</span></div><div class="t2">Added to Riya's ABHA</div>`},
-      {id:"consent",side:"r",label:"Consent",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m3",
+      {id:"consent",build:"/docs/hie-cm/workflows/hiu-request-consent",side:"r",label:"Consent",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m3",
         ui:`<div class="t1">Records requested</div><div class="t2">City Hospital, 2 visits</div><span class="btnmini">Allow</span>`},
-      {id:"records",side:"r",label:"Shared records",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/journeys/hiu-fetch-records-with-consent",
+      {id:"records",build:"/docs/hie-cm/workflows/hiu-receive-data",side:"r",label:"Shared records",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/journeys/hiu-fetch-records-with-consent",
         ui:`<div class="kv"><span class="t1">Discharge summary</span><span class="v">FHIR</span></div><div class="t2">Received with consent</div>`},
-      {id:"claim",side:"r",label:"Insurance claim",product:"NHCX",fam:"abdm",url:"/api-sdk/nhcx/submit-preauth",
+      {id:"claim",build:"/docs/nhcx/getting-started",side:"r",label:"Insurance claim",product:"NHCX",fam:"abdm",url:"/api-sdk/nhcx/submit-preauth",
         ui:`<div class="kv"><span class="t1">Pre-auth</span><span class="v">Approved</span></div><div class="t2">Sent through NHCX</div>`}]},
   mr:{name:"Medical records from any source",who:"Consultations, photos of reports and PDFs become one structured, coded record",app:"Your pipeline",kind:"pipeline",sides:["Anything in","A record out"],
     areas:'"voice" "doc" "note" "codify" "record"',rows:"62px 54px 62px 54px 54px",cols:"1fr",
     outcome:"Riya's spoken visit and her lab report photo are now one coded medical record.",next:["Medical records recipe","/docs/get-started/whats-possible/medical-records-from-any-source"],journey:["Clinical AI","Medical Scribe"],
     parts:[
-      {id:"voice",side:"l",label:"Consultation",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
+      {id:"voice",build:"/docs/scribe/quickstart",side:"l",label:"Consultation",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
         ui:`<div class="t2">Listening in Hindi</div><div class="wave">${WAVE}</div>`},
       {id:"doc",side:"l",label:"Report photo or PDF",product:"Medical Document Parsing",fam:"ai",url:"/api-sdk/models/medical-document-parsing/upload-report",
         ui:`<div class="kv"><span class="t1">lab_report.jpg</span><span class="v">Photo</span></div>`},
       {id:"codify",side:"l",label:"Codification",product:"Medical Document Parsing",fam:"ai",url:"/api-sdk/models/medical-entity-codification/link-entity",
         ui:`<div class="kv"><span class="t1">Type 2 diabetes</span><span class="v">ICD-10 E11.9</span></div>`},
-      {id:"note",side:"r",label:"Structured note",product:"Medical Scribe",fam:"ai",url:"/api-sdk/scribe/templates/list-templates",
+      {id:"note",build:"/api-sdk/scribe/sessions/get-session",side:"r",label:"Structured note",product:"Medical Scribe",fam:"ai",url:"/api-sdk/scribe/templates/list-templates",
         ui:`<div class="kv"><span class="t2">Complaint</span><span class="v">Fever, 3 days</span></div><div class="kv"><span class="t2">HbA1c</span><span class="v">7.8 % &#8593;</span></div>`},
-      {id:"record",side:"r",label:"Medical record",product:"Health Records",fam:"im",url:"/docs/health-records/upload-records",
+      {id:"record",build:"/api-sdk/health-records/obtain-authorization",side:"r",label:"Medical record",product:"Health Records",fam:"im",url:"/docs/health-records/upload-records",
         ui:`<div class="kv"><span class="t1">OPD visit, 14 Oct</span><span class="v">FHIR</span></div><div class="t2">Saved to Riya's record</div>`}]},
   ci:{name:"Clinically intelligent HIS",who:"A scribe, a medical assistant and agents that act on your EMR",app:"Your hospital system",kind:"clinic",sides:["At the consultation","Across the hospital"],
     areas:'"scribe assist" "kb mcp"',rows:"92px 80px",
     outcome:"Riya's doctor gets the note written, the answer checked and the follow-up booked.",next:["Clinically intelligent HIS recipe","/docs/get-started/whats-possible/clinically-intelligent-his"],journey:["Clinical AI","Medical Agents"],
     parts:[
-      {id:"scribe",side:"l",label:"Ambient scribe",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
+      {id:"scribe",build:"/docs/scribe/quickstart",side:"l",label:"Ambient scribe",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
         ui:`<div class="t2">Listening in Hindi</div><div class="wave">${WAVE}</div><div class="t1" style="font-weight:450">"3 din se bukhar hai..."</div>`},
       {id:"kb",side:"l",label:"Knowledge base",product:"Medical Knowledge",fam:"ai",url:"/api-sdk/datasets/medications/search",
         ui:`<div class="kv"><span class="t1">Metformin</span><span class="v">First line</span></div><div class="t2">Per national protocol</div>`},
       {id:"assist",side:"r",label:"MedAssist",product:"Medical Agents",fam:"ai",url:"/docs/agents/medassist",
         ui:`<div class="t2">MedAssist</div><div class="bubble">Metformin is first line here, per the national protocol.</div>`},
-      {id:"mcp",side:"r",label:"EMR agent",product:"Medical Agents",fam:"ai",url:"/docs/emr/build-with-ai/mcp-server/introduction",
+      {id:"mcp",build:"/docs/agents/agent-kit/mcp-integration",side:"r",label:"EMR agent",product:"Medical Agents",fam:"ai",url:"/docs/emr/build-with-ai/mcp-server/introduction",
         ui:`<div class="kv"><span class="t1">Follow-up booked</span><span class="v">MCP</span></div><div class="t2">14 Oct, 10:30</div>`}]},
   px:{name:"Patient experiences",who:"Booking, a patient-facing agent, and the records the patient keeps",app:"Your patient app",kind:"phone",sides:["Care","Conversation"],
     areas:'"agent agent" "appt appt" "pay notify" "records phr"',rows:"86px 62px 74px 74px",
     outcome:"Riya booked, paid, was reminded, and keeps her records from every hospital.",next:["Patient experiences recipe","/docs/products/patient-experiences"],journey:["Integrations","Eka EMR"],
     parts:[
-      {id:"appt",side:"l",label:"Appointments",product:"Eka EMR",fam:"im",url:"/docs/emr/appointment-api/getting-started",
+      {id:"appt",build:"/api-sdk/emr/appointment-api/book-appointment-slot",side:"l",label:"Appointments",product:"Eka EMR",fam:"im",url:"/docs/emr/appointment-api/getting-started",
         ui:`<div class="kv"><span class="t1">Tue 14 Oct</span><span class="v">10:30</span></div><div class="t2">Follow-up, Dr. Menon</div>`},
       {id:"pay",side:"l",label:"Payments",product:"Billing",fam:"im",url:"/api-sdk/emr/post_webhooks/payment-link-webhook",
         ui:`<div class="kv"><span class="t1">Consultation</span><span class="v">&#8377;500</span></div><span class="btnmini">Pay</span>`},
@@ -875,24 +875,21 @@ const SCENES={
         ui:`<div class="t1">3 reports</div><div class="t2">Shared by City Hospital</div>`},
       {id:"agent",side:"r",label:"Patient agent",product:"Medical Agents",fam:"ai",url:"/api-sdk/agents/overview",
         ui:`<div class="t2">MedAssist</div><div class="bubble">Your follow-up is booked for 14 Oct, 10:30.</div>`},
-      {id:"notify",side:"r",label:"Reminders",product:"Eka EMR",fam:"im",url:"/api-sdk/emr/notify/notify",
+      {id:"notify",build:"/api-sdk/emr/post_webhooks/appointment-reminder-instant-webhook",side:"r",label:"Reminders",product:"Eka EMR",fam:"im",url:"/api-sdk/emr/notify/notify",
         ui:`<div class="t1">Reminder sent</div><div class="t2">WhatsApp, 9:00</div>`},
       {id:"phr",side:"r",label:"PHR app",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/phr/overview",
         ui:`<div class="t1">Records from 3 hospitals</div><div class="t2">In Riya's health record app</div>`}]}
 };
-// Build with AI page per product, for the prompt. Every product the scenes use has one.
-const BWAI={"Medical Scribe":"/docs/scribe/build-with-ai","Medical Document Parsing":"/docs/models/build-with-ai","Medical Agents":"/docs/agents/build-with-ai","Medical Knowledge":"/docs/datasets/build-with-ai","HIE-CM":"/docs/hie-cm/build-with-ai","NHCX":"/docs/nhcx/build-with-ai","Eka EMR":"/docs/emr/build-with-ai","Billing":"/docs/billing/build-with-ai","Health Records":"/docs/health-records/build-with-ai"};
-// The prompt a visitor copies into their AI coding tool: the scene, then each clipped part's docs page in clip order.
+// The prompt a visitor copies into their AI coding tool: the scene, then each clipped part's page in clip order.
+// A part's `build` page is the one an agent can build from; `url` is the page the landing card opens.
 function promptFor(key,ids){
   const sc=SCENES[key],site="https://developer.eka.care";
   const parts=ids.map(id=>sc.parts.find(p=>p.id===id)).filter(Boolean);
-  const products=[...new Set(parts.map(p=>p.product))].filter(p=>BWAI[p]);
   return [`Build "${sc.name}" on Eka for my product.`,
     parts.length?`Read ${site}/llms.txt first, and use the pages below.`:`Read ${site}/llms.txt first.`,
-    ...parts.map(p=>`- ${p.label}: ${site}${p.url}`),
-    ...products.map(p=>`Build with AI for ${p}: ${site}${BWAI[p]}`),
+    ...parts.map(p=>`- ${p.label}: ${site}${p.build||p.url}`),
     "Authenticate with my sandbox credentials. Ask me for them; never write them into code you commit.",
-    "Handle every callback and webhook the pages describe."].join("\n");
+    `Handle the webhooks these pages name, and verify each one as ${site}/docs/webhooks/webhook-signature describes.`].join("\n");
 }
 /* Where a part's docs live. A part whose page is in the API reference opens its product's first docs page instead
    (each product's first page in docs.json), so every way out of Assemble lands in the docs. */
