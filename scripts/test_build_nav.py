@@ -226,6 +226,24 @@ class DevTools(unittest.TestCase):
             titles = re.findall(r'title="([^"]+)"', section)
             self.assertEqual(len(titles), len(set(titles)), section.splitlines()[0])
 
+    def test_mcp_cards_name_the_server(self):
+        mcp = self.page.split('## MCP servers')[1].split('\n## ')[0]
+        self.assertIn('title="Eka MCP Server"', mcp)
+        self.assertIn('title="MedAI Tools MCP Server"', mcp)
+        self.assertNotIn('title="Eka EMR"', mcp)
+
+    def test_no_page_calls_it_the_eka_emr_mcp(self):
+        named = [p for p in nav.walk_pages(json.load(open(os.path.join(ROOT, 'docs.json')))['navigation'])
+                 if os.path.exists(os.path.join(ROOT, p + '.mdx'))
+                 and 'Eka EMR MCP' in open(os.path.join(ROOT, p + '.mdx')).read()]
+        self.assertEqual(named, [])
+
+    def test_abdm_connect_mcp_is_listed_between_medai_and_eka(self):
+        mcp = self.page.split('## MCP servers')[1].split('\n## ')[0]
+        self.assertEqual(re.findall(r'title="([^"]+)"', mcp),
+                         ['MedAI Tools MCP Server', 'ABDM Connect MCP Server', 'Eka MCP Server'])
+        self.assertIn('href="https://github.com/eka-care/eka-abdm-connect-mcp"', mcp)
+
     def test_navbar_link(self):
         links = json.load(open(os.path.join(ROOT, 'docs.json')))['navbar']['links']
         self.assertEqual(links[0], {'label': 'Developer tools', 'href': '/developer-tools'})

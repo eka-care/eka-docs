@@ -74,6 +74,12 @@ The four tools are spread across products, so each pill needs a page that lists 
 2. **Extend the existing All APIs page** (`api-sdk/index.mdx`, URL `/api-sdk`) with SDK, MCP and Webhook sections. There's no new page, but a page titled "API Reference" ends up listing tools that are not APIs, and its URL says api-sdk.
 3. **Link each pill to one existing page.** There's nothing new to build, but MCP, SDKs and webhooks would each open a single product's page. That's the anti-goal above.
 
+### MCP servers on the Developer tools page (Abha, 2026-10-22)
+
+- MCP cards are named by the server, not the product: "MedAI Tools MCP Server", "ABDM Connect MCP Server", "Eka MCP Server".
+- The EMR server is renamed "Eka MCP Server", on its own page and wherever the docs named it "Eka EMR MCP".
+- "ABDM Connect MCP Server" links to github.com/eka-care/eka-abdm-connect-mcp. That repo is private today, so the link works only for Eka staff until it is made public. Abha chose to link it anyway.
+
 ## Left to the builder
 
 - The exact prompt wording per scene, within the list above. The integration-tester run settles it.

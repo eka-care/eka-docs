@@ -1029,6 +1029,12 @@ TOOL_SECTIONS = [
     ('Webhooks', lambda p: 'webhook' in p and 'post_webhooks/' not in p),
 ]
 
+# MCP servers with no docs page yet, listed under the product they serve: product -> (name, description, link).
+EXTERNAL_MCP = {
+    'HIE-CM': ('ABDM Connect MCP Server', 'ABHA creation, login and profile for ABDM Milestone 1',
+               'https://github.com/eka-care/eka-abdm-connect-mcp'),
+}
+
 
 def tool_targets(products):
     """Section title to (family, product, description, first matching page), in nav order."""
@@ -1043,10 +1049,15 @@ def tool_targets(products):
                 continue
             twin = twins.get(it['item'])
             pages = list(walk_pages(it)) + (list(walk_pages(twin)) if twin else [])
+            if it['item'] in EXTERNAL_MCP:
+                name, desc, link = EXTERNAL_MCP[it['item']]
+                tools['MCP servers'].append((fam['product'], name, desc, link))
             for title, match in TOOL_SECTIONS:
                 page = next((p for p in pages if match(p)), None)
                 if page:
-                    tools[title].append((fam['product'], it['item'], it.get('description', ''), page))
+                    # An MCP server is known by its own name, which can span products; the others by their product.
+                    name = page_meta(page).get('title', it['item']) if title == 'MCP servers' else it['item']
+                    tools[title].append((fam['product'], name, it.get('description', ''), page))
     return tools
 
 
@@ -1061,7 +1072,8 @@ def write_dev_tools(targets, tools):
             continue
         lines += [f'## {title}', '', '<CardGroup cols={2}>']
         for _, product, desc, page in rows:
-            lines += [f'  <Card title="{product}" href="/{page}">', f'    {desc}', '  </Card>']
+            href = page if page.startswith('http') else '/' + page
+            lines += [f'  <Card title="{product}" href="{href}">', f'    {desc}', '  </Card>']
         lines += ['</CardGroup>', '']
     open(DEV_TOOLS + '.mdx', 'w').write('\n'.join(lines))
 
