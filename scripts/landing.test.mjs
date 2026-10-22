@@ -148,3 +148,43 @@ test('the Developer tools menu links the same four sections', () => {
   const hrefs = [...menu.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(hrefs, ['/developer-tools#api-reference', '/developer-tools#sdks', '/developer-tools#mcp-servers', '/developer-tools#webhooks']);
 });
+
+const SCENES_SRC = 'const CHECK="",WAVE="";\n' + grab(/const SCENES=\{[\s\S]*?\n\};\n/, 'SCENES');
+const PROMPT_SRC = grab(/const BWAI=\{.*?\};\n[\s\S]*?function promptFor\([\s\S]*?\n\}\n/, 'promptFor');
+const prompt = (key, ids) => run(SCENES_SRC + PROMPT_SRC, `promptFor(${JSON.stringify(key)}, ${JSON.stringify(ids)})`);
+
+test('no illustrative code is left on the landing page', () => {
+  assert.ok(!/code:`/.test(SCENES_SRC));
+  assert.ok(!/Illustrative calls only/.test(html));
+  assert.ok(!html.includes('@eka-care/sdk'));
+});
+
+test('the prompt names the scene, each clipped part with its page, and llms.txt', () => {
+  const p = prompt('abdm', ['abha', 'link']);
+  assert.match(p, /ABDM-enabled HIS/);
+  assert.match(p, /ABHA login.*https:\/\/developer\.eka\.care\/docs\/hie-cm\/flows\/m1/);
+  assert.match(p, /Link the visit.*https:\/\/developer\.eka\.care\/docs\/hie-cm\/flows\/m2/);
+  assert.ok(p.indexOf('ABHA login') < p.indexOf('Link the visit'));
+  assert.match(p, /https:\/\/developer\.eka\.care\/llms\.txt/);
+  assert.match(p, /https:\/\/developer\.eka\.care\/docs\/hie-cm\/build-with-ai/);
+  assert.match(p, /sandbox/i);
+  assert.ok(!/client_secret|api[_-]?key\s*[:=]/i.test(p));
+});
+
+test('a scene with nothing clipped still gives a prompt', () => {
+  const p = prompt('abdm', []);
+  assert.match(p, /ABDM-enabled HIS/);
+  assert.match(p, /llms\.txt/);
+  assert.ok(!/^- /m.test(p));
+});
+
+test('every Build with AI link in a prompt is a page on disk', () => {
+  const bwai = run(PROMPT_SRC, 'BWAI');
+  assert.ok(Object.keys(bwai).length);
+  for (const path of Object.values(bwai)) assert.ok(fs.existsSync(new URL(`..${path}.mdx`, import.meta.url)), path);
+});
+
+test('every scene part has a docs link the prompt can use', () => {
+  const scenes = run(SCENES_SRC, 'SCENES');
+  for (const [k, sc] of Object.entries(scenes)) for (const part of sc.parts) assert.match(part.url, /^\/(docs|api-sdk)\//, `${k}/${part.id}`);
+});
