@@ -810,7 +810,7 @@ LINK_ITEMS = {
 # The switcher's one line for each product, in plain words rather than internal names.
 DESCRIPTIONS = {
     'Medical Scribe': 'Consultations become structured notes that complete the chart',
-    'Medical Document Parsing': 'Lab reports and discharge summaries become structured data',
+    'Medical Document Parsing': 'Any medical record, in any format, becomes structured data',
     'Medical Agents': 'A ready-made medical assistant, a kit to build your own agent, and SDKs to embed them',
     'Understanding Integrations': 'For teams already on an Eka product: connect Eka EMR, IPD, Billing and Health Records '
                                   'to your own systems through the same APIs developers build with',

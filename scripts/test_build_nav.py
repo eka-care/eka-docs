@@ -195,7 +195,7 @@ class BuildWithAI(unittest.TestCase):
 
     def test_plain_language_descriptions(self):
         want = {'Medical Scribe': 'Consultations become structured notes that complete the chart',
-                'Medical Document Parsing': 'Lab reports and discharge summaries become structured data',
+                'Medical Document Parsing': 'Any medical record, in any format, becomes structured data',
                 'Medical Agents': 'A ready-made medical assistant, a kit to build your own agent, and SDKs to embed them'}
         for name, desc in want.items():
             self.assertEqual(item(self.products, 'Clinical AI', name)['description'], desc)
