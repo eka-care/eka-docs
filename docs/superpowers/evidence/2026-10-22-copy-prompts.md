@@ -62,3 +62,79 @@ No sandbox credentials were available, so each scene's full prompt (every part c
   - PHR "share your endpoint with Eka" doesn't say how.
 - Live `llms.txt` has no appointment, PHR or Build with AI entries.
 - No broken links.
+
+## Clinically intelligent HIS (round 1): verdict "mostly" for Scribe and knowledge search, "no" for MedAssist and the webhook
+
+- Prompt-level issues:
+  - "Ambient scribe" pointed at an overview.
+  - "EMR agent" pointed at a consumer MCP setup page, not a build path (Agent Kit MCP integration).
+  - The Build with AI lines added no facts.
+  - "Handle every callback" was unbounded.
+  - "Sandbox credentials" hides that three credentials are needed: a Bearer token, a MedAssist `agent-id`, and an EMR MCP login.
+  - No page says how the four parts form one product.
+- Docs gaps:
+  - sandbox host unnamed (`api.dev.eka.care` appears only in specs);
+  - `auth` vs `Authorization: Bearer`;
+  - no Scribe webhook page, with two payload shapes and a legacy fetch path;
+  - webhook status code, retries and `t=` tolerance unstated;
+  - where MedAssist `x-agent-id` comes from;
+  - MedAssist hosts inconsistent (`matrix` vs `api`, `api-ws` vs `matrix-ws`);
+  - no MedAssist server-to-client message schemas;
+  - `EndSessionRequest` body unclear;
+  - medications search has no prose or valid combinations;
+  - `EKA_API_KEY` optional or required.
+- The plugin marketplace (`plugins/` and `.claude-plugin/marketplace.json`) 404s on `main` today, so Build with AI install steps fail until this branch merges.
+
+## ABDM-enabled HIS (round 2): verdict "mostly"
+
+- Fixed: the workflow pages replace the diagram and PHR pages, and the claim link reaches the NHCX getting-started chain.
+- Not fixed: the prompt never says the HIS acts as a HIP and an HIU. It has no "serve records" step (`docs/hie-cm/workflows/serve-data-on-fetch`), which an HIS holding its own FHIR data needs.
+- New docs findings:
+  - the replay example on `docs/webhooks/webhook-signature.mdx` calls an undefined `generate_signature` and signs the current time, not the received `t`;
+  - stale "No testing page exists yet" TODO comments on `hiu-request-consent` and `hiu-receive-data`;
+  - "setup" is undefined on `docs/nhcx/getting-started`.
+
+## Clinically intelligent HIS (round 2): verdict "mostly"
+
+- Fixed:
+  - the Scribe quickstart gives all five calls;
+  - the Build with AI lines are removed;
+  - the webhook line is bounded.
+- The EMR agent target is fixed, but the MCP auth header `x-eka-jwt-payload` has no defined value. It also conflicts with `Authorization: Bearer` on `docs/agents/agent-kit/tools.mdx` and with browser OIDC on `remote-mcp.mdx`.
+- The MedAssist link (`docs/agents/medassist`) is a concept page. The calls are on `/api-sdk/agents/overview`.
+- New docs findings:
+  - the `GenericAgent` snippet on `docs/agents/agent-kit/mcp-integration.mdx` lacks imports and runs `await` at top level;
+  - the replay example on `docs/webhooks/webhook-signature.mdx` is broken (also found in the ABDM run);
+  - `docs/emr/build-with-ai/mcp-server/authentication.mdx` uses a third auth endpoint and a different staging host (`api-dev.eka.care`).
+
+## Medical records from any source (round 2): verdict "mostly"
+
+- Fixed: "Structured note" now opens `get-session`, and "Medical record" now starts at `obtain-authorization`.
+- Not fixed:
+  - there is no Patient step, though `X-Pt-Id` is required;
+  - the sandbox host is unnamed.
+- New findings:
+  - `api-sdk/health-records/obtain-authorization.mdx` has no link to step 2 (`docs/health-records/upload-records`);
+  - no prompt page names the smart-report or record-uploaded webhooks;
+  - the replay snippet on `docs/webhooks/webhook-signature.mdx` would reject every valid webhook, and the page never says to sign the raw body;
+  - `split('=')` is fragile.
+
+## Patient experiences (round 2): verdict "no"
+
+- Fixed: Reminders now opens the reminder webhook, and the webhook line is bounded.
+- Not fixed:
+  - no API creates a payment link;
+  - "Patient agent" still opens doctor-facing MedAssist, while the recipe says Echo Agent Kit;
+  - the PHR link pulls in the whole PHR track.
+- New findings:
+  - Appointments skips Get Appointment Slots and Add Patient;
+  - `docs/products/patient-experiences.mdx` still says notify and Billing;
+  - the reminder and payment-link webhook specs don't name their triggers;
+  - the Book Appointment example has a bad `video_connect.vendor` and an ambiguous epoch unit;
+  - `event_names` misses the instant reminder events.
+
+## Outcome after two rounds
+
+- ABDM-enabled HIS, Medical records from any source and Clinically intelligent HIS: "mostly". Their prompts ship. What's left is docs gaps that need facts from Eka engineering, listed above.
+- Patient experiences: "no". It ships no prompt. The panel links its Cookbook recipe until the payment-link API and the patient-facing agent are documented.
+- None of this was run against sandbox. No credentials were available.

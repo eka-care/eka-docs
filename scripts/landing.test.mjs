@@ -192,8 +192,7 @@ test('each part sends the agent to the page it can build from', () => {
       records: '/docs/hie-cm/workflows/hiu-receive-data', claim: '/docs/nhcx/getting-started' },
     mr: { voice: '/docs/scribe/quickstart', note: '/api-sdk/scribe/sessions/get-session', record: '/api-sdk/health-records/obtain-authorization' },
     ci: { scribe: '/docs/scribe/quickstart', mcp: '/docs/agents/agent-kit/mcp-integration' },
-    px: { appt: '/api-sdk/emr/appointment-api/book-appointment-slot', notify: '/api-sdk/emr/post_webhooks/appointment-reminder-instant-webhook' },
-  };
+  };  // px is held (no prompt) until its round-2 findings are fixed
   for (const [k, parts] of Object.entries(want)) {
     const p = prompt(k, Object.keys(parts));
     for (const path of Object.values(parts)) assert.ok(p.includes(`https://developer.eka.care${path}\n`), `${k}: ${path}`);
@@ -206,4 +205,13 @@ test('every page a prompt sends the agent to is on disk', () => {
     const path = part.build || part.url;
     assert.ok(fs.existsSync(new URL(`..${path.split('#')[0]}.mdx`, import.meta.url)), `${k}/${part.id}: ${path}`);
   }
+});
+
+test('a scene whose prompt failed testing offers its recipe instead', () => {
+  assert.equal(prompt('px', ['appt', 'pay']), null);
+  assert.match(html, /promptFor\(sceneKey,built\)===null/);
+});
+
+test('MedAssist sends the agent to the API it can call', () => {
+  assert.ok(prompt('ci', ['assist']).includes('https://developer.eka.care/api-sdk/agents/overview\n'));
 });
