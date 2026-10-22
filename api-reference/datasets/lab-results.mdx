@@ -30,10 +30,10 @@ This replaces the older [Lab tests](/api-reference/datasets/lab-tests) type, whi
 | `result_type` | No | The shape of the reading: `N` for numeric, `C` for categorical, `D` for descriptive. | Exactly one of `N`, `C`, `D` | `N` |
 | `scale_type` | No | The scale of the reading. | Text, up to 16 characters | `Qn` |
 | `loinc` | No | LOINC code, if you have one. Not checked against the LOINC list. Also accepted as `loinc_id`. | Text, up to 32 characters | `718-7` |
-| `unit` | No | The unit the result is reported in. One unit only. | Text, up to 32 characters | `g/dL` |
-| `unit_id` | No | Eka's id for that unit, if you have it. | Text, up to 64 characters | From Eka's list |
+| `unit` | No | The unit the result is reported in. One unit only. Eka products show it only when `unit_id` is also set. | Text, up to 32 characters | `g/dL` |
+| `unit_id` | No | Eka's id for that unit, from Eka's reference list. Without it the `unit` is not shown in Eka products. | Text, up to 64 characters | From Eka's list |
 | `specimen` | No | The sample the result is measured on. | Text, up to 100 characters | `Blood` |
-| `specimen_id` | No | Your id for that specimen, if you have one. | Text, up to 64 characters | `SP-BLOOD` |
+| `specimen_id` | No | The specimen's id, served as is with the specimen. | Text, up to 64 characters | `SP-BLOOD` |
 | `is_active` | No | Set to `false` to keep the result but hide it. Defaults to `true`. Also accepted as `status`. | `true` or `false` | `true` |
 
 ## Example file
@@ -44,6 +44,8 @@ RES-HB,Hemoglobin,,Hemoglobin,Hb|HGB,true,N,Qn,718-7,g/dL,,Blood,,true
 RES-WBC,Total WBC Count,,Total WBC Count,TLC|WBC,true,N,Qn,6690-2,cells/mcL,,Blood,,true
 RES-PLT,Platelet Count,,Platelet Count,PLT,true,N,Qn,777-3,cells/mcL,,Blood,,true
 ```
+
+The sample leaves `unit_id` empty, so its units won't be shown in Eka products until you fill in `unit_id`.
 
 The smallest valid file has just the two mandatory columns:
 
@@ -114,6 +116,7 @@ If you already upload to Eka with pokedex, you can keep your file layout. These 
 
 ## Common mistakes
 
+- **A `unit` without a `unit_id`.** The unit is stored, but Eka products show it only when `unit_id` is also set. Fill in `unit_id` from Eka's reference list.
 - **Two units in one result.** A result holds one `unit`. For a value that is reported in two units, upload two results with different ids.
 - **Lowercase `result_type`.** Use `N`, `C` or `D` in capitals; `n` or `numeric` is rejected.
 - **Changing a `result_id` that a panel uses.** Panels refer to results by this id. A new id is a new result, and the panel keeps pointing at the old one.
