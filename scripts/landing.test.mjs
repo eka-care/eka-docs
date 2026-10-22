@@ -25,7 +25,7 @@ test('every GROUPS entry resolves in J', () => {
 
 test('nav labels', () => {
   const labels = [...html.matchAll(/<button class="nvb"[^>]*>([^<]+)</g)].map((m) => m[1]);
-  assert.deepEqual(labels, ['Solutions', 'Integrations', 'Resources']);
+  assert.deepEqual(labels, ['Solutions', 'Integrations', 'Resources', 'Developer tools']);
 });
 
 test('resources menu', () => {
@@ -126,4 +126,25 @@ test('the closing section has only Build Now, and the steps run 01 to 04', () =>
   assert.ok(!html.includes('Open the recipe'));
   // 02 · Assemble is a label inside the Choose section, so the section markers read 01, 03, 04.
   assert.deepEqual([...html.matchAll(/data-step="(\d\d) · /g)].map((m) => m[1]), ['01', '03', '04']);
+});
+
+test('the hero has the four developer tools, and nothing more', () => {
+  const row = grab(/<div class="tools-row"[\s\S]*?<\/div>/, 'tools-row');
+  assert.match(row, /role="navigation" aria-label="Developer tools"/);
+  const links = [...row.matchAll(/href="([^"]+)"[^>]*>(?:<i[^>]*><\/i>)?([^<]+)</g)].map((m) => [m[1], m[2]]);
+  assert.deepEqual(links, [
+    ['/developer-tools#api-reference', 'API reference'], ['/developer-tools#sdks', 'SDKs'],
+    ['/developer-tools#mcp-servers', 'MCP server'], ['/developer-tools#webhooks', 'Webhooks']]);
+  assert.ok(!/view more/i.test(row));
+  assert.ok(!html.includes('/mcp/introduction'));
+});
+
+test('the tools row is not a nav element', () => {
+  assert.ok(!/<nav class="tools-row"/.test(html));
+});
+
+test('the Developer tools menu links the same four sections', () => {
+  const menu = grab(/<div class="mega mega-tools"[\s\S]*?<\/div><\/div>\n/, 'mega-tools');
+  const hrefs = [...menu.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(hrefs, ['/developer-tools#api-reference', '/developer-tools#sdks', '/developer-tools#mcp-servers', '/developer-tools#webhooks']);
 });
