@@ -207,6 +207,36 @@ class BuildWithAI(unittest.TestCase):
             self.assertEqual(item(self.products, 'Clinical AI', name)['description'], desc)
 
 
+class ProductsGroup(unittest.TestCase):
+    """Get started > Products shows the landing page's three families, each page carding that family's menu items."""
+    PAGES = {'docs/products/clinical-intelligence': ('Solutions', 'Clinical AI'),
+             'docs/products/abdm': ('ABDM Connect', 'ABDM Connect'),
+             'docs/solutions/scribe-and-medical-records': ('Integrations', 'Integrations')}
+
+    def setUp(self):
+        self.docs = json.load(open(os.path.join(ROOT, 'docs.json')))
+        self.products = self.docs['navigation']['products']
+
+    def test_products_group_lists_the_three_families(self):
+        gs = item(self.products, 'Resources', 'Get started')['tabs'][0]['pages']
+        found, _ = nav.take_group(gs, 'Products')
+        self.assertEqual(list(nav.walk_pages(found)), list(self.PAGES))
+
+    def test_each_page_is_titled_and_carded_like_the_landing(self):
+        for page, (title, family) in self.PAGES.items():
+            src = open(os.path.join(ROOT, page + '.mdx')).read()
+            self.assertEqual(nav.page_meta(page)['title'], title, page)
+            fam = next(f for f in self.products if f['product'] == family)
+            want = [(i['item'], i['href'].replace('https://developer.eka.care', '') if i.get('href')
+                     else '/' + next(nav.walk_pages(i['tabs'][0]['pages']))) for i in fam['menu']]
+            cards = re.findall(r'<Card title="([^"]+)"[^>]*href="([^"]+)"', src.split('## How they fit together')[0])
+            self.assertEqual(cards, want, page)
+
+    def test_agents_overview_opens_medical_agents(self):
+        tab = item(self.products, 'Clinical AI', 'Medical Agents')['tabs'][0]
+        self.assertEqual(next(nav.walk_pages(tab['pages'])), 'docs/products/agents')
+
+
 class EkaEmrFold(unittest.TestCase):
     def setUp(self):
         d = json.load(open(os.path.join(ROOT, 'docs.json')))
