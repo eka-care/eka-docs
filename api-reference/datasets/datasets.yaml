@@ -427,7 +427,10 @@ paths:
 
 
         Panel search (`lab_panel`) can only be on while result search
-        (`lab_result`) is on, so turn results on first.
+        (`lab_result`) is on. A request that would break this is refused with
+        a 400 and nothing changes: turning `lab_panel` on while `lab_result`
+        is off returns code `turn_on_results_first`, and turning `lab_result`
+        off while `lab_panel` is on returns code `turn_off_panels_first`.
       operationId: setDatasetSearchStatus
       tags: [datasets]
       parameters:
@@ -460,7 +463,28 @@ paths:
                   dataset_type: medication
                   updated_at: '2026-09-28T10:20:00+00:00'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: >-
+            Invalid request, for example a missing or unknown `type`, or a
+            switch order that is not allowed for results and panels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                turnOnResultsFirst:
+                  summary: Panel search turned on while result search is off
+                  value:
+                    success: false
+                    message: Turn on search for results first
+                    errors:
+                      - code: turn_on_results_first
+                turnOffPanelsFirst:
+                  summary: Result search turned off while panel search is on
+                  value:
+                    success: false
+                    message: Turn off search for panels first
+                    errors:
+                      - code: turn_off_panels_first
         '401':
           $ref: '#/components/responses/Unauthorized'
   /admin/datasets/v1/batches/:
@@ -620,11 +644,12 @@ components:
           type: string
         errors:
           type: array
-          description: Present when validation failed or the shrink guard stopped a reconcile.
+          description: Present when validation failed, the shrink guard stopped a reconcile, or a search switch order was refused.
           items:
             oneOf:
               - $ref: '#/components/schemas/FieldError'
               - $ref: '#/components/schemas/ShrinkGuardError'
+              - $ref: '#/components/schemas/SearchOrderError'
     FieldError:
       type: object
       properties:
@@ -647,6 +672,12 @@ components:
           type: integer
         would_deactivate:
           type: integer
+    SearchOrderError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [turn_on_results_first, turn_off_panels_first]
     WriteResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessEnvelope'
