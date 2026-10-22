@@ -1,0 +1,120 @@
+---
+title: "Lab results"
+description: "What you can upload for each value a lab reports, such as hemoglobin, which columns are mandatory, and the values each one accepts."
+---
+
+Your results are the values that come back from an investigation: hemoglobin, total WBC count, platelet count. Each row is one result with one unit, identified by your own id. Use `type=lab_result` with the API, or pick **Results** in the console.
+
+Results are what a [lab panel](/api-reference/datasets/lab-panels) is made of. Upload your results first, then your panels. What a doctor orders is a separate catalog: [lab investigations](/api-reference/datasets/lab-investigations).
+
+<Note>
+**Mandatory columns:** `result_id` and `name`. Every other column is optional; leave the cell empty if you don't have the value.
+
+A result has **one unit**. If a value is reported in two units, upload two results.
+</Note>
+
+<Warning>
+This replaces the older [Lab tests](/api-reference/datasets/lab-tests) type, which is deprecated.
+</Warning>
+
+## Columns
+
+| Column | Required | What it means | Allowed values | Example |
+|---|---|---|---|---|
+| `result_id` | **Yes** | Your own id for the result. Panels refer to results by this id. Writing a row with an id that already exists updates it. Also accepted as `partner_id`. | Text, up to 200 characters | `RES-HB` |
+| `name` | **Yes** | The result name. Used for search. | Text, up to 200 characters | `Hemoglobin` |
+| `ekaid` | No | Eka's own id for the same result, from Eka's reference list. You map your id to Eka's; leave it empty if you don't have it. Also accepted as `eka_id`. See [Mapping your records to Eka ids](/api-reference/datasets/overview#mapping-your-records-to-eka-ids). | Text, up to 64 characters | From Eka's list |
+| `display_name` | No | The name shown to doctors and patients. Defaults to `name`. | Text, up to 200 characters | `Hemoglobin` |
+| `aliases` | No | Other names people search by. | Several values separated by `\|` | `Hb\|HGB` |
+| `is_numerical` | No | `true` when the reading is a number. Also accepted as `is_numeric`. | `true` or `false` | `true` |
+| `result_type` | No | The shape of the reading: `N` for numeric, `C` for categorical, `D` for descriptive. | Exactly one of `N`, `C`, `D` | `N` |
+| `scale_type` | No | The scale of the reading. | Text, up to 16 characters | `Qn` |
+| `loinc` | No | LOINC code, if you have one. Not checked against the LOINC list. Also accepted as `loinc_id`. | Text, up to 32 characters | `718-7` |
+| `unit` | No | The unit the result is reported in. One unit only. | Text, up to 32 characters | `g/dL` |
+| `unit_id` | No | Eka's id for that unit, if you have it. | Text, up to 64 characters | From Eka's list |
+| `specimen` | No | The sample the result is measured on. | Text, up to 100 characters | `Blood` |
+| `specimen_id` | No | Your id for that specimen, if you have one. | Text, up to 64 characters | `SP-BLOOD` |
+| `is_active` | No | Set to `false` to keep the result but hide it. Defaults to `true`. Also accepted as `status`. | `true` or `false` | `true` |
+
+## Example file
+
+```csv lab-results.csv
+result_id,name,ekaid,display_name,aliases,is_numerical,result_type,scale_type,loinc,unit,unit_id,specimen,specimen_id,is_active
+RES-HB,Hemoglobin,,Hemoglobin,Hb|HGB,true,N,Qn,718-7,g/dL,,Blood,,true
+RES-WBC,Total WBC Count,,Total WBC Count,TLC|WBC,true,N,Qn,6690-2,cells/mcL,,Blood,,true
+RES-PLT,Platelet Count,,Platelet Count,PLT,true,N,Qn,777-3,cells/mcL,,Blood,,true
+```
+
+The smallest valid file has just the two mandatory columns:
+
+```csv minimal.csv
+result_id,name
+RES-HB,Hemoglobin
+```
+
+## Example JSON
+
+The same records sent to [Create or update records](/api-reference/datasets/write). In JSON, multi-value fields are lists.
+
+```json
+[
+  {
+    "result_id": "RES-HB",
+    "name": "Hemoglobin",
+    "display_name": "Hemoglobin",
+    "aliases": ["Hb", "HGB"],
+    "is_numerical": true,
+    "result_type": "N",
+    "scale_type": "Qn",
+    "loinc": "718-7",
+    "unit": "g/dL",
+    "specimen": "Blood",
+    "is_active": true
+  },
+  {
+    "result_id": "RES-WBC",
+    "name": "Total WBC Count",
+    "display_name": "Total WBC Count",
+    "aliases": ["TLC", "WBC"],
+    "is_numerical": true,
+    "result_type": "N",
+    "scale_type": "Qn",
+    "loinc": "6690-2",
+    "unit": "cells/mcL",
+    "specimen": "Blood",
+    "is_active": true
+  },
+  {
+    "result_id": "RES-PLT",
+    "name": "Platelet Count",
+    "display_name": "Platelet Count",
+    "aliases": ["PLT"],
+    "is_numerical": true,
+    "result_type": "N",
+    "scale_type": "Qn",
+    "loinc": "777-3",
+    "unit": "cells/mcL",
+    "specimen": "Blood",
+    "is_active": true
+  }
+]
+```
+
+## Columns from pokedex files
+
+If you already upload to Eka with pokedex, you can keep your file layout. These column names are understood:
+
+| Pokedex column | Column on this page |
+|---|---|
+| `partner_id` | `result_id` |
+| `eka_id` | `ekaid` |
+| `is_numeric` | `is_numerical` |
+| `loinc_id` | `loinc` |
+| `status` | `is_active` |
+
+## Common mistakes
+
+- **Two units in one result.** A result holds one `unit`. For a value that is reported in two units, upload two results with different ids.
+- **Lowercase `result_type`.** Use `N`, `C` or `D` in capitals; `n` or `numeric` is rejected.
+- **Changing a `result_id` that a panel uses.** Panels refer to results by this id. A new id is a new result, and the panel keeps pointing at the old one.
+- **A wrong `ekaid`.** Eka stores the id you send without checking it. A wrong id can attach your result to the wrong Eka item, so check each mapping against Eka's reference list.

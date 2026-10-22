@@ -3,20 +3,25 @@ title: "Overview"
 description: "Upload and manage your own formulary catalogs, then use them in Eka's medical search."
 ---
 
-A dataset is your own catalog of one kind of clinical item: your drug formulary, your lab test menu, or your lists of symptoms and diagnoses. The Datasets API lets you load these catalogs into Eka, keep them in sync with your system, and switch Eka's [Medical Database search](/api-reference/medical-db/drugs-and-labs) over to them.
+A dataset is your own catalog of one kind of clinical item: your drug formulary, your lab investigations, results and panels, or your lists of symptoms and diagnoses. The Datasets API lets you load these catalogs into Eka, keep them in sync with your system, and switch Eka's [Medical Database search](/api-reference/medical-db/drugs-and-labs) over to them.
 
 Every request acts only on the workspace your access token belongs to. You cannot read or change another workspace's data.
 
 ## Dataset types
 
-You can upload four kinds of catalog. Each page lists every column you can send, which ones are mandatory, the values they accept, and a sample file.
+You can upload these kinds of catalog. Each page lists every column you can send, which ones are mandatory, the values they accept, and a sample file.
 
 | Catalog | `type` | Mandatory columns | Details |
 |---|---|---|---|
 | Drugs | `medication` | `medication_id`, `name` | [Medications](/api-reference/datasets/medications) |
-| Lab tests, imaging, panels and packages | `lab_test` | `lab_test_id`, `name`, `kind`, `result_type`, plus `specimen`, `unit` or `panel_members` in some cases | [Lab tests](/api-reference/datasets/lab-tests) |
+| Lab investigations: tests, scans and packages a doctor orders | `lab_investigation` | `investigation_id`, `name` | [Lab investigations](/api-reference/datasets/lab-investigations) |
+| Lab results: the values that come back, each with one unit | `lab_result` | `result_id`, `name` | [Lab results](/api-reference/datasets/lab-results) |
+| Lab panels: named, ordered collections of results, like CBC | `lab_panel` | `panel_id`, `name`, `member_result_ids` | [Lab panels](/api-reference/datasets/lab-panels) |
 | Symptoms | `symptom` | `symptom_id`, `name` | [Symptoms](/api-reference/datasets/symptoms) |
 | Diagnoses | `diagnosis` | `diagnosis_id`, `name` | [Diagnoses](/api-reference/datasets/diagnoses) |
+| Lab tests (deprecated) | `lab_test` | `lab_test_id`, `name`, `kind`, `result_type`, plus `specimen`, `unit` or `panel_members` in some cases | [Lab tests](/api-reference/datasets/lab-tests) |
+
+`lab_test` is deprecated. It still works, but use the three lab types for new catalogs. Upload lab results before lab panels: every panel member must already be a stored result.
 
 Records are identified by **your** id. Writing a record whose id already exists updates it.
 

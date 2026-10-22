@@ -1,0 +1,96 @@
+---
+title: "Lab investigations"
+description: "What you can upload for each lab test, scan or package your clinicians can order, which columns are mandatory, and the values each one accepts."
+---
+
+Your investigations are what a doctor orders or advises: laboratory tests, scans, panels and packages. Each row is one orderable item, identified by your own id. Use `type=lab_investigation` with the API, or pick **Investigations** in the console.
+
+An investigation is not the value that comes back. The values a lab reports, such as hemoglobin, are [lab results](/api-reference/datasets/lab-results). A named group of results that a doctor fills in, such as CBC, is a [lab panel](/api-reference/datasets/lab-panels). Complete Blood Count can exist as an investigation (ordered) and as a panel (filled in). These are separate records with their own ids.
+
+<Note>
+**Mandatory columns:** `investigation_id` and `name`. Every other column is optional; leave the cell empty if you don't have the value.
+</Note>
+
+<Warning>
+This replaces the older [Lab tests](/api-reference/datasets/lab-tests) type, which is deprecated.
+</Warning>
+
+## Columns
+
+| Column | Required | What it means | Allowed values | Example |
+|---|---|---|---|---|
+| `investigation_id` | **Yes** | Your own id for the investigation. Writing a row with an id that already exists updates it. Also accepted as `partner_id`. | Text, up to 200 characters | `LAB-CBC` |
+| `name` | **Yes** | The investigation name. Used for search. | Text, up to 200 characters | `Complete Blood Count` |
+| `display_name` | No | The name shown to doctors and patients. Defaults to `name`. | Text, up to 200 characters | `CBC` |
+| `aliases` | No | Other names people search by. | Several values separated by `\|` | `CBC\|Hemogram` |
+| `category` | No | The group the investigation belongs to. | Text, up to 64 characters | `laboratory` |
+| `type` | No | What sort of item this is. Stored for your own use. | Text, up to 64 characters | `test`, `panel` |
+| `specimen` | No | The sample the investigation runs on. | Text, up to 100 characters | `Blood` |
+| `unit` | No | Unit, if you track one. Stored for your own use. A result carries the unit that is served. | Text, up to 32 characters | `%` |
+| `ekaid` | No | Eka's own id for the same investigation, from Eka's reference list. You map your id to Eka's; leave it empty if you don't have it. Also accepted as `eka_id`. See [Mapping your records to Eka ids](/api-reference/datasets/overview#mapping-your-records-to-eka-ids). | Text, up to 64 characters | From Eka's list |
+| `is_active` | No | Set to `false` to keep the investigation but hide it. Defaults to `true`. Also accepted as `status`. | `true` or `false` | `true` |
+
+## Example file
+
+```csv lab-investigations.csv
+investigation_id,name,ekaid,display_name,aliases,category,type,specimen,unit,is_active
+LAB-CRP-Q,"C-Reactive Protein (CRP), Serum (Qualitative)",,CRP (Qualitative),CRP,laboratory,test,Blood,,true
+LAB-CBC,Complete Blood Count,,CBC,CBC|Hemogram,laboratory,panel,Blood,,true
+```
+
+<Tip>
+Put quotes around any value that contains a comma, like `"C-Reactive Protein (CRP), Serum (Qualitative)"`. Spreadsheet programs do this for you when they save as CSV.
+</Tip>
+
+The smallest valid file has just the two mandatory columns:
+
+```csv minimal.csv
+investigation_id,name
+LAB-CBC,Complete Blood Count
+```
+
+## Example JSON
+
+The same records sent to [Create or update records](/api-reference/datasets/write). In JSON, multi-value fields are lists.
+
+```json
+[
+  {
+    "investigation_id": "LAB-CRP-Q",
+    "name": "C-Reactive Protein (CRP), Serum (Qualitative)",
+    "display_name": "CRP (Qualitative)",
+    "aliases": ["CRP"],
+    "category": "laboratory",
+    "type": "test",
+    "specimen": "Blood",
+    "is_active": true
+  },
+  {
+    "investigation_id": "LAB-CBC",
+    "name": "Complete Blood Count",
+    "display_name": "CBC",
+    "aliases": ["CBC", "Hemogram"],
+    "category": "laboratory",
+    "type": "panel",
+    "specimen": "Blood",
+    "is_active": true
+  }
+]
+```
+
+## Columns from pokedex files
+
+If you already upload to Eka with pokedex, you can keep your file layout. These column names are understood:
+
+| Pokedex column | Column on this page |
+|---|---|
+| `partner_id` | `investigation_id` |
+| `eka_id` | `ekaid` |
+| `status` | `is_active` |
+
+## Common mistakes
+
+- **Putting result values here.** Hemoglobin, with its unit, belongs in [lab results](/api-reference/datasets/lab-results). Add an investigation only for what is ordered.
+- **Expecting a panel to be filled in from here.** Setting `type` to `panel` is only a label. To give doctors a CBC to fill in, upload a [lab panel](/api-reference/datasets/lab-panels).
+- **A wrong `ekaid`.** Eka stores the id you send without checking it. A wrong id can attach your investigation to the wrong Eka item, so check each mapping against Eka's reference list.
+- **Reusing an id for a different investigation.** An existing `investigation_id` updates that record; it never creates a second one.
