@@ -3,6 +3,9 @@ import copy
 import importlib.util
 import json
 import os
+import re
+import subprocess
+import sys
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -199,6 +202,38 @@ class BuildWithAI(unittest.TestCase):
                 'Medical Agents': 'A ready-made medical assistant, a kit to build your own agent, and SDKs to embed them'}
         for name, desc in want.items():
             self.assertEqual(item(self.products, 'Clinical AI', name)['description'], desc)
+
+
+class DevTools(unittest.TestCase):
+    def setUp(self):
+        self.page = open(os.path.join(ROOT, 'developer-tools.mdx')).read()
+
+    def test_sections_in_order(self):
+        heads = [l[3:] for l in self.page.splitlines() if l.startswith('## ')]
+        self.assertEqual(heads, ['API reference', 'SDKs', 'MCP servers', 'Webhooks'])
+
+    def test_known_tools_are_listed(self):
+        self.assertIn('href="/docs/emr/build-with-ai/mcp-server/introduction"', self.page)
+        self.assertIn('href="/docs/datasets/build-with-ai/mcp-server/introduction"', self.page)
+        self.assertNotIn('/mcp/introduction"', self.page)
+
+    def test_every_card_points_at_a_page_on_disk(self):
+        for href in re.findall(r'href="/([^"#]+)"', self.page):
+            self.assertTrue(os.path.exists(os.path.join(ROOT, href + '.mdx')), href)
+
+    def test_no_product_twice_in_a_section(self):
+        for section in self.page.split('\n## ')[1:]:
+            titles = re.findall(r'title="([^"]+)"', section)
+            self.assertEqual(len(titles), len(set(titles)), section.splitlines()[0])
+
+    def test_navbar_link(self):
+        links = json.load(open(os.path.join(ROOT, 'docs.json')))['navbar']['links']
+        self.assertEqual(links[0], {'label': 'Developer tools', 'href': '/developer-tools'})
+
+    def test_page_is_stable(self):
+        before = self.page
+        subprocess.run([sys.executable, 'scripts/build-nav.py'], cwd=ROOT, check=True, capture_output=True)
+        self.assertEqual(open(os.path.join(ROOT, 'developer-tools.mdx')).read(), before)
 
 
 if __name__ == '__main__':
