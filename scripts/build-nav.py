@@ -704,7 +704,11 @@ def tabify(products):
             if twin and twin.get('pages'):
                 tabs.append({'tab': API_TAB, 'pages': twin['pages']})
             if CHANGELOGS.get(it['item']):
-                tabs.append({'tab': CHANGELOG_TAB, 'pages': [{'group': CHANGELOG_TAB, 'pages': CHANGELOGS[it['item']]}]})
+                logs = [{'group': CHANGELOG_TAB, 'pages': CHANGELOGS[it['item']]}]
+                present = {m['item'] for m in fam['menu']}
+                logs += [{'group': n, 'pages': CHANGELOGS[n]} for n in FOLDS.get(it['item'], [])
+                         if CHANGELOGS.get(n) and n not in present]
+                tabs.append({'tab': CHANGELOG_TAB, 'pages': logs})
             it.pop('href', None)
             # A product whose docs are only its Build with AI page opens on its API reference.
             docs_tab = next((t for t in tabs if t['tab'] == DOCS_TAB), None)
@@ -721,6 +725,52 @@ def tabify(products):
         out.append({**fam, 'menu': menu})
     products[:] = out
 
+
+# Products shown as sections of another product: IPD, Billing and Health Records are part of Eka EMR. regroup() still
+# builds them as items; fold() moves each into its host's sidebar, API tab and changelog just before docs.json is
+# written, and unfold() reverses that on the next run, like tabify() and untab(). URLs do not change.
+FOLDS = {'Eka EMR': ['IPD', 'Billing', 'Health Records']}
+FOLDED = {'IPD': 'Admission, beds, nursing and discharge', 'Billing': 'Charges, deposits, invoices and payments',
+          'Health Records': "Records, cases and vitals on the patient's side"}
+
+
+def folded_icon(name):
+    return f'/images/icons/products/{ICONS[name]}.svg'
+
+
+def fold(products):
+    for fam in products:
+        suffix = API_SUFFIX if is_api_family(fam) else ''
+        by = {it['item']: it for it in fam['menu']}
+        for host, names in FOLDS.items():
+            h = by.get(host + suffix)
+            if h is None:
+                continue
+            for name in names:
+                it = by.get(name + suffix)
+                if it is None:
+                    continue
+                fam['menu'].remove(it)
+                if it.get('pages'):
+                    h['pages'] = h.get('pages', []) + [{'group': name, 'icon': folded_icon(name),
+                                                        'pages': unwrap(it, it['pages'])}]
+
+
+def unfold(products):
+    for fam in products:
+        suffix = API_SUFFIX if is_api_family(fam) else ''
+        for host, names in FOLDS.items():
+            h = next((it for it in fam['menu'] if it['item'] == host + suffix), None)
+            if h is None or not h.get('pages'):
+                continue
+            keep = []
+            for e in h['pages']:
+                if isinstance(e, dict) and e.get('group') in names and e.get('icon') == folded_icon(e['group']):
+                    fam['menu'].append({'item': e['group'] + suffix, 'icon': folded_icon(e['group']),
+                                        'description': FOLDED[e['group']], 'pages': e['pages']})
+                else:
+                    keep.append(e)
+            h['pages'] = keep
 
 def untab(products):
     """Back to docs families plus API families, so a rebuild reshapes the same tree."""
@@ -1238,6 +1288,7 @@ def main():
     if 'products' in d['navigation']:
         new = d['navigation']  # already built: only regenerate the derived files
         untab(new['products'])
+        unfold(new['products'])
     else:
         before = set(walk_pages(d['navigation']))
         new = build(d)
@@ -1305,6 +1356,7 @@ def main():
     write_link_js(root_groups(new['products']))
     write_index(targets)
     write_dev_tools(targets, tool_targets(new['products']))
+    fold(new['products'])
     write_journey(new['products'])
     tabify(new['products'])
     write_menus(new['products'])

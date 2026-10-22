@@ -30,6 +30,7 @@ def untabbed():
     d = json.load(open(os.path.join(ROOT, 'docs.json')))
     products = copy.deepcopy(d['navigation']['products'])
     nav.untab(products)
+    nav.unfold(products)
     return products
 
 
@@ -158,9 +159,10 @@ class BuildWithAI(unittest.TestCase):
         folders = {('Clinical AI', 'Medical Scribe'): 'scribe', ('Clinical AI', 'Medical Document Parsing'): 'models',
                    ('Clinical AI', 'Medical Agents'): 'agents', ('Clinical AI', 'Medical Knowledge'): 'datasets',
                    ('ABDM Connect', 'HIE-CM'): 'hie-cm', ('ABDM Connect', 'NHCX'): 'nhcx', ('ABDM Connect', 'UHI'): 'uhi',
-                   ('Integrations', 'Eka EMR'): 'emr', ('Integrations', 'IPD'): 'ipd',
-                   ('Integrations', 'Billing'): 'billing', ('Integrations', 'Health Records'): 'health-records'}
-        for (family, name), folder in folders.items():
+                   ('Integrations', 'Eka EMR'): 'emr'}
+        # IPD, Billing and Health Records are sections of Eka EMR; their Build with AI pages live in its sidebar.
+        folders = list(folders.items()) + [(('Integrations', 'Eka EMR'), f) for f in ('ipd', 'billing', 'health-records')]
+        for (family, name), folder in folders:
             it = item(self.products, family, name)
             tab = next((t for t in it['tabs'] if t['tab'] == nav.DOCS_TAB), None)
             self.assertIsNotNone(tab, f'{name} has no Documentation tab')
@@ -181,9 +183,10 @@ class BuildWithAI(unittest.TestCase):
         index = open(os.path.join(ROOT, 'api-sdk/index.mdx')).read()
         self.assertEqual(index.count('title="Medical Scribe"'), 1)
 
-    def test_a_product_opens_on_its_api_when_its_docs_are_only_build_with_ai(self):
-        ipd = item(self.products, 'Integrations', 'IPD')
-        self.assertEqual(ipd['tabs'][0]['tab'], nav.API_TAB)
+    def test_eka_emr_opens_on_its_documentation(self):
+        # IPD, whose docs were only Build with AI, used to open on its API. As a section of Eka EMR it opens with it.
+        emr = item(self.products, 'Integrations', 'Eka EMR')
+        self.assertEqual(emr['tabs'][0]['tab'], nav.DOCS_TAB)
 
     def test_scribe_in_integrations_opens_how_it_works(self):
         it = item(self.products, 'Integrations', 'Medical Scribe')
@@ -202,6 +205,42 @@ class BuildWithAI(unittest.TestCase):
                 'Medical Agents': 'A ready-made medical assistant, a kit to build your own agent, and SDKs to embed them'}
         for name, desc in want.items():
             self.assertEqual(item(self.products, 'Clinical AI', name)['description'], desc)
+
+
+class EkaEmrFold(unittest.TestCase):
+    def setUp(self):
+        d = json.load(open(os.path.join(ROOT, 'docs.json')))
+        self.integ = next(f for f in d['navigation']['products'] if f['product'] == 'Integrations')
+        self.emr = next(i for i in self.integ['menu'] if i['item'] == 'Eka EMR')
+
+    def tab(self, name):
+        return next(t['pages'] for t in self.emr['tabs'] if t['tab'] == name)
+
+    def groups(self, pages):
+        return [p.get('group') for p in pages if isinstance(p, dict)]
+
+    def test_integrations_lists_three_items(self):
+        self.assertEqual([i['item'] for i in self.integ['menu']], ['Understanding Integrations', 'Medical Scribe', 'Eka EMR'])
+
+    def test_eka_emr_documentation_holds_the_three(self):
+        self.assertEqual(self.groups(self.tab('Documentation'))[1:], ['IPD', 'Billing', 'Health Records'])
+
+    def test_eka_emr_api_tab_holds_the_three(self):
+        self.assertEqual(self.groups(self.tab('APIs & SDKs'))[1:], ['IPD', 'Billing', 'Health Records'])
+
+    def test_eka_emr_changelog_holds_billing_and_health_records(self):
+        self.assertEqual(self.groups(self.tab('Changelog')), ['Changelog', 'Billing', 'Health Records'])
+
+    def test_no_page_lost_by_the_fold(self):
+        pages = set(nav.walk_pages(self.emr['tabs']))
+        for p in ('docs/ipd/build-with-ai', 'docs/billing/changelog', 'docs/health-records/changelog',
+                  'api-sdk/health-records/create-overview', 'api-sdk/ipd/setup/get-ipd-setup-data'):
+            self.assertIn(p, pages)
+
+    def test_rebuild_is_stable(self):
+        before = open(os.path.join(ROOT, 'docs.json')).read()
+        subprocess.run([sys.executable, 'scripts/build-nav.py'], cwd=ROOT, check=True, capture_output=True)
+        self.assertEqual(open(os.path.join(ROOT, 'docs.json')).read(), before)
 
 
 class DevTools(unittest.TestCase):

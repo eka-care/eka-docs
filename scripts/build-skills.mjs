@@ -36,9 +36,10 @@ export const PRODUCTS = [
   { item: 'Medical Agents', slug: 'agents' },
   { item: 'Medical Knowledge', slug: 'medical-knowledge' },
   { item: 'Eka EMR', slug: 'emr' },
-  { item: 'IPD', slug: 'ipd' },
-  { item: 'Billing', slug: 'billing' },
-  { item: 'Health Records', slug: 'health-records' },
+  // IPD, Billing and Health Records are sections of Eka EMR in the docs (build-nav.py FOLDS), each still its own skill.
+  { item: 'IPD', slug: 'ipd', within: 'Eka EMR', description: 'Admission, beds, nursing and discharge' },
+  { item: 'Billing', slug: 'billing', within: 'Eka EMR', description: 'Charges, deposits, invoices and payments' },
+  { item: 'Health Records', slug: 'health-records', within: 'Eka EMR', description: "Records, cases and vitals on the patient's side" },
   { item: 'NHCX', slug: 'nhcx' },
   { item: 'UHI', slug: 'uhi' },
 ];
@@ -59,9 +60,19 @@ function walkPages(n, out = []) {
   return out;
 }
 
+const isGroup = (p, name) => p && typeof p === 'object' && p.group === name && p.icon;
+
 function findItem(docs, name) {
-  for (const fam of docs.navigation.products) for (const it of fam.menu) if (it.item === name) return it;
-  return null;
+  const items = docs.navigation.products.flatMap((fam) => fam.menu);
+  const it = items.find((i) => i.item === name);
+  const folded = PRODUCTS.filter((p) => p.within === name).map((p) => p.item);
+  // A host's tabs without the products folded into it, so each operation belongs to one skill.
+  if (it) return { ...it, tabs: (it.tabs ?? []).map((t) => ({ ...t, pages: t.pages.filter((p) => !folded.some((f) => isGroup(p, f))) })) };
+  const product = PRODUCTS.find((p) => p.item === name && p.within);
+  const host = product && items.find((i) => i.item === product.within);
+  if (!host) return null;
+  const tabs = (host.tabs ?? []).map((t) => ({ tab: t.tab, pages: t.pages.filter((p) => isGroup(p, name)) })).filter((t) => t.pages.length);
+  return { item: name, description: product.description, tabs };
 }
 
 export function apiPagesOf(docs, name) {
