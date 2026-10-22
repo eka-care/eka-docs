@@ -427,10 +427,13 @@ paths:
 
 
         Panel search (`lab_panel`) can only be on while result search
-        (`lab_result`) is on. A request that would break this is refused with
-        a 400 and nothing changes: turning `lab_panel` on while `lab_result`
-        is off returns code `turn_on_results_first`, and turning `lab_result`
-        off while `lab_panel` is on returns code `turn_off_panels_first`.
+        (`lab_result`) is on for the same knowledge base. A request that would
+        break this is refused with a 400 and nothing changes: turning
+        `lab_panel` on while `lab_result` is off returns code
+        `turn_on_results_first`, turning `lab_panel` on while `lab_result` is
+        on in a different knowledge base returns code `results_in_other_kb`,
+        and turning `lab_result` off while `lab_panel` is on in the same
+        knowledge base returns code `turn_off_panels_first`.
       operationId: setDatasetSearchStatus
       tags: [datasets]
       parameters:
@@ -478,6 +481,13 @@ paths:
                     message: Turn on search for results first
                     errors:
                       - code: turn_on_results_first
+                resultsInOtherKb:
+                  summary: Panel search turned on while result search is on in another knowledge base
+                  value:
+                    success: false
+                    message: Turn on search for results in the same knowledge base first
+                    errors:
+                      - code: results_in_other_kb
                 turnOffPanelsFirst:
                   summary: Result search turned off while panel search is on
                   value:
@@ -677,7 +687,7 @@ components:
       properties:
         code:
           type: string
-          enum: [turn_on_results_first, turn_off_panels_first]
+          enum: [turn_on_results_first, results_in_other_kb, turn_off_panels_first]
     WriteResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessEnvelope'
