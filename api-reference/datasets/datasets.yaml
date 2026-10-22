@@ -164,7 +164,6 @@ paths:
                   - $ref: '#/components/schemas/LabInvestigation'
                   - $ref: '#/components/schemas/LabResult'
                   - $ref: '#/components/schemas/LabPanel'
-                  - $ref: '#/components/schemas/LabTest'
                   - $ref: '#/components/schemas/Symptom'
                   - $ref: '#/components/schemas/Diagnosis'
             example:
@@ -249,7 +248,7 @@ paths:
         - name: entity_id
           in: path
           required: true
-          description: Your id for the record (`medication_id`, `investigation_id`, `result_id`, `panel_id`, `symptom_id`, `diagnosis_id` or the deprecated `lab_test_id`).
+          description: Your id for the record (`medication_id`, `investigation_id`, `result_id`, `panel_id`, `symptom_id` or `diagnosis_id`).
           schema:
             type: string
         - $ref: '#/components/parameters/Type'
@@ -586,12 +585,10 @@ components:
       name: type
       in: query
       required: true
-      description: >-
-        Which catalog to act on. `lab_test` is deprecated; use
-        `lab_investigation`, `lab_result` and `lab_panel` instead.
+      description: Which catalog to act on.
       schema:
         type: string
-        enum: [medication, lab_investigation, lab_result, lab_panel, symptom, diagnosis, lab_test]
+        enum: [medication, lab_investigation, lab_result, lab_panel, symptom, diagnosis]
     Limit:
       name: limit
       in: query
@@ -626,9 +623,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            success: false
-            message: type must be one of 'medication', 'lab_test', 'symptom', 'diagnosis', 'lab_investigation', 'lab_result', 'lab_panel'
     Unauthorized:
       description: The access token is missing, invalid or expired.
     PayloadTooLarge:
@@ -801,7 +795,6 @@ components:
         - $ref: '#/components/schemas/LabInvestigation'
         - $ref: '#/components/schemas/LabResult'
         - $ref: '#/components/schemas/LabPanel'
-        - $ref: '#/components/schemas/LabTest'
         - $ref: '#/components/schemas/Symptom'
         - $ref: '#/components/schemas/Diagnosis'
     Medication:
@@ -1066,106 +1059,6 @@ components:
         is_active:
           type: boolean
           description: Defaults to true on write. In a CSV the column may also be named `status`.
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    LabTest:
-      type: object
-      title: LabTest
-      deprecated: true
-      required: [lab_test_id, name, kind, result_type]
-      description: >-
-        Deprecated. Use `lab_investigation`, `lab_result` and `lab_panel`
-        instead.
-
-
-        `specimen` is required when `kind` is `laboratory`, `unit` when
-        `result_type` is `numerical`, and `panel_members` when `kind` is
-        `panel`.
-      properties:
-        lab_test_id:
-          type: string
-          maxLength: 200
-          description: Your id for the test.
-        name:
-          type: string
-          maxLength: 200
-        ekaid:
-          type: [string, 'null']
-          maxLength: 64
-          description: >-
-            Optional. Eka's own id for this item, taken from Eka's reference list,
-            so Eka products (for example EMR calculators) recognise it. Not checked
-            against Eka's records; an id you send is stored as given. In a CSV the
-            column may also be named `eka_id`. Re-uploading a CSV without this column
-            keeps existing values; a blank cell in the column clears it. In a JSON
-            update, leaving `ekaid` out or sending it empty keeps the current value.
-          examples: ["lb-1322178942"]
-        display_name:
-          type: string
-          maxLength: 200
-          description: Shown to end users. Defaults to `name`.
-        aliases:
-          type: array
-          items:
-            type: string
-            maxLength: 200
-        loinc:
-          type: string
-          maxLength: 32
-          description: LOINC code. Not checked against the LOINC vocabulary.
-        kind:
-          type: string
-          enum: [imaging, laboratory, functional, special_test, package, panel]
-        result_type:
-          type: string
-          enum: [numerical, ordinal, string, na]
-        discipline:
-          type: array
-          items:
-            type: string
-            maxLength: 100
-          description: For example biochemistry, hematology, micro, molecular, cardiology.
-        specimen:
-          type: string
-          maxLength: 100
-        unit:
-          type: string
-          maxLength: 32
-        unit_id:
-          type: string
-          maxLength: 64
-        panel_members:
-          type: array
-          items:
-            type: string
-            maxLength: 200
-          description: Names of the member tests.
-        panel_member_ids:
-          type: array
-          items:
-            type: string
-            maxLength: 200
-        method:
-          type: string
-          maxLength: 100
-          description: For example ELISA, RAPID_ICT, CHEMILUMINESCENCE (CLIA).
-        body_part:
-          type: string
-          maxLength: 100
-          description: Imaging only.
-        laterality:
-          type: string
-          maxLength: 32
-          description: Imaging only.
-        view:
-          type: string
-          maxLength: 64
-          description: Imaging only.
-        is_active:
-          type: boolean
-          description: Defaults to true on write.
         updated_at:
           type: string
           format: date-time
