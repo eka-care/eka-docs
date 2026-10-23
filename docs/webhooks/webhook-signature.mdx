@@ -110,16 +110,18 @@ def is_within_tolerance(timestamp, tolerance=180):
     current_time = int(time.time())
     return abs(current_time - timestamp) <= tolerance
 
-def verify_webhook_signature_with_replay_protection(secret_key, payload, received_signature, tolerance=180):
-    parts = received_signature.split(',')
-    timestamp = int(parts[0].split('=')[1])
-    signature = parts[1].split('=')[1]
+def verify_webhook_signature_with_replay_protection(secret_key, payload, signature_header, tolerance=180):
+    try:
+        parts = dict(item.split('=', 1) for item in signature_header.split(','))
+        timestamp = int(parts['t'])
+    except (KeyError, ValueError):
+        return False
 
     if not is_within_tolerance(timestamp, tolerance):
         return False
 
-    expected_signature = generate_signature(secret_key, payload)
-    return hmac.compare_digest(expected_signature, signature)
+    # verify_signature (above) signs the received t and the payload, exactly as Eka Care does.
+    return verify_signature(secret_key, payload, signature_header)
 ```
 
 ### Best Practices
