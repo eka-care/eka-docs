@@ -53,7 +53,7 @@ Validated in a throwaway mockup in the scratchpad (`mock/tools.html`), at 1280px
 - **Landing nav:** a fourth item, "Developer tools", after Resources, using the same dropdown (`.nv` and `.nvb`) as the others, with the same four entries. Update the `nav labels` test.
 - **Mintlify navbar:** a "Developer tools" link in `docs.json` `navbar.links`, before Discord. It points at `/developer-tools`.
 
-### Copy prompt panel
+### Copy prompt panel (superseded by "Brief on the app frame" below)
 
 - Remove `#code` and the `code:` strings on all 21 parts.
 - The panel keeps its place, width and `.code` look. It shows the prompt as text, with part names in `.k` and a `.btn-line.btn-sm` "Copy prompt" pill. After a click the label reads "Copied" for about 1.4s.
@@ -65,6 +65,26 @@ Validated in a throwaway mockup in the scratchpad (`mock/tools.html`), at 1280px
   - an instruction to authenticate with the developer's own sandbox credentials, never pasted into the prompt.
 - No agent logos. Agent names, if shown at all, are plain text.
 - **Ships only after it works:** each of the four scenes' full prompt is run by the `integration-tester` agent against sandbox. Every point where it had to guess becomes a docs fix or a prompt change. A scene whose prompt fails stays off the panel until it passes.
+
+### Brief on the app frame (Abha, 2026-10-23; replaces the copy prompt panel)
+
+The panel under the stage didn't read as something to copy into an AI tool. The stage itself becomes the tool. The references were Stripe's quickstart (a choice inserts its own highlighted block) and Razorpay's sectioned prompt files.
+
+- **The flip:** the app frame's head gets an **App | Brief** toggle and a **Copy prompt** button. Brief shows the integration brief inside the frame. The panel under the stage is removed.
+- **Live sections:** each part clipped onto the app adds a numbered section to the brief: its name, product, job and the page to build from. In Brief view, the new section is highlighted and scrolled into view. Unclipping a part removes its section. The frame head counts "N of M tools".
+- **The brief's sections:**
+  - the task;
+  - before you write code (inspect, then stop for approval if the flow already exists);
+  - credentials as `{{EKA_CLIENT_ID}}` / `{{EKA_CLIENT_SECRET}}` placeholders;
+  - auth (only what the docs verify);
+  - scene notes;
+  - the tools to integrate;
+  - webhooks (signature page);
+  - how to work;
+  - output;
+  - "Begin integration now."
+- **Agent-agnostic:** one Copy prompt. No agent picker, no deep links into Cursor, Claude or ChatGPT, and no per-agent file names (Abha). The share-a-setup URL is left out for now.
+- **Held scenes:** Brief shows the recipe link, and Copy is hidden.
 
 ## Approaches: the target of each pill (Abha chose 1 on 2026-10-22)
 

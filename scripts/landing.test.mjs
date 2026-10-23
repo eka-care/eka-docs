@@ -162,22 +162,22 @@ test('no illustrative code is left on the landing page', () => {
 test('the prompt names the scene, each clipped part with its page, and llms.txt', () => {
   const p = prompt('abdm', ['abha', 'link']);
   assert.match(p, /ABDM-enabled HIS/);
-  assert.match(p, /ABHA login.*https:\/\/developer\.eka\.care\/docs\/hie-cm\/workflows\/login-abha/);
-  assert.match(p, /Link the visit.*https:\/\/developer\.eka\.care\/docs\/hie-cm\/workflows\/link-care-context-hip/);
+  assert.match(p, /ABHA login[\s\S]*?Build from: https:\/\/developer\.eka\.care\/docs\/hie-cm\/workflows\/login-abha/);
+  assert.match(p, /Link the visit[\s\S]*?Build from: https:\/\/developer\.eka\.care\/docs\/hie-cm\/workflows\/link-care-context-hip/);
   assert.ok(p.indexOf('ABHA login') < p.indexOf('Link the visit'));
   assert.match(p, /https:\/\/developer\.eka\.care\/llms\.txt/);
   assert.ok(!/Build with AI/.test(p));
   assert.match(p, /https:\/\/developer\.eka\.care\/docs\/webhooks\/webhook-signature/);
   assert.ok(!/every callback/i.test(p));
   assert.match(p, /sandbox/i);
-  assert.ok(!/client_secret|api[_-]?key\s*[:=]/i.test(p));
+  assert.ok(!/(client_secret|api[_-]?key)\s*[:=]\s*(?!\{\{)\S/i.test(p), 'a credential value is in the prompt');
 });
 
 test('a scene with nothing clipped still gives a prompt', () => {
   const p = prompt('abdm', []);
   assert.match(p, /ABDM-enabled HIS/);
   assert.match(p, /llms\.txt/);
-  assert.ok(!/^- /m.test(p));
+  assert.ok(!/^\d+\. /m.test(p));
 });
 
 test('every scene part has a docs link the prompt can use', () => {
@@ -214,4 +214,49 @@ test('a scene whose prompt failed testing offers its recipe instead', () => {
 
 test('MedAssist sends the agent to the API it can call', () => {
   assert.ok(prompt('ci', ['assist']).includes('https://developer.eka.care/api-sdk/agents/overview\n'));
+});
+
+const SECTIONS = ['## Before you write code', '## Credentials', '## Auth', '## Tools to integrate', '## Webhooks', '## How to work', '## Output'];
+
+test('the brief runs in a fixed order of sections and ends by starting the work', () => {
+  const p = prompt('abdm', ['abha']);
+  assert.ok(p.startsWith('Integrate "ABDM-enabled HIS" from Eka into this codebase.'));
+  let at = -1;
+  for (const h of SECTIONS) { const i = p.indexOf(`\n${h}\n`); assert.ok(i > at, h); at = i; }
+  assert.ok(p.trimEnd().endsWith('Begin integration now.'));
+});
+
+test('credentials are placeholders the agent asks for, never keys', () => {
+  const p = prompt('mr', ['voice']);
+  assert.match(p, /EKA_CLIENT_ID=\{\{EKA_CLIENT_ID\}\}/);
+  assert.match(p, /EKA_CLIENT_SECRET=\{\{EKA_CLIENT_SECRET\}\}/);
+  assert.match(p, /POST https:\/\/api\.eka\.care\/connect-auth\/v1\/account\/login/);
+  assert.match(p, /stop and ask me/i);
+});
+
+test('every part says what it does, and each clipped part is a numbered section', () => {
+  const scenes = run(SCENES_SRC, 'SCENES');
+  for (const [k, sc] of Object.entries(scenes)) for (const part of sc.parts) assert.ok(part.job && part.job.endsWith('.'), `${k}/${part.id}`);
+  const p = prompt('abdm', ['link', 'abha']);
+  assert.match(p, /\n1\. Link the visit \(HIE-CM\)\n   Link each visit/);
+  assert.match(p, /\n2\. ABHA login \(HIE-CM\)\n/);
+});
+
+test('scene and part notes carry what the testers found missing', () => {
+  const abdm = prompt('abdm', ['abha']);
+  assert.match(abdm, /Health Information Provider \(HIP\)/);
+  assert.match(abdm, /https:\/\/developer\.eka\.care\/docs\/hie-cm\/workflows\/serve-data-on-fetch/);
+  assert.match(prompt('mr', ['record']), /X-Pt-Id/);
+  assert.ok(!/X-Pt-Id/.test(prompt('mr', ['voice'])));
+  assert.match(prompt('ci', ['assist']), /agent ID/);
+});
+
+test('one agent-agnostic Copy prompt on the frame: no deep links, no panel under the stage', () => {
+  for (const link of ['cursor.com/link', 'cursor://', 'claude.ai/new', 'chatgpt.com/?']) assert.ok(!html.includes(link), link);
+  const foot = grab(/<div class="frame-foot">[\s\S]*?<\/div>\n\s*<\/div>/, 'frame-foot');
+  assert.match(foot, /id="vApp"[^>]*>App</);
+  assert.match(foot, /id="vBrief"[^>]*>Brief</);
+  assert.match(foot, /id="copy"[^>]*>[\s\S]*Copy prompt/);
+  assert.match(html, /<div class="brief" id="brief"/);
+  assert.ok(!html.includes('<div class="code reveal" id="code"'));
 });

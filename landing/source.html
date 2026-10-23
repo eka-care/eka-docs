@@ -357,9 +357,20 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
 .code .k{color:var(--ink);font-weight:500}
 .code .c{color:var(--ink-3)}
 .code .ln{display:block;white-space:pre;overflow:hidden;text-overflow:ellipsis}
-#ptext .ln{white-space:normal;overflow-wrap:anywhere}
-.code .copy{float:right;margin:0 0 8px 12px;font-family:var(--sans)}
 .code .ln.new{animation:lnIn .5s var(--ease) both}
+.frame-foot{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.fseg{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:999px}
+.fseg button{height:22px;padding:0 9px;border-radius:999px;font-family:var(--mono);font-size:.58rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);transition:background .2s var(--ease),color .2s}
+.fseg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.fcount{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.fcopy{margin-left:auto}
+.fcopy svg{width:14px;height:14px}
+.brief{position:absolute;left:12px;right:12px;overflow:hidden auto;padding:2px 4px 8px;font-family:var(--mono);font-size:.66rem;line-height:1.7;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere;text-align:left}
+.brief .h{color:var(--ink);font-weight:500}
+.brief .sec{display:block;margin:0 -4px;padding:2px 4px;border-radius:6px;transition:background 1.2s var(--ease)}
+.brief .sec.new{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.brief a{color:var(--ink);border-bottom:1px solid var(--line-2)}
+.frame.show-brief #appgrid,.frame.show-brief .frame-head .slot{visibility:hidden}
 @keyframes lnIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .caption{margin-top:14px;text-align:center;font-size:.8rem;color:var(--ink-3);min-height:1.3em}
 
@@ -634,10 +645,15 @@ footer .fcols a:hover{color:var(--ink)}
         <span class="appname" id="appname"></span>
       </div>
       <div class="grid" id="appgrid"></div>
+      <div class="brief" id="brief" aria-live="polite" hidden></div>
+      <div class="frame-foot">
+        <div class="fseg" role="group" aria-label="View"><button type="button" id="vApp" aria-pressed="true">App</button><button type="button" id="vBrief" aria-pressed="false">Brief</button></div>
+        <span class="fcount" id="fcount"></span>
+        <button class="btn btn-primary btn-sm fcopy" id="copy" type="button"><i data-lucide="copy" aria-hidden="true"></i>Copy prompt</button>
+      </div>
     </div>
     <div class="rail" id="rail"></div>
   </div>
-  <div class="code reveal" id="code"><button class="btn btn-line btn-sm copy" id="copy" type="button">Copy prompt</button><div id="ptext" aria-live="polite"></div></div>
   <p class="caption" id="caption"></p>
 </section>
 
@@ -821,77 +837,85 @@ const stayMode=new URLSearchParams(location.search).has("stay");
 const CHECK=`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 const WAVE=Array.from({length:16},(_,i)=>`<i style="--i:${i}"></i>`).join("");
 const SCENES={
-  abdm:{name:"ABDM-enabled HIS",who:"A hospital system on India's health stack, from ABHA at the desk to the insurance claim",app:"Your hospital system",kind:"clinic",sides:["At the front desk","Across hospitals"],
+  abdm:{name:"ABDM-enabled HIS",note:"This system acts as both a Health Information Provider (HIP) and a Health Information User (HIU). If it keeps its own records, it must also serve them: https://developer.eka.care/docs/hie-cm/workflows/serve-data-on-fetch",who:"A hospital system on India's health stack, from ABHA at the desk to the insurance claim",app:"Your hospital system",kind:"clinic",sides:["At the front desk","Across hospitals"],
     areas:'"scan scan" "link consent" "records records" "claim claim"',rows:"66px 92px 66px 62px",
     outcome:"Riya checks in with her ABHA, and her records follow her between hospitals with her consent.",next:["ABDM-enabled HIS recipe","/docs/get-started/whats-possible/abdm-enabled-his"],journey:["ABDM Connect","HIE-CM"],
     parts:[
-      {id:"abha",build:"/docs/hie-cm/workflows/login-abha",side:"l",label:"ABHA login",product:"HIE-CM",fam:"abdm",head:true,url:"/docs/hie-cm/flows/m1",
+      {id:"abha",job:"Let patients sign in with their ABHA at registration, with an OTP.",build:"/docs/hie-cm/workflows/login-abha",side:"l",label:"ABHA login",product:"HIE-CM",fam:"abdm",head:true,url:"/docs/hie-cm/flows/m1",
         ui:`<div class="row"><span class="av">RK</span><span class="t1">riya.k@abdm</span>${CHECK}</div>`},
-      {id:"scan",build:"/docs/hie-cm/workflows/hip-scan-and-share",side:"l",label:"Scan and share",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/scan-and-share/getting-started",
+      {id:"scan",job:"Register walk-in patients who scan your facility QR code and share their ABHA profile.",build:"/docs/hie-cm/workflows/hip-scan-and-share",side:"l",label:"Scan and share",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/scan-and-share/getting-started",
         ui:`<div class="kv"><span class="t1">Token 42</span><span class="v">Counter 2</span></div><div class="t2">Registered from a QR scan</div>`},
-      {id:"link",build:"/docs/hie-cm/workflows/link-care-context-hip",side:"l",label:"Link the visit",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m2",
+      {id:"link",job:"Link each visit to the patient's ABHA as a care context, so their records follow them.",build:"/docs/hie-cm/workflows/link-care-context-hip",side:"l",label:"Link the visit",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m2",
         ui:`<div class="kv"><span class="t1">OPD visit, 14 Oct</span><span class="v">Linked</span></div><div class="t2">Added to Riya's ABHA</div>`},
-      {id:"consent",build:"/docs/hie-cm/workflows/hiu-request-consent",side:"r",label:"Consent",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m3",
+      {id:"consent",job:"Request the patient's consent to fetch their records from other facilities.",build:"/docs/hie-cm/workflows/hiu-request-consent",side:"r",label:"Consent",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m3",
         ui:`<div class="t1">Records requested</div><div class="t2">City Hospital, 2 visits</div><span class="btnmini">Allow</span>`},
-      {id:"records",build:"/docs/hie-cm/workflows/hiu-receive-data",side:"r",label:"Shared records",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/journeys/hiu-fetch-records-with-consent",
+      {id:"records",job:"Receive and decrypt the records other facilities share under that consent.",build:"/docs/hie-cm/workflows/hiu-receive-data",side:"r",label:"Shared records",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/journeys/hiu-fetch-records-with-consent",
         ui:`<div class="kv"><span class="t1">Discharge summary</span><span class="v">FHIR</span></div><div class="t2">Received with consent</div>`},
-      {id:"claim",build:"/docs/nhcx/getting-started",side:"r",label:"Insurance claim",product:"NHCX",fam:"abdm",url:"/api-sdk/nhcx/submit-preauth",
+      {id:"claim",job:"Check eligibility, get pre-authorisation and submit insurance claims through NHCX.",build:"/docs/nhcx/getting-started",side:"r",label:"Insurance claim",product:"NHCX",fam:"abdm",url:"/api-sdk/nhcx/submit-preauth",
         ui:`<div class="kv"><span class="t1">Pre-auth</span><span class="v">Approved</span></div><div class="t2">Sent through NHCX</div>`}]},
   mr:{name:"Medical records from any source",who:"Consultations, photos of reports and PDFs become one structured, coded record",app:"Your pipeline",kind:"pipeline",sides:["Anything in","A record out"],
     areas:'"voice" "doc" "note" "codify" "record"',rows:"62px 54px 62px 54px 54px",cols:"1fr",
     outcome:"Riya's spoken visit and her lab report photo are now one coded medical record.",next:["Medical records recipe","/docs/get-started/whats-possible/medical-records-from-any-source"],journey:["Clinical AI","Medical Scribe"],
     parts:[
-      {id:"voice",build:"/docs/scribe/quickstart",side:"l",label:"Consultation",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
+      {id:"voice",job:"Record or upload the consultation audio and get back a structured clinical note.",build:"/docs/scribe/quickstart",side:"l",label:"Consultation",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
         ui:`<div class="t2">Listening in Hindi</div><div class="wave">${WAVE}</div>`},
-      {id:"doc",side:"l",label:"Report photo or PDF",product:"Medical Document Parsing",fam:"ai",url:"/api-sdk/models/medical-document-parsing/upload-report",
+      {id:"doc",job:"Upload a lab report photo or PDF and get its tests, values and units as structured data.",side:"l",label:"Report photo or PDF",product:"Medical Document Parsing",fam:"ai",url:"/api-sdk/models/medical-document-parsing/upload-report",
         ui:`<div class="kv"><span class="t1">lab_report.jpg</span><span class="v">Photo</span></div>`},
-      {id:"codify",side:"l",label:"Codification",product:"Medical Document Parsing",fam:"ai",url:"/api-sdk/models/medical-entity-codification/link-entity",
+      {id:"codify",job:"Map diagnoses and findings in free text to standard codes such as ICD-10, SNOMED CT and LOINC.",side:"l",label:"Codification",product:"Medical Document Parsing",fam:"ai",url:"/api-sdk/models/medical-entity-codification/link-entity",
         ui:`<div class="kv"><span class="t1">Type 2 diabetes</span><span class="v">ICD-10 E11.9</span></div>`},
-      {id:"note",build:"/api-sdk/scribe/sessions/get-session",side:"r",label:"Structured note",product:"Medical Scribe",fam:"ai",url:"/api-sdk/scribe/templates/list-templates",
+      {id:"note",job:"Fetch the finished note in your template, and as FHIR.",build:"/api-sdk/scribe/sessions/get-session",side:"r",label:"Structured note",product:"Medical Scribe",fam:"ai",url:"/api-sdk/scribe/templates/list-templates",
         ui:`<div class="kv"><span class="t2">Complaint</span><span class="v">Fever, 3 days</span></div><div class="kv"><span class="t2">HbA1c</span><span class="v">7.8 % &#8593;</span></div>`},
-      {id:"record",build:"/api-sdk/health-records/obtain-authorization",side:"r",label:"Medical record",product:"Health Records",fam:"im",url:"/docs/health-records/upload-records",
+      {id:"record",job:"Save the visit, the note and the reports to the patient's health record.",note:"Record uploads need the patient's ID in the X-Pt-Id header. Ask me how my system identifies patients.",build:"/api-sdk/health-records/obtain-authorization",side:"r",label:"Medical record",product:"Health Records",fam:"im",url:"/docs/health-records/upload-records",
         ui:`<div class="kv"><span class="t1">OPD visit, 14 Oct</span><span class="v">FHIR</span></div><div class="t2">Saved to Riya's record</div>`}]},
   ci:{name:"Clinically intelligent HIS",who:"A scribe, a medical assistant and agents that act on your EMR",app:"Your hospital system",kind:"clinic",sides:["At the consultation","Across the hospital"],
     areas:'"scribe assist" "kb mcp"',rows:"92px 80px",
     outcome:"Riya's doctor gets the note written, the answer checked and the follow-up booked.",next:["Clinically intelligent HIS recipe","/docs/get-started/whats-possible/clinically-intelligent-his"],journey:["Clinical AI","Medical Agents"],
     parts:[
-      {id:"scribe",build:"/docs/scribe/quickstart",side:"l",label:"Ambient scribe",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
+      {id:"scribe",job:"Turn each consultation into a structured note that fills the chart.",build:"/docs/scribe/quickstart",side:"l",label:"Ambient scribe",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
         ui:`<div class="t2">Listening in Hindi</div><div class="wave">${WAVE}</div><div class="t1" style="font-weight:450">"3 din se bukhar hai..."</div>`},
-      {id:"kb",side:"l",label:"Knowledge base",product:"Medical Knowledge",fam:"ai",url:"/api-sdk/datasets/medications/search",
+      {id:"kb",job:"Search medications in Eka's Indian medical database.",side:"l",label:"Knowledge base",product:"Medical Knowledge",fam:"ai",url:"/api-sdk/datasets/medications/search",
         ui:`<div class="kv"><span class="t1">Metformin</span><span class="v">First line</span></div><div class="t2">Per national protocol</div>`},
-      {id:"assist",build:"/api-sdk/agents/overview",side:"r",label:"MedAssist",product:"Medical Agents",fam:"ai",url:"/docs/agents/medassist",
+      {id:"assist",job:"Embed MedAssist, Eka's medical assistant, through its session and WebSocket APIs.",note:"MedAssist authenticates with an agent ID, not the client credentials. Ask me for it.",build:"/api-sdk/agents/overview",side:"r",label:"MedAssist",product:"Medical Agents",fam:"ai",url:"/docs/agents/medassist",
         ui:`<div class="t2">MedAssist</div><div class="bubble">Metformin is first line here, per the national protocol.</div>`},
-      {id:"mcp",build:"/docs/agents/agent-kit/mcp-integration",side:"r",label:"EMR agent",product:"Medical Agents",fam:"ai",url:"/docs/emr/build-with-ai/mcp-server/introduction",
+      {id:"mcp",job:"Give your agent Eka EMR tools (patients, appointments, prescriptions) over MCP with the Echo Agent Kit.",build:"/docs/agents/agent-kit/mcp-integration",side:"r",label:"EMR agent",product:"Medical Agents",fam:"ai",url:"/docs/emr/build-with-ai/mcp-server/introduction",
         ui:`<div class="kv"><span class="t1">Follow-up booked</span><span class="v">MCP</span></div><div class="t2">14 Oct, 10:30</div>`}]},
   px:{name:"Patient experiences",held:true,who:"Booking, a patient-facing agent, and the records the patient keeps",app:"Your patient app",kind:"phone",sides:["Care","Conversation"],
     areas:'"agent agent" "appt appt" "pay notify" "records phr"',rows:"86px 62px 74px 74px",
     outcome:"Riya booked, paid, was reminded, and keeps her records from every hospital.",next:["Patient experiences recipe","/docs/products/patient-experiences"],journey:["Integrations","Eka EMR"],
     parts:[
-      {id:"appt",build:"/api-sdk/emr/appointment-api/book-appointment-slot",side:"l",label:"Appointments",product:"Eka EMR",fam:"im",url:"/docs/emr/appointment-api/getting-started",
+      {id:"appt",job:"Show open slots and book appointments.",build:"/api-sdk/emr/appointment-api/book-appointment-slot",side:"l",label:"Appointments",product:"Eka EMR",fam:"im",url:"/docs/emr/appointment-api/getting-started",
         ui:`<div class="kv"><span class="t1">Tue 14 Oct</span><span class="v">10:30</span></div><div class="t2">Follow-up, Dr. Menon</div>`},
-      {id:"pay",side:"l",label:"Payments",product:"Billing",fam:"im",url:"/api-sdk/emr/post_webhooks/payment-link-webhook",
+      {id:"pay",job:"React when a patient's payment link is requested.",side:"l",label:"Payments",product:"Billing",fam:"im",url:"/api-sdk/emr/post_webhooks/payment-link-webhook",
         ui:`<div class="kv"><span class="t1">Consultation</span><span class="v">&#8377;500</span></div><span class="btnmini">Pay</span>`},
-      {id:"records",side:"l",label:"Reports",product:"Health Records",fam:"im",url:"/api-sdk/health-records/list-records",
+      {id:"records",job:"List the patient's reports.",side:"l",label:"Reports",product:"Health Records",fam:"im",url:"/api-sdk/health-records/list-records",
         ui:`<div class="t1">3 reports</div><div class="t2">Shared by City Hospital</div>`},
-      {id:"agent",side:"r",label:"Patient agent",product:"Medical Agents",fam:"ai",url:"/api-sdk/agents/overview",
+      {id:"agent",job:"Give patients an assistant they can talk to.",side:"r",label:"Patient agent",product:"Medical Agents",fam:"ai",url:"/api-sdk/agents/overview",
         ui:`<div class="t2">MedAssist</div><div class="bubble">Your follow-up is booked for 14 Oct, 10:30.</div>`},
-      {id:"notify",build:"/api-sdk/emr/post_webhooks/appointment-reminder-instant-webhook",side:"r",label:"Reminders",product:"Eka EMR",fam:"im",url:"/api-sdk/emr/notify/notify",
+      {id:"notify",job:"Remind patients before their appointments.",build:"/api-sdk/emr/post_webhooks/appointment-reminder-instant-webhook",side:"r",label:"Reminders",product:"Eka EMR",fam:"im",url:"/api-sdk/emr/notify/notify",
         ui:`<div class="t1">Reminder sent</div><div class="t2">WhatsApp, 9:00</div>`},
-      {id:"phr",side:"r",label:"PHR app",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/phr/overview",
+      {id:"phr",job:"Let patients see and share their ABHA records in your app.",side:"r",label:"PHR app",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/phr/overview",
         ui:`<div class="t1">Records from 3 hospitals</div><div class="t2">In Riya's health record app</div>`}]}
 };
-// The prompt a visitor copies into their AI coding tool: the scene, then each clipped part's page in clip order.
-// A part's `build` page is the one an agent can build from; `url` is the page the landing card opens.
+// The brief a visitor copies into their AI coding tool, agent-agnostic. Sections follow Razorpay's prompt files and
+// Scribe's CLAUDE.md page; each clipped part is a numbered section, in clip order. A part's `build` page is the one an
+// agent can build from; `url` is the page the landing card opens. Only facts the docs state go in.
 function promptFor(key,ids){
   const sc=SCENES[key],site="https://developer.eka.care";
-  // A scene whose prompt failed testing (held) offers no prompt; the panel links its recipe instead.
+  // A scene whose prompt failed testing (held) offers no prompt; the frame links its recipe instead.
   if(sc.held)return null;
   const parts=ids.map(id=>sc.parts.find(p=>p.id===id)).filter(Boolean);
-  return [`Build "${sc.name}" on Eka for my product.`,
-    parts.length?`Read ${site}/llms.txt first, and use the pages below.`:`Read ${site}/llms.txt first.`,
-    ...parts.map(p=>`- ${p.label}: ${site}${p.build||p.url}`),
-    "Authenticate with my sandbox credentials. Ask me for them; never write them into code you commit.",
-    `Handle the webhooks these pages name, and verify each one as ${site}/docs/webhooks/webhook-signature describes.`].join("\n");
+  const tools=parts.length?parts.map((p,i)=>[`${i+1}. ${p.label} (${p.product})`,`   ${p.job}`,...(p.note?[`   ${p.note}`]:[]),`   Build from: ${site}${p.build||p.url}`].join("\n")).join("\n\n")
+    :"None chosen yet. Ask me which parts of this to build.";
+  return [`Integrate "${sc.name}" from Eka into this codebase.`,`What it is: ${sc.who}.`,...(sc.note?[sc.note]:[]),"",
+    "## Before you write code","Detect the stack. Look for an existing Eka or ABDM integration. If one covers any tool below, list what it covers, then stop and ask me before you change it.","",
+    "## Credentials","EKA_CLIENT_ID={{EKA_CLIENT_ID}}","EKA_CLIENT_SECRET={{EKA_CLIENT_SECRET}}","If these are blank, ask me. Keep them in .env and never commit them.","",
+    "## Auth","POST https://api.eka.care/connect-auth/v1/account/login with client_id and client_secret returns an access_token.",
+    "Send it as Authorization: Bearer <access_token>. It lasts about 30 minutes; on 401, refresh it:",`${site}/api-sdk/auth/refresh-token-v2`,"",
+    "## Tools to integrate",tools,"",
+    "## Webhooks","Handle the webhooks the pages above name. Verify each one's signature:",`${site}/docs/webhooks/webhook-signature`,"",
+    "## How to work","Read each Build from page before writing its code. Build the tools in the order listed.",
+    `Where a page leaves a value open, ask me rather than guess. ${site}/llms.txt indexes every page.`,"",
+    "## Output","List the files you created or changed, how to test in sandbox, and any manual steps.","","Begin integration now."].join("\n");
 }
 /* Where a part's docs live. A part whose page is in the API reference opens its product's first docs page instead
    (each product's first page in docs.json), so every way out of Assemble lands in the docs. */
@@ -908,7 +932,7 @@ const loadBuilt=k=>{if(BUILT[k])return BUILT[k].slice();let ids=[];try{ids=JSON.
 let built=[];
 const save=()=>{BUILT[sceneKey]=built.slice();try{localStorage.setItem("eka-assemble-"+sceneKey,JSON.stringify(built))}catch(e){}};
 const slotOf=id=>$(`.slot[data-slot="${id}"]`),partOf=id=>$(`.part[data-id="${id}"]`);
-const frame=$("#frame"),code=$("#code"),ptext=$("#ptext"),caption=$("#caption"),links=$("#links"),stage=$("#stage");
+const frame=$("#frame"),brief=$("#brief"),caption=$("#caption"),links=$("#links"),stage=$("#stage");
 
 function springTo(st,key,target,{response=.42,onFrame,onDone}={}){
   const w=2*Math.PI/response,s=st[key];if(s.raf)cancelAnimationFrame(s.raf);
@@ -961,16 +985,29 @@ function emptySlot(m){const s=slotOf(m.id);s.classList.remove("filled");["tabind
 let lastAdded=null;
 function renderCode(){
   const esc=t=>t.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"})[c]);
-  const last=lastAdded&&(MODULES.find(x=>x.id===lastAdded)||{}).label;
+  $("#fcount").textContent=`${built.length} of ${MODULES.length} tools`;
   $("#copy").hidden=promptFor(sceneKey,built)===null;
   if(promptFor(sceneKey,built)===null){const sc=SCENES[sceneKey];
-    ptext.innerHTML=`<span class="ln">A tested prompt for this scene isn't ready yet. Follow the recipe instead: <a href="${BASE+sc.next[1]}">${esc(sc.next[0])} &rarr;</a></span>`;return}
-  ptext.innerHTML=promptFor(sceneKey,built).split("\n").map(l=>{const m=l.match(/^- ([^:]+): (.*)$/);
-    return m?`<span class="ln${m[1]===last?" new":""}">- <span class="k">${esc(m[1])}</span>: ${esc(m[2])}</span>`:`<span class="ln">${esc(l)}</span>`}).join("");
+    brief.innerHTML=`<span class="sec">A tested prompt for this scene isn't ready yet. Follow the recipe instead: <a href="${BASE+sc.next[1]}">${esc(sc.next[0])} &rarr;</a></span>`;return}
+  // One block per section; a tool's block is marked with its part so the newest one can be lit and scrolled to.
+  const last=lastAdded&&(MODULES.find(x=>x.id===lastAdded)||{}).label;
+  const H="## Tools to integrate\n";
+  // The first tool shares its block with the heading above it; split it off so it can be lit like the rest.
+  const blocks=promptFor(sceneKey,built).split("\n\n").flatMap(b=>b.startsWith(H)?[H.trim(),b.slice(H.length)]:[b]);
+  brief.innerHTML=blocks.map((b,i)=>{const t=b.match(/^\d+\. (.+) \(/);
+    const body=esc(b).replace(/^(## .+|Integrate .+|\d+\. .+)$/gm,'<span class="h">$1</span>');
+    return (i&&blocks[i-1]!==H.trim()?"\n":"")+`<span class="sec${t&&t[1]===last?" new":""}">${body}</span>`}).join("");
+  const fresh=brief.querySelector(".sec.new");
+  if(fresh&&!brief.hidden){fresh.scrollIntoView({block:"nearest",behavior:reduce()?"auto":"smooth"});setTimeout(()=>fresh.classList.remove("new"),1400)}
 }
+function placeBrief(){const g=$("#appgrid");brief.style.top=g.offsetTop+"px";brief.style.height=g.offsetHeight+"px"}
+function setView(v){const b=v==="brief";frame.classList.toggle("show-brief",b);brief.hidden=!b;
+  $("#vApp").setAttribute("aria-pressed",!b);$("#vBrief").setAttribute("aria-pressed",b);if(b){placeBrief();brief.scrollTop=0}}
+$("#vApp").addEventListener("click",()=>setView("app"));$("#vBrief").addEventListener("click",()=>setView("brief"));
+addEventListener("resize",()=>{if(!brief.hidden)placeBrief()});
 $("#copy").addEventListener("click",async()=>{const b=$("#copy");
   try{await navigator.clipboard.writeText(promptFor(sceneKey,built));b.textContent="Copied";setTimeout(()=>{b.textContent="Copy prompt"},WAIT)}
-  catch(e){const r=document.createRange();r.selectNodeContents(ptext);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)}});
+  catch(e){const r=document.createRange();r.selectNodeContents(brief);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)}});
 function sync(){frame.classList.toggle("has-any",built.length>0);
   // Unlocking counts what the visitor has built in every scene, not only this one.
   unlock(Object.keys(SCENES).flatMap(k=>k===sceneKey?built:loadBuilt(k)));
@@ -1415,7 +1452,7 @@ unlock(Object.keys(SCENES).flatMap(k=>k===sceneKey?built:loadBuilt(k)));
   const INT_MENU=NAV_MENUS.filter(([g])=>g==="Integrations").map(([g,items])=>[g,"int",items]);
   prod.innerHTML=INT_MENU.map(([g,k,items])=>`<div class="mcol m-${k}"><h4><i></i>${g}</h4>${items.map(([n,h,ic,d])=>
     `<a class="mi" role="menuitem" href="${h}" data-g="${g}" data-p="${n}"><span class="pi"><i data-lucide="${ic}"></i></span><div><b>${n}</b><span>${d}</span></div></a>`).join("")}</div>`).join("");
-  if(window.lucide){lucide.createIcons({root:sol});lucide.createIcons({root:prod});lucide.createIcons({root:$("#mega-res")});lucide.createIcons({root:$("#mega-tools")});lucide.createIcons({root:$("#tools")})}
+  if(window.lucide){lucide.createIcons({root:sol});lucide.createIcons({root:prod});lucide.createIcons({root:$("#mega-res")});lucide.createIcons({root:$("#mega-tools")});lucide.createIcons({root:$("#tools")});lucide.createIcons({root:$("#frame")})}
   $("#mega-res").addEventListener("click",e=>{if(e.target.closest("a.mi"))close()});
   const menus=$$(".nv");let timer=null;
   const close=()=>menus.forEach(m=>{m.classList.remove("open");m.querySelector(".nvb").setAttribute("aria-expanded","false")});
