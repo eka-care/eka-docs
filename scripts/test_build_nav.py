@@ -207,9 +207,9 @@ class BuildWithAI(unittest.TestCase):
         links = self.docs['navbar']['links']
         self.assertEqual([(l.get('label'), l['href'], l.get('icon')) for l in links], [
             ('Developer tools', '/developer-tools', 'hammer'),
-            ('GitHub', 'https://github.com/eka-care', 'github'),
+            ('GitHub', 'https://github.com/eka-care', '/images/icons/github.svg'),
             ('Hugging Face', 'https://huggingface.co/ekacare', '/images/icons/huggingface.svg'),
-            ('Discord', 'https://discord.gg/THgd5S22EK', 'discord')])
+            ('Discord', 'https://discord.gg/THgd5S22EK', '/images/icons/discord.svg')])
         self.assertFalse([i for f in self.products for i in f['menu'] if 'Hugging Face' in i['item']])
 
     def test_plain_language_descriptions(self):

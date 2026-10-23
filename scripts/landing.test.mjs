@@ -276,3 +276,13 @@ test('the footer names the portal, follows the nav, and its heart opens the site
 test('no script still reaches for the removed Integrations or Developer tools menus', () => {
   for (const gone of ['$("#mega-prod")', 'prod.addEventListener', 'prod.innerHTML', '$("#mega-tools")']) assert.ok(!html.includes(gone), gone);
 });
+
+test('the nav uses the official GitHub, Hugging Face and Discord marks', () => {
+  const right = grab(/<div class="navright">[\s\S]*?<\/div>\n<\/nav>/, 'navright');
+  for (const name of ['github', 'huggingface', 'discord']) {
+    const file = fs.readFileSync(new URL(`../images/icons/${name}.svg`, import.meta.url), 'utf8');
+    const d = file.match(/<path[^>]* d="([^"]+)"/)[1];
+    assert.ok(right.includes(`d="${d}"`), `${name} is not the official mark`);
+  }
+  assert.ok(!right.includes('data-lucide="github"'));
+});

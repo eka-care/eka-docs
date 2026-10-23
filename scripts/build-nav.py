@@ -1130,11 +1130,12 @@ def write_dev_tools(targets, tools):
 
 
 # The navbar's icon links on every docs page; styles.css shows them as icons and keeps the labels for screen readers.
+# GitHub, Hugging Face and Discord are the official marks (images/icons/, from Simple Icons 13.21.0, CC0).
 NAVBAR_LINKS = [
     {'label': 'Developer tools', 'href': '/' + DEV_TOOLS, 'icon': 'hammer'},
-    {'label': 'GitHub', 'href': 'https://github.com/eka-care', 'icon': 'github', 'iconType': 'brands'},
+    {'label': 'GitHub', 'href': 'https://github.com/eka-care', 'icon': '/images/icons/github.svg'},
     {'label': 'Hugging Face', 'href': 'https://huggingface.co/ekacare', 'icon': '/images/icons/huggingface.svg'},
-    {'label': 'Discord', 'href': 'https://discord.gg/THgd5S22EK', 'icon': 'discord', 'iconType': 'brands'},
+    {'label': 'Discord', 'href': 'https://discord.gg/THgd5S22EK', 'icon': '/images/icons/discord.svg'},
 ]
 SITEMAP = 'sitemap'
 
