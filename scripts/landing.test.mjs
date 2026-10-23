@@ -25,14 +25,26 @@ test('every GROUPS entry resolves in J', () => {
 
 test('nav labels', () => {
   const labels = [...html.matchAll(/<button class="nvb"[^>]*>([^<]+)</g)].map((m) => m[1]);
-  assert.deepEqual(labels, ['Solutions', 'Integrations', 'Resources', 'Developer tools']);
+  assert.deepEqual(labels, ['Solutions', 'Resources', 'Newsboard']);
 });
 
 test('resources menu', () => {
   const res = grab(/<div class="mega mega-res"[\s\S]*?<\/div><\/div>\n/, 'mega-res');
   const names = [...res.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
-  for (const gone of ['Docs', 'API reference', 'SDKs']) assert.ok(!names.includes(gone), gone);
-  for (const kept of ['Cookbook', 'Auth', 'Encryption', 'Research', 'Models on Hugging Face', 'Datasets on Hugging Face', 'Changelog']) assert.ok(names.includes(kept), kept);
+  assert.deepEqual(names, ['Cookbook', 'Auth', 'Encryption']);
+});
+
+test('newsboard menu holds what used to be Stay current', () => {
+  const news = grab(/<div class="mega mega-news"[\s\S]*?<\/div><\/div>\n/, 'mega-news');
+  assert.deepEqual([...news.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]), ['Changelog', 'Under the hood', 'Research']);
+});
+
+test('the nav carries Developer tools, GitHub, Hugging Face and Discord as icons', () => {
+  const right = grab(/<div class="navright">[\s\S]*?<\/div>\n<\/nav>/, 'navright');
+  const links = [...right.matchAll(/<a class="iconlink" href="([^"]+)"[^>]*aria-label="([^"]+)"/g)].map((m) => [m[1], m[2]]);
+  assert.deepEqual(links, [['/developer-tools', 'Developer tools'], ['https://github.com/eka-care', "Eka's open source projects on GitHub"],
+    ['https://huggingface.co/ekacare', 'Eka on Hugging Face'], ['https://discord.gg/THgd5S22EK', 'Eka developers on Discord']]);
+  for (const gone of ['Models on Hugging Face', 'Datasets on Hugging Face', 'Developer Discord', 'mega-tools', 'mega-prod']) assert.ok(!html.includes(gone), gone);
 });
 
 test('the product grid is gone and the journey is step 03', () => {
@@ -77,15 +89,14 @@ test('the Solutions and Integrations menus are the docs product switcher', () =>
   const menus = JSON.parse(grab(/const NAV_MENUS=(.*);\n/, 'NAV_MENUS').replace(/^const NAV_MENUS=/, '').replace(/;\n$/, ''));
   assert.deepEqual(menus, want);
   assert.match(html, /const SOL_MENU=NAV_MENUS\.filter/);
-  assert.match(html, /const INT_MENU=NAV_MENUS\.filter/);
 });
 
 test('the scene picker offers the four scenes, each opening its Cookbook recipe', () => {
   const order = run(grab(/const SCENE_ORDER=\[.*?\];\n/, 'SCENE_ORDER'), 'SCENE_ORDER');
-  assert.deepEqual([...order], ['abdm', 'mr', 'ci', 'px']);
+  assert.deepEqual([...order], ['abdm', 'mr']);
   const scenes = grab(/const SCENES=\{[\s\S]*?\n\};\n/, 'SCENES');
   const names = [...scenes.matchAll(/^  [a-z]+:\{name:"([^"]+)"/gm)].map((m) => m[1]);
-  assert.deepEqual(names, ['ABDM-enabled HIS', 'Medical records from any source', 'Clinically intelligent HIS', 'Patient experiences']);
+  assert.deepEqual(names, ['ABDM-enabled HIS', 'Medical records from any source']);
   const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
   const cookbook = JSON.stringify(docs.navigation.products.flatMap((f) => f.menu).find((i) => i.item === 'Cookbook'));
   for (const m of scenes.matchAll(/next:\["[^"]+","\/([^"]+)"\]/g)) assert.ok(cookbook.includes(`"${m[1]}"`), m[1]);
@@ -143,12 +154,6 @@ test('the tools row is not a nav element', () => {
   assert.ok(!/<nav class="tools-row"/.test(html));
 });
 
-test('the Developer tools menu links the same four sections', () => {
-  const menu = grab(/<div class="mega mega-tools"[\s\S]*?<\/div><\/div>\n/, 'mega-tools');
-  const hrefs = [...menu.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(hrefs, ['/developer-tools#api-reference', '/developer-tools#sdks', '/developer-tools#mcp-servers', '/developer-tools#webhooks']);
-});
-
 const SCENES_SRC = 'const CHECK="",WAVE="";\n' + grab(/const SCENES=\{[\s\S]*?\n\};\n/, 'SCENES');
 const PROMPT_SRC = grab(/function promptFor\([\s\S]*?\n\}\n/, 'promptFor');
 const prompt = (key, ids) => run(SCENES_SRC + PROMPT_SRC, `promptFor(${JSON.stringify(key)}, ${JSON.stringify(ids)})`);
@@ -190,9 +195,8 @@ test('each part sends the agent to the page it can build from', () => {
     abdm: { abha: '/docs/hie-cm/workflows/login-abha', scan: '/docs/hie-cm/workflows/hip-scan-and-share',
       link: '/docs/hie-cm/workflows/link-care-context-hip', consent: '/docs/hie-cm/workflows/hiu-request-consent',
       records: '/docs/hie-cm/workflows/hiu-receive-data', claim: '/docs/nhcx/getting-started' },
-    mr: { voice: '/docs/scribe/quickstart', note: '/api-sdk/scribe/sessions/get-session', record: '/api-sdk/health-records/obtain-authorization' },
-    ci: { scribe: '/docs/scribe/quickstart', mcp: '/docs/agents/agent-kit/mcp-integration' },
-  };  // px is held (no prompt) until its round-2 findings are fixed
+    mr: { voice: '/docs/scribe/quickstart', note: '/api-sdk/scribe/sessions/get-session', record: '/docs/scribe/resources/fhir-structure' },
+  };
   for (const [k, parts] of Object.entries(want)) {
     const p = prompt(k, Object.keys(parts));
     for (const path of Object.values(parts)) assert.ok(p.includes(`https://developer.eka.care${path}\n`), `${k}: ${path}`);
@@ -207,13 +211,9 @@ test('every page a prompt sends the agent to is on disk', () => {
   }
 });
 
-test('a scene whose prompt failed testing offers its recipe instead', () => {
-  assert.equal(prompt('px', ['appt', 'pay']), null);
+test('a scene whose prompt failed testing would offer its recipe instead', () => {
+  assert.match(PROMPT_SRC, /if\(sc\.held\)return null;/);
   assert.match(html, /promptFor\(sceneKey,built\)===null/);
-});
-
-test('MedAssist sends the agent to the API it can call', () => {
-  assert.ok(prompt('ci', ['assist']).includes('https://developer.eka.care/api-sdk/agents/overview\n'));
 });
 
 const SECTIONS = ['## Before you write code', '## Credentials', '## Auth', '## Tools to integrate', '## Webhooks', '## How to work', '## Output'];
@@ -246,9 +246,7 @@ test('scene and part notes carry what the testers found missing', () => {
   const abdm = prompt('abdm', ['abha']);
   assert.match(abdm, /Health Information Provider \(HIP\)/);
   assert.match(abdm, /https:\/\/developer\.eka\.care\/docs\/hie-cm\/workflows\/serve-data-on-fetch/);
-  assert.match(prompt('mr', ['record']), /X-Pt-Id/);
-  assert.ok(!/X-Pt-Id/.test(prompt('mr', ['voice'])));
-  assert.match(prompt('ci', ['assist']), /agent ID/);
+  assert.match(prompt('mr', ['record']), /FHIR record \(Medical Scribe\)/);
 });
 
 test('one agent-agnostic Copy prompt on the frame: no deep links, no panel under the stage', () => {
@@ -259,4 +257,22 @@ test('one agent-agnostic Copy prompt on the frame: no deep links, no panel under
   assert.match(foot, /id="copy"[^>]*>[\s\S]*Copy prompt/);
   assert.match(html, /<div class="brief" id="brief"/);
   assert.ok(!html.includes('<div class="code reveal" id="code"'));
+});
+
+test('the scene ring lays two scenes out side by side, without a wrap seam', () => {
+  const ringSrc = grab(/\/\* A ring, not a strip[\s\S]*?\n\}\)\(\);/, 'ring');
+  assert.match(ringSrc, /LINEAR=N<3/);
+});
+
+test('the footer names the portal, follows the nav, and its heart opens the site map', () => {
+  const footer = grab(/<footer[\s\S]*?<\/footer>/, 'footer');
+  assert.match(footer, /Eka Developer Portal/);
+  const heads = [...footer.matchAll(/<h4>([^<]+)<\/h4>/g)].map((m) => m[1]);
+  assert.deepEqual(heads, ['Solutions', 'Resources', 'Newsboard', 'Community']);
+  for (const gone of ['Medical Agents', 'Medical Knowledge', 'Integrations', 'Eka EMR', 'IPD']) assert.ok(!footer.includes(gone), gone);
+  assert.match(footer, /Eka Care\. Built in India\.\s*<a class="heart" href="\/sitemap" aria-label="Site map"/);
+});
+
+test('no script still reaches for the removed Integrations or Developer tools menus', () => {
+  for (const gone of ['$("#mega-prod")', 'prod.addEventListener', 'prod.innerHTML', '$("#mega-tools")']) assert.ok(!html.includes(gone), gone);
 });

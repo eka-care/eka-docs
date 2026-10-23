@@ -181,7 +181,7 @@ ICONS = {
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Understanding Integrations': 'compass', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
+    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -804,16 +804,19 @@ def untab(products):
 # with), then Integrations (for people already on an Eka product) and Resources (what every product shares). regroup() moves the tree build() made, or the one already in docs.json, into that
 # shape. It moves pages and never rewrites them, and running it again changes nothing.
 FAMILIES = [
-    ('Clinical AI', 'sparkles', 'Scribe, document parsing, agents and medical knowledge to build your own tools.',
-     ['Medical Scribe', 'Medical Document Parsing', 'Medical Agents', 'Medical Knowledge']),
+    ('Clinical AI', 'sparkles', 'The medical scribe, document parsing and the Eka MCP server, to build your own tools.',
+     ['Medical Scribe', 'Medical Document Parsing', 'Eka MCP']),
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
-    ('Integrations', 'folder-open', 'Already on an Eka product? Connect it to the tools your team uses.',
-     ['Understanding Integrations', 'Medical Scribe', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
-    ('Resources', 'book-open', 'Sign-in and encryption for every product, and what changed.',
-     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Research', 'Models on Hugging Face',
-      'Datasets on Hugging Face', 'Changelog']),
+    ('Resources', 'book-open', 'Keys, sign-in, encryption, every API and worked examples.',
+     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook']),
+    ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
+     ['Changelog', 'Research']),
+    # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
+    ('More from Eka', 'box-archive', 'Products kept out of the navigation. Their pages stay live, listed on /sitemap.',
+     ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
 ]
+HIDDEN_FAMILIES = {'More from Eka'}
 RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medical Document Parsing',
                 'Scribe': 'Medical Scribe', 'Agents': 'Medical Agents', 'Datasets': 'Medical Knowledge',
                 'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR', 'Overview': 'Understanding Integrations'}
@@ -822,8 +825,12 @@ NEW_ITEMS = {
     'Research': 'Open models, datasets and research for AI in Indian healthcare',
     'Changelog': 'What changed across Eka, week by week',
     'Understanding Integrations': 'Which integration you need, by the Eka product you use',
+    'Eka MCP': 'Connect your agent to Eka EMR: patients, appointments and prescriptions',
 }
 INTEGRATIONS_HOME = 'docs/integrations/overview'
+# The Eka MCP server is the one way into Eka EMR from the navigation, so it is a Clinical AI item of its own.
+EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [
+    f'docs/emr/build-with-ai/mcp-server/{p}' for p in ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
 COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
             'docs/get-started/whats-possible/medical-records-from-any-source',
             'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
@@ -846,17 +853,7 @@ SDK_MOVES = {
 # An integration that uses a solution's API opens that solution's docs instead of copying them. Mintlify's switcher only
 # follows a full URL on a link entry (it opens in a new tab); the landing page uses the same link relative to the site.
 SITE = 'https://developer.eka.care'
-LINK_ITEMS = {
-    ('Integrations', 'Medical Scribe'): {'href': SITE + '/docs/scribe/overview#how-it-works',
-                                         'icon': '/images/icons/products/mic.svg',
-                                         'description': 'Voice in, structured notes out, from the Eka product you use'},
-    ('Resources', 'Models on Hugging Face'): {'href': 'https://huggingface.co/collections/ekacare/ekacare-public-healthcare-llms',
-                                              'icon': '/images/icons/products/package.svg',
-                                              'description': "Eka's open models, with their weights"},
-    ('Resources', 'Datasets on Hugging Face'): {'href': 'https://huggingface.co/collections/ekacare/ekacare-medical-public-datasets',
-                                                'icon': '/images/icons/products/database.svg',
-                                                'description': "Eka's open medical datasets and benchmarks"},
-}
+LINK_ITEMS = {}
 # The switcher's one line for each product, in plain words rather than internal names.
 DESCRIPTIONS = {
     'Medical Scribe': 'Consultations become structured notes that complete the chart',
@@ -873,9 +870,6 @@ BUILD_WITH_AI = {
     'Medical Knowledge': [{'group': 'MCP server', 'root': 'docs/datasets/build-with-ai/mcp-server/introduction',
                            'pages': [f'docs/datasets/build-with-ai/mcp-server/{p}'
                                      for p in ('quickstart', 'tools', 'authentication')]}],
-    'Eka EMR': [{'group': 'MCP server', 'root': 'docs/emr/build-with-ai/mcp-server/introduction',
-                 'pages': [f'docs/emr/build-with-ai/mcp-server/{p}'
-                           for p in ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]}],
 }
 
 # Each product's Build with AI overview, the root of that group.
@@ -1025,6 +1019,12 @@ def regroup(products):
         it.pop('href', None)
         it['pages'] = place_build_with_ai(it.get('pages', []), json.loads(json.dumps(contents)), home)
 
+    if all(open_ok(p) for p in EKA_MCP):
+        for (is_api, _), it in items.items():
+            if not is_api and it.get('pages'):
+                it['pages'] = remove_pages(it['pages'], set(EKA_MCP))
+        items[(False, 'Eka MCP')] = {**items.get((False, 'Eka MCP'), {}), 'item': 'Eka MCP', 'pages': list(EKA_MCP)}
+
     out = []
     for suffix in ('', API_SUFFIX):
         for fam, icon, description, names in FAMILIES:
@@ -1045,8 +1045,9 @@ def regroup(products):
                 menu.append(it)
             if menu:
                 old = fams.get(fam + suffix, {})
-                out.append({**old, 'product': fam + suffix, 'icon': old.get('icon', icon),
-                            'description': description, 'menu': menu})
+                out.append({**{k: v for k, v in old.items() if k != 'hidden'}, 'product': fam + suffix,
+                            'icon': old.get('icon', icon), 'description': description, 'menu': menu,
+                            **({'hidden': True} if fam in HIDDEN_FAMILIES else {})})
     products[:] = out
 
 
@@ -1092,7 +1093,7 @@ def tool_targets(products):
              for it in fam['menu'] if it['item'].endswith(API_SUFFIX)}
     tools = {title: [] for title, _ in TOOL_SECTIONS}
     for fam in products:
-        if is_api_family(fam):
+        if is_api_family(fam) or fam['product'] in HIDDEN_FAMILIES:
             continue
         for it in fam['menu']:
             if (fam['product'], it['item']) in LINK_ITEMS:
@@ -1126,6 +1127,62 @@ def write_dev_tools(targets, tools):
             lines += [f'  <Card title="{product}" href="{href}">', f'    {desc}', '  </Card>']
         lines += ['</CardGroup>', '']
     open(DEV_TOOLS + '.mdx', 'w').write('\n'.join(lines))
+
+
+# The navbar's icon links on every docs page; styles.css shows them as icons and keeps the labels for screen readers.
+NAVBAR_LINKS = [
+    {'label': 'Developer tools', 'href': '/' + DEV_TOOLS, 'icon': 'hammer'},
+    {'label': 'GitHub', 'href': 'https://github.com/eka-care', 'icon': 'github', 'iconType': 'brands'},
+    {'label': 'Hugging Face', 'href': 'https://huggingface.co/ekacare', 'icon': '/images/icons/huggingface.svg'},
+    {'label': 'Discord', 'href': 'https://discord.gg/THgd5S22EK', 'icon': 'discord', 'iconType': 'brands'},
+]
+SITEMAP = 'sitemap'
+
+
+def page_title(page):
+    meta = page_meta(page)
+    title = meta.get('sidebarTitle') or meta.get('title')
+    if not title and meta.get('openapi'):
+        title = meta['openapi'].split()[-1] if ' ' in meta['openapi'] else meta['openapi']
+    title = title or page.rsplit('/', 1)[-1].replace('-', ' ').replace('_', ' ').capitalize()
+    return title.replace('{', '(').replace('}', ')').replace('<', '').replace('>', '').replace('[', '(').replace(']', ')')
+
+
+def sitemap_lines(entries, depth):
+    out = []
+    for e in entries:
+        pad = '  ' * depth
+        if isinstance(e, str):
+            out.append(f'{pad}- [{page_title(e)}](/{e})')
+        elif isinstance(e, dict) and 'group' in e:
+            root = f' ([overview](/{e["root"]}))' if e.get('root') else ''
+            out.append(f'{pad}- **{e["group"]}**{root}')
+            out += sitemap_lines(e.get('pages', []), depth + 1)
+    return out
+
+
+def write_sitemap(products):
+    """Every page in docs.json, by family, product and tab, including the products kept out of the navigation.
+    Hidden itself: reachable from the footer's heart, not from the navigation or search."""
+    lines = ['---', 'title: "Site map"',
+             'description: "Every page on developer.eka.care, including products kept out of the navigation."',
+             'hidden: true', '---', '',
+             '{/* Generated by scripts/build-nav.py from docs.json. Do not edit by hand. */}', '',
+             'Every product, guide and API reference page, in the order the navigation keeps them. '
+             'Products under More from Eka are not in the navigation; their pages stay live at these links.', '']
+    for fam in products:
+        lines += [f'## {fam["product"]}', '']
+        if fam.get('hidden'):
+            lines += ['<Note>Not in the navigation. These pages stay live; link to them directly.</Note>', '']
+        for it in fam['menu']:
+            lines += [f'### {it["item"]}', '']
+            if it.get('description'):
+                lines += [it['description'], '']
+            if it.get('href'):
+                lines += [f'- [{it["item"]}]({it["href"]})', '']
+            for t in it.get('tabs', []):
+                lines += [f'<Accordion title="{t["tab"]}">', ''] + sitemap_lines(t['pages'], 0) + ['', '</Accordion>', '']
+    open(SITEMAP + '.mdx', 'w').write('\n'.join(lines))
 
 # ---------- Landing page developer journey ----------
 # The landing page's journey (landing/source.html, const J) follows each product's docs
@@ -1189,7 +1246,7 @@ def journey(products):
            for it in fam['menu'] if it['item'].endswith(API_SUFFIX)}
     J = {}
     for fam in products:
-        if is_api_family(fam):
+        if is_api_family(fam) or fam['product'] in HIDDEN_FAMILIES:
             continue
         J[fam['product']] = prods = {}
         for it in fam['menu']:
@@ -1226,7 +1283,7 @@ def write_journey(products):
     open(LANDING_HTML, 'w').write(src[:start] + block + src[end:])
 
 
-LANDING_MENUS = ['Clinical AI', 'ABDM Connect', 'Integrations']
+LANDING_MENUS = ['Clinical AI', 'ABDM Connect']
 
 
 def write_menus(products):
@@ -1318,7 +1375,7 @@ def main():
     # Each product's tabs lead between its docs and its API reference, so the navbar carries no Docs or API link.
     d['navbar']['links'] = [l for l in d['navbar'].setdefault('links', [])
                             if l.get('label') not in ('API Reference', 'API and SDKs', API_LABEL, 'Docs', 'Developer tools')]
-    d['navbar']['links'].insert(0, {'label': 'Developer tools', 'href': '/' + DEV_TOOLS})
+    d['navbar']['links'] = list(NAVBAR_LINKS)
     for fam in new['products']:
         for it in fam['menu']:
             if is_api_family(fam) or 'href' in it:
@@ -1354,12 +1411,15 @@ def main():
         set_page_icons(new['products'])
     targets, _ = reference_targets(new['products'])
     write_link_js(root_groups(new['products']))
-    write_index(targets)
-    write_dev_tools(targets, tool_targets(new['products']))
+    # The API index and Developer tools list only what the navigation shows; /sitemap lists the rest.
+    visible = [t for t in targets if t[0] not in HIDDEN_FAMILIES]
+    write_index(visible)
+    write_dev_tools(visible, tool_targets(new['products']))
     fold(new['products'])
     write_journey(new['products'])
     tabify(new['products'])
     write_menus(new['products'])
+    write_sitemap(new['products'])
     # Every page listed before is listed exactly once now. Only the API index, the Integrations overview and Build
     # with AI overviews may be added.
     after = page_multiset(new)
