@@ -39,7 +39,7 @@ export function waveAt(t: number): Pt[] {
 type Shape = Pt[] | ((t: number) => Pt[]);
 type Step = {shape: Shape; hold: number; morph: number};
 const LARGE: Step[] = [
-  {shape: EKA, hold: 2, morph: 1},
+  {shape: EKA, hold: 4, morph: 1}, // long enough to read as where the loop starts
   {shape: HEART, hold: 2.2, morph: 1},
   {shape: LOTUS, hold: 1.8, morph: 1},
   {shape: waveAt, hold: 2, morph: 1},
