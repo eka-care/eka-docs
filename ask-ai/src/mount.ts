@@ -79,14 +79,14 @@ export function install(win: Window = window, doc: Document = document): boolean
   } else {
     start();
   }
-  // The shortcut opens Ask AI from anywhere on the page and closes it again. Caught first, so the host page's own
+  // The shortcut opens Ask AI on a new chat from anywhere on the page, and closes it again. Caught first, so the host page's own
   // binding for the key (if any) never runs as well.
   win.addEventListener('keydown', (e) => {
     if (!isAskShortcut(e)) return;
     e.preventDefault();
-    const panel = mount(doc);
+    const panel = mount(doc) as SupportAgentElement;
     if (panel.hasAttribute('open')) panel.removeAttribute('open');
-    else panel.setAttribute('open', '');
+    else panel.startNew();
   }, true);
   win.addEventListener('mintlify:navigate', () => win.setTimeout(run, 0));
   win.addEventListener('popstate', run);

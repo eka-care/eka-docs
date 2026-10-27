@@ -419,9 +419,11 @@ assert.equal(install(win, page), false, 'second install is a no-op');
 assert.deepEqual(calls, {listen: 5, interval: 1, define: 1, observe: 1});
 assert.equal(page.body.children.length, 1);
 
-// ⌘I (Ctrl+I off a Mac) opens Ask AI from anywhere, and closes it again; nothing else does.
+// ⌘I (Ctrl+I off a Mac) opens Ask AI on a new chat from anywhere, and closes it again; nothing else does.
 {
   const panel = page.body.children[0];
+  let fresh = 0;
+  panel.startNew = () => { fresh++; panel.setAttribute('open', ''); };
   const press = (init) => {
     const event = {key: 'i', metaKey: false, ctrlKey: false, altKey: false, shiftKey: false, isComposing: false, prevented: false, ...init,
       preventDefault() { this.prevented = true; }};
@@ -431,8 +433,10 @@ assert.equal(page.body.children.length, 1);
   assert.equal(keydown.length, 1, 'one shortcut listener');
   assert.ok(press({metaKey: true}).prevented, 'the browser does not also act on it');
   assert.ok(panel.hasAttribute('open'), '⌘I opens the panel');
+  assert.equal(fresh, 1, 'on a new chat, not the last one');
   press({ctrlKey: true, key: 'I'});
   assert.ok(!panel.hasAttribute('open'), 'Ctrl+I closes it again, whatever the case of the key');
+  assert.equal(fresh, 1, 'closing starts nothing');
   for (const other of [{key: 'i'}, {metaKey: true, shiftKey: true}, {ctrlKey: true, altKey: true}, {metaKey: true, key: 'k'}, {metaKey: true, isComposing: true}]) {
     assert.ok(!press(other).prevented && !panel.hasAttribute('open'), JSON.stringify(other));
   }

@@ -94,6 +94,8 @@ type PanelProps = {
   /** A question asked from the floating bar, numbered so asking the same
       words twice still asks twice. */
   asked: Asked | null;
+  /** Bumped to open on a new chat (the keyboard shortcut); the last one goes to History. */
+  fresh: number;
   starters: Starter[];
   /** False where the host asked not to keep conversations in its origin. */
   keepHistory: boolean;
@@ -251,6 +253,7 @@ function Panel({
   question,
   send,
   asked,
+  fresh,
   starters,
   keepHistory,
 }: PanelProps) {
@@ -394,6 +397,14 @@ function Panel({
     autoAsked.current = question;
     void ask(question);
   }, [open, question, send]);
+
+  // The keyboard shortcut opens on a new chat, the way New does.
+  const freshSeen = useRef(fresh);
+  useEffect(() => {
+    if (!open || freshSeen.current === fresh) return;
+    freshSeen.current = fresh;
+    reset();
+  }, [open, fresh]);
 
   // A question from the floating bar is asked at once. While an earlier
   // answer is still arriving it waits in the composer instead, so it is not
@@ -978,6 +989,7 @@ function Widget({
   onAttach,
   onAsk,
   asked,
+  fresh,
   question,
   send,
   starters,
@@ -993,6 +1005,7 @@ function Widget({
   onAttach: (page: PageAttachment) => void;
   onAsk: (question: string) => void;
   asked: Asked | null;
+  fresh: number;
   question: string;
   send: boolean;
   starters: Starter[];
@@ -1014,6 +1027,7 @@ function Widget({
         question={question}
         send={send}
         asked={asked}
+        fresh={fresh}
         starters={starters}
         keepHistory={keepHistory}
         onClose={close}
@@ -1115,6 +1129,7 @@ export class SupportAgentElement extends Base {
   private root: ShadowRoot | null = null;
   private page: PageAttachment | null = null;
   private asked: Asked | null = null;
+  private fresh = 0;
   private autoGround = false;
 
   connectedCallback() {
@@ -1153,6 +1168,13 @@ export class SupportAgentElement extends Base {
   /** Closes the panel. */
   hide() {
     this.removeAttribute('open');
+  }
+
+  /** Opens the panel on a new chat. The one on screen goes to History, as with New. */
+  startNew() {
+    this.fresh += 1;
+    this.removeAttribute('open');
+    this.setAttribute('open', '');
   }
 
   /** Opens the panel and asks `question` at once. */
@@ -1214,6 +1236,7 @@ export class SupportAgentElement extends Base {
         onAttach={(found) => this.attachPage(found)}
         onAsk={(text) => this.ask(text)}
         asked={this.asked}
+        fresh={this.fresh}
         question={this.getAttribute('question') ?? ''}
         send={this.hasAttribute('send')}
         starters={startersFrom(this.getAttribute('starters') ?? '')}
