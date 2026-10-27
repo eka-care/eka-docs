@@ -22,7 +22,7 @@ import {Composer, type Menu} from './Composer';
 import {HistoryList} from './HistoryList';
 import {Welcome} from './Welcome';
 import {FloatingBar} from './FloatingBar';
-import {ThinkingOrb} from './orb/frosted-orb';
+import {EkaOrb} from './orb/eka-orb';
 import {startersFrom, type Starter} from './starters';
 import {isHtmlDocument, markdownUrl, pageUrl, type PageEntry} from './pages';
 import type {Attached, PageAttachment, Source} from './types';
@@ -934,7 +934,7 @@ function Panel({
         ))}
         {showActivity && (
           <p class="ask-ai__activity">
-            <ThinkingOrb />
+            <EkaOrb size={20} />
             {activity ?? 'Thinking'}
           </p>
         )}

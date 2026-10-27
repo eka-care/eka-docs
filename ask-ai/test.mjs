@@ -20,7 +20,8 @@ await build({
                export {forModel} from './src/transcript';
                export {parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument} from './src/pages';
                export {mount, install} from './src/mount';
-               export {rowLabel} from './src/search-row';`,
+               export {rowLabel} from './src/search-row';
+               export {ekaFrame, SHAPES, STILL} from './src/orb/eka-orb';`,
     resolveDir: import.meta.dirname,
     loader: 'ts',
   },
@@ -43,7 +44,7 @@ const {
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
-  mount, install, rowLabel,
+  mount, install, rowLabel, ekaFrame, SHAPES, STILL,
 } = await import(out);
 
 // Search row: the label for Mintlify's search box, nothing for an empty query.
@@ -399,3 +400,44 @@ assert.deepEqual(load(), []);
 assert.doesNotThrow(() => save([{id: 'a', at: 1, title: 'q', turns: []}]));
 
 console.log('ok');
+
+// Eka orb: dots laid evenly along an outline that morphs circle -> Eka mark -> heart.
+{
+  const near = (dots, shape, size, tol) => {
+    const pts = shape.map(([x, y]) => [size / 2 + x * size, size / 2 + y * size]);
+    return dots.every((d) => pts.some(([x, y]) => Math.hypot(d.x - x, d.y - y) <= tol));
+  };
+  const big = ekaFrame(64, STILL);
+  assert.ok(big.length >= 48, `a 64px orb draws enough dots to read the mark, got ${big.length}`);
+  assert.ok(big.every((d) => d.x > 0 && d.x < 64 && d.y > 0 && d.y < 64 && d.r > 0), 'every dot sits on the canvas');
+  assert.ok(near(big, SHAPES.eka, 64, 1.5), 'the still frame is the Eka mark');
+  const gaps = big.map((d, i) => Math.hypot(d.x - big[(i + 1) % big.length].x, d.y - big[(i + 1) % big.length].y));
+  const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  assert.ok(Math.max(...gaps) < mean * 2.2, 'dots are spaced evenly along the outline');
+  // Spacing, not count, is fixed: the long, doubled-back mark gets more dots than the circle, so it reads as the mark.
+  const circleAt = (() => { for (let t = 0; t < 20; t += 0.05) { const d = ekaFrame(64, t); if (near(d, SHAPES.circle, 64, 0.6)) return d; } })();
+  assert.ok(big.length > circleAt.length * 2.5, `mark ${big.length} dots vs circle ${circleAt.length}`);
+  const step = (dots) => { const g = dots.map((d, i) => Math.hypot(d.x - dots[(i + 1) % dots.length].x, d.y - dots[(i + 1) % dots.length].y)); return g.reduce((a, b) => a + b, 0) / g.length; };
+  assert.ok(Math.abs(step(big) - step(circleAt)) < step(circleAt) * 0.25, 'the mark and the circle share one dot spacing');
+
+  // Over one cycle a 64px orb passes through all three shapes; a 20px one never draws the mark it cannot resolve.
+  const seen = (size) => {
+    const out = new Set();
+    for (let t = 0; t < 20; t += 0.05) {
+      const dots = ekaFrame(size, t);
+      for (const [name, shape] of Object.entries(SHAPES)) if (near(dots, shape, size, size * 0.02)) out.add(name);
+    }
+    return out;
+  };
+  assert.deepEqual([...seen(64)].sort(), ['circle', 'eka', 'heart']);
+  assert.ok(!seen(20).has('eka') && seen(20).has('heart'), 'small orbs pulse between the circle and the heart');
+
+  // The heart beats: its reach grows on the beat and settles between beats.
+  const reach = (t) => Math.max(...ekaFrame(64, t).map((d) => Math.hypot(d.x - 32, d.y - 32)));
+  const beats = [];
+  for (let t = 0; t < 20; t += 0.02) {
+    const dots = ekaFrame(64, t);
+    if (near(dots, SHAPES.heart, 64, 4)) beats.push(reach(t));
+  }
+  assert.ok(Math.max(...beats) > Math.min(...beats) * 1.05, 'the heart pulses');
+}

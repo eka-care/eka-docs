@@ -92,12 +92,22 @@ host: an embed that sets `docs-origin` has page search.
 
 ### The orb
 
-The greeting's orb is the Plasma Orb (Apache-2.0, on
-`@paper-design/shaders-react`) behind a frosted glass shell, one WebGL context
-per orb. The shader library is written for React; `build.mjs` aliases `react`
-to `preact/compat`, so the bundle carries one small runtime rather than two.
-Without WebGL it draws a CSS gradient of the same colours, and with reduced
-motion it holds a still frame.
+The greeting's orb and the one beside "Thinking" are the Eka orb
+(`src/orb/eka-orb.tsx`): a dotted outline that morphs between a circle, the
+Eka mark and the heart at the mark's centre, on a plain 2D canvas. The mark
+and the circle breathe; the heart beats. Small orbs pulse between the circle
+and the heart only, because the mark needs room to read. One clock keeps orbs
+in phase, each pauses offscreen and in hidden tabs, and with reduced motion it
+holds a still frame of the mark. `node eka-shapes.mjs` regenerates the
+outlines in `src/orb/eka-shapes.ts`.
+
+The technique is adapted from the "shaping" state of
+[thinking-orbs](https://github.com/Jakubantalik/thinking-orbs), MIT License,
+Copyright (c) 2026 Jakub Antalik. Its full licence is in
+`licenses/thinking-orbs-LICENSE`.
+
+The earlier Plasma Orb (`src/orb/plasma-orb.tsx`, `frosted-orb.tsx`) is no
+longer used by the panel.
 
 ### What it keeps
 

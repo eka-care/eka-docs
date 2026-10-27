@@ -4,7 +4,7 @@
  * The mock still says what it is here, under the greeting, because a panel
  * that cannot answer has to say so before anyone asks it something.
  */
-import {FrostedOrb} from './orb/frosted-orb';
+import {EkaOrb} from './orb/eka-orb';
 import type {Starter} from './starters';
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
 export function Welcome({starters, mock, onPick}: Props) {
   return (
     <div class="ask-ai__welcome">
-      <FrostedOrb size={80} />
+      <EkaOrb size={80} label="Eka" />
       <h3 class="ask-ai__greeting">Welcome to the Eka Developer Platform. What do you want to build?</h3>
       {mock && (
         <p class="ask-ai__welcome-note">
