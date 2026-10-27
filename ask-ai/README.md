@@ -93,13 +93,14 @@ host: an embed that sets `docs-origin` has page search.
 ### The orb
 
 The greeting's orb and the one beside "Thinking" are the Eka orb
-(`src/orb/eka-orb.tsx`): a dotted outline that morphs between a circle, the
-Eka mark and the heart at the mark's centre, on a plain 2D canvas. The mark
-and the circle breathe; the heart beats. Small orbs pulse between the circle
-and the heart only, because the mark needs room to read. One clock keeps orbs
+(`src/orb/eka-orb.tsx`): one line of dots that transforms from the Eka mark
+into a stethoscope in the shape of a heart, the lotus of ABDM, the audio wave
+of Scribe, and back to the mark, on a plain 2D canvas. The heart beats, the
+wave moves, the rest breathe. Small orbs move between the heart and the wave
+only, because the mark and the lotus need room to read. One clock keeps orbs
 in phase, each pauses offscreen and in hidden tabs, and with reduced motion it
-holds a still frame of the mark. `node eka-shapes.mjs` regenerates the
-outlines in `src/orb/eka-shapes.ts`.
+holds a still frame of the mark. `node eka-shapes.mjs` regenerates the lines in
+`src/orb/eka-shapes.ts`.
 
 The technique is adapted from the "shaping" state of
 [thinking-orbs](https://github.com/Jakubantalik/thinking-orbs), MIT License,
