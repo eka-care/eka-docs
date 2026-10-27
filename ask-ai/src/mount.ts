@@ -9,8 +9,11 @@
 import {SupportAgentElement} from './index';
 import {ensureRow} from './search-row';
 
-/** The assistant to talk to. Empty keeps the panel on the mock transport. */
-const AGENT_ID = '';
+/**
+ * The MedAssist agent behind the panel. It answers from the docs through Mintlify's MCP server
+ * (https://developer.eka.care/mcp), attached to the agent on Eka's side. Empty keeps the mock.
+ */
+const AGENT_ID = 'ZTMzYmI2NWItOWRjYy00ZDRkLWFlZTItMWFjMzU0ZDVkNDQ2Izc3MDg4MTY2OTk2NzI0';
 
 /** The page's one `eka-ask-ai`, created only if there is none yet. */
 export function mount(doc: Document = document): HTMLElement {

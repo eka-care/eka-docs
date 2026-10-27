@@ -10,7 +10,7 @@ await build({
   stdin: {
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
                export {mockTransport, tipsAfter} from './src/mock-transport';
-               export {createTransport} from './src/transport';
+               export {createTransport, UNREACHABLE} from './src/transport';
                export {pastHero} from './src/FloatingBar';
                export {groundOfColor} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
@@ -39,7 +39,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, pastHero, groundOfColor, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, pastHero, groundOfColor, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -261,7 +261,98 @@ assert.equal(groundOfColor('rgba(0, 0, 0, 0)'), null, 'transparent paints nothin
 assert.equal(groundOfColor('rgba(255, 255, 255, 0.8)'), 'light');
 assert.equal(groundOfColor('rgb(10 10 10 / 0.9)'), 'dark', 'space syntax');
 assert.equal(groundOfColor('transparent'), null);
-assert.throws(() => createTransport({agentId: 'a1'}), /Synapse transport not wired yet/);
+// Synapse transport, against a stand-in for @eka-care/medassist-core's SynapseSDK.
+{
+  const made = [];
+  class FakeSdk {
+    constructor(config) { this.config = config; this.listeners = new Map(); this.sent = []; this.ended = false; made.push(this); }
+    on(event, fn) { if (!this.listeners.has(event)) this.listeners.set(event, new Set()); this.listeners.get(event).add(fn); }
+    off(event, fn) { this.listeners.get(event)?.delete(fn); }
+    emit(event, data) { for (const fn of [...(this.listeners.get(event) ?? [])]) fn(data); }
+    count() { return [...this.listeners.values()].reduce((n, set) => n + set.size, 0); }
+    async startSession(existing) {
+      this.startedWith = existing;
+      this.config.callbacks?.onTokenExchange?.({sess_token: 'sess-1', refresh_token: 'ref-1', level: 'guest', user_id: 'u1', expires_in: 1800});
+      return {session_id: existing?.session_id ?? 's-new'};
+    }
+    async sendMessage(options) { this.sent.push(options); if (options.message === 'fail') throw new Error('offline'); }
+    endSession() { this.ended = true; }
+  }
+  const sdkFactory = (config) => new FakeSdk(config);
+
+  const t = createTransport({agentId: 'agent-1', sdkFactory});
+  assert.equal(t.isMock, false, 'an agent id talks to MedAssist, not the mock');
+
+  // A guest: no auth token, the widget channel, production unless told otherwise.
+  const ref = await t.start();
+  const sdk = made.at(-1);
+  assert.equal(sdk.config.agentId, 'agent-1');
+  assert.equal(sdk.config.environment, 'production');
+  assert.equal(sdk.config.channel, 'widget');
+  assert.ok(!('authToken' in sdk.config), 'guests send no auth token');
+  assert.equal(sdk.startedWith, undefined);
+  assert.deepEqual(ref, {sessionId: 's-new', sessionToken: 'sess-1', refreshToken: 'ref-1', level: 'guest'});
+
+  // Streaming: chunks are deltas; a progress or tool step between them starts a new paragraph.
+  const got = {text: '', progress: [], tips: [], done: 0, errors: []};
+  const handlers = {
+    onText: (d) => { got.text += d; }, onProgress: (p) => got.progress.push(p), onTips: (x) => got.tips.push(x),
+    onDone: () => { got.done++; }, onError: (e) => got.errors.push(e),
+  };
+  t.send({text: 'How do I create an ABHA?', files: [], page: {title: 'Login ABHA', url: 'https://developer.eka.care/docs/hie-cm/workflows/login-abha', markdown: '# x'}}, handlers);
+  assert.equal(sdk.sent.at(-1).message, 'How do I create an ABHA?\n\nI am reading this page: Login ABHA (https://developer.eka.care/docs/hie-cm/workflows/login-abha)');
+  sdk.emit('message_chunk', {data: {text: 'Start '}, messageId: 'm1'});
+  sdk.emit('message_chunk', {data: {text: 'here.'}, messageId: 'm1'});
+  sdk.emit('tool_start', {data: {name: 'search_eka_developer_platform_ap_is'}, messageId: 'm1'});
+  sdk.emit('progress_message', {data: {text: 'Searching the docs'}, messageId: 'm1'});
+  sdk.emit('message_chunk', {data: {text: 'Then verify.'}, messageId: 'm1'});
+  sdk.emit('tips_message', {data: {tips: ['What is a care context?', {text: 'How does consent work?'}]}, messageId: 'm1'});
+  sdk.emit('end_of_stream');
+  assert.equal(got.text, 'Start here.\n\nThen verify.');
+  assert.deepEqual(got.progress, ['Searching the docs', 'Searching the docs']);
+  assert.deepEqual(got.tips, [['What is a care context?', 'How does consent work?']]);
+  assert.equal(got.done, 1);
+  assert.equal(sdk.count(), 0, 'the reply is over, so its listeners are gone');
+
+  // A choice prompt (elicit_selection pills): its text is the answer, its options the follow-ups.
+  const pick = {text: '', tips: [], done: 0, errors: []};
+  t.send({text: 'Which flow?', files: []}, {
+    onText: (d) => { pick.text += d; }, onProgress: () => {}, onTips: (x) => pick.tips.push(x),
+    onDone: () => { pick.done++; }, onError: (e) => pick.errors.push(e),
+  });
+  sdk.emit('tool_call', {messageId: 'm2', data: {tool_type: 'elicitation', tool_id: 'tu1', tool_name: 'elicit_selection',
+    details: {component: 'pills', input: {text: 'Pick a login method:', options: [{label: 'Mobile OTP', value: 'mobile'}, {label: 'Aadhaar OTP', value: 'aadhaar'}]}}}});
+  sdk.emit('end_of_stream');
+  assert.equal(pick.text, 'Pick a login method:');
+  assert.deepEqual(pick.tips, [['Mobile OTP', 'Aadhaar OTP']]);
+  assert.equal(pick.done, 1);
+
+  // Errors: the server's message when it has one, the fallback otherwise, and a failed send.
+  t.send({text: 'q2', files: []}, handlers);
+  sdk.emit('error', {data: {code: 'server_error', msg: 'Agent unavailable'}});
+  assert.equal(got.errors.at(-1), 'Agent unavailable');
+  assert.equal(sdk.count(), 0);
+  t.send({text: 'fail', files: []}, handlers);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(got.errors.at(-1), UNREACHABLE);
+
+  // Detach stops delivery; end closes the session.
+  t.send({text: 'q3', files: []}, handlers);
+  t.detach();
+  assert.equal(sdk.count(), 0);
+  await t.end();
+  assert.equal(sdk.ended, true);
+
+  // Resuming: the saved tokens seed the SDK, and the session is reopened by its id.
+  const t2 = createTransport({agentId: 'agent-1', environment: 'staging', sdkFactory});
+  await t2.start({sessionId: 's-old', sessionToken: 'sess-0', refreshToken: 'ref-0', level: 'guest'});
+  const sdk2 = made.at(-1);
+  assert.equal(sdk2.config.environment, 'staging');
+  assert.equal(sdk2.config.refreshToken, 'ref-0');
+  assert.equal(sdk2.config.sessToken, 'sess-0');
+  assert.equal(sdk2.config.level, 'guest');
+  assert.deepEqual(sdk2.startedWith, {session_id: 's-old'});
+}
 
 // mount: one element per document, however often the script runs.
 function fakeDocument() {
