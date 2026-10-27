@@ -46,11 +46,18 @@ export interface Transport {
 export const UNREACHABLE =
   'The assistant is unreachable right now. Try again shortly.';
 
+/** When an answer goes quiet for this long, the turn ends with STALLED. Any event from the agent restarts the wait. */
+const STALL_MS = 60_000;
+
+/** The turn's text when the agent stops sending mid-answer. */
+export const STALLED =
+  'This answer stalled on our side, so I stopped waiting. Ask again in a moment.';
+
 /** The SDK surface the transport uses; a stand-in replaces it in tests. */
 type Sdk = Pick<SynapseSDK, 'startSession' | 'sendMessage' | 'on' | 'off' | 'endSession'>;
 type SdkFactory = (config: SynapseSDKConfig) => Sdk;
 
-type Config = {agentId?: string; authToken?: string; environment?: 'production' | 'staging' | 'development'; sdkFactory?: SdkFactory};
+type Config = {agentId?: string; authToken?: string; environment?: 'production' | 'staging' | 'development'; sdkFactory?: SdkFactory; stallMs?: number};
 
 export function createTransport(config: Config): Transport {
   if (!config.agentId) return mockTransport();
@@ -60,12 +67,14 @@ export function createTransport(config: Config): Transport {
 const tipText = (tip: unknown): string =>
   typeof tip === 'string' ? tip : typeof (tip as {text?: unknown})?.text === 'string' ? (tip as {text: string}).text : '';
 
-function synapseTransport({agentId, authToken, environment = 'production', sdkFactory = (c) => new SynapseSDK(c)}: Config & {agentId: string}): Transport {
+function synapseTransport({agentId, authToken, environment = 'production', sdkFactory = (c) => new SynapseSDK(c), stallMs = STALL_MS}: Config & {agentId: string}): Transport {
   let sdk: Sdk | undefined;
   let tokens: {sessToken?: string; refreshToken?: string; level?: 'user' | 'guest'} = {};
   let listening: Array<[string, (data: unknown) => void]> = [];
+  let stall: ReturnType<typeof setTimeout> | undefined;
 
   const detach = () => {
+    clearTimeout(stall);
     for (const [event, fn] of listening) sdk?.off(event as never, fn);
     listening = [];
   };
@@ -107,8 +116,14 @@ function synapseTransport({agentId, authToken, environment = 'production', sdkFa
       // Chunks are deltas. A tool call or progress step between them starts a new paragraph,
       // as medassist-react does.
       let wrote = false, broke = false;
-      const on = (event: string, fn: (data: any) => void) => { live.on(event as never, fn); listening.push([event, fn]); };
       const finish = (then: () => void) => { detach(); then(); };
+      // The backend can go quiet mid-answer and never end the stream. Every event restarts the wait.
+      const wait = () => { clearTimeout(stall); stall = setTimeout(() => finish(() => handlers.onError(STALLED)), stallMs); };
+      const on = (event: string, fn: (data: any) => void) => {
+        const heard = (data: any) => { wait(); fn(data); };
+        live.on(event as never, heard);
+        listening.push([event, heard]);
+      };
       on(SYNAPSE_REALTIME_EVENTS.MESSAGE_CHUNK, (d) => {
         const text = d?.data?.text;
         if (!text) return;
@@ -117,6 +132,8 @@ function synapseTransport({agentId, authToken, environment = 'production', sdkFa
       });
       on(SYNAPSE_REALTIME_EVENTS.PROGRESS_MESSAGE, (d) => { broke = true; if (d?.data?.text) handlers.onProgress(d.data.text); });
       on(SYNAPSE_REALTIME_EVENTS.TOOL_START, () => { broke = true; handlers.onProgress('Searching the docs'); });
+      // A finished tool is the agent still working: it only restarts the stall wait.
+      on(SYNAPSE_REALTIME_EVENTS.TOOL_END, () => {});
       // An agent can answer with a choice prompt (elicitation pills) instead of streamed text:
       // its text is the answer, and its options become the follow-ups the panel offers.
       on(SYNAPSE_REALTIME_EVENTS.TOOL_CALL, (d) => {
@@ -138,6 +155,7 @@ function synapseTransport({agentId, authToken, environment = 'production', sdkFa
       on(SYNAPSE_REALTIME_EVENTS.ERROR, (e) => finish(() => handlers.onError(e?.data?.msg || UNREACHABLE)));
       // The agent reads the docs through Mintlify's MCP server, so an attached page travels as its link.
       const text = message.page?.url ? `${message.text}\n\nI am reading this page: ${message.page.title} (${message.page.url})` : message.text;
+      wait();
       live.sendMessage({message: text, ...(message.files.length ? {files: message.files} : {})})
         .catch(() => finish(() => handlers.onError(UNREACHABLE)));
     },

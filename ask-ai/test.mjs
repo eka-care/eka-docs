@@ -10,7 +10,7 @@ await build({
   stdin: {
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
                export {mockTransport, tipsAfter} from './src/mock-transport';
-               export {createTransport, UNREACHABLE} from './src/transport';
+               export {createTransport, UNREACHABLE, STALLED} from './src/transport';
                export {pastHero} from './src/FloatingBar';
                export {groundOfColor} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
@@ -40,7 +40,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, pastHero, groundOfColor, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, groundOfColor, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -315,6 +315,30 @@ assert.equal(groundOfColor('transparent'), null);
   assert.deepEqual(got.tips, [['What is a care context?', 'How does consent work?']]);
   assert.equal(got.done, 1);
   assert.equal(sdk.count(), 0, 'the reply is over, so its listeners are gone');
+
+  // A stalled answer: silence past the stall window ends the turn with a plain message; any event resets the window.
+  {
+    const st = createTransport({agentId: 'agent-1', sdkFactory, stallMs: 40});
+    await st.start();
+    const s2 = made.at(-1);
+    const out = {text: '', done: 0, errors: []};
+    const h = {onText: (d) => { out.text += d; }, onProgress: () => {}, onTips: () => {}, onDone: () => { out.done++; }, onError: (e) => out.errors.push(e)};
+    st.send({text: 'slow', files: []}, h);
+    await new Promise((r) => setTimeout(r, 25));
+    s2.emit('progress_message', {data: {text: 'Searching the docs'}, messageId: 'm9'});
+    await new Promise((r) => setTimeout(r, 25));
+    assert.deepEqual(out.errors, [], 'an event inside the window keeps the turn alive');
+    await new Promise((r) => setTimeout(r, 40));
+    assert.deepEqual(out.errors, [STALLED], 'silence past the window ends the turn');
+    assert.equal(s2.count(), 0, 'a stalled reply stops listening');
+    s2.emit('message_chunk', {data: {text: 'late'}, messageId: 'm9'});
+    assert.equal(out.text, '', 'nothing arrives after the turn ended');
+
+    st.send({text: 'quick', files: []}, h);
+    s2.emit('end_of_stream');
+    await new Promise((r) => setTimeout(r, 60));
+    assert.deepEqual(out.errors, [STALLED], 'a finished answer never times out');
+  }
 
   // A choice prompt (elicit_selection pills): its text is the answer, its options the follow-ups.
   const pick = {text: '', tips: [], done: 0, errors: []};
