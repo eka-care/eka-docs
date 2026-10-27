@@ -855,7 +855,7 @@ const stayMode=new URLSearchParams(location.search).has("stay");
 const CHECK=`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 const WAVE=Array.from({length:16},(_,i)=>`<i style="--i:${i}"></i>`).join("");
 const SCENES={
-  abdm:{name:"ABDM-enabled HIS",note:"This system acts as both a Health Information Provider (HIP) and a Health Information User (HIU). If it keeps its own records, it must also serve them: https://developer.eka.care/docs/hie-cm/workflows/serve-data-on-fetch",who:"A hospital system on India's health stack, from ABHA at the desk to the insurance claim",app:"Your hospital system",kind:"clinic",sides:["At the front desk","Across hospitals"],
+  abdm:{name:"ABDM-enabled HIS",plugin:true,note:"This system acts as both a Health Information Provider (HIP) and a Health Information User (HIU). If it keeps its own records, it must also serve them: https://developer.eka.care/docs/hie-cm/workflows/serve-data-on-fetch",who:"A hospital system on India's health stack, from ABHA at the desk to the insurance claim",app:"Your hospital system",kind:"clinic",sides:["At the front desk","Across hospitals"],
     areas:'"scan scan" "link consent" "records records" "blood claim"',rows:"66px 92px 66px 62px",
     outcome:"Riya checks in with her ABHA, and her records follow her between hospitals with her consent.",next:["ABDM-enabled HIS recipe","/docs/get-started/whats-possible/abdm-enabled-his"],journey:["ABDM Connect","HIE-CM"],
     parts:[
@@ -912,7 +912,12 @@ function promptFor(key,ids){
   const parts=ids.map(id=>sc.parts.find(p=>p.id===id)).filter(Boolean);
   const tools=parts.length?parts.map((p,i)=>[`${i+1}. ${p.label} (${p.product})`,`   ${p.job}`,...(p.note?[`   ${p.note}`]:[]),`   Build from: ${site}${p.build||p.url}`].join("\n")).join("\n\n")
     :"None chosen yet. Ask me which parts of this to build.";
-  return [`Integrate "${sc.name}" from Eka into this codebase.`,`What it is: ${sc.who}.`,...(sc.note?[sc.note]:[]),"",
+  // ABDM work starts from the abdm-connect plugin, whatever is clipped in (docs/hie-cm/build-with-ai).
+  const plugin=sc.plugin?["## Install the abdm-connect plugin first","It carries the ABDM flows and tests them on the sandbox. In Claude Code, run these, or ask me to:",
+    "/plugin marketplace add eka-care/abdm-utility","/plugin install abdm-connect@eka-abdm",
+    "In another agent, copy https://github.com/eka-care/abdm-utility/tree/main/skills into the folder you load skills from.",
+    "It covers M1 (ABHA creation and login) in full; check what it builds for M2 to M4 against the Build from pages below.",""]:[];
+  return [`Integrate "${sc.name}" from Eka into this codebase.`,`What it is: ${sc.who}.`,...(sc.note?[sc.note]:[]),"",...plugin,
     "## Before you write code","Detect the stack. Look for an existing Eka or ABDM integration. If one covers any tool below, list what it covers, then stop and ask me before you change it.","",
     "## Credentials","EKA_CLIENT_ID={{EKA_CLIENT_ID}}","EKA_CLIENT_SECRET={{EKA_CLIENT_SECRET}}","If these are blank, ask me. Keep them in .env and never commit them.","",
     "## Auth","POST https://api.eka.care/connect-auth/v1/account/login with client_id and client_secret returns an access_token.",

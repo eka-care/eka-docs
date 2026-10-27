@@ -226,6 +226,16 @@ test('the brief runs in a fixed order of sections and ends by starting the work'
   assert.ok(p.trimEnd().endsWith('Begin integration now.'));
 });
 
+test('the ABDM prompt installs the abdm-connect plugin first, whatever is clipped in', () => {
+  for (const ids of [[], ['claim'], ['abha', 'blood'], ['abha', 'scan', 'link', 'consent', 'records', 'claim', 'blood']]) {
+    const p = prompt('abdm', ids);
+    assert.match(p, /\/plugin marketplace add eka-care\/abdm-utility\n\/plugin install abdm-connect@eka-abdm/, ids.join());
+    assert.match(p, /https:\/\/github\.com\/eka-care\/abdm-utility\/tree\/main\/skills/, ids.join());
+    assert.ok(p.indexOf('/plugin install') < p.indexOf('## Before you write code'), ids.join());
+  }
+  assert.ok(!prompt('mr', ['voice']).includes('/plugin'), 'other scenes install nothing');
+});
+
 test('credentials are placeholders the agent asks for, never keys', () => {
   const p = prompt('mr', ['voice']);
   assert.match(p, /EKA_CLIENT_ID=\{\{EKA_CLIENT_ID\}\}/);
