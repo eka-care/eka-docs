@@ -245,9 +245,13 @@ test('every clip in a scene is one size, and both columns start level with the a
   assert.match(layout, /Math\.min\(fw2\+96,rails-32-172\)/, 'columns stay at least 32px inside the page rails');
 });
 
-test('the page rails are brighter on dark grounds', () => {
-  assert.match(html, /:root\[data-theme="dark"\] \.rails\{border-color:/);
-  assert.match(html, /prefers-color-scheme: dark\)\{:root:not\(\[data-theme="light"\]\) \.rails\{border-color:/);
+test('the page lines share one colour, brighter on dark grounds', () => {
+  assert.match(html, /:root\[data-theme="dark"\]\{--rail:/);
+  assert.match(html, /prefers-color-scheme: dark\)\{:root:not\(\[data-theme="light"\]\)\{--rail:/);
+  for (const rule of ['.rails{', '.band{', '.sig{']) {
+    const css = html.slice(html.indexOf(rule), html.indexOf('}', html.indexOf(rule)));
+    assert.ok(css.includes('var(--rail)') && !/border[^;]*var\(--line\)/.test(css), rule);
+  }
 });
 
 test('credentials are placeholders the agent asks for, never keys', () => {

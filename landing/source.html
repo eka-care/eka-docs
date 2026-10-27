@@ -392,13 +392,15 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
 .pairs{max-width:1040px;margin:80px auto 0;display:grid;grid-template-columns:1fr 168px 1fr;row-gap:120px}
 /* The frame, after Fern: rails at the content edges, full-width rules, a pair of parallel rules between sections, and ring nodes
    where lines cross. The tube is the grid's centre divider, so the grid draws none of its own. */
-.rails{position:absolute;left:50%;width:min(1080px,calc(100% - 48px));transform:translateX(-50%);bottom:0;border-left:1px solid var(--line);border-right:1px solid var(--line);pointer-events:none;z-index:0}
-/* On dark grounds the shared hairline all but disappears, so the rails take a brighter one. */
-:root[data-theme="dark"] .rails{border-color:rgba(255,255,255,.18)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rails{border-color:rgba(255,255,255,.18)}}
+/* The page's own lines, the vertical rails and the horizontal bands and edges, share one colour. On dark grounds the
+   shared hairline all but disappears, so they take a brighter one. */
+:root{--rail:var(--line)}
+:root[data-theme="dark"]{--rail:rgba(255,255,255,.18)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--rail:rgba(255,255,255,.18)}}
+.rails{position:absolute;left:50%;width:min(1080px,calc(100% - 48px));transform:translateX(-50%);bottom:0;border-left:1px solid var(--rail);border-right:1px solid var(--rail);pointer-events:none;z-index:0}
 /* The rails fade out over their last 200px, as the dot field fades at its edges, ending on the signature's top rule. */
 .rails{-webkit-mask-image:linear-gradient(#000 calc(100% - 200px),transparent);mask-image:linear-gradient(#000 calc(100% - 200px),transparent)}
-.band{position:relative;z-index:1;height:96px;margin-top:140px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);pointer-events:none}
+.band{position:relative;z-index:1;height:96px;margin-top:140px;border-top:1px solid var(--rail);border-bottom:1px solid var(--rail);pointer-events:none}
 .band+.sec,.band+.close{padding-top:120px}
 .jprod button.on::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:7px;vertical-align:1px}
 /* Developer journey: a family switch, product tabs, then four numbered steps on a rail. The panel is solid, so the
@@ -470,7 +472,7 @@ footer .fcols a:hover{color:var(--ink)}
 @media (max-width:640px){footer .fcols{grid-template-columns:repeat(2,minmax(0,1fr))}
 footer .fband{grid-template-columns:minmax(0,1fr);padding:28px 22px 20px}}
 /* Signature: the full logo as negative space in a field of strokes, below the footer. */
-.sig{position:relative;z-index:1;height:clamp(200px,30vw,440px);background:var(--bg);border-top:1px solid var(--line);overflow:hidden}
+.sig{position:relative;z-index:1;height:clamp(200px,30vw,440px);background:var(--bg);border-top:1px solid var(--rail);overflow:hidden}
 .sig canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .sig::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,var(--bg),transparent 6%,transparent 94%,var(--bg))}
 
