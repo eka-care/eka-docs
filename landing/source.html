@@ -393,6 +393,9 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
 /* The frame, after Fern: rails at the content edges, full-width rules, a pair of parallel rules between sections, and ring nodes
    where lines cross. The tube is the grid's centre divider, so the grid draws none of its own. */
 .rails{position:absolute;left:50%;width:min(1080px,calc(100% - 48px));transform:translateX(-50%);bottom:0;border-left:1px solid var(--line);border-right:1px solid var(--line);pointer-events:none;z-index:0}
+/* On dark grounds the shared hairline all but disappears, so the rails take a brighter one. */
+:root[data-theme="dark"] .rails{border-color:rgba(255,255,255,.18)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rails{border-color:rgba(255,255,255,.18)}}
 /* The rails fade out over their last 200px, as the dot field fades at its edges, ending on the signature's top rule. */
 .rails{-webkit-mask-image:linear-gradient(#000 calc(100% - 200px),transparent);mask-image:linear-gradient(#000 calc(100% - 200px),transparent)}
 .band{position:relative;z-index:1;height:96px;margin-top:140px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);pointer-events:none}
@@ -1115,8 +1118,10 @@ function layoutParts(){
   const clips=MODULES.map(m=>partOf(m.id));clips.forEach(el=>{el.style.height=""});
   const tall=Math.max(...clips.map(el=>el.offsetHeight))||112;clips.forEach(el=>{el.style.height=tall+"px"});
   if(!matchMedia("(min-width:1100px)").matches){stage.style.height="";sc.style.top=frame.style.top=frame.style.transform="";$("#step02").style.top="";$("#sideL").style.top=$("#sideR").style.top="";return}
-  // Columns clear whichever is wider, the app or the picker above it.
-  const half=Math.max(frame.offsetWidth/2+96,sc.offsetWidth/2+16);L=-(half+172);R=half;
+  // Columns sit 96px from the app and at least 32px inside the page rails; they start below the picker, so its width
+  // does not push them out. Where the rails are tight, the gap to the app gives way first, down to 24px.
+  const rails=($(".rails")?.offsetWidth||1080)/2,fw2=frame.offsetWidth/2;
+  const half=Math.max(fw2+24,Math.min(fw2+96,rails-32-172));L=-(half+172);R=half;
   $("#sideL").style.right=`calc(50% + ${R}px)`;$("#sideR").style.left=`calc(50% + ${R}px)`;
   const GAP=24,cols={l:[],r:[]};MODULES.forEach(m=>cols[m.side].push(m));
   // Both columns start level with the top of the app frame, below the scene picker, and the stage is as tall as

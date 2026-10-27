@@ -242,6 +242,12 @@ test('every clip in a scene is one size, and both columns start level with the a
   assert.match(layout, /let y=frameTop-H\/2;/, 'both columns start level with the top of the app frame');
   assert.ok(!/let y=-total\/2/.test(layout), 'no column centres on its own length');
   assert.match(html, /\.part\{position:absolute;width:172px;/, 'one width for every clip');
+  assert.match(layout, /Math\.min\(fw2\+96,rails-32-172\)/, 'columns stay at least 32px inside the page rails');
+});
+
+test('the page rails are brighter on dark grounds', () => {
+  assert.match(html, /:root\[data-theme="dark"\] \.rails\{border-color:/);
+  assert.match(html, /prefers-color-scheme: dark\)\{:root:not\(\[data-theme="light"\]\) \.rails\{border-color:/);
 });
 
 test('credentials are placeholders the agent asks for, never keys', () => {
