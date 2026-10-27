@@ -25,6 +25,10 @@ export function mount(doc: Document = document): HTMLElement {
   return element;
 }
 
+/** ⌘I, or Ctrl+I off a Mac: the key Mintlify's own assistant uses. Shift and Alt variants stay the browser's. */
+export const isAskShortcut = (e: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'isComposing'>) =>
+  (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && !e.isComposing && e.key.toLowerCase() === 'i';
+
 /** Set on the window once the listeners and the interval are in place. */
 const INSTALLED = '__ekaAskAiInstalled';
 
@@ -75,6 +79,15 @@ export function install(win: Window = window, doc: Document = document): boolean
   } else {
     start();
   }
+  // The shortcut opens Ask AI from anywhere on the page and closes it again. Caught first, so the host page's own
+  // binding for the key (if any) never runs as well.
+  win.addEventListener('keydown', (e) => {
+    if (!isAskShortcut(e)) return;
+    e.preventDefault();
+    const panel = mount(doc);
+    if (panel.hasAttribute('open')) panel.removeAttribute('open');
+    else panel.setAttribute('open', '');
+  }, true);
   win.addEventListener('mintlify:navigate', () => win.setTimeout(run, 0));
   win.addEventListener('popstate', run);
   win.addEventListener('scroll', ground, {passive: true});

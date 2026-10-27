@@ -385,7 +385,8 @@ function fakeDocument() {
   const children = [];
   const element = (tag) => {
     const attrs = new Map();
-    return {tagName: tag.toUpperCase(), setAttribute: (k, v) => attrs.set(k, String(v)), getAttribute: (k) => attrs.get(k) ?? null};
+    return {tagName: tag.toUpperCase(), setAttribute: (k, v) => attrs.set(k, String(v)), getAttribute: (k) => attrs.get(k) ?? null,
+      hasAttribute: (k) => attrs.has(k), removeAttribute: (k) => attrs.delete(k)};
   };
   return {
     body: {children, append: (...nodes) => children.push(...nodes)},
@@ -403,9 +404,10 @@ assert.equal(a.getAttribute('auth-token'), null, 'auth-token is left unset');
 // install: a script evaluated twice adds one set of listeners and one interval.
 const calls = {listen: 0, interval: 0, define: 0, observe: 0};
 const defined = new Map();
+const keydown = [];
 const win = {
   customElements: {get: (n) => defined.get(n), define: (n, c) => { calls.define++; defined.set(n, c); }},
-  addEventListener: () => calls.listen++,
+  addEventListener: (type, fn) => { calls.listen++; if (type === 'keydown') keydown.push(fn); },
   setInterval: () => calls.interval++,
   setTimeout: () => 0,
   requestAnimationFrame: () => 0,
@@ -414,8 +416,27 @@ const win = {
 const page = {...fakeDocument(), readyState: 'complete', addEventListener: () => calls.listen++};
 assert.equal(install(win, page), true);
 assert.equal(install(win, page), false, 'second install is a no-op');
-assert.deepEqual(calls, {listen: 4, interval: 1, define: 1, observe: 1});
+assert.deepEqual(calls, {listen: 5, interval: 1, define: 1, observe: 1});
 assert.equal(page.body.children.length, 1);
+
+// ⌘I (Ctrl+I off a Mac) opens Ask AI from anywhere, and closes it again; nothing else does.
+{
+  const panel = page.body.children[0];
+  const press = (init) => {
+    const event = {key: 'i', metaKey: false, ctrlKey: false, altKey: false, shiftKey: false, isComposing: false, prevented: false, ...init,
+      preventDefault() { this.prevented = true; }};
+    for (const fn of keydown) fn(event);
+    return event;
+  };
+  assert.equal(keydown.length, 1, 'one shortcut listener');
+  assert.ok(press({metaKey: true}).prevented, 'the browser does not also act on it');
+  assert.ok(panel.hasAttribute('open'), '⌘I opens the panel');
+  press({ctrlKey: true, key: 'I'});
+  assert.ok(!panel.hasAttribute('open'), 'Ctrl+I closes it again, whatever the case of the key');
+  for (const other of [{key: 'i'}, {metaKey: true, shiftKey: true}, {ctrlKey: true, altKey: true}, {metaKey: true, key: 'k'}, {metaKey: true, isComposing: true}]) {
+    assert.ok(!press(other).prevented && !panel.hasAttribute('open'), JSON.stringify(other));
+  }
+}
 
 // Last: this replaces a global the tests above may rely on.
 // history keeps the session pair; blocked storage never throws

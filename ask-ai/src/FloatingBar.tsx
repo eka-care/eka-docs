@@ -10,6 +10,7 @@
  */
 import {useEffect, useState} from 'preact/hooks';
 import {ArrowUp, Sparkles} from './icons';
+import {isMac} from './search-row';
 
 /** The host page's hero, by the id the landing page gives it. */
 const HERO_ID = 'hero';
@@ -70,9 +71,12 @@ export function FloatingBar({
         onInput={(event) => setDraft(event.currentTarget.value)}
         placeholder="Ask AI a question..."
         aria-label="Ask AI a question"
+        aria-keyshortcuts={isMac() ? 'Meta+I' : 'Control+I'}
         autocomplete="off"
         enterkeyhint="send"
       />
+      {/* The shortcut, until there is something to send. */}
+      {!question && <kbd class="ask-ai__float-kbd" aria-hidden="true">{isMac() ? '⌘I' : 'Ctrl I'}</kbd>}
       <button
         type="submit"
         class="ask-ai__float-send"
