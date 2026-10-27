@@ -93,10 +93,10 @@ test('the Solutions and Integrations menus are the docs product switcher', () =>
 
 test('the scene picker offers the four scenes, each opening its Cookbook recipe', () => {
   const order = run(grab(/const SCENE_ORDER=\[.*?\];\n/, 'SCENE_ORDER'), 'SCENE_ORDER');
-  assert.deepEqual([...order], ['abdm', 'mr']);
+  assert.deepEqual([...order], ['abdm', 'as', 'mr']);
   const scenes = grab(/const SCENES=\{[\s\S]*?\n\};\n/, 'SCENES');
   const names = [...scenes.matchAll(/^  [a-z]+:\{name:"([^"]+)"/gm)].map((m) => m[1]);
-  assert.deepEqual(names, ['ABDM-enabled HIS', 'Medical records from any source']);
+  assert.deepEqual(names, ['ABDM-enabled HIS', 'ABDM-enabled app with a scribe', 'Medical records from any source']);
   const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
   const cookbook = JSON.stringify(docs.navigation.products.flatMap((f) => f.menu).find((i) => i.item === 'Cookbook'));
   for (const m of scenes.matchAll(/next:\["[^"]+","\/([^"]+)"\]/g)) assert.ok(cookbook.includes(`"${m[1]}"`), m[1]);
@@ -285,4 +285,28 @@ test('the nav uses the official GitHub, Hugging Face and Discord marks', () => {
     assert.ok(right.includes(`d="${d}"`), `${name} is not the official mark`);
   }
   assert.ok(!right.includes('data-lucide="github"'));
+});
+
+test('the ABDM scene finds blood banks over UHI', () => {
+  const p = prompt('abdm', ['blood']);
+  assert.match(p, /Blood bank \(UHI\)/);
+  assert.ok(p.includes('https://developer.eka.care/docs/uhi/workflows/blood-bank-search\n'));
+});
+
+test('one scene is an ABDM-enabled app with a scribe', () => {
+  const scenes = run(SCENES_SRC, 'SCENES');
+  const products = new Set(scenes.as.parts.map((x) => x.product));
+  assert.ok(products.has('HIE-CM') && products.has('Medical Scribe'), [...products].join(', '));
+  const p = prompt('as', scenes.as.parts.map((x) => x.id));
+  assert.match(p, /Health Information Provider \(HIP\)/);
+  assert.ok(p.indexOf('Consultation (Medical Scribe)') < p.indexOf('Link the visit (HIE-CM)'));
+});
+
+test('the new scene has its dark colour scoped to dark mode, like the others', () => {
+  const css = html.match(/\[data-sc="as"\][^{]*\{--sc:[^}]+\}|[^}\n]*\[data-sc="as"\][^{]*\{--sc:[^}]+\}/g) ?? [];
+  const unscoped = [...html.matchAll(/(^|[},\n])\s*([^{}\n]*)\{--sc:(#[0-9A-F]+)\}/gm)]
+    .filter((m) => m[2].split(',').some((sel) => sel.trim() === '[data-sc="as"]')).map((m) => m[3]);
+  assert.deepEqual(unscoped, ['#7C5CFF'], css.join(' | '));
+  assert.match(html, /:root\[data-theme="dark"\] \[data-sc="as"\]/);
+  assert.match(html, /:root:not\(\[data-theme="light"\]\) \[data-sc="as"\]/);
 });

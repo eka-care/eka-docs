@@ -259,9 +259,9 @@ section{position:relative;z-index:1}
 .part[data-fam] .tag span{color:var(--fam)}
 /* Scene picker: four ways in, one per core area. */
 /* Scene picker: a carousel of the five ways in. Each scene has its own colour and icon; the centre tile is the one selected. */
-[data-sc="mr"]{--sc:#0E9F8E}[data-sc="px"]{--sc:#E0457B}[data-sc="ci"]{--sc:#7C5CFF}[data-sc="abdm"]{--sc:#E8650A}[data-sc="all"]{--sc:#215FFF}
-:root[data-theme="dark"] [data-sc="mr"]{--sc:#3CC7B5}:root[data-theme="dark"] [data-sc="px"]{--sc:#FF7AA5}:root[data-theme="dark"] [data-sc="ci"]{--sc:#A08CFF}:root[data-theme="dark"] [data-sc="abdm"]{--sc:#FF9248}:root[data-theme="dark"] [data-sc="all"]{--sc:#6B93FF}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) [data-sc="mr"]{--sc:#3CC7B5}:root:not([data-theme="light"]) [data-sc="px"]{--sc:#FF7AA5}:root:not([data-theme="light"]) [data-sc="ci"]{--sc:#A08CFF}:root:not([data-theme="light"]) [data-sc="abdm"]{--sc:#FF9248}:root:not([data-theme="light"]) [data-sc="all"]{--sc:#6B93FF}}
+[data-sc="mr"]{--sc:#0E9F8E}[data-sc="px"]{--sc:#E0457B}[data-sc="ci"],[data-sc="as"]{--sc:#7C5CFF}[data-sc="abdm"]{--sc:#E8650A}[data-sc="all"]{--sc:#215FFF}
+:root[data-theme="dark"] [data-sc="mr"]{--sc:#3CC7B5}:root[data-theme="dark"] [data-sc="px"]{--sc:#FF7AA5}:root[data-theme="dark"] [data-sc="ci"],:root[data-theme="dark"] [data-sc="as"]{--sc:#A08CFF}:root[data-theme="dark"] [data-sc="abdm"]{--sc:#FF9248}:root[data-theme="dark"] [data-sc="all"]{--sc:#6B93FF}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) [data-sc="mr"]{--sc:#3CC7B5}:root:not([data-theme="light"]) [data-sc="px"]{--sc:#FF7AA5}:root:not([data-theme="light"]) [data-sc="ci"],:root:not([data-theme="light"]) [data-sc="as"]{--sc:#A08CFF}:root:not([data-theme="light"]) [data-sc="abdm"]{--sc:#FF9248}:root:not([data-theme="light"]) [data-sc="all"]{--sc:#6B93FF}}
 /* A glass capsule, after Apple's materials: translucent, blurred and saturated, a bright top edge where light catches
    it, and a soft shadow. One tile width and one gap throughout; the track shows exactly five tiles, so the opening
    state is symmetric about the centre axis. */
@@ -856,7 +856,7 @@ const CHECK=`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColo
 const WAVE=Array.from({length:16},(_,i)=>`<i style="--i:${i}"></i>`).join("");
 const SCENES={
   abdm:{name:"ABDM-enabled HIS",note:"This system acts as both a Health Information Provider (HIP) and a Health Information User (HIU). If it keeps its own records, it must also serve them: https://developer.eka.care/docs/hie-cm/workflows/serve-data-on-fetch",who:"A hospital system on India's health stack, from ABHA at the desk to the insurance claim",app:"Your hospital system",kind:"clinic",sides:["At the front desk","Across hospitals"],
-    areas:'"scan scan" "link consent" "records records" "claim claim"',rows:"66px 92px 66px 62px",
+    areas:'"scan scan" "link consent" "records records" "blood claim"',rows:"66px 92px 66px 62px",
     outcome:"Riya checks in with her ABHA, and her records follow her between hospitals with her consent.",next:["ABDM-enabled HIS recipe","/docs/get-started/whats-possible/abdm-enabled-his"],journey:["ABDM Connect","HIE-CM"],
     parts:[
       {id:"abha",job:"Let patients sign in with their ABHA at registration, with an OTP.",build:"/docs/hie-cm/workflows/login-abha",side:"l",label:"ABHA login",product:"HIE-CM",fam:"abdm",head:true,url:"/docs/hie-cm/flows/m1",
@@ -870,7 +870,23 @@ const SCENES={
       {id:"records",job:"Receive and decrypt the records other facilities share under that consent.",build:"/docs/hie-cm/workflows/hiu-receive-data",side:"r",label:"Shared records",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/journeys/hiu-fetch-records-with-consent",
         ui:`<div class="kv"><span class="t1">Discharge summary</span><span class="v">FHIR</span></div><div class="t2">Received with consent</div>`},
       {id:"claim",job:"Check eligibility, get pre-authorisation and submit insurance claims through NHCX.",build:"/docs/nhcx/getting-started",side:"r",label:"Insurance claim",product:"NHCX",fam:"abdm",url:"/api-sdk/nhcx/submit-preauth",
-        ui:`<div class="kv"><span class="t1">Pre-auth</span><span class="v">Approved</span></div><div class="t2">Sent through NHCX</div>`}]},
+        ui:`<div class="kv"><span class="t1">Pre-auth</span><span class="v">Approved</span></div><div class="t2">Sent through NHCX</div>`},
+      {id:"blood",job:"Find blood banks with stock near the patient, by state and district.",build:"/docs/uhi/workflows/blood-bank-search",side:"l",label:"Blood bank",product:"UHI",fam:"abdm",url:"/docs/uhi/blood-bank/getting-started",
+        ui:`<div class="kv"><span class="t1">O+ blood</span><span class="v">3 nearby</span></div><div class="t2">Searched over UHI</div>`}]},
+  as:{name:"ABDM-enabled app with a scribe",note:"This app acts as a Health Information Provider (HIP): it links each scribed visit to the patient's ABHA, so the record reaches their next doctor.",who:"A clinic app where every visit is scribed, and the record reaches the patient's ABHA",app:"Your clinic app",kind:"clinic",sides:["In the room","On the health stack"],
+    areas:'"voice voice" "note record" "link link"',rows:"66px 80px 62px",
+    outcome:"Riya's spoken visit becomes a FHIR record, linked to her ABHA for her next doctor.",next:["ABDM-enabled HIS recipe","/docs/get-started/whats-possible/abdm-enabled-his"],journey:["Clinical AI","Medical Scribe"],
+    parts:[
+      {id:"abha",job:"Let patients sign in with their ABHA at registration, with an OTP.",build:"/docs/hie-cm/workflows/login-abha",side:"l",label:"ABHA login",product:"HIE-CM",fam:"abdm",head:true,url:"/docs/hie-cm/flows/m1",
+        ui:`<div class="row"><span class="av">RK</span><span class="t1">riya.k@abdm</span>${CHECK}</div>`},
+      {id:"voice",job:"Record or upload the consultation audio and get back a structured clinical note.",build:"/docs/scribe/quickstart",side:"l",label:"Consultation",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/overview",
+        ui:`<div class="t2">Listening in Hindi</div><div class="wave">${WAVE}</div>`},
+      {id:"note",job:"Fetch the finished note in your template, and as FHIR.",build:"/api-sdk/scribe/sessions/get-session",side:"l",label:"Structured note",product:"Medical Scribe",fam:"ai",url:"/api-sdk/scribe/templates/list-templates",
+        ui:`<div class="kv"><span class="t2">Complaint</span><span class="v">Fever, 3 days</span></div><div class="kv"><span class="t2">HbA1c</span><span class="v">7.8 % &#8593;</span></div>`},
+      {id:"record",job:"Get the visit back as a FHIR record that your system can store.",side:"r",label:"FHIR record",product:"Medical Scribe",fam:"ai",url:"/docs/scribe/resources/fhir-structure",
+        ui:`<div class="kv"><span class="t1">OPD visit, 14 Oct</span><span class="v">FHIR</span></div><div class="t2">Ready for Riya's record</div>`},
+      {id:"link",job:"Link each visit to the patient's ABHA as a care context, so their records follow them.",build:"/docs/hie-cm/workflows/link-care-context-hip",side:"r",label:"Link the visit",product:"HIE-CM",fam:"abdm",url:"/docs/hie-cm/flows/m2",
+        ui:`<div class="kv"><span class="t1">OPD visit, 14 Oct</span><span class="v">Linked</span></div><div class="t2">Added to Riya's ABHA</div>`}]},
   mr:{name:"Medical records from any source",who:"Consultations, photos of reports and PDFs become one structured, coded record",app:"Your pipeline",kind:"pipeline",sides:["Anything in","A record out"],
     areas:'"voice" "doc" "note" "codify" "record"',rows:"62px 54px 62px 54px 54px",cols:"1fr",
     outcome:"Riya's spoken visit and her lab report photo are now one coded medical record.",next:["Medical records recipe","/docs/get-started/whats-possible/medical-records-from-any-source"],journey:["Clinical AI","Medical Scribe"],
@@ -1122,10 +1138,11 @@ const SCENE_SVG={
   px:SI('<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M9.5 8.5h5a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-1.5 1.5H12l-2 2v-2h-.5A1.5 1.5 0 0 1 8 12v-2a1.5 1.5 0 0 1 1.5-1.5z"/>'),
   // Agents has no Assemble scene; its icon is for the Products menu.
   ag:SI('<rect x="5" y="8" width="14" height="11" rx="2.5"/><path d="M12 8V4.5M9.5 13h.01M14.5 13h.01M9.5 16.5h5"/><circle cx="12" cy="3.5" r="1"/>'),
+  as:SI('<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4"/>'),
   ci:SI('<path d="M7 2.5h7l4 4v15H7z"/><path d="M10 10h5M10 17h3"/><path d="M4 13.5h16" stroke-width="2.2"/>'),
   abdm:`<svg viewBox="0 0 18 16" aria-hidden="true"><use href="#lotus"/></svg>`
 };
-const SCENE_ORDER=["abdm","mr"];
+const SCENE_ORDER=["abdm","as","mr"];
 const CHEV=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 $("#scenes").innerHTML=`<button class="snav prev" aria-label="Previous">${CHEV("m15 18-6-6 6-6")}</button><div class="swrap"><span class="slens" aria-hidden="true"></span><div class="strack" role="tablist" aria-label="What are you building?">${
   SCENE_ORDER.map(k=>`<button class="stile" role="tab" data-scene="${k}" data-sc="${k}" aria-selected="false" aria-label="${SCENES[k].name}: ${SCENES[k].who}"><span class="sic">${SCENE_SVG[k]}</span><span class="sl">${SCENES[k].name}</span></button>`).join("")
