@@ -11,7 +11,7 @@
  * (https://developer.eka.care/mcp), which is attached to the agent, not here.
  * A panel with no agent id talks to the mock.
  */
-import {SynapseSDK, SYNAPSE_REALTIME_EVENTS, type SynapseSDKConfig} from '@eka-care/medassist-core';
+import {ConnectionType, SynapseSDK, SYNAPSE_REALTIME_EVENTS, type SynapseSDKConfig} from '@eka-care/medassist-core';
 import {mockTransport} from './mock-transport';
 import type {PageAttachment} from './types';
 
@@ -79,6 +79,9 @@ function synapseTransport({agentId, authToken, environment = 'production', sdkFa
         agentId,
         environment,
         channel: 'widget',
+        // A WebSocket, as medassist-react uses: the HTTP stream sends nothing until the answer is ready, and
+        // CloudFront cuts it off at 30 seconds, which an answer that reads the docs can take.
+        connectionType: ConnectionType.SOCKET,
         ...(authToken ? {authToken} : {}),
         // A reload resumes the same reader: seed the tokens the last exchange issued.
         ...(existing?.refreshToken

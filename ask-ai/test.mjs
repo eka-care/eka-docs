@@ -290,6 +290,7 @@ assert.equal(groundOfColor('transparent'), null);
   assert.equal(sdk.config.agentId, 'agent-1');
   assert.equal(sdk.config.environment, 'production');
   assert.equal(sdk.config.channel, 'widget');
+  assert.equal(sdk.config.connectionType, 'socket', 'talks over the WebSocket, not the HTTP stream CloudFront cuts off');
   assert.ok(!('authToken' in sdk.config), 'guests send no auth token');
   assert.equal(sdk.startedWith, undefined);
   assert.deepEqual(ref, {sessionId: 's-new', sessionToken: 'sess-1', refreshToken: 'ref-1', level: 'guest'});
@@ -411,6 +412,7 @@ console.log('ok');
   assert.ok(big.length >= 24, `a 64px orb draws enough dots to read the mark, got ${big.length}`);
   assert.ok(big.every((d) => d.x > 0 && d.x < 64 && d.y > 0 && d.y < 64 && d.r > 0), 'every dot sits on the canvas');
   assert.ok(near(big, SHAPES.eka, 64, 1.5), 'the still frame is the Eka mark');
+  assert.ok(near(ekaFrame(64, 0), SHAPES.eka, 64, 1.5), 'the loop opens on the Eka mark');
 
   // One line of dots, start to end, at an even spacing. The mark and the heart are open strokes; the lotus is the
   // ABDM lotus's outline, so its ends meet.
