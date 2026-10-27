@@ -13,15 +13,17 @@ spec = importlib.util.spec_from_file_location('build_nav', os.path.join(ROOT, 's
 nav = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(nav)
 
-CLINICAL = ['Medical Scribe', 'Medical Document Parsing', 'Eka MCP']
+CLINICAL = ['Medical Scribe', 'Medical Document Parsing', 'Clinical MCP']
 ABDM = ['HIE-CM', 'NHCX', 'UHI']
 # Kept out of the navigation (a hidden product): their pages stay live, and the generated /sitemap lists them.
 HIDDEN = 'More from Eka'
 MORE = ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
-RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook']
+RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']
 NEWSBOARD = ['Changelog', 'Research']
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [f'docs/emr/build-with-ai/mcp-server/{p}' for p in
                                                                  ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
+CLINICAL_MCP = ['docs/datasets/build-with-ai/mcp-server/introduction'] + [
+    f'docs/datasets/build-with-ai/mcp-server/{p}' for p in ('quickstart', 'tools', 'authentication')]
 RECIPES = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
            'docs/get-started/whats-possible/medical-records-from-any-source',
            'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
@@ -140,12 +142,16 @@ class BuildWithAI(unittest.TestCase):
         return set(nav.walk_pages(found))
 
     def test_build_with_ai_groups(self):
-        # The Eka MCP server is a Clinical AI item of its own, the one way in to Eka EMR from the navigation.
-        mcp = item(self.products, 'Clinical AI', 'Eka MCP')
+        # The clinical MCP server (MedAI Tools) is a Clinical AI item of its own; Medical Knowledge no longer holds it.
+        clinical = item(self.products, 'Clinical AI', 'Clinical MCP')
+        self.assertEqual([t['tab'] for t in clinical['tabs']], [nav.DOCS_TAB])
+        self.assertEqual(list(nav.walk_pages(clinical['tabs'][0]['pages'])), CLINICAL_MCP)
+        self.assertFalse(set(CLINICAL_MCP) & set(nav.walk_pages(item(self.products, HIDDEN, 'Medical Knowledge')['tabs'])))
+        # The Eka MCP server, the one way in to Eka EMR from the navigation, is a Resources item.
+        mcp = item(self.products, 'Resources', 'Eka MCP')
         self.assertEqual([t['tab'] for t in mcp['tabs']], [nav.DOCS_TAB])
         self.assertEqual(list(nav.walk_pages(mcp['tabs'][0]['pages'])), EKA_MCP)
         self.assertFalse(set(EKA_MCP) & set(nav.walk_pages(item(self.products, HIDDEN, 'Eka EMR')['tabs'])))
-        self.assertIn('docs/datasets/build-with-ai/mcp-server/introduction', self.group(HIDDEN, 'Medical Knowledge'))
         self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Clinical AI', 'Medical Scribe'))
         agents = set(nav.walk_pages(item(self.products, HIDDEN, 'Medical Agents')))
         self.assertFalse({p for p in agents if 'mcp-server' in p or 'medai-tools-mcp' in p})
@@ -298,7 +304,7 @@ class DevTools(unittest.TestCase):
 
     def test_known_tools_are_listed(self):
         self.assertIn('href="/docs/emr/build-with-ai/mcp-server/introduction"', self.page)
-        self.assertNotIn('href="/docs/datasets/build-with-ai/mcp-server/introduction"', self.page)
+        self.assertIn('href="/docs/datasets/build-with-ai/mcp-server/introduction"', self.page)
         self.assertNotIn('/mcp/introduction"', self.page)
 
     def test_every_card_points_at_a_page_on_disk(self):
@@ -323,7 +329,7 @@ class DevTools(unittest.TestCase):
 
     def test_eka_mcp_first_then_abdm_connect(self):
         mcp = self.page.split('## MCP servers')[1].split('\n## ')[0]
-        self.assertEqual(re.findall(r'title="([^"]+)"', mcp), ['Eka MCP Server', 'ABDM Connect MCP Server'])
+        self.assertEqual(re.findall(r'title="([^"]+)"', mcp), ['Eka MCP Server', 'MedAI Tools MCP Server', 'ABDM Connect MCP Server'])
         self.assertIn('href="https://github.com/eka-care/eka-abdm-connect-mcp"', mcp)
 
     def test_navbar_link(self):

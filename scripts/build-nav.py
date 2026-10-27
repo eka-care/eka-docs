@@ -181,7 +181,7 @@ ICONS = {
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
+    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -804,12 +804,12 @@ def untab(products):
 # with), then Integrations (for people already on an Eka product) and Resources (what every product shares). regroup() moves the tree build() made, or the one already in docs.json, into that
 # shape. It moves pages and never rewrites them, and running it again changes nothing.
 FAMILIES = [
-    ('Clinical AI', 'sparkles', 'The medical scribe, document parsing and the Eka MCP server, to build your own tools.',
-     ['Medical Scribe', 'Medical Document Parsing', 'Eka MCP']),
+    ('Clinical AI', 'sparkles', 'The medical scribe, document parsing and the clinical MCP server, to build your own tools.',
+     ['Medical Scribe', 'Medical Document Parsing', 'Clinical MCP']),
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
-    ('Resources', 'book-open', 'Keys, sign-in, encryption, every API and worked examples.',
-     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook']),
+    ('Resources', 'book-open', 'Keys, sign-in, encryption, every API, worked examples and the Eka MCP server.',
+     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
      ['Changelog', 'Research']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
@@ -826,11 +826,17 @@ NEW_ITEMS = {
     'Changelog': 'What changed across Eka, week by week',
     'Understanding Integrations': 'Which integration you need, by the Eka product you use',
     'Eka MCP': 'Connect your agent to Eka EMR: patients, appointments and prescriptions',
+    'Clinical MCP': 'Ground your agent in Indian drugs, treatment protocols, pharmacology and clinical calculators',
 }
 INTEGRATIONS_HOME = 'docs/integrations/overview'
-# The Eka MCP server is the one way into Eka EMR from the navigation, so it is a Clinical AI item of its own.
+# The Eka MCP server is the one way into Eka EMR from the navigation, so it is a Resources item of its own; the landing
+# hero links it for teams already on Eka.
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [
     f'docs/emr/build-with-ai/mcp-server/{p}' for p in ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
+# The clinical MCP server (MedAI Tools: drugs, protocols, pharmacology, calculators) is a Clinical AI item of its own.
+CLINICAL_MCP = ['docs/datasets/build-with-ai/mcp-server/introduction'] + [
+    f'docs/datasets/build-with-ai/mcp-server/{p}' for p in ('quickstart', 'tools', 'authentication')]
+MCP_ITEMS = {'Eka MCP': EKA_MCP, 'Clinical MCP': CLINICAL_MCP}
 COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
             'docs/get-started/whats-possible/medical-records-from-any-source',
             'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
@@ -867,9 +873,6 @@ DESCRIPTIONS = {
 BUILD_WITH_AI_GROUP = 'Build with AI'
 BUILD_WITH_AI = {
     'Medical Scribe': ['docs/scribe/build-with-ai/claude-md'],
-    'Medical Knowledge': [{'group': 'MCP server', 'root': 'docs/datasets/build-with-ai/mcp-server/introduction',
-                           'pages': [f'docs/datasets/build-with-ai/mcp-server/{p}'
-                                     for p in ('quickstart', 'tools', 'authentication')]}],
 }
 
 # Each product's Build with AI overview, the root of that group.
@@ -1019,11 +1022,12 @@ def regroup(products):
         it.pop('href', None)
         it['pages'] = place_build_with_ai(it.get('pages', []), json.loads(json.dumps(contents)), home)
 
-    if all(open_ok(p) for p in EKA_MCP):
-        for (is_api, _), it in items.items():
-            if not is_api and it.get('pages'):
-                it['pages'] = remove_pages(it['pages'], set(EKA_MCP))
-        items[(False, 'Eka MCP')] = {**items.get((False, 'Eka MCP'), {}), 'item': 'Eka MCP', 'pages': list(EKA_MCP)}
+    for name, pages in MCP_ITEMS.items():
+        if all(open_ok(p) for p in pages):
+            for (is_api, _), it in items.items():
+                if not is_api and it.get('pages'):
+                    it['pages'] = remove_pages(it['pages'], set(pages))
+            items[(False, name)] = {**items.get((False, name), {}), 'item': name, 'pages': list(pages)}
 
     out = []
     for suffix in ('', API_SUFFIX):
@@ -1109,6 +1113,8 @@ def tool_targets(products):
                     # An MCP server is known by its own name, which can span products; the others by their product.
                     name = page_meta(page).get('title', it['item']) if title == 'MCP servers' else it['item']
                     tools[title].append((fam['product'], name, it.get('description', ''), page))
+    # The Eka MCP server leads its section wherever it sits in the navigation; the rest keep nav order.
+    tools['MCP servers'].sort(key=lambda t: t[3] != EKA_MCP[0])
     return tools
 
 

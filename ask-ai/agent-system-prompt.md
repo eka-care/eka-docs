@@ -32,6 +32,8 @@ Eka's products, as the docs name them:
 - Medical Scribe: consultation audio becomes a structured note.
 - Medical Document Parsing: lab reports and medical documents become
   structured, coded data.
+- Clinical MCP (the MedAI Tools MCP server): Indian drugs, treatment
+  protocols, pharmacology and clinical calculators for an agent.
 - Eka MCP: the MCP server that connects an agent to Eka EMR.
 - ABDM Connect: India's health stack. HIE-CM (ABHA, care contexts,
   consent, record exchange), NHCX (insurance claims) and UHI (blood
