@@ -8,8 +8,8 @@
  * so spacing stays uniform through holds and morphs alike. The heart beats,
  * the wave moves, the rest breathe.
  *
- * Small orbs (inline, beside "Thinking") cannot resolve the mark or the
- * lotus, so they move between the heart and the wave only. One clock
+ * Small orbs (inline, beside "Thinking") show the mark only, breathing with
+ * the shimmer running along it. One clock
  * (performance.now) keeps every orb in phase; each pauses offscreen and in
  * hidden tabs, and reduced motion gets one still frame of the mark.
  */
@@ -44,10 +44,8 @@ const LARGE: Step[] = [
   {shape: LOTUS, hold: 1.8, morph: 1},
   {shape: waveAt, hold: 2, morph: 1},
 ];
-const SMALL: Step[] = [
-  {shape: HEART, hold: 2.2, morph: 0.8},
-  {shape: waveAt, hold: 1.8, morph: 0.8},
-];
+// Beside "Thinking", the mark alone: it breathes and the shimmer runs along it.
+const SMALL: Step[] = [{shape: EKA, hold: 3, morph: 0}];
 
 const smooth = (x: number) => x * x * (3 - 2 * x);
 const bump = (p: number, at: number, w: number) => Math.exp(-(((p - at) / w) ** 2));
@@ -66,7 +64,7 @@ function phase(steps: Step[], t: number) {
   for (let k = 0; k < steps.length; k++) {
     const {hold, morph} = steps[k];
     if (local < hold + morph) {
-      const m = local > hold ? smooth((local - hold) / morph) : 0;
+      const m = local > hold && morph ? smooth((local - hold) / morph) : 0;
       const a = steps[k].shape, b = steps[(k + 1) % steps.length].shape;
       const heart = (a === HEART ? 1 - m : 0) + (b === HEART ? m : 0);
       return {a: at(a, t), b: at(b, t), m, heart};

@@ -17,7 +17,7 @@ export function Welcome({starters, mock, onPick}: Props) {
   return (
     <div class="ask-ai__welcome">
       <EkaOrb size={96} label="Eka" />
-      <h3 class="ask-ai__greeting">Hi! Tell me what you're building, and I'll sketch you the way there.</h3>
+      <h3 class="ask-ai__greeting">Hi! What are we building today?</h3>
       {mock && (
         <p class="ask-ai__welcome-note">
           A preview, not connected to an assistant.

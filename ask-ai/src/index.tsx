@@ -934,7 +934,7 @@ function Panel({
         ))}
         {showActivity && (
           <p class="ask-ai__activity">
-            <EkaOrb size={20} />
+            <EkaOrb size={24} />
             {activity ?? 'Thinking'}
           </p>
         )}

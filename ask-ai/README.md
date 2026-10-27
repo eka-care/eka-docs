@@ -96,10 +96,10 @@ The greeting's orb and the one beside "Thinking" are the Eka orb
 (`src/orb/eka-orb.tsx`): one line of dots that transforms from the Eka mark
 into the heart at its middle (turned upright), the ABDM lotus, the audio wave
 of Scribe, and back to the mark, on a plain 2D canvas. The mark and the heart
-run down the middle of the logo's one stroke; the lotus traces the ABDM
-lotus's outline. The heart beats, the
-wave moves, the rest breathe. Small orbs move between the heart and the wave
-only, because the mark and the lotus need room to read. One clock keeps orbs
+run down the middle of the logo's one stroke; the lotus draws the ABDM
+lotus's five petals, overlapping. The heart beats, the
+wave moves, the rest breathe. The small orb beside "Thinking" holds the mark
+only. One clock keeps orbs
 in phase, each pauses offscreen and in hidden tabs, and with reduced motion it
 holds a still frame of the mark. `node eka-shapes.mjs` regenerates the lines in
 `src/orb/eka-shapes.ts`.

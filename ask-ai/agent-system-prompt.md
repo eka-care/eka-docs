@@ -17,7 +17,7 @@ The MedAssist agent behind Ask AI on developer.eka.care (agent "Mintlify"). This
 - Attach the MCP server with all three tools. Attach no other tools.
 - **Turn off the elicitation tools** (`elicit_selection` and the other pickers). A docs assistant answers in text; a choice prompt of guessed answers is what the agent did before this prompt.
 - Temperature 0. Answers must be reproducible.
-- Greeting: "Hi! Tell me what you're building, and I'll sketch you the way there." The widget shows the same line under the orb. Suggestions: "How do I authenticate?", "Turn a consultation into a note", "Link a visit to a patient's ABHA".
+- Greeting: "Hi! What are we building today?" The widget shows the same line under the orb. Suggestions: "How do I authenticate?", "Turn a consultation into a note", "Link a visit to a patient's ABHA".
 
 ## System prompt
 

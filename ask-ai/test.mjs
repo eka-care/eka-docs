@@ -423,7 +423,7 @@ console.log('ok');
     assert.ok(Math.hypot(sh[0][0] - sh.at(-1)[0], sh[0][1] - sh.at(-1)[1]) > 0.02, `${name} is an open line`);
   }
 
-  // A 64px orb passes through all four in order; a 20px one shows only the heart and the wave.
+  // A 64px orb passes through all four in order; a small one shows only the mark.
   // A shape counts when it holds for a run of frames, so a frame passing close to one mid-morph does not.
   const seen = (size, step = 0.05) => {
     const out = [];
@@ -440,7 +440,7 @@ console.log('ok');
   };
   const order = seen(64);
   assert.deepEqual(order.slice(0, 5), ['eka', 'heart', 'lotus', 'wave', 'eka']);
-  assert.ok(!seen(20).includes('eka') && !seen(20).includes('lotus') && seen(20).includes('heart') && seen(20).includes('wave'));
+  assert.deepEqual(seen(20), ['eka'], 'beside "Thinking", the orb holds the Eka mark only');
 
   // The heart beats, and the wave moves while it holds.
   const reach = (t) => Math.max(...ekaFrame(64, t).map((d) => Math.hypot(d.x - 32, d.y - 32)));
