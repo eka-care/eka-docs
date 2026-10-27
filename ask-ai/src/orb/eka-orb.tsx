@@ -9,9 +9,9 @@
  * the wave moves, the rest breathe.
  *
  * Small orbs (inline, beside "Thinking") show the mark only, breathing with
- * the shimmer running along it. One clock
- * (performance.now) keeps every orb in phase; each pauses offscreen and in
- * hidden tabs, and reduced motion gets one still frame of the mark.
+ * the shimmer running along it. Each orb's clock starts when it mounts, so
+ * every loop opens on the mark; each pauses offscreen and in hidden tabs, and
+ * reduced motion gets one still frame of the mark.
  */
 import {useEffect, useRef} from 'preact/hooks';
 import {EKA, HEART, LOTUS} from './eka-shapes';
@@ -78,7 +78,7 @@ function phase(steps: Step[], t: number) {
 export function ekaFrame(size: number, t: number): Dot[] {
   const large = size >= 40;
   const {a, b, m, heart} = phase(large ? LARGE : SMALL, t);
-  const rDot = large ? size * 0.012 : size * 0.05;
+  const rDot = large ? size * 0.012 : size * 0.022;
   const scale = heart * heartbeat(t) + (1 - heart) * (1 + 0.02 * Math.sin(t * 2.4));
 
   // Blend the lines point by point, then measure the blend from its start to its end. It is open: no wrap.
@@ -92,7 +92,7 @@ export function ekaFrame(size: number, t: number): Dot[] {
   }
 
   // Spacing is fixed, so the count follows the line's length.
-  const n = Math.max(large ? 30 : 9, Math.round((total * size) / (rDot * (large ? 3.8 : 2.6))) + 1);
+  const n = Math.max(large ? 30 : 9, Math.round((total * size) / (rDot * (large ? 3.8 : 3))) + 1);
   const dots: Dot[] = [];
   const c = size / 2;
   let seg = 0, acc = 0;
@@ -134,6 +134,8 @@ export function EkaOrb({size = 64, label = 'Thinking', class: className}: {size?
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.round(size * dpr);
     canvas.height = Math.round(size * dpr);
+    // The loop opens on the mark: time counts from when this orb mounts.
+    const born = performance.now();
     const draw = (t: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, size, size);
@@ -146,7 +148,7 @@ export function EkaOrb({size = 64, label = 'Thinking', class: className}: {size?
     }
     let raf = 0, running = false, visible = true;
     const loop = () => {
-      draw(performance.now() / 1000);
+      draw((performance.now() - born) / 1000);
       if (running) raf = requestAnimationFrame(loop);
     };
     const start = () => {
@@ -158,7 +160,7 @@ export function EkaOrb({size = 64, label = 'Thinking', class: className}: {size?
       running = false;
       cancelAnimationFrame(raf);
     };
-    draw(performance.now() / 1000);
+    draw(0);
     const io = typeof IntersectionObserver !== 'undefined'
       ? new IntersectionObserver(([e]) => {
           visible = e.isIntersecting;
