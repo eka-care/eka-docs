@@ -94,8 +94,10 @@ host: an embed that sets `docs-origin` has page search.
 
 The greeting's orb and the one beside "Thinking" are the Eka orb
 (`src/orb/eka-orb.tsx`): one line of dots that transforms from the Eka mark
-into a stethoscope in the shape of a heart, the lotus of ABDM, the audio wave
-of Scribe, and back to the mark, on a plain 2D canvas. The heart beats, the
+into the heart at its middle (turned upright), the ABDM lotus, the audio wave
+of Scribe, and back to the mark, on a plain 2D canvas. The mark and the heart
+run down the middle of the logo's one stroke; the lotus traces the ABDM
+lotus's outline. The heart beats, the
 wave moves, the rest breathe. Small orbs move between the heart and the wave
 only, because the mark and the lotus need room to read. One clock keeps orbs
 in phase, each pauses offscreen and in hidden tabs, and with reduced motion it

@@ -1,74 +1,98 @@
 // Generates src/orb/eka-shapes.ts: the single lines the Eka orb transforms between, each sampled into N points spaced
 // evenly by arc length from the line's start to its end, in units of the orb's size, centred on 0,0 (y down).
-// One line per shape, the way you would draw it without lifting the pen. The audio wave moves, so the orb draws it live.
+// The mark and the heart run down the middle of the Eka mark's one stroke; the lotus draws the ABDM lotus's petals.
+// The audio wave moves, so the orb draws it live.
 // Run: node eka-shapes.mjs
 import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
 const N = 240;
 const rad = (d) => (d * Math.PI) / 180;
-const arc = (cx, cy, r, from, to, steps = 120) =>
-  Array.from({length: steps + 1}, (_, i) => {
-    const a = rad(from + ((to - from) * i) / steps);
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  });
 const line = (a, b, steps = 40) => Array.from({length: steps + 1}, (_, i) => [a[0] + ((b[0] - a[0]) * i) / steps, a[1] + ((b[1] - a[1]) * i) / steps]);
-const quad = (a, c, b, steps = 40) =>
-  Array.from({length: steps + 1}, (_, i) => {
-    const t = i / steps, u = 1 - t;
-    return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
-  });
-/** The classic heart curve, tip at the bottom; t = 0 is the dip between the lobes. */
-const heartAt = (t, s) => [16 * Math.sin(t) ** 3 * s, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * s];
 const join_ = (...parts) => parts.flatMap((p, i) => (i ? p.slice(1) : p));
 
-// 1. The Eka mark: the stethoscope tube as an open ring, its upper end running in to a sideways heart at the centre.
-function eka() {
-  const R = 0.22;
-  const ring = arc(0, 0, R, 40, 320); // from the lower right, round the bottom, left and top, to the upper right
-  const s = 0.0047;
-  const tip = [0.07, 0.03];
-  // Sideways heart: tip pointing right, lobes on the left, traced from the tip round and back to it.
-  const heart = Array.from({length: 241}, (_, i) => {
-    const [x, y] = heartAt(Math.PI + (i / 240) * 2 * Math.PI, s);
-    const [hx, hy] = heartAt(Math.PI, s);
-    return [tip[0] + (y - hy), tip[1] - (x - hx)];
-  });
-  return join_(ring, line(ring.at(-1), tip), heart);
-}
-
-// 2. A stethoscope in the shape of a heart: ear hooks at the top, the tube down each side, the chest piece a loop at the tip.
-function stethoscopeHeart() {
-  const s = 0.0098, dy = -0.04;
-  const at = (t) => { const [x, y] = heartAt(t, s); return [x, y + dy]; };
-  const gap = 0.32;
-  const left = Array.from({length: 161}, (_, i) => at(-gap - ((Math.PI - gap) * i) / 160)); // dip-left down to the tip
-  const right = Array.from({length: 161}, (_, i) => at(Math.PI - ((Math.PI - gap) * i) / 160)); // tip up to dip-right
-  const hook = (p, dir) => quad(p, [p[0] + 0.02 * dir, p[1] - 0.07], [p[0] + 0.075 * dir, p[1] - 0.06], 24);
-  const tip = left.at(-1);
-  const r = 0.036;
-  const chest = arc(tip[0], tip[1] + r, r, -90, 270, 90); // round the chest piece and back to the tip
-  return join_(hook(left[0], 1).reverse(), left, chest, right, hook(right.at(-1), -1));
-}
-
-// 3. The lotus, for ABDM: the crown of five petals as one silhouette, rising to each tip and falling to each valley,
-// left to right, so no stroke crosses or doubles back.
-function lotus() {
-  const start = [-0.17, 0.15], end = [0.17, 0.15];
-  const tips = [[-0.26, -0.03], [-0.15, -0.13], [0, -0.22], [0.15, -0.13], [0.26, -0.03]];
-  const valleys = [[-0.18, 0.07], [-0.065, 0.03], [0.065, 0.03], [0.18, 0.07]];
-  // A petal edge bows outward: its control sits beside the straight edge, away from the petal's centre line.
-  const edge = (a, b, bow) => {
-    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy);
-    return quad(a, [mx + (-dy / l) * bow, my + (dx / l) * bow], b, 40);
-  };
-  const parts = [edge(start, tips[0], -0.05)];
-  for (let k = 0; k < valleys.length; k++) {
-    parts.push(edge(tips[k], valleys[k], -0.035));
-    parts.push(edge(valleys[k], tips[k + 1], -0.035));
+/** A smooth line through the given points (uniform Catmull-Rom), from the first to the last. */
+function spline(pts, steps = 24) {
+  const out = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    for (let k = 1; k <= steps; k++) {
+      const t = k / steps, t2 = t * t, t3 = t2 * t;
+      out.push([0, 1].map((c) => 0.5 * (2 * p1[c] + (-p0[c] + p2[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t2 + (-p0[c] + 3 * p1[c] - 3 * p2[c] + p3[c]) * t3)));
+    }
   }
-  parts.push(edge(tips[4], end, -0.05));
-  return join_(...parts);
+  return out;
+}
+const ellipse = (cx, cy, rx, ry, from, to, steps = 160) =>
+  Array.from({length: steps + 1}, (_, i) => {
+    const a = rad(from + ((to - from) * i) / steps);
+    return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)];
+  });
+/** Centre a line on 0,0 and scale it so its larger side is `span` of the orb. */
+function fit(pts, span) {
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const k = span / Math.max(x1 - x0, y1 - y0);
+  return pts.map(([x, y]) => [(x - (x0 + x1) / 2) * k, (y - (y0 + y1) / 2) * k]);
+}
+
+// The Eka mark is already one stroke. These points run down its middle, in the mark's own units (the landing's
+// watermark path, viewBox 4.5 4 23 24): from the upper ear knob, curled in at the heart's dip, round the heart's top lobe, down the band that passes
+// under to the lower right, round the ring through the bottom, left and top, in at the upper right, down the band that
+// passes over, round the bottom lobe to the lower ear knob. The two bands cross at the heart's tip.
+const MID = 15.97; // the mark is symmetric about this line
+const TOP_LOBE = [[13.2, 15.25], [12.35, 14.5], [12.05, 13.2], [12.5, 12.1], [13.2, 11.3], [15.22, 10.74], [17.47, 11.63]];
+const TIP = [21.96, MID];
+const BOTTOM_LOBE = TOP_LOBE.map(([x, y]) => [x, 2 * MID - y]).reverse();
+const RING = ellipse(16.97, 15.97, 10.85, 10.42, 42.3, 318);
+
+// 1. The Eka mark, the whole stroke.
+function eka() {
+  return fit(join_(
+    spline(TOP_LOBE),
+    line(TOP_LOBE.at(-1), [24.9, 18.78]),
+    spline([[24.9, 18.78], [25.6, 20.9], RING[0]]),
+    RING,
+    spline([RING.at(-1), [25.8, 10.3], [25.83, 11.4], [24.9, 2 * MID - 18.78]]),
+    line([24.9, 2 * MID - 18.78], BOTTOM_LOBE[0]),
+    spline(BOTTOM_LOBE),
+  ), 0.62);
+}
+
+// 2. The heart at the middle of the mark, turned upright: the ear knobs meet at the dip, the lobes round out above,
+// and the two bands meet at the tip. It is the stethoscope's heart on the landing.
+function heart() {
+  const sideways = join_(spline(TOP_LOBE), line(TOP_LOBE.at(-1), TIP), line(TIP, BOTTOM_LOBE[0]), spline(BOTTOM_LOBE));
+  return fit(sideways.map(([x, y]) => [-y, x]), 0.5);
+}
+
+/** The circular arc from a through m to b. */
+function arc3(a, m, b, steps = 48) {
+  const [ax, ay] = a, [bx, by] = b, [cx, cy] = m;
+  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+  const ux = ((ax ** 2 + ay ** 2) * (by - cy) + (bx ** 2 + by ** 2) * (cy - ay) + (cx ** 2 + cy ** 2) * (ay - by)) / d;
+  const uy = ((ax ** 2 + ay ** 2) * (cx - bx) + (bx ** 2 + by ** 2) * (ax - cx) + (cx ** 2 + cy ** 2) * (bx - ax)) / d;
+  const r = Math.hypot(ax - ux, ay - uy), ang = (p) => Math.atan2(p[1] - uy, p[0] - ux);
+  const a0 = ang(a), am = ang(m), TAU = 2 * Math.PI;
+  let sweep = ((ang(b) - a0) % TAU + TAU) % TAU;
+  if ((((am - a0) % TAU) + TAU) % TAU > sweep) sweep -= TAU; // go the way that passes through m
+  return Array.from({length: steps + 1}, (_, i) => [ux + r * Math.cos(a0 + (sweep * i) / steps), uy + r * Math.sin(a0 + (sweep * i) / steps)]);
+}
+
+// 3. The ABDM lotus: the five petals of the landing's #lotus symbol (viewBox 0 0 18 16), each a leaf of two arcs from
+// the shared base point to its tip. One line draws them in turn, left to right, out and back through the base, so the
+// petals overlap the way they do in the logo.
+const BASE = [9, 11.3];
+// [tip, a point on the edge drawn out, a point on the edge drawn back]
+const PETALS = [
+  [[0.45, 11.31], [4.72, 13.24], [4.72, 9.38]], // left outer
+  [[3.06, 5.28], [3.62, 8.08], [7.27, 8.48]], // left side
+  [[9.03, 2.86], [7.08, 7.0], [10.93, 7.0]], // centre
+  [[14.94, 5.28], [10.73, 8.48], [14.38, 8.08]], // right side
+  [[17.55, 11.31], [13.28, 9.38], [13.28, 13.24]], // right outer
+];
+function lotus() {
+  return fit(join_(...PETALS.flatMap(([tip, out, back]) => [arc3(BASE, out, tip), arc3(tip, back, BASE)])), 0.74);
 }
 
 function resample(poly, n) {
@@ -85,7 +109,7 @@ function resample(poly, n) {
   return out;
 }
 
-const shapes = {EKA: resample(eka(), N), HEART: resample(stethoscopeHeart(), N), LOTUS: resample(lotus(), N)};
+const shapes = {EKA: resample(eka(), N), HEART: resample(heart(), N), LOTUS: resample(lotus(), N)};
 const fmt = (pts) => '[' + pts.map(([x, y]) => `[${x.toFixed(4)},${y.toFixed(4)}]`).join(',') + ']';
 writeFileSync(join(import.meta.dirname, 'src/orb/eka-shapes.ts'),
   '// Generated by ask-ai/eka-shapes.mjs. Do not edit.\n' +

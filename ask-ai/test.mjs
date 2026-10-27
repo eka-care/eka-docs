@@ -412,12 +412,13 @@ console.log('ok');
   assert.ok(big.every((d) => d.x > 0 && d.x < 64 && d.y > 0 && d.y < 64 && d.r > 0), 'every dot sits on the canvas');
   assert.ok(near(big, SHAPES.eka, 64, 1.5), 'the still frame is the Eka mark');
 
-  // One line, not an outline: dots run start to end at an even spacing, and the two ends are apart.
+  // One line of dots, start to end, at an even spacing. The mark and the heart are open strokes; the lotus is the
+  // ABDM lotus's outline, so its ends meet.
   const gaps = big.slice(1).map((d, i) => Math.hypot(d.x - big[i].x, d.y - big[i].y));
   const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
   // Spacing is even along the line; straight-line gaps only shrink where it turns back on itself (the heart's dip).
   assert.ok(Math.max(...gaps) < mean * 1.6 && Math.min(...gaps) > mean * 0.4, 'one even line of dots, with no holes');
-  for (const name of ['eka', 'heart', 'lotus']) {
+  for (const name of ['eka', 'heart']) {
     const sh = SHAPES[name];
     assert.ok(Math.hypot(sh[0][0] - sh.at(-1)[0], sh[0][1] - sh.at(-1)[1]) > 0.02, `${name} is an open line`);
   }

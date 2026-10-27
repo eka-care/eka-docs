@@ -1,6 +1,6 @@
 /**
  * The Eka orb: one line of dots that transforms from the Eka mark into a
- * stethoscope in the shape of a heart, the lotus of ABDM, the audio wave of
+ * heart at its middle (turned upright), the lotus of ABDM, the audio wave of
  * Scribe, and back to the mark. It follows the "shaping" state of
  * thinking-orbs (MIT, Copyright (c) 2026 Jakub Antalik; licence in
  * ask-ai/licenses/): every frame blends the two neighbouring lines point by
@@ -29,7 +29,7 @@ const N = EKA.length;
 /** The Scribe wave at time t: a voice-shaped envelope over two moving sines, left to right. */
 export function waveAt(t: number): Pt[] {
   return Array.from({length: N}, (_, i) => {
-    const x = -0.26 + (0.52 * i) / (N - 1);
+    const x = -0.3 + (0.6 * i) / (N - 1);
     const env = 0.11 * Math.exp(-((x / 0.15) ** 2)) + 0.012;
     const y = env * (0.65 * Math.sin(x * 58 - t * 7) + 0.35 * Math.sin(x * 23 + t * 4.3));
     return [x, y];
@@ -80,7 +80,7 @@ function phase(steps: Step[], t: number) {
 export function ekaFrame(size: number, t: number): Dot[] {
   const large = size >= 40;
   const {a, b, m, heart} = phase(large ? LARGE : SMALL, t);
-  const rDot = large ? size * 0.018 : size * 0.05;
+  const rDot = large ? size * 0.012 : size * 0.05;
   const scale = heart * heartbeat(t) + (1 - heart) * (1 + 0.02 * Math.sin(t * 2.4));
 
   // Blend the lines point by point, then measure the blend from its start to its end. It is open: no wrap.
@@ -94,7 +94,7 @@ export function ekaFrame(size: number, t: number): Dot[] {
   }
 
   // Spacing is fixed, so the count follows the line's length.
-  const n = Math.max(large ? 30 : 9, Math.round((total * size) / (rDot * (large ? 2.4 : 2.6))) + 1);
+  const n = Math.max(large ? 30 : 9, Math.round((total * size) / (rDot * (large ? 3.8 : 2.6))) + 1);
   const dots: Dot[] = [];
   const c = size / 2;
   let seg = 0, acc = 0;
