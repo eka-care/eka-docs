@@ -236,6 +236,14 @@ test('the ABDM prompt installs the abdm-connect plugin first, whatever is clippe
   assert.ok(!prompt('mr', ['voice']).includes('/plugin'), 'other scenes install nothing');
 });
 
+test('every clip in a scene is one size, and both columns start at the same height', () => {
+  const layout = grab(/function layoutParts\(\)\{[\s\S]*?\n\}\n/, 'layoutParts');
+  assert.match(layout, /clips\.forEach\(el=>\{el\.style\.height=tall\+"px"\}\)/, 'each clip takes the tallest clip\'s height');
+  assert.match(layout, /let y=-colMax\/2;/, 'both columns start from the top of the taller one');
+  assert.ok(!/let y=-total\/2/.test(layout), 'no column centres on its own length');
+  assert.match(html, /\.part\{position:absolute;width:172px;/, 'one width for every clip');
+});
+
 test('credentials are placeholders the agent asks for, never keys', () => {
   const p = prompt('mr', ['voice']);
   assert.match(p, /EKA_CLIENT_ID=\{\{EKA_CLIENT_ID\}\}/);

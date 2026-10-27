@@ -1095,15 +1095,17 @@ $("#stay").addEventListener("click",cancelRoute);addEventListener("keydown",e=>{
    the two, picker and app or a column of parts, so choosing a scene and seeing what it builds fit on one screen. */
 function layoutParts(){
   const sc=$("#scenes");if(sc.parentElement!==stage)stage.insertBefore(sc,stage.firstChild);
+  // Every clip is as tall as the scene's tallest, so the two columns line up row for row.
+  const clips=MODULES.map(m=>partOf(m.id));clips.forEach(el=>{el.style.height=""});
+  const tall=Math.max(...clips.map(el=>el.offsetHeight))||112;clips.forEach(el=>{el.style.height=tall+"px"});
   if(!matchMedia("(min-width:1100px)").matches){stage.style.height="";sc.style.top=frame.style.top=frame.style.transform="";$("#step02").style.top="";$("#sideL").style.top=$("#sideR").style.top="";return}
   // Columns clear whichever is wider, the app or the picker above it.
   const half=Math.max(frame.offsetWidth/2+96,sc.offsetWidth/2+16);L=-(half+172);R=half;
   $("#sideL").style.right=`calc(50% + ${R}px)`;$("#sideR").style.left=`calc(50% + ${R}px)`;
   const GAP=24,cols={l:[],r:[]};MODULES.forEach(m=>cols[m.side].push(m));
-  let colMax=0;
-  ["l","r"].forEach(side=>{const ps=cols[side],hs=ps.map(m=>partOf(m.id).offsetHeight||112);
-    const total=hs.reduce((a,b)=>a+b,0)+GAP*Math.max(0,ps.length-1);colMax=Math.max(colMax,total);
-    let y=-total/2;ps.forEach((m,i)=>{const el=partOf(m.id);el.style.setProperty("--x",(side==="l"?L:R)+"px");el.style.setProperty("--y",y+"px");y+=hs[i]+GAP})});
+  // Both columns start at the same height, the top of the taller one, rather than each centring on its own length.
+  const colMax=Math.max(...["l","r"].map(side=>cols[side].length*tall+GAP*Math.max(0,cols[side].length-1)));
+  ["l","r"].forEach(side=>{let y=-colMax/2;cols[side].forEach(m=>{const el=partOf(m.id);el.style.setProperty("--x",(side==="l"?L:R)+"px");el.style.setProperty("--y",y+"px");y+=tall+GAP})});
   const ph=sc.offsetHeight,fh=frame.offsetHeight,GAPF=34,centre=ph+GAPF+fh,H=Math.max(colMax,centre)+56,top=(H-centre)/2;
   stage.style.height=H+"px";sc.style.top=top+"px";frame.style.top=(top+ph+GAPF)+"px";frame.style.transform="translateX(-50%)";
   $("#step02").style.top=(top+ph+GAPF/2-9)+"px";
