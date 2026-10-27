@@ -6029,6 +6029,70 @@ paths:
       tags:
       - Scan and Share
       summary: Scan On Share
+  /abdm/v1/hiu/care-context/data/{transaction_id}/entries/{content_ref}:
+    get:
+      description: |-
+        Returns one entry of the [`abha.hiu_data_push`](/docs/hie-cm/webhooks/hiu-data-push) webhook, encrypted exactly as the HIP sent it.
+
+        **When to use**
+
+        Every entry in the webhook carries a `content_ref`. Large pushes cannot be delivered in one webhook, so for some entries `content` arrives as an empty string. Call this API for every entry whose `content` is empty. You can also call it for every entry and ignore the inline `content`.
+
+        An entry can be fetched for 15 minutes after the webhook is sent. After that it is deleted and cannot be fetched again, so fetch entries as soon as you receive the webhook.
+
+        **How to use**
+
+        1. From the webhook, take `data.transaction_id` (not the top-level `transaction_id`, which identifies the webhook delivery) and the entry's `content_ref`.
+        2. Call this API with the same credentials you use for the other ABDM Connect APIs.
+        3. Decrypt `content` with the webhook's `key_information` and your private key, the same way as an inline entry, and verify `checksum`.
+
+        A `404` means the transaction does not belong to your workspace, the `content_ref` is unknown, or the entry has expired.
+
+        <Note>We recommend fetching every entry through this API. Inline `content` in the webhook may be removed in a future version.</Note>
+      parameters:
+      - description: data.transaction_id from the abha.hiu_data_push webhook, not
+          the top-level transaction_id.
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          description: data.transaction_id from the abha.hiu_data_push webhook, not
+            the top-level transaction_id.
+          type: string
+      - description: content_ref of the entry in data.entries of the abha.hiu_data_push
+          webhook.
+        in: path
+        name: content_ref
+        required: true
+        schema:
+          description: content_ref of the entry in data.entries of the abha.hiu_data_push
+            webhook.
+          type: string
+      responses:
+        4XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        5XX:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: ""
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntriesResponse'
+          description: OK
+      security:
+      - authApiKey: []
+      operationId: getDataPushEntry
+      tags:
+      - Care Contexts
+      summary: Fetch Data Push Entry
   /abdm/v1/hiu/care-context/data/on-push:
     post:
       description: API for HIU to push care context FHIR parsing status
@@ -8338,6 +8402,21 @@ components:
           - 'null'
         txn_id:
           description: Transaction ID required for the next API call.
+          type: string
+      type: object
+    EntriesResponse:
+      properties:
+        care_context_id:
+          type: string
+        checksum:
+          description: Checksum of the non encrypted plain text fhir data
+          type: string
+        content:
+          description: Encrypted content
+          type: string
+        media:
+          enum:
+          - application/fhir+json
           type: string
       type: object
     ExistRequest:

@@ -19,7 +19,9 @@ Get a token first: [Authentication](https://developer.eka.care/api-sdk/auth/gett
 
 - [Datasets API](https://developer.eka.care/api-sdk/datasets/overview)
 - [Medications](https://developer.eka.care/api-sdk/datasets/medications)
-- [Lab tests](https://developer.eka.care/api-sdk/datasets/lab-tests)
+- [Lab investigations](https://developer.eka.care/api-sdk/datasets/lab-investigations)
+- [Lab results](https://developer.eka.care/api-sdk/datasets/lab-results)
+- [Lab panels](https://developer.eka.care/api-sdk/datasets/lab-panels)
 - [Symptoms](https://developer.eka.care/api-sdk/datasets/symptoms)
 - [Diagnoses](https://developer.eka.care/api-sdk/datasets/diagnoses)
 

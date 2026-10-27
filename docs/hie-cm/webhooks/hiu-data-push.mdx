@@ -8,6 +8,24 @@ Webhook event is sent when an external HIP pushes encrypted health data to your 
 
 The Health Information User (HIU) can initiate a consent request through the [Consent-API](/api-sdk/hie-cm/consents/consent-create) to get care context data. Once consent is validated, the Health Information Provider (HIP) sends the encrypted health data to the HIU.
 
+### Large pushes
+
+A webhook has a size limit, and a single HIP push can be larger than that. Every entry therefore carries a `content_ref`, and when the webhook would be too large, `content` is sent as an empty string for some entries.
+
+**What to do when you receive this webhook:**
+
+1. For each entry in `data.entries`, check `content`.
+2. If `content` is empty, fetch the entry with the [Fetch data push entry API](/api-sdk/hie-cm/care-contexts/data-push-entry), passing `data.transaction_id` and the entry's `content_ref`.
+3. Decrypt `content` with `key_information` and your private key, whether it came inline or from the API, and verify `checksum`.
+
+<Warning>
+An entry can be fetched for **15 minutes** after the webhook is sent. After that it is deleted and the API returns `404`, so fetch entries as soon as you receive the webhook.
+</Warning>
+
+<Note>
+We recommend fetching every entry through the [Fetch data push entry API](/api-sdk/hie-cm/care-contexts/data-push-entry). Inline `content` may be removed from this webhook in a future version.
+</Note>
+
 ### Request
 **Headers:**
 
@@ -38,7 +56,8 @@ The Health Information User (HIU) can initiate a consent request through the [Co
                 "care_context_id": "<string>",
                 "checksum": "<string>",
                 "content": "<string>",
-                "media": "application/fhir+json"
+                "media": "application/fhir+json",
+                "content_ref": "<uuid>"
             }
         ],
         "key_information": {
@@ -59,8 +78,13 @@ The Health Information User (HIU) can initiate a consent request through the [Co
 
 - **`data`**: Contains additional details related to the event.
     - **`consent_id`**: Consent id for the data transfer
-    - **`transaction_id`**: Transaction id for the data flow
+    - **`transaction_id`**: Transaction id for the data flow. Use this one, not the top-level `transaction_id`, when calling the [Fetch data push entry API](/api-sdk/hie-cm/care-contexts/data-push-entry).
     - **`entries`**: List of care contexts with encrypted fhir data
+        - `care_context_id` The care context this entry belongs to.
+        - `checksum` Checksum of the plain-text FHIR data, to verify after decryption.
+        - `content` The encrypted FHIR data. Empty when the entry did not fit in the webhook; see [Large pushes](#large-pushes).
+        - `media` Media type of the decrypted data, `application/fhir+json`.
+        - `content_ref` Reference to fetch this entry with the [Fetch data push entry API](/api-sdk/hie-cm/care-contexts/data-push-entry). Always present. Valid for 15 minutes after the webhook is sent.
     - **`key_information`** : Contains the cryptographic key material and related parameters required for secure ECDH-based key exchange between HIU and HIP.
         - `crypto_alg` The cryptographic algorithm used for key exchange (e.g., "ECDH").
         - `curve` The elliptic curve used in ECDH key generation (e.g., "Curve25519", "P-256").

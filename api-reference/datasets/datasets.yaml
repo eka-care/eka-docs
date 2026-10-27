@@ -2,8 +2,9 @@ openapi: 3.1.0
 info:
   title: Eka Care Datasets API
   description: >-
-    Manage your workspace's formulary catalogs (medications, lab tests,
-    symptoms and diagnoses): upload them as JSON or CSV, keep them in sync,
+    Manage your workspace's formulary catalogs (medications, lab
+    investigations, lab results, lab panels, symptoms and diagnoses): upload
+    them as JSON or CSV, keep them in sync,
     read them back, and switch on partner search in the Eka Medical Database.
     Every request acts only on the workspace your access token belongs to.
   version: 1.0.0
@@ -106,6 +107,13 @@ paths:
         anything.
 
 
+        For `type=lab_panel`, every id in `member_result_ids` must already be
+        stored as a `lab_result` in your workspace, so write results first. A
+        panel needs at least one member and an id can appear once. A member
+        that is not a stored result is rejected with the message
+        `<id> is not a result in this catalog`.
+
+
         `overwrite=true` (CSV only) hard-deletes the whole catalog and replaces
         it with the file, in one transaction. It cannot be combined with
         `mode=reconcile`; prefer `reconcile`, which can be undone.
@@ -153,7 +161,9 @@ paths:
               items:
                 oneOf:
                   - $ref: '#/components/schemas/Medication'
-                  - $ref: '#/components/schemas/LabTest'
+                  - $ref: '#/components/schemas/LabInvestigation'
+                  - $ref: '#/components/schemas/LabResult'
+                  - $ref: '#/components/schemas/LabPanel'
                   - $ref: '#/components/schemas/Symptom'
                   - $ref: '#/components/schemas/Diagnosis'
             example:
@@ -238,7 +248,7 @@ paths:
         - name: entity_id
           in: path
           required: true
-          description: Your id for the record (`medication_id`, `lab_test_id`, `symptom_id` or `diagnosis_id`).
+          description: Your id for the record (`medication_id`, `investigation_id`, `result_id`, `panel_id`, `symptom_id` or `diagnosis_id`).
           schema:
             type: string
         - $ref: '#/components/parameters/Type'
@@ -413,6 +423,16 @@ paths:
         catalog, or back off. Turn it on once, after your first successful
         write; later syncs don't need to touch it. Turning it off is the
         rollback if a catalog turns out to be wrong.
+
+
+        Panel search (`lab_panel`) can only be on while result search
+        (`lab_result`) is on for the same knowledge base. A request that would
+        break this is refused with a 400 and nothing changes: turning
+        `lab_panel` on while `lab_result` is off returns code
+        `turn_on_results_first`, turning `lab_panel` on while `lab_result` is
+        on in a different knowledge base returns code `results_in_other_kb`,
+        and turning `lab_result` off while `lab_panel` is on in the same
+        knowledge base returns code `turn_off_panels_first`.
       operationId: setDatasetSearchStatus
       tags: [datasets]
       parameters:
@@ -445,7 +465,35 @@ paths:
                   dataset_type: medication
                   updated_at: '2026-09-28T10:20:00+00:00'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: >-
+            Invalid request, for example a missing or unknown `type`, or a
+            switch order that is not allowed for results and panels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                turnOnResultsFirst:
+                  summary: Panel search turned on while result search is off
+                  value:
+                    success: false
+                    message: Turn on search for results first
+                    errors:
+                      - code: turn_on_results_first
+                resultsInOtherKb:
+                  summary: Panel search turned on while result search is on in another knowledge base
+                  value:
+                    success: false
+                    message: Turn on search for results in the same knowledge base first
+                    errors:
+                      - code: results_in_other_kb
+                turnOffPanelsFirst:
+                  summary: Result search turned off while panel search is on
+                  value:
+                    success: false
+                    message: Turn off search for panels first
+                    errors:
+                      - code: turn_off_panels_first
         '401':
           $ref: '#/components/responses/Unauthorized'
   /admin/datasets/v1/batches/:
@@ -540,7 +588,7 @@ components:
       description: Which catalog to act on.
       schema:
         type: string
-        enum: [medication, lab_test, symptom, diagnosis]
+        enum: [medication, lab_investigation, lab_result, lab_panel, symptom, diagnosis]
     Limit:
       name: limit
       in: query
@@ -575,9 +623,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            success: false
-            message: type must be one of 'medication', 'lab_test', 'symptom', 'diagnosis'
     Unauthorized:
       description: The access token is missing, invalid or expired.
     PayloadTooLarge:
@@ -603,11 +648,12 @@ components:
           type: string
         errors:
           type: array
-          description: Present when validation failed or the shrink guard stopped a reconcile.
+          description: Present when validation failed, the shrink guard stopped a reconcile, or a search switch order was refused.
           items:
             oneOf:
               - $ref: '#/components/schemas/FieldError'
               - $ref: '#/components/schemas/ShrinkGuardError'
+              - $ref: '#/components/schemas/SearchOrderError'
     FieldError:
       type: object
       properties:
@@ -630,6 +676,12 @@ components:
           type: integer
         would_deactivate:
           type: integer
+    SearchOrderError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [turn_on_results_first, results_in_other_kb, turn_off_panels_first]
     WriteResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessEnvelope'
@@ -740,7 +792,9 @@ components:
       description: A record of the requested type, as returned by the API.
       oneOf:
         - $ref: '#/components/schemas/Medication'
-        - $ref: '#/components/schemas/LabTest'
+        - $ref: '#/components/schemas/LabInvestigation'
+        - $ref: '#/components/schemas/LabResult'
+        - $ref: '#/components/schemas/LabPanel'
         - $ref: '#/components/schemas/Symptom'
         - $ref: '#/components/schemas/Diagnosis'
     Medication:
@@ -761,8 +815,7 @@ components:
           description: >-
             Optional. Eka's own id for this item, taken from Eka's reference list,
             so Eka products (for example EMR calculators) recognise it. Not checked
-            against Eka's records; an id you send is stored as given. In a CSV the
-            column may also be named `eka_id`. Re-uploading a CSV without this column
+            against Eka's records; an id you send is stored as given. Re-uploading a CSV without this column
             keeps existing values; a blank cell in the column clears it. In a JSON
             update, leaving `ekaid` out or sending it empty keeps the current value.
         aliases:
@@ -832,19 +885,18 @@ components:
           type: string
           format: date-time
           readOnly: true
-    LabTest:
+    LabInvestigation:
       type: object
-      title: LabTest
-      required: [lab_test_id, name, kind, result_type]
+      title: LabInvestigation
+      required: [investigation_id, name]
       description: >-
-        `specimen` is required when `kind` is `laboratory`, `unit` when
-        `result_type` is `numerical`, and `panel_members` when `kind` is
-        `panel`.
+        What a doctor orders or advises: a lab test, scan or package. The values
+        that come back are `lab_result` records.
       properties:
-        lab_test_id:
+        investigation_id:
           type: string
           maxLength: 200
-          description: Your id for the test.
+          description: Your id for the investigation.
         name:
           type: string
           maxLength: 200
@@ -854,11 +906,9 @@ components:
           description: >-
             Optional. Eka's own id for this item, taken from Eka's reference list,
             so Eka products (for example EMR calculators) recognise it. Not checked
-            against Eka's records; an id you send is stored as given. In a CSV the
-            column may also be named `eka_id`. Re-uploading a CSV without this column
+            against Eka's records; an id you send is stored as given. Re-uploading a CSV without this column
             keeps existing values; a blank cell in the column clears it. In a JSON
             update, leaving `ekaid` out or sending it empty keeps the current value.
-          examples: ["lb-1322178942"]
         display_name:
           type: string
           maxLength: 200
@@ -868,58 +918,140 @@ components:
           items:
             type: string
             maxLength: 200
-        loinc:
+        category:
           type: string
-          maxLength: 32
-          description: LOINC code. Not checked against the LOINC vocabulary.
-        kind:
+          maxLength: 64
+        type:
           type: string
-          enum: [imaging, laboratory, functional, special_test, package, panel]
-        result_type:
-          type: string
-          enum: [numerical, ordinal, string, na]
-        discipline:
-          type: array
-          items:
-            type: string
-            maxLength: 100
-          description: For example biochemistry, hematology, micro, molecular, cardiology.
+          maxLength: 64
         specimen:
           type: string
           maxLength: 100
         unit:
           type: string
           maxLength: 32
+        is_active:
+          type: boolean
+          description: Defaults to true on write.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    LabResult:
+      type: object
+      title: LabResult
+      required: [result_id, name]
+      description: >-
+        A value that comes back from an investigation, such as hemoglobin. It has
+        one unit. Panels refer to results by `result_id`.
+      properties:
+        result_id:
+          type: string
+          maxLength: 200
+          description: Your id for the result.
+        name:
+          type: string
+          maxLength: 200
+        ekaid:
+          type: [string, 'null']
+          maxLength: 64
+          description: >-
+            Optional. Eka's own id for this item, taken from Eka's reference list,
+            so Eka products (for example EMR calculators) recognise it. Not checked
+            against Eka's records; an id you send is stored as given. Re-uploading a CSV without this column
+            keeps existing values; a blank cell in the column clears it. In a JSON
+            update, leaving `ekaid` out or sending it empty keeps the current value.
+        display_name:
+          type: string
+          maxLength: 200
+          description: Shown to end users. Defaults to `name`.
+        aliases:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+        is_numerical:
+          type: boolean
+          description: True when the reading is a number.
+        result_type:
+          type: string
+          enum: [N, C, D]
+          description: N is numeric, C is categorical, D is descriptive.
+        scale_type:
+          type: string
+          maxLength: 16
+        loinc:
+          type: string
+          maxLength: 32
+          description: LOINC code. Not checked against the LOINC vocabulary.
+        unit:
+          type: string
+          maxLength: 32
+          description: The one unit this result is reported in. Eka products show it only when `unit_id` is also set.
         unit_id:
           type: string
           maxLength: 64
-        panel_members:
-          type: array
-          items:
-            type: string
-            maxLength: 200
-          description: Names of the member tests.
-        panel_member_ids:
-          type: array
-          items:
-            type: string
-            maxLength: 200
-        method:
+          description: Eka's id for the unit. Without it the `unit` is not shown in Eka products.
+        specimen:
           type: string
           maxLength: 100
-          description: For example ELISA, RAPID_ICT, CHEMILUMINESCENCE (CLIA).
-        body_part:
-          type: string
-          maxLength: 100
-          description: Imaging only.
-        laterality:
-          type: string
-          maxLength: 32
-          description: Imaging only.
-        view:
+        specimen_id:
           type: string
           maxLength: 64
-          description: Imaging only.
+          description: The specimen's id, served as is with the specimen.
+        is_active:
+          type: boolean
+          description: Defaults to true on write.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    LabPanel:
+      type: object
+      title: LabPanel
+      required: [panel_id, name, member_result_ids]
+      description: >-
+        A named, ordered collection of results that a doctor fills in, such as
+        CBC. Every member must already be a `lab_result` in the same workspace
+        and knowledge base, so write results first. Panel search can only be on
+        while result search is on.
+      properties:
+        panel_id:
+          type: string
+          maxLength: 200
+          description: Your id for the panel.
+        name:
+          type: string
+          maxLength: 200
+        ekaid:
+          type: [string, 'null']
+          maxLength: 64
+          description: >-
+            Optional. Eka's own id for this item, taken from Eka's reference list,
+            so Eka products (for example EMR calculators) recognise it. Not checked
+            against Eka's records; an id you send is stored as given. Re-uploading a CSV without this column
+            keeps existing values; a blank cell in the column clears it. In a JSON
+            update, leaving `ekaid` out or sending it empty keeps the current value.
+        display_name:
+          type: string
+          maxLength: 200
+          description: Shown to end users. Defaults to `name`.
+        aliases:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+        member_result_ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            maxLength: 200
+          description: >-
+            The `result_id` of each member result, in display order. Each id
+            must be stored as a result, and can appear once. A member whose
+            result is deactivated or deleted later stays on the panel and is
+            skipped when the panel is served.
         is_active:
           type: boolean
           description: Defaults to true on write.
@@ -945,8 +1077,7 @@ components:
           description: >-
             Optional. Eka's own id for this item, taken from Eka's reference list,
             so Eka products (for example EMR calculators) recognise it. Not checked
-            against Eka's records; an id you send is stored as given. In a CSV the
-            column may also be named `eka_id`. Re-uploading a CSV without this column
+            against Eka's records; an id you send is stored as given. Re-uploading a CSV without this column
             keeps existing values; a blank cell in the column clears it. In a JSON
             update, leaving `ekaid` out or sending it empty keeps the current value.
         display_name:
@@ -997,8 +1128,7 @@ components:
           description: >-
             Optional. Eka's own id for this item, taken from Eka's reference list,
             so Eka products (for example EMR calculators) recognise it. Not checked
-            against Eka's records; an id you send is stored as given. In a CSV the
-            column may also be named `eka_id`. Re-uploading a CSV without this column
+            against Eka's records; an id you send is stored as given. Re-uploading a CSV without this column
             keeps existing values; a blank cell in the column clears it. In a JSON
             update, leaving `ekaid` out or sending it empty keeps the current value.
         display_name:
