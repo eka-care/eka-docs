@@ -8,6 +8,38 @@ import { SubscribeForm } from '/snippets/subscribe-form.jsx';
 <SubscribeForm />
 
 <Update
+  label="September 12, 2026"
+  description="September 12, 2026"
+  tags={["Feature", "Update", "Fix"]}
+  rss={{
+    title: "Eka Developer Platform — September 12, 2026",
+    description: "• Knowledge bases gain a Weaviate provider end to end — `echo-agents` adds a `retrieve_clinical_guidelines` tool and MedAssist agent configs accept `provider: \"weaviate\"`\n\n• `GET /reloaded/med-assist/session` now returns a generated `topic` title and the session's `tz` for each session\n\n• The chat widget adds an upfront consent gate, and remembers the acceptance per agent instead of asking every session\n\n• Agents on the moolchand workspace can now create CRM leads via `create_crm_lead_tool`\n\nRead more: https://developer.eka.care/changelog"
+  }}
+>
+
+## Added
+
+- **[EkaAgents] Weaviate knowledge-base provider** — Knowledge bases can now be backed by Weaviate instead of AWS Bedrock, across the whole chain. `echo` (the LLM-orchestration SDK) gains `echo.knowledge.weaviate_kb` with a hybrid (vector + keyword) retriever scoped to a tenant and `kb_id`; `echo-agents` wraps it as a `retrieve_clinical_guidelines` tool via `get_weaviate_kb_tool` (`echo-agents[weaviate]` extra); and MedAssist agent configs accept `provider: "weaviate"` on a knowledge base, alongside the existing `bedrock`. The Bedrock path and its `retrieve_knowledge` tool are unchanged — this is purely additive. Connection details come from the environment (`WEAVIATE_HTTP_HOST`, `WEAVIATE_HTTP_PORT`, `WEAVIATE_HTTP_SECURE`, `WEAVIATE_GRPC_HOST`, `WEAVIATE_GRPC_PORT`, `WEAVIATE_GRPC_SECURE`, and optionally `WEAVIATE_API_KEY`), so one cluster is configured per environment rather than per knowledge base.
+- **[EkaAgents] Per-knowledge-base retrieval tuning** — A knowledge base can now carry `workspace_id`, `min_similarity`, and `alpha` in its config. `workspace_id` is the knowledge base's *own* workspace, used as the Weaviate tenant — a corpus owned by one workspace can be mapped to another workspace's agent, so the tenant is not always the agent's workspace. `min_similarity` is the cosine floor below which the knowledge base abstains rather than returning weak passages, and `alpha` is the hybrid weight (`1.0` = pure vector). All three are optional; omitting them keeps the SDK's defaults.
+- **[EkaAgents] Session titles on the sessions list** — `GET /reloaded/med-assist/session` now returns a `topic` for every session — a short generated title for the conversation — plus `tz`, the IANA timezone the client supplied when the session was created. `tz` is client-supplied and may be stale or unresolvable (`"Asia/Calcutta"`, `""`), so treat it as a hint and fall back gracefully. Both fields are additive; existing consumers that ignore unknown keys are unaffected.
+- **[EkaAgents] `create_crm_lead_tool` for the moolchand workspace** — The CRM lead-creation tool from the Eka MCP SDK is now enabled for moolchand agents, backed by a moolchand-specific implementation that composes the patient phone from the country code and mobile number before posting the lead. Apollo and RFH already had this tool. [View docs](/ai-tools/medai-tools-mcp/tools)
+- **[EkaAgents] Upfront consent gate in the chat widget** — `@eka-care/synapse-widget` 0.1.128 and `synapse-widget-embed` 0.2.106 add an optional consent form, driven by the agent-config `theme.upfront_consent` flag. When set, the widget blocks the chat behind the form on first use and remembers the acceptance locally per agent, so the user is asked once rather than every session.
+
+## Improved
+
+- **[EkaAgents] Widget first-paint and bundle size** — The widget applies its theme before first paint, splits the auth inputs out of the entry chunk, shrinks the flag icon, fully minifies the lib-mode ES output, and guards the bundle against regressions with a size budget. `window.prefetchAuth` is exposed so hosts can warm authentication before the widget mounts, and agent-config can be prefetched before a SynapseSDK instance exists. A `vite build --mode analyze` mode and a sourcemap attribution script were added for tracking this over time.
+- **[EkaAgents] Nudge requests are cached across page refreshes** — The widget only calls the user-nudge endpoint once a session token is available, and caches the result so a page refresh no longer re-triggers the call.
+- **[EkaAgents] Structured logging and New Relic attributes across MedAssist** — MedAssist, the WhatsApp agent, and the developer console moved to structured logs with a bound request context (agent id, workspace id, response code) on every endpoint, plus redaction of client-supplied context values — session context routinely carries patient name, mobile, and date of birth, so only its keys are logged, never its values.
+
+## Fixed
+
+- **[EkaAgents] Knowledge-base scores no longer go negative** — The knowledge-base connector clamps negative cosine values, which previously let a poorly-matching passage score below zero and confuse the relevance ordering.
+- **[EkaAgents] File messages no longer fail the HTTP stream** — Sending a file raised a `NameError` before reaching the agent; the channel is now passed through to the file-message handler, and the resulting agent task is returned so the HTTP stream awaits it instead of closing early.
+- **[EkaAgents] Fatal errors on the sessions list surface correctly** — A failure while listing sessions returned `200` with an empty array, which was indistinguishable from "this user has no sessions". It now reports the error.
+
+</Update>
+
+<Update
   label="June 2, 2026"
   description="June 2, 2026"
   tags={["Feature", "Update", "Fix"]}
