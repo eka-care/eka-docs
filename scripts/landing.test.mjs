@@ -338,3 +338,12 @@ test('the new scene has its dark colour scoped to dark mode, like the others', (
   assert.match(html, /:root\[data-theme="dark"\] \[data-sc="as"\]/);
   assert.match(html, /:root:not\(\[data-theme="light"\]\) \[data-sc="as"\]/);
 });
+
+test('the home page hides the docs chrome the server sends until the landing mounts', () => {
+  // The landing renders only in the browser, so the server's HTML for "/" is the first product's docs layout.
+  const css = fs.readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const before = 'html[data-current-path="/"]:not(:has(.eka-landing))';
+  assert.ok(css.includes(`${before} body > *`), 'chrome hidden before the landing mounts');
+  assert.ok(css.includes(`${before} body {`) && css.includes(`html.dark[data-current-path="/"]:not(:has(.eka-landing)) body {`),
+    'the wait shows the landing ground in both themes');
+});
