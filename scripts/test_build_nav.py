@@ -19,7 +19,7 @@ ABDM = ['HIE-CM', 'NHCX', 'UHI']
 HIDDEN = 'More from Eka'
 MORE = ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
 RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']
-NEWSBOARD = ['Research', 'Changelog']
+NEWSBOARD = ['Eka Labs', 'Changelog']
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [f'docs/emr/build-with-ai/mcp-server/{p}' for p in
                                                                  ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
 CLINICAL_MCP = ['docs/datasets/build-with-ai/mcp-server/introduction'] + [
@@ -82,7 +82,7 @@ class Regroup(unittest.TestCase):
         self.assertEqual(json.dumps(twice), json.dumps(self.products))
 
     def test_research_moved(self):
-        research = set(nav.walk_pages(item(self.products, 'Newsboard', 'Research')))
+        research = set(nav.walk_pages(item(self.products, 'Newsboard', 'Eka Labs')))
         self.assertIn('docs/models/spotlight', research)
         parsing = set(nav.walk_pages(item(self.products, 'Clinical AI', 'Medical Document Parsing')))
         self.assertNotIn('docs/models/spotlight', parsing)

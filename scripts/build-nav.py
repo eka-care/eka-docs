@@ -181,7 +181,7 @@ ICONS = {
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Research': 'star', 'Changelog': 'history',
+    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Eka Labs': 'star', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -811,7 +811,7 @@ FAMILIES = [
     ('Resources', 'book-open', 'Keys, sign-in, encryption, every API, worked examples and the Eka MCP server.',
      ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
-     ['Research', 'Changelog']),
+     ['Eka Labs', 'Changelog']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
     ('More from Eka', 'box-archive', 'Products kept out of the navigation. Their pages stay live, listed on /sitemap.',
      ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
@@ -819,10 +819,10 @@ FAMILIES = [
 HIDDEN_FAMILIES = {'More from Eka'}
 RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medical Document Parsing',
                 'Scribe': 'Medical Scribe', 'Agents': 'Medical Agents', 'Datasets': 'Medical Knowledge',
-                'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR', 'Overview': 'Understanding Integrations'}
+                'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR', 'Research': 'Eka Labs', 'Overview': 'Understanding Integrations'}
 NEW_ITEMS = {
     'Cookbook': 'Worked examples that combine Eka products',
-    'Research': 'Open models, datasets and research for AI in Indian healthcare',
+    'Eka Labs': 'Open models, datasets and research for AI in Indian healthcare',
     'Changelog': 'What changed across Eka, week by week',
     'Understanding Integrations': 'Which integration you need, by the Eka product you use',
     'Eka MCP': 'Connect your agent to Eka EMR: patients, appointments and prescriptions',
@@ -971,12 +971,12 @@ def regroup(products):
     def api(name):
         return items.get((True, name))
 
-    # Research: the Spotlight group leaves Document Parsing whole.
-    if not docs('Research'):
+    # Eka Labs: the Spotlight group leaves Document Parsing whole.
+    if not docs('Eka Labs'):
         dp = docs('Medical Document Parsing')
         group, dp['pages'] = take_group(dp.get('pages', []), 'Eka MedAI research')
         if group:
-            items[(False, 'Research')] = {'item': 'Research', 'pages': [group]}
+            items[(False, 'Eka Labs')] = {'item': 'Eka Labs', 'pages': [group]}
     # Cookbook: every recipe in one place. Patient Experiences combines several products, so it is a recipe too.
     if open_ok(COOKBOOK[0]):
         recipes = set(COOKBOOK)
