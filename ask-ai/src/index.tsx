@@ -119,9 +119,16 @@ type PanelProps = {
  * dialog on the right, and the page makes room for it (see dock()), so the
  * reader keeps reading the page beside the answer.
  */
-/** From this viewport width up, the panel docks beside the page rather than over it. */
-export const DOCK_MIN = 1024;
-export const docksAt = (viewport: number) => viewport >= DOCK_MIN;
+/**
+ * The narrowest the page may get beside a docked panel. The landing's and
+ * Mintlify's layouts follow the window, not the body, so a body squeezed
+ * narrower keeps a wide layout that no longer fits: the landing's nav runs
+ * under the panel below about 860px, and a docs article falls under 500px
+ * below 900. Where the page would get narrower than this, the panel covers it.
+ */
+export const PAGE_MIN = 900;
+export const DEFAULT_PANEL = 416; // 26rem
+export const docksAt = (viewport: number, panel: number) => viewport - panel >= PAGE_MIN;
 
 /** Set on <html> while the panel is docked; its width rides along as a variable. */
 const DOCKED = 'data-eka-ask-ai-docked';
@@ -148,18 +155,32 @@ function dock(panel: HTMLElement): () => void {
       `html[${DOCKED}] #content-side-layout{display:none!important}`;
     document.head.append(style);
   }
-  const measure = () => root.style.setProperty('--eka-ask-ai-dock', `${Math.round(panel.getBoundingClientRect().width)}px`);
-  const relayout = () => window.setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
-  measure();
-  root.setAttribute(DOCKED, '');
-  relayout();
-  // The grip changes the panel's width while it is open; the page follows.
-  const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+  let pending = 0;
+  const relayout = () => {
+    window.clearTimeout(pending);
+    pending = window.setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
+  };
+  // Docked while the page keeps PAGE_MIN beside the panel. A narrower window, or a panel dragged wider, puts the
+  // page back at full width under the panel, and room enough docks it again.
+  const fit = () => {
+    const width = Math.round(panel.getBoundingClientRect().width);
+    root.style.setProperty('--eka-ask-ai-dock', `${width}px`);
+    const docked = docksAt(window.innerWidth, width);
+    if (docked === root.hasAttribute(DOCKED)) return;
+    root.toggleAttribute(DOCKED, docked);
+    relayout();
+  };
+  fit();
+  const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
   watch?.observe(panel);
+  window.addEventListener('resize', fit);
   return () => {
     watch?.disconnect();
-    root.removeAttribute(DOCKED);
-    relayout();
+    window.removeEventListener('resize', fit);
+    if (root.hasAttribute(DOCKED)) {
+      root.removeAttribute(DOCKED);
+      relayout();
+    }
   };
 }
 /** How wide the panel may be dragged, in pixels. */
@@ -473,7 +494,8 @@ function Panel({
     // hand once the panel is actually showing.
     let undock: (() => void) | undefined;
     if (open && !el.open) {
-      if (docksAt(window.innerWidth)) {
+      const wanted = parseFloat(el.style.getPropertyValue('--aa-panel-width')) || DEFAULT_PANEL;
+      if (docksAt(window.innerWidth, wanted)) {
         el.show();
         undock = dock(el);
       } else {
