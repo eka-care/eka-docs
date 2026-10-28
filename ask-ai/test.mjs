@@ -12,7 +12,7 @@ await build({
                export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport, UNREACHABLE, STALLED} from './src/transport';
                export {pastHero} from './src/FloatingBar';
-               export {groundOfColor, groundOfScheme} from './src/index';
+               export {groundOfColor, groundOfScheme, docksAt, DOCK_MIN} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
@@ -40,7 +40,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, groundOfColor, groundOfScheme, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, groundOfColor, groundOfScheme, docksAt, DOCK_MIN, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -269,6 +269,10 @@ assert.equal(groundOfScheme('dark'), 'dark');
 assert.equal(groundOfScheme('normal'), null, 'no declared scheme');
 assert.equal(groundOfScheme('light dark'), null, 'either scheme is no answer');
 assert.equal(groundOfScheme(''), null);
+// A wide screen docks the panel beside the page; a narrow one keeps it over the page, full width.
+assert.equal(DOCK_MIN, 1024);
+assert.ok(docksAt(1440) && docksAt(1024), 'desktop widths dock');
+assert.ok(!docksAt(1023) && !docksAt(390), 'tablets and phones keep the overlay');
 // Synapse transport, against a stand-in for @eka-care/medassist-core's SynapseSDK.
 {
   const made = [];

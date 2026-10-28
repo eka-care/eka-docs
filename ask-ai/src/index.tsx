@@ -113,11 +113,55 @@ type PanelProps = {
  * header repeats it, because a convincing mock of an assistant that cannot
  * answer is worse than no assistant at all.
  *
- * The panel is a native modal dialog, so it lands in the browser's top layer.
- * That is what keeps it above a host page's own stacking contexts without the
- * widget knowing anything about them, and it brings Escape, the backdrop and
- * focus containment with it.
+ * On a narrow screen the panel is a native modal dialog, so it lands in the
+ * browser's top layer, above whatever the host page stacks, with Escape, the
+ * backdrop and focus containment. On a wide one it docks instead: a plain
+ * dialog on the right, and the page makes room for it (see dock()), so the
+ * reader keeps reading the page beside the answer.
  */
+/** From this viewport width up, the panel docks beside the page rather than over it. */
+export const DOCK_MIN = 1024;
+export const docksAt = (viewport: number) => viewport >= DOCK_MIN;
+
+/** Set on <html> while the panel is docked; its width rides along as a variable. */
+const DOCKED = 'data-eka-ask-ai-docked';
+const DOCK_STYLE_ID = 'eka-ask-ai-dock-style';
+
+/**
+ * Makes room for the docked panel: the page's body gives up the panel's width
+ * on the right. Mintlify's header and sidebar are sticky on wide screens, so
+ * they move with the body; only its fixed background stays, under the panel.
+ * The rule lives in the page's own stylesheet, the one thing the widget puts
+ * outside its shadow root. A resize event afterwards lets the page's own
+ * layout code (the landing's scene) measure the narrower body.
+ */
+function dock(panel: HTMLElement): () => void {
+  const root = document.documentElement;
+  if (!document.getElementById(DOCK_STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = DOCK_STYLE_ID;
+    style.textContent =
+      `body{transition:margin-right 200ms ease-out}` +
+      `html[${DOCKED}] body{margin-right:var(--eka-ask-ai-dock,26rem)!important}` +
+      // Mintlify picks its layout from the window, not the body, so its "On this page" column would stay and squeeze
+      // the article; the article needs the room more.
+      `html[${DOCKED}] #content-side-layout{display:none!important}`;
+    document.head.append(style);
+  }
+  const measure = () => root.style.setProperty('--eka-ask-ai-dock', `${Math.round(panel.getBoundingClientRect().width)}px`);
+  const relayout = () => window.setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
+  measure();
+  root.setAttribute(DOCKED, '');
+  relayout();
+  // The grip changes the panel's width while it is open; the page follows.
+  const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+  watch?.observe(panel);
+  return () => {
+    watch?.disconnect();
+    root.removeAttribute(DOCKED);
+    relayout();
+  };
+}
 /** How wide the panel may be dragged, in pixels. */
 const PANEL_MIN = 320;
 const PANEL_MAX = 960;
@@ -427,11 +471,18 @@ function Panel({
     // first. The dialog's own autofocus would be the way to say that, but it
     // leaves focus on the dialog itself here, so the composer is focused by
     // hand once the panel is actually showing.
+    let undock: (() => void) | undefined;
     if (open && !el.open) {
-      el.showModal();
+      if (docksAt(window.innerWidth)) {
+        el.show();
+        undock = dock(el);
+      } else {
+        el.showModal();
+      }
       composer.current?.focus();
     }
     if (!open && el.open) el.close();
+    return () => undock?.();
   }, [open]);
 
   // Escape closes it, from wherever focus happens to be. The dialog's own
@@ -780,7 +831,8 @@ function Panel({
       onClose={onClose}
       onCancel={onClose}
       onClick={(event) => {
-        if (event.target === dialog.current && !resizing) onClose();
+        // A click on the dialog itself is a click on the backdrop, which only a modal panel has.
+        if (event.target === dialog.current && dialog.current.matches(':modal') && !resizing) onClose();
       }}>
       <ResizeGrip dialog={dialog} />
       <div class="ask-ai__head">
