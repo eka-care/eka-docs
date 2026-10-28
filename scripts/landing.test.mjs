@@ -347,3 +347,9 @@ test('the home page hides the docs chrome the server sends until the landing mou
   assert.ok(css.includes(`${before} body {`) && css.includes(`html.dark[data-current-path="/"]:not(:has(.eka-landing)) body {`),
     'the wait shows the landing ground in both themes');
 });
+
+test('the landing first paints in the theme Mintlify already set, not light then dark', () => {
+  const jsx = fs.readFileSync(new URL('../snippets/landing.jsx', import.meta.url), 'utf8');
+  assert.ok(!jsx.includes('className="eka-landing" data-theme="light"'), 'the wrapper does not start light');
+  assert.ok(jsx.includes('data-theme={startTheme()}'), 'the wrapper starts in the page theme');
+});

@@ -10,6 +10,8 @@ export const Landing = () => {
   const LANDING_LIBS = ["https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js","https://cdn.jsdelivr.net/npm/lucide@0.453.0/dist/umd/lucide.min.js"];
   const LANDING_FONTS = "https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Newsreader:opsz,wght@6..72,200..800&display=swap";
   const ref = useRef(null);
+  // Start in the theme Mintlify has already set on <html>, so a dark page never paints light first and fades over.
+  const startTheme = () => (typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light");
   useEffect(() => {
     const el = ref.current;
     let alive = true;
@@ -90,7 +92,7 @@ export const Landing = () => {
   }, []);
 
   return (
-    <div ref={ref} className="eka-landing" data-theme="light"
+    <div ref={ref} className="eka-landing" data-theme={startTheme()}
       dangerouslySetInnerHTML={{ __html: "<style>" + LANDING_CSS + "</style>" + LANDING_HTML }} />
   );
 };
