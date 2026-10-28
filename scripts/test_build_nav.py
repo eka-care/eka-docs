@@ -285,7 +285,7 @@ class EkaEmrFold(unittest.TestCase):
     def test_no_page_lost_by_the_fold(self):
         pages = set(nav.walk_pages(self.emr['tabs']))
         for p in ('docs/ipd/build-with-ai', 'docs/billing/changelog', 'docs/health-records/changelog',
-                  'api-sdk/health-records/create-overview', 'api-sdk/ipd/setup/get-ipd-setup-data'):
+                  'api-sdk/health-records/create-overview', 'api-sdk/ipd/configuration/setup/get-ipd-setup-data'):
             self.assertIn(p, pages)
 
     def test_rebuild_is_stable(self):
