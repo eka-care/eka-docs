@@ -97,6 +97,8 @@ export function install(win: Window = window, doc: Document = document): boolean
     win.setTimeout(ground, 400);
   });
   win.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', ground);
+  // The site's theme toggle flips the root's class (and color-scheme with it), with or without a click.
+  new win.MutationObserver(ground).observe(doc.documentElement, {attributes: true, attributeFilter: ['class', 'style', 'data-theme']});
   win.setInterval(run, 1000);
   return true;
 }

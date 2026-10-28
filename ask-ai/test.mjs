@@ -12,7 +12,7 @@ await build({
                export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport, UNREACHABLE, STALLED} from './src/transport';
                export {pastHero} from './src/FloatingBar';
-               export {groundOfColor} from './src/index';
+               export {groundOfColor, groundOfScheme} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
@@ -40,7 +40,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, groundOfColor, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, groundOfColor, groundOfScheme, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -262,6 +262,13 @@ assert.equal(groundOfColor('rgba(0, 0, 0, 0)'), null, 'transparent paints nothin
 assert.equal(groundOfColor('rgba(255, 255, 255, 0.8)'), 'light');
 assert.equal(groundOfColor('rgb(10 10 10 / 0.9)'), 'dark', 'space syntax');
 assert.equal(groundOfColor('transparent'), null);
+// Where nothing paints, the page's declared color-scheme (Mintlify sets it from its Light / Dark / System toggle)
+// decides before the machine's preference does.
+assert.equal(groundOfScheme('light'), 'light');
+assert.equal(groundOfScheme('dark'), 'dark');
+assert.equal(groundOfScheme('normal'), null, 'no declared scheme');
+assert.equal(groundOfScheme('light dark'), null, 'either scheme is no answer');
+assert.equal(groundOfScheme(''), null);
 // Synapse transport, against a stand-in for @eka-care/medassist-core's SynapseSDK.
 {
   const made = [];
@@ -416,7 +423,7 @@ const win = {
 const page = {...fakeDocument(), readyState: 'complete', addEventListener: () => calls.listen++};
 assert.equal(install(win, page), true);
 assert.equal(install(win, page), false, 'second install is a no-op');
-assert.deepEqual(calls, {listen: 5, interval: 1, define: 1, observe: 1});
+assert.deepEqual(calls, {listen: 5, interval: 1, define: 1, observe: 2});
 assert.equal(page.body.children.length, 1);
 
 // ⌘I (Ctrl+I off a Mac) opens Ask AI on a new chat from anywhere, and closes it again; nothing else does.

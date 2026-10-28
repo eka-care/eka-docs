@@ -1088,13 +1088,24 @@ export function groundOfColor(background: string): 'light' | 'dark' | null {
 }
 
 /**
+ * Which way a page says it runs, from its computed color-scheme: null unless it
+ * names exactly one. Mintlify sets it on the root from its Light, Dark and
+ * System toggle, so it follows the site theme even where nothing paints.
+ */
+export function groundOfScheme(scheme: string): 'light' | 'dark' | null {
+  const s = scheme.trim();
+  return s === 'light' || s === 'dark' ? s : null;
+}
+
+/**
  * Which way the host page's ground runs where the bar sits: the first thing
  * under the foot of the viewport that actually paints a background. Read
  * there, not from body, because a page can paint its own ground over the
  * site's: the landing page has its own light and dark, independent of the
  * site theme. A light page on a machine set to dark is still a light page,
- * and a dark bar dropped into it looks like a bug. Where nothing paints, the
- * system preference decides.
+ * and a dark bar dropped into it looks like a bug. Where nothing paints (the
+ * docs pages), the scheme the page declares decides, and only then the
+ * system preference: a site set to Light on a dark machine is still light.
  */
 function groundOf(host: Element): 'light' | 'dark' {
   const under = document.elementsFromPoint(window.innerWidth / 2, window.innerHeight - 45);
@@ -1102,6 +1113,10 @@ function groundOf(host: Element): 'light' | 'dark' {
     if (!el || el === host) continue;
     const ground = groundOfColor(getComputedStyle(el).backgroundColor);
     if (ground) return ground;
+  }
+  for (const el of [document.documentElement, document.body]) {
+    const declared = el && groundOfScheme(getComputedStyle(el).colorScheme);
+    if (declared) return declared;
   }
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
