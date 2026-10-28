@@ -34,9 +34,9 @@ test('resources menu', () => {
   assert.deepEqual(names, ['Cookbook', 'Auth', 'Encryption']);
 });
 
-test('newsboard menu holds what used to be Stay current', () => {
+test('newsboard menu leads with Research and ends with Changelog', () => {
   const news = grab(/<div class="mega mega-news"[\s\S]*?<\/div><\/div>\n/, 'mega-news');
-  assert.deepEqual([...news.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]), ['Changelog', 'Under the hood', 'Research']);
+  assert.deepEqual([...news.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]), ['Research', 'Under the hood', 'Changelog']);
 });
 
 test('the nav carries Developer tools, GitHub, Hugging Face and Discord as icons', () => {

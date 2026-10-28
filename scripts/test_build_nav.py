@@ -19,7 +19,7 @@ ABDM = ['HIE-CM', 'NHCX', 'UHI']
 HIDDEN = 'More from Eka'
 MORE = ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
 RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']
-NEWSBOARD = ['Changelog', 'Research']
+NEWSBOARD = ['Research', 'Changelog']
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [f'docs/emr/build-with-ai/mcp-server/{p}' for p in
                                                                  ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
 CLINICAL_MCP = ['docs/datasets/build-with-ai/mcp-server/introduction'] + [
