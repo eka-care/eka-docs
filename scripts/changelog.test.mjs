@@ -148,6 +148,13 @@ test('plugins, skills, procedures and corrections', () => {
   const kinds = entriesFor(a, b, '2026-10-28').map((e) => e.kind).sort();
   assert.deepEqual(kinds, ['correction', 'plugin-version', 'procedure', 'skill-added']);
   assert.deepEqual(entriesFor(b, b, '2026-10-28'), [], 'a declaration is news once');
+  const [onPage] = of(entriesFor(a, b, '2026-10-28'), 'correction');
+  assert.equal(headingFor(onPage), 'Medical Scribe: a correction to limits');
+  assert.match(render(onPage), /^The page said/);
+  const reference = { 'api-sdk/ipd/configuration/setup/get-ipd-setup-data': [{ date: '2026-10-28', was: 'calls sat under `/ipd/v1/sdk`', now: 'they sit under `/ipd/sdk`', product: 'IPD' }] };
+  const [onReference] = entriesFor(a, facts({ 's.yaml': [op('GET', '/a')] }, { plugins: plugin('0.1.0', ['eka-scribe']), corrections: reference }), '2026-10-28');
+  assert.equal(headingFor(onReference), 'IPD: a correction to the API reference');
+  assert.match(render(onReference), /^The reference said calls sat under `\/ipd\/v1\/sdk`\. They sit under/);
 });
 
 const NAV = {

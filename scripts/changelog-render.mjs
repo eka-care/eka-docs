@@ -147,7 +147,7 @@ export function headingFor(e) {
     case 'procedure':
       return `${l}: ${items[0].title}`;
     case 'correction':
-      return `${l}: a correction to ${items[0].page.split('/').at(-1).replace(/-/g, ' ')}`;
+      return `${l}: a correction to ${correctedPage(items[0].page)}`;
     case 'look-changed':
       return `${l}: the docs have a new look`;
     case 'nav-layout':
@@ -174,6 +174,10 @@ const tabLinks = (tabs) => listed(
   4,
   ([tab, page]) => `[${tab}](/${page})`,
 );
+
+/** What a correction corrected: an API page is the reference, any other page goes by its name. */
+const isReference = (page) => page.startsWith('api-sdk/');
+const correctedPage = (page) => (isReference(page) ? 'the API reference' : page.split('/').at(-1).replace(/-/g, ' '));
 
 const update = (items) => ` If you built against the earlier contract, update ${items.length === 1 ? 'this call' : 'these calls'}.`;
 const openPage = (link, what = 'the page') => (link ? ` [Open ${what}](${link}).` : '');
@@ -224,7 +228,7 @@ export function render(e) {
       return `${d ? `${cap(d.replace(/\.?$/, '.'))} ` : ''}[Read the procedure](/${items[0].page}).`;
     }
     case 'correction':
-      return `${items.map((c) => `The page said ${c.was.replace(/\.?$/, '')}. ${cap(c.now.replace(/\.?$/, ''))}.`).join(' ')} [Read the page](/${items[0].page}).`;
+      return `${items.map((c) => `The ${isReference(c.page) ? 'reference' : 'page'} said ${c.was.replace(/\.?$/, '')}. ${cap(c.now.replace(/\.?$/, ''))}.`).join(' ')} [Read the page](/${items[0].page}).`;
     case 'look-changed':
       return `Every page has new ${listed(items[0].parts.map((p) => LOOK_PARTS[p] ?? p), 5, (p) => p)}. No API changes with it.`;
     case 'nav-layout': {
