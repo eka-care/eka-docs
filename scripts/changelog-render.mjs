@@ -148,10 +148,32 @@ export function headingFor(e) {
       return `${l}: ${items[0].title}`;
     case 'correction':
       return `${l}: a correction to ${items[0].page.split('/').at(-1).replace(/-/g, ' ')}`;
+    case 'look-changed':
+      return `${l}: the docs have a new look`;
+    case 'nav-layout':
+      return `${l}: each product has its own pages`;
+    case 'nav-product-added':
+      return `${l}: the product has its own pages`;
+    case 'nav-product-removed':
+      return `${l}: the product is no longer in the menu`;
+    case 'nav-tab-added':
+      return `${l}: ${items.length === 1 ? `a ${items[0].tab} page is` : `${listed(items.map((i) => i.tab), 4, (t) => t)} pages are`} added`;
+    case 'nav-tab-removed':
+      return `${l}: ${items.length === 1 ? `the ${items[0].tab} page is` : `the ${listed(items.map((i) => i.tab), 4, (t) => t)} pages are`} removed`;
     default:
       return `${l}: ${e.kind}`;
   }
 }
+
+const LOOK_PARTS = { theme: 'theme', colors: 'colours', fonts: 'fonts', background: 'background', logo: 'logo' };
+/** A product's pages as links: "[Documentation](/docs/x) and [APIs & SDKs](/api-sdk/x)". */
+const TAB_ORDER = ['Documentation', 'APIs & SDKs', 'Changelog'];
+const tabRank = (tab) => (TAB_ORDER.includes(tab) ? TAB_ORDER.indexOf(tab) : TAB_ORDER.length);
+const tabLinks = (tabs) => listed(
+  Object.entries(tabs).filter(([, page]) => page).sort(([a], [b]) => tabRank(a) - tabRank(b) || a.localeCompare(b)),
+  4,
+  ([tab, page]) => `[${tab}](/${page})`,
+);
 
 const update = (items) => ` If you built against the earlier contract, update ${items.length === 1 ? 'this call' : 'these calls'}.`;
 const openPage = (link, what = 'the page') => (link ? ` [Open ${what}](${link}).` : '');
@@ -203,6 +225,27 @@ export function render(e) {
     }
     case 'correction':
       return `${items.map((c) => `The page said ${c.was.replace(/\.?$/, '')}. ${cap(c.now.replace(/\.?$/, ''))}.`).join(' ')} [Read the page](/${items[0].page}).`;
+    case 'look-changed':
+      return `Every page has new ${listed(items[0].parts.map((p) => LOOK_PARTS[p] ?? p), 5, (p) => p)}. No API changes with it.`;
+    case 'nav-layout': {
+      const families = [...new Set(items.map((i) => i.family).filter(Boolean))].sort();
+      // The product with the most pages shows the new shape best.
+      const example = [...items].sort((x, y) => Object.keys(y.tabs).length - Object.keys(x.tabs).length || x.item.localeCompare(y.item))[0];
+      return [
+        `The product menu has ${words(items.length)} items${families.length ? `, grouped under ${listed(families, 6, (f) => f)}` : ''}.`,
+        'Each product has its own Documentation, and its own APIs & SDKs when it has an API.',
+        e.redirects ? 'Old addresses redirect to the new pages.' : '',
+        example ? `For example, ${example.item} has ${tabLinks(example.tabs)}.` : '',
+      ].filter(Boolean).join(' ');
+    }
+    case 'nav-product-added':
+      return `${items[0].family ? `It is listed under ${items[0].family}. ` : ''}Open its ${tabLinks(items[0].tabs)}.`;
+    case 'nav-product-removed':
+      return 'Its pages are no longer listed in the product menu.';
+    case 'nav-tab-added':
+      return `Open ${listed(items, 4, (i) => (i.page ? `[${i.tab}](/${i.page})` : i.tab))}.`;
+    case 'nav-tab-removed':
+      return `The product's menu no longer has ${items.length === 1 ? 'it' : 'them'}.`;
     default:
       return openPage(firstPage(items) && `/${firstPage(items)}`).trim();
   }
@@ -211,8 +254,8 @@ export function render(e) {
 /** The section an entry is listed under in its block. */
 export function sectionOf(e) {
   if (e.breaking) return 'Breaking';
-  if (['added', 'sdk-added', 'plugin-added', 'skill-added', 'procedure'].includes(e.kind)) return 'Added';
-  if (['sdk-removed', 'plugin-removed', 'skill-removed'].includes(e.kind)) return 'Removed';
+  if (['added', 'sdk-added', 'plugin-added', 'skill-added', 'procedure', 'nav-product-added', 'nav-tab-added'].includes(e.kind)) return 'Added';
+  if (['sdk-removed', 'plugin-removed', 'skill-removed', 'nav-product-removed', 'nav-tab-removed'].includes(e.kind)) return 'Removed';
   if (e.kind === 'correction') return 'Corrected';
   return 'Changed';
 }
@@ -223,12 +266,12 @@ const SECTION_HEADINGS = { Breaking: '## <Icon icon="triangle-exclamation" /> Br
 function tagOf(e) {
   if (e.kind.startsWith('sdk-')) return 'SDK';
   if (e.kind.startsWith('plugin-') || e.kind.startsWith('skill-')) return 'AI tools';
-  if (e.kind === 'procedure' || e.kind === 'correction') return 'Docs';
+  if (['procedure', 'correction', 'look-changed'].includes(e.kind) || e.kind.startsWith('nav-')) return 'Docs';
   return 'API';
 }
 const TAGS = ['Breaking', 'API', 'SDK', 'AI tools', 'Docs'];
 
-const ORDER = ['path-changed', 'withdrawn', 'changed', 'shared-change', 'added', 'sdk-release', 'sdk-added', 'plugin-version', 'plugin-added', 'skill-added', 'sdk-removed', 'plugin-removed', 'skill-removed', 'procedure', 'correction'];
+const ORDER = ['path-changed', 'withdrawn', 'changed', 'shared-change', 'added', 'sdk-release', 'sdk-added', 'plugin-version', 'plugin-added', 'skill-added', 'sdk-removed', 'plugin-removed', 'skill-removed', 'procedure', 'correction', 'nav-layout', 'look-changed', 'nav-product-added', 'nav-tab-added', 'nav-product-removed', 'nav-tab-removed'];
 export function sortEntries(entries) {
   return [...entries].sort(
     (a, b) => SECTIONS.indexOf(sectionOf(a)) - SECTIONS.indexOf(sectionOf(b))

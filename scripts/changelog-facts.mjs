@@ -11,6 +11,8 @@
 //   - the page that documents each operation, and the product that page sits under in docs.json;
 //   - the SDKs listed in changelog-data/sdks.yaml, with the latest version their registry publishes;
 //   - the product plugins under plugins/ and their skills;
+//   - the site's look (theme, colours, fonts, background, logo) and its navigation: how it is laid out, which
+//     products the menu carries and which pages (Documentation, APIs & SDKs, Changelog) each one has;
 //   - two things a writer declares in a page's frontmatter: `new_procedure: true` and `corrections`.
 //
 // Output is canonical (keys sorted, sets sorted) so two runs over the same tree are byte identical and the
@@ -242,6 +244,26 @@ function pluginFacts(root, docs) {
   return out;
 }
 
+/** What the site looks like, as docs.json sets it. A stylesheet tweak is not a changeover, so CSS is not read. */
+function lookFacts(docs) {
+  return { theme: docs.theme ?? null, colors: docs.colors ?? null, fonts: docs.fonts ?? null, background: docs.background ?? null, logo: docs.logo ?? null };
+}
+
+/**
+ * How the site is laid out: the navigation's top level, and for a product menu each product's family and its
+ * tabs, with the first page of each to link. Pages moving inside a tab are not navigation news.
+ */
+function navigationFacts(docs) {
+  const nav = docs.navigation ?? {};
+  const products = {};
+  for (const fam of nav.products ?? []) {
+    for (const it of fam.menu ?? []) {
+      products[it.item] = { family: fam.product ?? null, tabs: Object.fromEntries((it.tabs ?? []).map((t) => [t.tab, walkPages(t.pages)[0] ?? null])) };
+    }
+  }
+  return { layout: Object.keys(nav).filter((k) => k !== 'global').sort().join(',') || null, products, redirects: Boolean(docs.redirects?.length) };
+}
+
 /**
  * What a writer declares. A page that documents a procedure for the first time says `new_procedure: true`; a
  * page whose prose stated a wrong fact lists it under `corrections`, each with `was` and `now`. Both reach the
@@ -270,12 +292,20 @@ function declared(root, docs) {
  * Every fact in one checkout. `versions` maps an SDK name to the version its registry publishes, fetched by the
  * caller, since reading a registry needs the network and this function does not. `docs` replaces the checkout's
  * own docs.json, for an older checkout whose navigation predates the product layout: its operations are then
- * filed under the products they sit under today.
+ * filed under the products they sit under today. The look and the navigation are always the checkout's own.
  */
-export function extractFacts(root, { versions = {}, docs = JSON.parse(fs.readFileSync(path.join(root, 'docs.json'), 'utf8')) } = {}) {
+export function extractFacts(root, { versions = {}, docs } = {}) {
+  const own = JSON.parse(fs.readFileSync(path.join(root, 'docs.json'), 'utf8'));
+  docs ??= own;
   return sortKeys({
     modules: moduleFacts(root, docs),
-    site: { sdks: sdkFacts(root, versions), plugins: pluginFacts(root, docs), ...declared(root, docs) },
+    site: {
+      sdks: sdkFacts(root, versions),
+      plugins: pluginFacts(root, docs),
+      ...declared(root, docs),
+      look: lookFacts(own),
+      navigation: navigationFacts(own),
+    },
   });
 }
 

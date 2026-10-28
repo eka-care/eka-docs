@@ -8,6 +8,9 @@
 //   plugin-added, plugin-version, plugin-removed,
 //   skill-added, skill-removed                               a product plugin under plugins/
 //   procedure, correction                                    what a writer declared in a page
+//   look-changed                                             the theme, colours, fonts or logo in docs.json
+//   nav-layout, nav-product-added, nav-product-removed,
+//   nav-tab-added, nav-tab-removed                           the products in the menu and each one's pages
 //
 // An entry is `breaking` when code written against the earlier version can fail: a call withdrawn or at a new
 // address, a newly required parameter, header or body field, a different auth scheme or host, or an SDK release
@@ -222,6 +225,29 @@ function siteEntries(ps, ns, add) {
     const before = ps.corrections?.[page] ?? [];
     const fresh = list.filter((c) => !before.some((b) => b.was === c.was && b.now === c.now));
     if (fresh.length) add('correction', fresh[0].product, page, fresh.map(({ was, now }) => ({ page, was, now })));
+  }
+
+  // A snapshot from before the look and the navigation were read states neither, so neither is diffed.
+  if (ps.look && ns.look && !same(ps.look, ns.look)) {
+    add('look-changed', null, 'docs.json', [{ parts: Object.keys(ns.look).filter((k) => !same(ps.look[k], ns.look[k])) }]);
+  }
+  const pn = ps.navigation;
+  const nn = ns.navigation;
+  if (!pn || !nn) return;
+  const product = (item, p) => ({ item, family: p.family, tabs: p.tabs });
+  if (pn.layout !== nn.layout) {
+    add('nav-layout', null, 'docs.json', Object.entries(nn.products).map(([item, p]) => product(item, p)), { redirects: nn.redirects });
+    return;
+  }
+  for (const [item, p] of Object.entries(nn.products)) {
+    const was = pn.products[item];
+    if (!was) { add('nav-product-added', item, 'docs.json', [product(item, p)]); continue; }
+    const tabs = diffSets(Object.keys(was.tabs), Object.keys(p.tabs));
+    if (tabs.added.length) add('nav-tab-added', item, 'docs.json', tabs.added.map((tab) => ({ item, tab, page: p.tabs[tab] })));
+    if (tabs.removed.length) add('nav-tab-removed', item, 'docs.json', tabs.removed.map((tab) => ({ item, tab, page: null })));
+  }
+  for (const [item, p] of Object.entries(pn.products)) {
+    if (!nn.products[item]) add('nav-product-removed', item, 'docs.json', [{ item, family: p.family }]);
   }
 }
 

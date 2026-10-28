@@ -150,6 +150,34 @@ test('plugins, skills, procedures and corrections', () => {
   assert.deepEqual(entriesFor(b, b, '2026-10-28'), [], 'a declaration is news once');
 });
 
+const NAV = {
+  'Medical Scribe': { family: 'Clinical AI', tabs: { Documentation: 'docs/scribe/overview', 'APIs & SDKs': 'api-sdk/scribe/overview', Changelog: 'docs/get-started/ekascribe-changelog' } },
+  'HIE-CM': { family: 'ABDM Connect', tabs: { Documentation: 'docs/hie-cm/overview', 'APIs & SDKs': 'api-sdk/hie-cm/overview' } },
+};
+const LOOK = { theme: 'mint', colors: { primary: '#6B5CE0' }, fonts: null, background: null, logo: null };
+const site = (look, navigation) => facts({ 's.yaml': [op('GET', '/a')] }, { look, navigation });
+
+test('the look and the navigation: a changeover, a product and its pages', () => {
+  const run = (x, y) => entriesFor(x, y, '2026-10-28');
+  const products = { layout: 'products', products: NAV, redirects: true };
+  const changeover = run(site(LOOK, { layout: 'anchors', products: {}, redirects: false }), site({ ...LOOK, colors: { primary: '#5B45C9' }, fonts: { body: { family: 'Geist' } } }, products));
+  assert.deepEqual(changeover.map((e) => e.kind).sort(), ['look-changed', 'nav-layout']);
+  assert.ok(changeover.every((e) => e.page === null && !e.breaking), 'platform changelog only, never breaking');
+  assert.match(render(of(changeover, 'look-changed')[0]), /new colours and fonts\./);
+  assert.match(render(of(changeover, 'nav-layout')[0]), /two items, grouped under ABDM Connect and Clinical AI.*Old addresses redirect.*Medical Scribe has \[Documentation\]/);
+
+  assert.deepEqual(run(site(null, null), site(LOOK, products)), [], 'a snapshot from before these facts states neither');
+  assert.deepEqual(run(site(LOOK, products), site(LOOK, { ...products, products: { ...NAV, 'HIE-CM': { ...NAV['HIE-CM'], tabs: { ...NAV['HIE-CM'].tabs, Documentation: 'docs/hie-cm/moved' } } } })), [], 'a page moving inside a tab is not news');
+
+  const grown = run(site(LOOK, { ...products, products: { 'Medical Scribe': NAV['Medical Scribe'] } }), site(LOOK, products));
+  assert.deepEqual(grown.map((e) => [e.kind, e.page]), [['nav-product-added', 'docs/hie-cm/changelog']]);
+  assert.match(render(grown[0]), /\[Documentation\]\(\/docs\/hie-cm\/overview\) and \[APIs & SDKs\]/);
+  const tabs = run(site(LOOK, products), site(LOOK, { ...products, products: { ...NAV, 'HIE-CM': { ...NAV['HIE-CM'], tabs: { Documentation: 'docs/hie-cm/overview', Changelog: 'docs/hie-cm/changelog' } } } }));
+  assert.deepEqual(tabs.map((e) => e.kind).sort(), ['nav-tab-added', 'nav-tab-removed']);
+  assert.equal(headingFor(of(tabs, 'nav-tab-added')[0]), 'HIE-CM: a Changelog page is added');
+  assert.deepEqual(run(site(LOOK, products), site(LOOK, { ...products, products: { 'Medical Scribe': NAV['Medical Scribe'] } })).map((e) => e.kind), ['nav-product-removed']);
+});
+
 test('entry ids are stable', () => {
   const a = facts({ 's.yaml': [op('GET', '/a')] });
   const b = facts({ 's.yaml': [op('GET', '/a'), op('GET', '/b')] });
@@ -213,11 +241,14 @@ test('every template renders within the writing rules docs-check enforces', () =
   const plugin = { 'eka-scribe': { version: '0.1.0', product: 'Medical Scribe', page: 'docs/scribe/build-with-ai', skills: ['eka-scribe'] } };
   const sdk = (version) => ({ '@eka-care/ekascribe-ts-sdk': { registry: 'npm', repo: null, product: 'Medical Scribe', page: 'api-sdk/scribe/sdks/ekascribe-ts-sdk', documented: true, version } });
   const many = Array.from({ length: 9 }, (_, i) => op('POST', `/v1/thing-${i}/{id}`));
-  const a = facts({ 'a.yaml': [...many, op('GET', '/gone'), op('GET', '/x', { id: 'x' })], 'b.yaml': [op('GET', '/b1')] }, { plugins: plugin, sdks: sdk('3.0.58') });
+  const a = facts({ 'a.yaml': [...many, op('GET', '/gone'), op('GET', '/x', { id: 'x' })], 'b.yaml': [op('GET', '/b1')] }, {
+    plugins: plugin, sdks: sdk('3.0.58'), look: LOOK, navigation: { layout: 'anchors', products: {}, redirects: false },
+  });
   const b = facts({
     'a.yaml': [...many.map((o) => ({ ...o, params: ['header:X-Workspace!', 'query:page'], required: ['mode'], responses: ['200', '409'] })), op('GET', '/v2/x', { id: 'x' }), op('GET', '/new')],
     'b.yaml': [op('GET', '/b1', { params: ['header:X-Workspace!', 'query:page'] })],
   }, {
+    look: { ...LOOK, colors: { primary: '#5B45C9' } }, navigation: { layout: 'products', products: NAV, redirects: true },
     plugins: { 'eka-scribe': { ...plugin['eka-scribe'], version: '0.2.0', skills: ['eka-scribe', 'eka-scribe-debug'] } },
     sdks: sdk('4.0.0'),
     procedures: { 'docs/scribe/workflows/dictate': { title: 'Dictate a note', description: 'Record, then fetch the note', product: 'Medical Scribe' } },
@@ -225,7 +256,7 @@ test('every template renders within the writing rules docs-check enforces', () =
   });
   const entries = [...entriesFor(before, after, '2026-10-19'), ...entriesFor(a, b, '2026-10-28')];
   const kinds = new Set(entries.map((e) => e.kind));
-  for (const k of ['added', 'withdrawn', 'path-changed', 'changed', 'shared-change', 'sdk-release', 'plugin-version', 'skill-added', 'procedure', 'correction']) assert.ok(kinds.has(k), `no ${k} entry to check`);
+  for (const k of ['added', 'withdrawn', 'path-changed', 'changed', 'shared-change', 'sdk-release', 'plugin-version', 'skill-added', 'procedure', 'correction', 'look-changed', 'nav-layout']) assert.ok(kinds.has(k), `no ${k} entry to check`);
   for (const e of entries) {
     const text = `${headingFor(e)}. ${render(e)}`;
     assert.ok(!/—/.test(text), `em dash in ${e.kind}`);
