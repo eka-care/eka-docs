@@ -134,6 +134,7 @@ test('SDK releases: a minor or major is news, a patch is not, and 0.x minors are
   assert.deepEqual(run(sdk('v0.4.5'), sdk('v0.4.6')), []);
   assert.deepEqual(run({}, sdk('v0.4.5')).map((e) => e.kind), ['sdk-added']);
   assert.deepEqual(run(sdk('v0.4.5'), sdk('v0.4.5', false)).map((e) => e.kind), ['sdk-removed']);
+  assert.deepEqual(run({ sdks: null }, sdk('v0.4.5')), [], 'a checkout with no SDK list states no SDK facts');
 });
 
 test('plugins, skills, procedures and corrections', () => {

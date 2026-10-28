@@ -6,6 +6,8 @@
 //   node scripts/build-changelog.mjs --check      fail if the snapshot or the pages are stale; what CI runs
 //   node scripts/build-changelog.mjs --offline    as the first form, without asking the SDK registries
 //   node scripts/build-changelog.mjs --date=YYYY-MM-DD   date the entries
+//   node scripts/build-changelog.mjs --since=origin/main  write the entries this branch makes against the commit
+//                                                 it left REF at, for a branch cut before the snapshot existed
 //
 // Three things live under changelog-data/. `facts/` is the last committed snapshot, one file per spec plus
 // `_site.json`, the cursor this run diffs against. `entries/` is the durable record, one JSON file per date, which
@@ -20,7 +22,14 @@
 // A run that cannot reach a registry keeps the version it had.
 //
 // The first run, with no snapshot, writes one and no entries: a baseline is a cursor, not news.
+//
+// --since diffs the same facts from the merge base of HEAD and REF instead of from the snapshot, so a branch
+// records what it changes for developers and none of what REF changed after it. It reads no registry and leaves
+// the snapshot where it is, which must already be current. A merge base whose docs.json predates the product
+// navigation has its operations filed under today's products, and one with no SDK list states no SDK facts.
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -37,6 +46,7 @@ const args = process.argv.slice(2);
 const check = args.includes('--check');
 const offline = args.includes('--offline');
 const dateArg = args.find((a) => a.startsWith('--date='))?.slice(7);
+const since = args.find((a) => a.startsWith('--since='))?.slice(8);
 
 /** Today in Asia/Kolkata. */
 function today() {
@@ -135,11 +145,59 @@ async function versions(prev, ask) {
   return out;
 }
 
+/** The facts at the merge base of HEAD and `ref`, read from an archive of that commit. */
+function factsSince(ref, versionsOf, docs) {
+  const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).trim();
+  const sha = git('merge-base', 'HEAD', ref);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'changelog-since-'));
+  try {
+    execFileSync('git', ['archive', '--output', path.join(dir, 'tree.tar'), sha], { cwd: ROOT });
+    const tree = path.join(dir, 'tree');
+    fs.mkdirSync(tree);
+    execFileSync('tar', ['-xf', path.join(dir, 'tree.tar'), '-C', tree]);
+    const own = JSON.parse(fs.readFileSync(path.join(tree, 'docs.json'), 'utf8'));
+    return { sha, facts: extractFacts(tree, { versions: versionsOf, docs: own.navigation?.products ? own : docs }) };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Add the entries to their date's file, skipping any already there, and say what was written. */
+function record(byDate, date, entries) {
+  const existing = byDate.get(date) ?? [];
+  const ids = new Set(existing.map((e) => e.id));
+  const fresh = entries.filter((e) => !ids.has(e.id));
+  const file = path.join(ENTRIES, `${date}.json`);
+  writeIfChanged(file, stable([...existing, ...fresh]));
+  byDate.set(date, [...existing, ...fresh]);
+  for (const e of fresh) console.log(`  + ${(e.breaking ? 'breaking ' : '') + e.kind}: ${headingFor(e)}`);
+  console.log(`changelog: ${fresh.length} entr${fresh.length === 1 ? 'y' : 'ies'} for ${date} written to ${rel(file)}.`);
+}
+
+function renderPages(byDate) {
+  let written = 0;
+  for (const [file, content] of renderAll(byDate)) if (writeIfChanged(file, content)) written += 1;
+  if (written) console.log(`changelog: ${written} page(s) rendered.`);
+}
+
 async function main() {
   const byDate = readEntries();
   const prev = readFacts();
-  const next = extractFacts(ROOT, { versions: await versions(prev, !check && !offline) });
+  const next = extractFacts(ROOT, { versions: await versions(prev, !check && !offline && !since) });
   const baseline = !Object.keys(prev.modules).length;
+
+  if (since) {
+    if (check) throw new Error('--since writes entries; it cannot run with --check');
+    if (baseline || !unchanged(prev, next)) throw new Error('the snapshot is not current; run npm run changelog first, so --since logs nothing twice');
+    const docs = JSON.parse(fs.readFileSync(path.join(ROOT, 'docs.json'), 'utf8'));
+    const base = factsSince(since, Object.fromEntries(Object.entries(next.site.sdks ?? {}).map(([k, v]) => [k, v.version])), docs);
+    const entries = entriesFor(base.facts, next, today());
+    console.log(`changelog: diffing against ${base.sha.slice(0, 7)}, the merge base with ${since}.`);
+    if (entries.length) record(byDate, today(), entries);
+    else console.log('changelog: this branch changes nothing a developer acts on.');
+    renderPages(byDate);
+    return;
+  }
 
   if (check) {
     const problems = [];
@@ -166,14 +224,7 @@ async function main() {
   const date = today();
   const entries = baseline ? [] : entriesFor(prev, next, date);
   if (entries.length) {
-    const existing = byDate.get(date) ?? [];
-    const ids = new Set(existing.map((e) => e.id));
-    const fresh = entries.filter((e) => !ids.has(e.id));
-    const file = path.join(ENTRIES, `${date}.json`);
-    writeIfChanged(file, stable([...existing, ...fresh]));
-    byDate.set(date, [...existing, ...fresh]);
-    for (const e of fresh) console.log(`  + ${(e.breaking ? 'breaking ' : '') + e.kind}: ${headingFor(e)}`);
-    console.log(`changelog: ${fresh.length} entr${fresh.length === 1 ? 'y' : 'ies'} for ${date} written to ${rel(file)}.`);
+    record(byDate, date, entries);
   } else if (baseline) {
     console.log('changelog: no snapshot yet; writing the baseline. A baseline is a cursor, not news.');
   } else if (unchanged(prev, next)) {
@@ -182,9 +233,7 @@ async function main() {
     console.log('changelog: the facts moved but nothing a developer acts on changed; the snapshot follows.');
   }
   writeFacts(next);
-  let written = 0;
-  for (const [file, content] of renderAll(byDate)) if (writeIfChanged(file, content)) written += 1;
-  if (written) console.log(`changelog: ${written} page(s) rendered.`);
+  renderPages(byDate);
 }
 
 await main();

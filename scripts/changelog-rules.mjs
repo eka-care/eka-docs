@@ -185,8 +185,9 @@ export function entriesFor(prev, next, date) {
 }
 
 function siteEntries(ps, ns, add) {
-  const prevSdks = ps.sdks ?? {};
-  for (const [name, s] of Object.entries(ns.sdks ?? {})) {
+  // null is a checkout with no SDK list, which states nothing to diff against.
+  const prevSdks = ps.sdks === null ? null : ps.sdks ?? {};
+  for (const [name, s] of Object.entries(prevSdks ? ns.sdks ?? {} : {})) {
     const was = prevSdks[name];
     const item = { name, registry: s.registry, repo: s.repo, page: s.page };
     if ((!was || !was.documented) && s.documented) add('sdk-added', s.product, name, [{ ...item, version: s.version }]);
@@ -196,7 +197,7 @@ function siteEntries(ps, ns, add) {
       if (release) add('sdk-release', s.product, name, [{ ...item, from: was.version, to: s.version }], { breaking: release.breaking });
     }
   }
-  for (const [name, s] of Object.entries(prevSdks)) {
+  for (const [name, s] of Object.entries(prevSdks ?? {})) {
     if (!ns.sdks?.[name] && s.documented) add('sdk-removed', s.product, name, [{ name, registry: s.registry, repo: s.repo, page: null }]);
   }
 

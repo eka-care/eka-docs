@@ -195,10 +195,13 @@ function moduleFacts(root, docs) {
   return modules;
 }
 
-/** The SDKs a person listed, whether their page still exists, and the version passed in for each. */
+/**
+ * The SDKs a person listed, whether their page still exists, and the version passed in for each. A checkout with
+ * no list says nothing about SDKs, which is null rather than none, so a diff against it reads no SDK as new.
+ */
 function sdkFacts(root, versions) {
   const file = path.join(root, 'changelog-data', 'sdks.yaml');
-  if (!fs.existsSync(file)) return {};
+  if (!fs.existsSync(file)) return null;
   const out = {};
   for (const s of YAML.parse(fs.readFileSync(file, 'utf8')) ?? []) {
     out[s.name] = {
@@ -265,10 +268,11 @@ function declared(root, docs) {
 
 /**
  * Every fact in one checkout. `versions` maps an SDK name to the version its registry publishes, fetched by the
- * caller, since reading a registry needs the network and this function does not.
+ * caller, since reading a registry needs the network and this function does not. `docs` replaces the checkout's
+ * own docs.json, for an older checkout whose navigation predates the product layout: its operations are then
+ * filed under the products they sit under today.
  */
-export function extractFacts(root, { versions = {} } = {}) {
-  const docs = JSON.parse(fs.readFileSync(path.join(root, 'docs.json'), 'utf8'));
+export function extractFacts(root, { versions = {}, docs = JSON.parse(fs.readFileSync(path.join(root, 'docs.json'), 'utf8')) } = {}) {
   return sortKeys({
     modules: moduleFacts(root, docs),
     site: { sdks: sdkFacts(root, versions), plugins: pluginFacts(root, docs), ...declared(root, docs) },
