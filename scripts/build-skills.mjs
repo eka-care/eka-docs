@@ -50,7 +50,7 @@ export const rawSkillUrl = (slug) => `${RAW}/${skillDir(slug)}/SKILL.md`;
 
 // ---------- reading ----------
 
-function walkPages(n, out = []) {
+export function walkPages(n, out = []) {
   if (typeof n === 'string') out.push(n);
   else if (Array.isArray(n)) n.forEach((x) => walkPages(x, out));
   else if (n && typeof n === 'object') {
@@ -62,7 +62,7 @@ function walkPages(n, out = []) {
 
 const isGroup = (p, name) => p && typeof p === 'object' && p.group === name && p.icon;
 
-function findItem(docs, name) {
+export function findItem(docs, name) {
   const items = docs.navigation.products.flatMap((fam) => fam.menu);
   const it = items.find((i) => i.item === name);
   const folded = PRODUCTS.filter((p) => p.within === name).map((p) => p.item);
