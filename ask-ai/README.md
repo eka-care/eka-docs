@@ -1,0 +1,142 @@
+# Ask AI widget
+
+The Eka Developer Platform's Ask AI assistant as one custom element,
+`<eka-ask-ai>`, that goes on any page. The docs site is its first user, not its
+owner. It currently runs in mock mode: with no `agent-id` it answers from canned
+text and says so, until a Synapse backend is wired in (see below).
+
+## Embedding
+
+One script tag and one element. No framework is required on the host page, and
+there is no build step for an embedder.
+
+```html
+<script defer src="https://<docs-origin>/agent/ask-ai.js"></script>
+
+<eka-ask-ai
+  api-base="https://<chat-server>"
+  docs-origin="https://<docs-origin>"></eka-ask-ai>
+```
+
+The origin the page is served from must be on the server's allowlist, or the
+browser refuses the request. Ask for one in a pull request against the server's
+configuration.
+
+### Attributes
+
+| Attribute     | Meaning                                                                   |
+| ------------- | ------------------------------------------------------------------------- |
+| `api-base`    | The chat server's origin. Absent leaves the panel a labelled mock.        |
+| `docs-origin` | Where citations resolve. Defaults to the host page's own origin, which is right only on the docs site. |
+| `ground`      | `light` or `dark`. The element reads the host page's background and sets this itself; set it to override that reading. |
+| `question`    | Seeds the composer when the panel opens on an empty box. Nothing is sent; the reader still presses send. The docs site fills it from whatever is in the search field. |
+| `starters`    | The empty state's openers, one per line, at most five, shown as pills under the greeting. A line may be `label \| question`, so the pill stays two or three words while the question it asks is whole; a line with no bar is its own label. Absent keeps the widget's own general set. |
+| `history`     | `off` stops past conversations being kept. They are kept in `localStorage` on the embedding page's origin, which is yours, not the widget's; turn it off if your origin should not hold what readers type. |
+| `open`        | Present while the panel is showing. Set it to open the panel, and the element removes it when the reader closes one. |
+
+`attachPage({title, url, markdown})` puts a page on the conversation as a pill
+above the chat bar, and `attachPage(null)` takes it off. An HTML document passed
+as `markdown`, which is what a static host's app shell looks like when it
+answers for a missing page, is refused as a failed attachment rather than sent.
+
+`show()` and `hide()` on the element do the same as setting and removing
+`open`, for a host that prefers a method call. `ask(question)` opens the panel
+and asks the question at once.
+
+The script mounts one element on its own, at the end of `body`, if the page
+has none, and checks again on Mintlify's client-side navigation. The element
+draws a compact "Ask AI" bar at the foot of the page, hidden while the panel
+is open; the bar is what calls `ask()`. On a page with an element `#hero` (the
+landing page) the bar stays hidden until the hero has scrolled out of view.
+
+### Attachments
+
+A reader can attach one text file per question: `.json`, `.txt`, `.log`, `.csv`, `.xml`, `.yaml`, `.md` or `.har`, at most 20,000 characters and 256KB. Only text files are read; the widget reads them with `File.text()` in the reader's own browser and sends the text as `turns[n].attachment` beside the question. Anything else, a PDF or an image included, is refused with a message saying so.
+
+### How an answer arrives
+
+A stream does not arrive evenly: a tool call, a second of silence, then a
+paragraph in one packet. The panel buffers what arrives and reveals it on the
+display's own clock, a share of the backlog each frame, so the answer reads at
+an even pace whatever the network did. Nothing is shown until the panel has
+visibly thought for half a second, so a fast first token does not flash a word
+up in place of the indicator, and a caret marks the live edge of the text so a
+pause reads as the model thinking rather than the answer having ended.
+
+Under `prefers-reduced-motion: reduce` the text is not paced at all: it appears
+as it arrives. The three constants that set the pacing are at the top of
+`src/index.tsx`.
+
+Stopping an answer keeps every word that had arrived, including the part still
+waiting to be shown. Citations attach when the answer finishes, not while it is
+still being revealed.
+
+### Appearance
+
+Everything renders in a shadow root, so the host page's styles cannot reach in
+and the widget's cannot leak out. Colour comes from the host page's own custom
+properties where it defines them (`--surface`, `--accent`, `--text-body` and
+the rest of the set in `src/styles.css`), and falls back to a palette that
+follows `prefers-color-scheme`. To theme it deliberately, set those properties
+on the element.
+
+The panel is a native modal dialog, so it sits in the browser's top layer above
+whatever the host page stacks, without either side knowing about the other.
+
+### Pages
+
+The add button's menu can attach any page on the docs site mid-conversation.
+The list is `<docs-origin>/llms.txt`, fetched once, searched in the browser,
+and a page's text is `<path>.md` beside it. Nothing else is needed from the
+host: an embed that sets `docs-origin` has page search.
+
+### The orb
+
+The greeting's orb and the one beside "Thinking" are the Eka orb
+(`src/orb/eka-orb.tsx`): one line of dots that transforms from the Eka mark
+into the heart at its middle (turned upright), the ABDM lotus, the audio wave
+of Scribe, and back to the mark, on a plain 2D canvas. The mark and the heart
+run down the middle of the logo's one stroke; the lotus draws the ABDM
+lotus's five petals, overlapping. The heart beats, the
+wave moves, the rest breathe. The small orb beside "Thinking" holds the mark
+only. One clock keeps orbs
+in phase, each pauses offscreen and in hidden tabs, and with reduced motion it
+holds a still frame of the mark. `node eka-shapes.mjs` regenerates the lines in
+`src/orb/eka-shapes.ts`.
+
+The technique is adapted from the "shaping" state of
+[thinking-orbs](https://github.com/Jakubantalik/thinking-orbs), MIT License,
+Copyright (c) 2026 Jakub Antalik. Its full licence is in
+`licenses/thinking-orbs-LICENSE`.
+
+The earlier Plasma Orb (`src/orb/plasma-orb.tsx`, `frosted-orb.tsx`) is no
+longer used by the panel.
+
+### What it keeps
+
+Past conversations, for the History tab: up to fifty, in `localStorage` on the
+embedding page's origin, each dropped after thirty days, with any attached
+file's text stripped before saving. A reader can delete one or clear them all
+from the History tab, and `history="off"` keeps nothing. Nothing about a
+conversation leaves the browser except the question being asked.
+
+## Wiring Synapse
+
+The backend is wired through `src/transport.ts`. For the team doing it:
+
+- Replace the throw in `createTransport` with a Synapse-backed `Transport`.
+- Citations need an `onSources` handler added across `types.ts`,
+  `transport.ts` and `index.tsx`; nothing supplies sources today, so the panel
+  shows none.
+- `reset()` does not await `end()`, so a new conversation can start before the
+  old session is closed.
+- Stop during a pending `start()` orphans the session that call creates.
+- Attached pages are sent without a size cap.
+
+## Working on it
+
+    npm run build --workspace ai-widget    # dist/ask-ai.js
+    npm test --workspace ai-widget         # the markdown and the event stream
+
+The docs site builds its own copy into `site/static/agent/` on every
+`prestart` and `prebuild`, so a change here reaches the site by rebuilding it.

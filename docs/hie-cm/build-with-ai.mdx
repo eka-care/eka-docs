@@ -1,0 +1,63 @@
+---
+title: "Build with AI"
+description: "Set up a coding agent to build your ABDM Connect integration with the abdm-connect plugin."
+icon: "wand-magic-sparkles"
+type: build-with-ai
+---
+
+import LearnAi from '/snippets/build-with-ai/learn-ai.mdx';
+import ReadAsAgent from '/snippets/build-with-ai/read-as-agent.mdx';
+
+Use the abdm-connect plugin to have a coding assistant build your ABDM Connect integration, milestone by milestone.
+
+<Note>
+Check what the assistant writes against these docs, and test it in the sandbox before it reaches a patient.
+</Note>
+
+<CardGroup cols={1}>
+  <Card title="abdm-connect plugin" icon="puzzle-piece" href="#install-the-plugin">
+    Commands that integrate ABDM Connect into your code, check what is done, and debug a failure.
+  </Card>
+</CardGroup>
+
+<LearnAi />
+
+## Install the plugin
+
+<Warning>
+The plugin covers M1 (ABHA creation and login) only for now. The M2 to M4 commands are listed below and are being expanded; check their output against these docs before you rely on it.
+</Warning>
+
+In Claude Code:
+
+```bash
+/plugin marketplace add eka-care/abdm-utility
+/plugin install abdm-connect@eka-abdm
+```
+
+In Cursor, Codex or another agent, copy the [skills folder](https://github.com/eka-care/abdm-utility/tree/main/skills) into the folder your agent loads skills from.
+
+| Command | What it does |
+| --- | --- |
+| `/abdm-connect:integrate-m1` | ABHA creation and login, from your code to a passing sandbox test |
+| `/abdm-connect:integrate-m2` | Care context linking and sharing records as a HIP |
+| `/abdm-connect:integrate-m3` | Consent and fetching records as a HIU |
+| `/abdm-connect:integrate-m4` | HPR and HFR registration and facility onboarding |
+| `/abdm-connect:abdm-status` | What is integrated, what is missing, and compliance gaps |
+| `/abdm-connect:abdm-debug` | Diagnose a failure from its error code or symptom |
+
+Each integrate command reads your codebase and asks you once for credentials and UI decisions. It shows you a plan, builds, and tests on the sandbox until it passes. Its skills also answer questions as you work, such as which `hi_type` a lab report is.
+
+## Prompting an agent for ABDM Connect
+
+Tell the assistant these, and check its output against them.
+
+| Tell it | Because |
+| --- | --- |
+| Look each endpoint up here before writing the call | The plugin carries the flows. The request and response shapes live on the reference pages, which are current. |
+| Never store an Aadhaar number or an OTP | They are needed for one call and must not reach a database, a log or a test fixture. |
+| Make webhook handlers safe to run twice | The same event can arrive more than once. Handle it once and acknowledge every copy. |
+| Test against the sandbox first | Build and test against `api.dev.eka.care` until every flow passes, then switch to production. |
+| Leave the ABDM portal steps to a person | Facility approval and Software Linkage happen on the ABDM portal, outside any API. |
+
+<ReadAsAgent />

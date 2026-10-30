@@ -1,0 +1,323 @@
+---
+icon: "inbox"
+title: "Encrypted API Requests and Responses"
+description: "Guide for implementing end-to-end encryption using JWE for Eka Care APIs"
+---
+
+# Encrypted API Requests & Responses
+
+Our APIs support end-to-end encryption for sensitive data and file uploads using [JWE (JSON Web Encryption) RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516). This ensures that even over HTTPS, payloads remain confidential and tamper-proof.
+
+
+## Key Details
+- **Protected (`protected`)**: Base64URL-encoded JSON object containing the algorithm (`alg`) and encryption method (`enc`).
+- **Algorithm (`alg`)**: Currently `dir` (direct mode, uses a shared symmetric key for encryption); other algorithms may be supported in the future
+- **Encryption Method (`enc`)**: Currently `A128CBC-HS256` (AES-128 CBC with PKCS7 padding); other methods may be supported in the future
+- **IV**: Random per request, Base64URL-encoded initialization vector
+- **Ciphertext**: Base64URL-encoded encrypted content
+- **Tag**: Authentication tag for integrity, Base64URL-encoded
+- **Key (`kid`)**: Identifier for the shared AES key
+
+## JSON API Requests
+
+For APIs using `Content-Type: application/json`, encrypt the payload and send as JWE JSON serialization:
+
+```json
+{
+  "protected": "eyJhbGciOiAiZGlyIiwgImVuYyI6ICJBMTI4Q0JDLUhTMjU2In0",
+  "iv": "0--10mVIyBcO_0GO",
+  "ciphertext": "U2FsdGVkX1+...",
+  "tag": "QmFzZTY0VGVzdFRhZw",
+  "kid": "client-key-1"
+}
+```
+
+### Example cURL Request
+
+```bash
+curl --request POST \
+  --url https://api.eka.care/abdm/na/v1/registration/aadhaar/init \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --header 'X-Encryption: JWE' \
+  --data '{
+    "protected": "eyJhbGciOiAiZGlyIiwgImVuYyI6ICJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "0--10mVIyBcO_0GO",
+    "ciphertext": "U2FsdGVkX1+...",
+    "tag": "QmFzZTY0VGVzdFRhZw",
+    "kid": "client-key-1"
+  }'
+```
+
+## File Upload APIs
+
+Without encryption
+
+```bash
+curl --request POST \
+  --url https://api.eka.care/mr/api/v2/docs \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: multipart/form-data' \
+  --form file=@example-file
+```
+
+With encryption
+
+``` bash
+curl --location 'https://api.eka.care/mr/api/v2/docs' \
+--header 'Authorization: Bearer <token>' \
+--header 'X-Encryption: JWE' \
+--header 'Content-Type: application/json' \
+--data '{
+"protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+"iv": "o1jMW1CIrbEotbo6i1fdcg",
+"ciphertext":"Aj_W1llT1pn6c_lWTMwSRcM5oKPsgqL_i2M3wr8UvI-HLxflxztqqDfiOqUtf7UWY7GGju1T2vUJ8S-O_pk6A2Q2k2LXgJ06YC4VUnMTe99_awFnekIOMbYX1T",
+"tag": "o-Jx1iP8OWRhw9jAwcM3xQ",
+"kid":"1"
+}'
+```
+<Note>
+    For tasks such as `PII` or `SRP`, make sure to include the appropriate query parameter as described in the [Upload API](https://developer.eka.care/api-sdk/models/medical-document-parsing/upload-report).
+</Note>
+
+
+
+
+## Encrypted API Responses
+
+Server responses can also be encrypted. Clients must decrypt using the shared key:
+
+```json
+{
+  "ciphertext": "SXNXEHqvd9PT15ELzuGScYNUS7RwXP9H3yqWl-Mml6bgwNdWoV3OdZ-Nuzz6C0tHX12Z82VnOL6q5_40vuIxDA",
+  "iv": "oAvH6vVV_UYK7vrYsj2b8A",
+  "tag": "kOLTuvgzaoxeN79DtGva_6Kf5FlpccclESO0XzoJZ2Y"
+}
+```
+
+After decryption, the payload is your usual JSON object:
+```json
+{
+  "id": "123",
+  "name": "Rakesh",
+  "dob": "1990-01-01",
+  "gender": "male"
+}
+```
+
+
+## Example: Encrypting a File (Python)
+```python
+from jwcrypto import jwk, jwe
+import base64
+import json
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
+
+def encrypt_file(file_path: str, key_str: str) -> dict:
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
+
+    file_b64 = base64.b64encode(file_bytes).decode("utf-8")
+    payload = {
+        "file": file_b64
+    }
+
+    payload_json = json.dumps(payload).encode("utf-8")
+    key_bytes = (key_str * 2).encode("utf-8")
+    key_b64 = b64url(key_bytes)
+    key = jwk.JWK(kty="oct", k=key_b64)
+    header = {"alg": "dir", "enc": "A128CBC-HS256"}
+    jwetoken = jwe.JWE(payload_json, protected=header)
+    jwetoken.add_recipient(key)
+    jwe_dict = json.loads(jwetoken.serialize(compact=False))
+    return {
+        "protected": jwe_dict["protected"],
+        "iv": jwe_dict["iv"],
+        "ciphertext": jwe_dict["ciphertext"],
+        "tag": jwe_dict["tag"]
+    }
+
+encrypted_file = encrypt_file(
+    "/Users/admin/Library/Application Support/JetBrains/PyCharm2024.2/scratches/Lab_Report_Sample.pdf",
+    "YOUR_ENCRYPTION_KEY"
+)
+
+print(json.dumps(encrypted_file, indent=4))
+```
+
+```shell
+{
+    "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "oAvH6vVV_UYK7vrYsj2b8A",
+    "ciphertext": "T0jZQGWh6WP+......",
+    "tag": "LW3ikoOIGvtDY4TeH_ezfg"
+}
+```
+
+## Example: Encrypting a Payload (Python)
+
+```python
+from jwcrypto import jwk, jwe
+import json
+import base64
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
+
+def encrypt_jwe(payload: dict, key_str: str) -> dict:
+    payload_json = json.dumps(payload).encode('utf-8')
+    key_bytes = (key_str * 2).encode('utf-8')
+    key_b64 = b64url(key_bytes)
+    key = jwk.JWK(kty='oct', k=key_b64)
+
+    header = {"alg": "dir", "enc": "A128CBC-HS256"}
+    jwetoken = jwe.JWE(payload_json, protected=header)
+    jwetoken.add_recipient(key)
+
+    jwe_json = json.loads(jwetoken.serialize(compact=False))
+    return {
+        "protected": jwe_json["protected"],
+        "iv": jwe_json["iv"],
+        "ciphertext": jwe_json["ciphertext"],
+        "tag": jwe_json["tag"]
+    }
+
+payload = {"aadhaar_number": "123456789012"}
+encrypted_jwe = encrypt_jwe(payload, "YOUR_ENCRYPTION_KEY")
+print(encrypted_jwe)
+```
+
+```shell
+{
+    "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "oAvH6vVV_UYK7vrYsj2b8A",
+    "ciphertext": "T0jZQGWh6WP_TMz_1aUyqm06FGxi8FdQVK-0eleFDD7OBhxr3Bt2a1gt4OtbpuSn",
+    "tag": "LW3ikoOIGvtDY4TeH_ezfg"
+}
+```
+
+## Example: Encrypting a Payload (.net)
+```csharp
+using System;
+using System.Text;
+using Jose;
+using Newtonsoft.Json.Linq;
+
+public class Program
+{
+    public static JObject EncryptJwe(JObject payload, string keyStr)
+    {
+        string payloadJson = payload.ToString(Newtonsoft.Json.Formatting.None);
+
+        string doubled = keyStr + keyStr;
+        byte[] key = Encoding.UTF8.GetBytes(doubled);
+
+        string jweCompact = JWT.Encode(payloadJson, key, JweAlgorithm.DIR, JweEncryption.A128CBC_HS256);
+
+        string[] parts = jweCompact.Split('.');
+
+        return new JObject
+        {
+            ["protected"] = parts[0],
+            ["iv"] = parts[2],
+            ["ciphertext"] = parts[3],
+            ["tag"] = parts[4]
+        };
+    }
+
+    public static void Main()
+    {
+        var payload = new JObject
+        {
+            ["aadhaar_number"] = "123456789012"
+        };
+
+        var encrypted_jwe = EncryptJwe(payload, "YOUR_ENCRYPTION_KEY");
+        Console.WriteLine(encrypted_jwe);
+    }
+}
+```
+
+```shell
+{
+  "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+  "iv": "-xRt08Nui-LIEUhYMaAODg",
+  "ciphertext": "IMCGMlpPmV2DMkYJMeqLqlGj4pL74OZn-koLVNyDESrJU_LE6fnJJhrorRwBoIyh",
+  "tag": "TAi3Yok9KU0FLTSL0WEWnQ"
+}
+```
+
+
+## Example: Decrypting a Payload (Python)
+```python
+from jwcrypto import jwk, jwe
+import json, base64
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
+
+def decrypt_jwe(jwe_dict: dict, key_str: str) -> dict:
+    key_bytes = (key_str * 2).encode('utf-8')
+    key_b64 = b64url(key_bytes)
+    key = jwk.JWK(kty='oct', k=key_b64)
+    token = jwe.JWE()
+    token.deserialize(json.dumps(jwe_dict))
+    token.decrypt(key)
+    return json.loads(token.payload.decode())
+
+encrypted_jwe = {
+    "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+    "iv": "oAvH6vVV_UYK7vrYsj2b8A",
+    "ciphertext": "T0jZQGWh6WP_TMz_1aUyqm06FGxi8FdQVK-0eleFDD7OBhxr3Bt2a1gt4OtbpuSn",
+    "tag": "LW3ikoOIGvtDY4TeH_ezfg"
+}
+
+print(decrypt_jwe(encrypted_jwe, "YOUR_ENCRYPTION_KEY"))
+```
+
+```shell
+{"aadhaar_number": "123456789012"}
+```
+
+## Example: Decrypting a Payload (.net)
+```csharp
+using System;
+using System.Text;
+using Jose;
+using Newtonsoft.Json.Linq;
+
+public class Program
+{
+    public static JObject DecryptJwe(JObject jweDict, string keyStr)
+    {
+        string doubled = keyStr + keyStr;
+        byte[] key = Encoding.UTF8.GetBytes(doubled);
+
+        string jweCompact = $"{jweDict["protected"]}..{jweDict["iv"]}.{jweDict["ciphertext"]}.{jweDict["tag"]}";
+
+        string decryptedJson = JWT.Decode(jweCompact, key);
+
+        return JObject.Parse(decryptedJson);
+    }
+
+    public static void Main()
+    {
+        var encrypted_jwe = new JObject
+        {
+            ["protected"] = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+            ["iv"] = "oAvH6vVV_UYK7vrYsj2b8A",
+            ["ciphertext"] = "T0jZQGWh6WP_TMz_1aUyqm06FGxi8FdQVK-0eleFDD7OBhxr3Bt2a1gt4OtbpuSn",
+            ["tag"] = "LW3ikoOIGvtDY4TeH_ezfg"
+        };
+
+        Console.WriteLine(DecryptJwe(encrypted_jwe, "YOUR_ENCRYPTION_KEY"));
+    }
+}
+```
+
+```shell
+{"aadhaar_number": "123456789012"}
+```
+

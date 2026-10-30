@@ -1,0 +1,55 @@
+---
+title: "Build with AI"
+description: "Set up a coding agent to build with EkaScribe: the reference skill and the CLAUDE.md file."
+icon: "wand-magic-sparkles"
+type: build-with-ai
+---
+
+import LearnAi from '/snippets/build-with-ai/learn-ai.mdx';
+import ReadAsAgent from '/snippets/build-with-ai/read-as-agent.mdx';
+
+Use these to have a coding assistant build your EkaScribe integration. Each one hands it the same facts as these docs.
+
+<Note>
+Check what the assistant writes against these docs, and test it in the sandbox before it reaches a patient.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Reference skill" icon="wand-magic-sparkles" href="#install-the-skill">
+    Every operation, its hosts, auth and headers, in one install.
+  </Card>
+  <Card title="CLAUDE.md file" icon="file-code" href="/docs/scribe/build-with-ai/claude-md">
+    The four calls and their rules, in one file to drop into your project.
+  </Card>
+</CardGroup>
+
+<LearnAi />
+
+## Install the skill
+
+The `eka-scribe` skill carries the hosts, auth and headers, and every Scribe operation, each with a link to its page here. It is built from these docs, so it changes when they do.
+
+In Claude Code:
+
+```bash
+/plugin marketplace add eka-care/eka-docs
+/plugin install eka-scribe@eka-docs
+```
+
+In Cursor, Codex or another agent, copy the [skill folder](https://github.com/eka-care/eka-docs/tree/main/plugins/eka-scribe/skills/eka-scribe) into the folder your agent loads skills from. Its map is [`SKILL.md`](https://raw.githubusercontent.com/eka-care/eka-docs/main/plugins/eka-scribe/skills/eka-scribe/SKILL.md).
+
+## Prompting an agent for Scribe
+
+Tell the assistant these, and check its output against them.
+
+| Tell it | Because |
+| --- | --- |
+| Keep the client secret on a server | The secret never goes in browser code. Exchange it on a small backend and hand the UI only the short-lived access token. |
+| Upload raw audio bytes | The upload takes the bytes themselves: not multipart, not JSON, not base64. |
+| Read the HTTP status when polling | 202 means still processing, 200 means done, 206 means some templates failed, and 410 means the session expired. |
+| Use a chunked session for files over 10 MB | A single upload takes one file up to 10 MB. Longer recordings upload in numbered chunks before the session ends. |
+| Sign in again on a 401 | The access token expires. A 401 means fetch a new one, not that the call is wrong. |
+
+The [CLAUDE.md file](/docs/scribe/build-with-ai/claude-md) carries these rules and the four calls in one file you can drop into a project.
+
+<ReadAsAgent />

@@ -1,0 +1,94 @@
+---
+icon: "compass"
+title: "Overview"
+description: "Upload and manage your own formulary catalogs, then use them in Eka's medical search."
+sidebarTitle: "Datasets API"
+---
+
+A dataset is your own catalog of one kind of clinical item: your drug formulary, your lab investigations, results and panels, or your lists of symptoms and diagnoses. The Datasets API lets you load these catalogs into Eka, keep them in sync with your system, and switch Eka's [Medical Database search](/api-sdk/datasets/medical-db/drugs-and-labs) over to them.
+
+Every request acts only on the workspace your access token belongs to. You cannot read or change another workspace's data.
+
+## Dataset types
+
+You can upload these kinds of catalog. Each page lists every column you can send, which ones are mandatory, the values they accept, and a sample file.
+
+| Catalog | `type` | Mandatory columns | Details |
+|---|---|---|---|
+| Drugs | `medication` | `medication_id`, `name` | [Medications](/api-sdk/datasets/medications) |
+| Lab investigations: tests, scans and packages a doctor orders | `lab_investigation` | `investigation_id`, `name` | [Lab investigations](/api-sdk/datasets/lab-investigations) |
+| Lab results: the values that come back, each with one unit | `lab_result` | `result_id`, `name` | [Lab results](/api-sdk/datasets/lab-results) |
+| Lab panels: named, ordered collections of results, like CBC | `lab_panel` | `panel_id`, `name`, `member_result_ids` | [Lab panels](/api-sdk/datasets/lab-panels) |
+| Symptoms | `symptom` | `symptom_id`, `name` | [Symptoms](/api-sdk/datasets/symptoms) |
+| Diagnoses | `diagnosis` | `diagnosis_id`, `name` | [Diagnoses](/api-sdk/datasets/diagnoses) |
+
+Upload lab results before lab panels: every panel member must already be a stored result.
+
+Records are identified by **your** id. Writing a record whose id already exists updates it.
+
+## Preparing a file
+
+These rules apply to every catalog, whether you upload a CSV in the console or through the API.
+
+- **One header row, then one row per record.** Column names are the ones listed on each catalog's page. Columns can be in any order, and you only need the mandatory ones plus whatever else you have. A column Eka doesn't recognise is ignored, with a warning.
+- **Leave a cell empty when you don't have the value.**
+- **Lists in one cell** use `|` between values, like `CBC|Hemogram`. The one exception is a drug's `generic_list` and `generic_list_ids`, which use `+`. In JSON, send these as lists instead.
+- **Yes/no columns** accept `true` or `false` (also `yes`/`no` and `1`/`0`).
+- **Quote any value containing a comma**, like `"Chest pain, unspecified"`. Spreadsheet programs do this when they save as CSV.
+- **Save as UTF-8 CSV** if you can. Files saved by Excel on Windows also work.
+- **Up to 50,000 rows per file.**
+
+## Endpoints
+
+- **[Create or update records](/api-sdk/datasets/write)**: send a JSON list or a CSV file, in `upsert` or `reconcile` mode, with an optional dry run
+- **[List records](/api-sdk/datasets/list)** and **[Get a record](/api-sdk/datasets/get)**: read your catalog back
+- **[Export the catalog as CSV](/api-sdk/datasets/export)**: download it in the same format the write endpoint accepts
+- **[List CSV import batches](/api-sdk/datasets/batches)**: check that an upload landed
+- **[Deactivate records](/api-sdk/datasets/delete)**: remove records reversibly
+- **[Delete the whole catalog](/api-sdk/datasets/delete-all)**: remove every record permanently
+- **[Get](/api-sdk/datasets/search-status-get)** and **[set](/api-sdk/datasets/search-status-set)** partner search status: switch medical search over to your catalog
+
+For medications, use a `form_name` from the [accepted drug forms](/docs/datasets/forms) so the drug is linked to Eka's dosage form.
+
+## Mapping your records to Eka ids
+
+Every record can carry an optional `ekaid`: Eka's own id for the same item, taken from Eka's reference list (for example `lb-1322178942` for a lab test). When it is set, Eka products such as the EMR recognise your item and can offer features built on Eka's data, like calculators. Eka stores the id as you send it and does not check it, so make sure each mapping is right.
+
+## Keeping a catalog in sync
+
+To mirror a catalog from your system on a schedule, send the **whole** catalog each time in `reconcile` mode. Records you no longer send are deactivated, not deleted, so sending them again restores them.
+
+<Steps>
+  <Step title="Dry run">
+    `POST /admin/datasets/v1/?type=medication&mode=reconcile&dry_run=true` with the full catalog. Nothing is written; the response shows how many records would be inserted, updated, reactivated and deactivated.
+  </Step>
+  <Step title="Commit">
+    If the counts look right, send the same request without `dry_run`. If more than half of your catalog would be deactivated, the request is rejected with a `shrink_guard` error, the usual sign of a truncated export. Pass `confirm_shrink=true` only if you really mean it.
+  </Step>
+  <Step title="Verify">
+    For CSV uploads, `GET /admin/datasets/v1/batches/?type=medication` shows the latest batch and its row counts.
+  </Step>
+  <Step title="Enable search (first sync only)">
+    `POST /admin/datasets/v1/search-status/?type=medication` with `{"enabled": true}`. Later syncs don't need to repeat this. Set it back to `false` to roll back.
+  </Step>
+</Steps>
+
+## Writes are all-or-nothing
+
+If any record or CSV row fails validation, nothing in the request is written. The `errors` list in the response names every failing record, field and value, so you can fix them all at once.
+
+## Limits
+
+- Request bodies are limited to **10 MB**. For a larger catalog, send it as several `upsert` requests (a `reconcile` must contain the whole catalog in one request).
+- A request must finish within **29 seconds**.
+- List and batch pages return at most 1000 items (`limit`, default 100).
+
+## Authentication
+
+All endpoints require an access token in the `Authorization` header:
+
+```
+Authorization: Bearer <access_token>
+```
+
+See [Authorization](/api-sdk/auth/getting-started) for how to get one.

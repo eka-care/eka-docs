@@ -1,0 +1,22 @@
+name: docs-check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: python3 -m unittest scripts/test_build_nav.py
+      - run: npm run skills:check
+      - run: npm run changelog:check
+      - run: npm run docs:check

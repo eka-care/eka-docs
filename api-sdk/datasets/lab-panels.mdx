@@ -1,0 +1,95 @@
+---
+title: "Lab panels"
+description: "What you can upload for each panel of results a doctor fills in, such as CBC, which columns are mandatory, and the rule for its members."
+---
+
+A panel is a named, ordered collection of [lab results](/api-sdk/datasets/lab-results) that a doctor fills in, such as CBC. Each row is one panel, identified by your own id, with the ids of its results in the order they are shown. Use `type=lab_panel` with the API, or pick **Panels** in the console.
+
+A panel is not what a doctor orders. Complete Blood Count can exist as an [investigation](/api-sdk/datasets/lab-investigations) (ordered) and as a panel (filled in). These are separate records with their own ids.
+
+<Note>
+**Mandatory columns:** `panel_id`, `name` and `member_result_ids`. Every other column is optional; leave the cell empty if you don't have the value.
+</Note>
+
+## Columns
+
+| Column | Required | What it means | Allowed values | Example |
+|---|---|---|---|---|
+| `panel_id` | **Yes** | Your own id for the panel. Writing a row with an id that already exists updates it. | Text, up to 200 characters | `PNL-CBC` |
+| `name` | **Yes** | The panel name. Used for search. | Text, up to 200 characters | `Complete Blood Count` |
+| `display_name` | No | The name shown to doctors and patients. Defaults to `name`. | Text, up to 200 characters | `CBC` |
+| `aliases` | No | Other names people search by. | Several values separated by `\|` | `CBC\|Hemogram` |
+| `ekaid` | No | Eka's own id for the same panel, from Eka's reference list. You map your id to Eka's; leave it empty if you don't have it. See [Mapping your records to Eka ids](/api-sdk/datasets/overview#mapping-your-records-to-eka-ids). | Text, up to 64 characters | From Eka's list |
+| `member_result_ids` | **Yes** | The `result_id` of each result in the panel, in the order you want them shown. | Several values separated by `\|` | `RES-HB\|RES-WBC\|RES-PLT` |
+| `is_active` | No | Set to `false` to keep the panel but hide it. Defaults to `true`. | `true` or `false` | `true` |
+
+## Members
+
+Every id in `member_result_ids` must be a `result_id` already stored in the same workspace and knowledge base. So upload your [results](/api-sdk/datasets/lab-results) first, then your panels. There is no combined upload.
+
+- A panel needs at least one member.
+- An id can't appear twice in the same panel.
+- An inactive result can be a member.
+- A member that is not a result in your catalog rejects the upload. Nothing is written, and the error names the row and the id.
+- If a member's result is deactivated or deleted later, it stays on the panel and is skipped when the panel is served.
+
+The errors you can get are:
+
+| Error | Cause |
+|---|---|
+| `RES-XYZ is not a result in this catalog` | No result with that `result_id` is stored. Upload it first. |
+| `a panel needs at least one member` | `member_result_ids` is empty. |
+| `RES-HB is listed more than once` | The same id appears twice in one panel. |
+
+## Example file
+
+This panel uses the three results from the [lab results](/api-sdk/datasets/lab-results#example-file) example, so upload those first.
+
+```csv lab-panels.csv
+panel_id,name,ekaid,display_name,aliases,member_result_ids,is_active
+PNL-CBC,Complete Blood Count,,CBC,CBC|Hemogram,RES-HB|RES-WBC|RES-PLT,true
+```
+
+The smallest valid file has just the mandatory columns:
+
+```csv minimal.csv
+panel_id,name,member_result_ids
+PNL-CBC,Complete Blood Count,RES-HB
+```
+
+## Example JSON
+
+The same record sent to [Create or update records](/api-sdk/datasets/write). In JSON, multi-value fields are lists.
+
+```json
+[
+  {
+    "panel_id": "PNL-CBC",
+    "name": "Complete Blood Count",
+    "display_name": "CBC",
+    "aliases": ["CBC", "Hemogram"],
+    "member_result_ids": ["RES-HB", "RES-WBC", "RES-PLT"],
+    "is_active": true
+  }
+]
+```
+
+## Partner search
+
+Panel search can only be on while result search is on for the same knowledge base, because a panel is served from its results. Turn on result search first, then panel search. To turn them off, turn panel search off first.
+
+[Turn partner search on or off](/api-sdk/datasets/search-status-set) refuses a request that breaks this order. It returns a `400` with the message and code below, and nothing changes. In the console the switch is disabled in the same cases.
+
+| Request | Message | Error code |
+|---|---|---|
+| Turn `lab_panel` on while `lab_result` is off | `Turn on search for results first` | `turn_on_results_first` |
+| Turn `lab_panel` on while `lab_result` is on in a different knowledge base | `Turn on search for results in the same knowledge base first` | `results_in_other_kb` |
+| Turn `lab_result` off while `lab_panel` is on in the same knowledge base | `Turn off search for panels first` | `turn_off_panels_first` |
+
+## Common mistakes
+
+- **Uploading panels before results.** Every member must already be a stored result, so upload results first.
+- **Putting an investigation id in `member_result_ids`.** Members are `result_id` values only, never investigation or panel ids.
+- **Listing a result twice.** Each id can appear once in a panel.
+- **Members in the wrong order.** The panel shows its results in the order you list them.
+- **An empty `member_result_ids`.** A panel needs at least one member.

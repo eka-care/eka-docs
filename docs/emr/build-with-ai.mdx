@@ -1,0 +1,80 @@
+---
+title: "Build with AI"
+description: "Set up a coding agent to build with Eka EMR: the reference skill and the EMR MCP server."
+icon: "wand-magic-sparkles"
+type: build-with-ai
+---
+
+import LearnAi from '/snippets/build-with-ai/learn-ai.mdx';
+import ReadAsAgent from '/snippets/build-with-ai/read-as-agent.mdx';
+
+Use these to have a coding assistant build against Eka EMR, or to let an AI assistant act on your EMR directly.
+
+<Note>
+Check what the assistant writes against these docs, and test it in the sandbox before it reaches a patient.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Reference skill" icon="wand-magic-sparkles" href="#install-the-skill">
+    Every operation, its hosts, auth and headers, in one install.
+  </Card>
+  <Card title="EMR MCP server" icon="plug" href="/docs/emr/build-with-ai/mcp-server/introduction">
+    Patients, appointments, prescriptions and clinic data as tools for any MCP client.
+  </Card>
+</CardGroup>
+
+<LearnAi />
+
+## Install the skill
+
+The `eka-emr` skill carries the hosts, auth and headers, and every Eka EMR operation, each with a link to its page here. It is built from these docs, so it changes when they do.
+
+In Claude Code:
+
+```bash
+/plugin marketplace add eka-care/eka-docs
+/plugin install eka-emr@eka-docs
+```
+
+In Cursor, Codex or another agent, copy the [skill folder](https://github.com/eka-care/eka-docs/tree/main/plugins/eka-emr/skills/eka-emr) into the folder your agent loads skills from. Its map is [`SKILL.md`](https://raw.githubusercontent.com/eka-care/eka-docs/main/plugins/eka-emr/skills/eka-emr/SKILL.md).
+
+## Connect the MCP server
+
+The Eka MCP server is hosted at `https://mcp.eka.care/mcp`. You sign in with your Eka.care account the first time your assistant connects.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add eka-care --transport http https://mcp.eka.care/mcp
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json mcp.json
+    {
+      "mcpServers": {
+        "eka-care": {
+          "url": "https://mcp.eka.care/mcp"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="VS Code">
+    ```json settings.json
+    {
+      "mcp": {
+        "servers": {
+          "eka-care": {
+            "type": "http",
+            "url": "https://mcp.eka.care/mcp"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Setup for every other client, sign-in and the full tool list are on the [Eka MCP server](/docs/emr/build-with-ai/mcp-server/introduction) pages.
+
+<ReadAsAgent />

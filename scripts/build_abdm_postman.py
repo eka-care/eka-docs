@@ -343,8 +343,8 @@ def main():
     group = find_group(docs["navigation"], "ABDM Connect")
 
     auth = build_items([
-        "api-reference/authorization/client-login",
-        "api-reference/authorization/refresh-token-v2",
+        "api-sdk/auth/client-login",
+        "api-sdk/auth/refresh-token-v2",
     ], ops, set())
     items = [{"id": stable_id("group", "Authentication"), "name": "Authentication", "item": auth}]
     items += build_items(group["pages"], ops, set())

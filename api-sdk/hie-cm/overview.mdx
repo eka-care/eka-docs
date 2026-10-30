@@ -1,0 +1,158 @@
+---
+sidebarTitle: "API overview"
+title: "Overview"
+icon: "code"
+type: overview
+description: "Environments, authentication, headers, callbacks and errors for the ABDM Connect APIs, plus a Postman collection with every API and callback."
+---
+
+import { PostmanCollection } from '/snippets/postman-collection.jsx';
+
+ABDM Connect is a REST API over the ABDM gateway. You call Eka, and Eka handles ABDM's gateway protocol, encryption and callbacks for you. This page covers what every ABDM Connect call has in common. New to ABDM? Read the [ABDM overview](/docs/hie-cm/about) first for the ecosystem, roles and milestones.
+
+## In short
+
+- Eka handles ABDM's gateway protocol, encryption and callbacks for you.
+- Every call takes an Eka access token; some also need the patient's ABHA session.
+- Many results arrive later on a webhook you register.
+
+## Postman Collection
+
+<PostmanCollection
+  collection="/api-reference/user-app/abdm-connect/postman/eka-abdm-connect.postman_collection.json"
+  environment="/api-reference/user-app/abdm-connect/postman/eka-abdm-connect-sandbox.postman_environment.json"
+>
+  Every ABDM Connect API and callback, grouped by milestone in the order you build them, and a sandbox environment to fill in. Run **Connect Login** first; each step keeps the `txn_id`, `request_id` and user token it gets back for the steps after it. Callback requests replay the payloads Eka sends, so you can test your own webhook receiver.
+</PostmanCollection>
+
+## Environments
+
+| Environment | Base URL |
+| --- | --- |
+| Sandbox | `https://api.dev.eka.care` |
+| Production | `https://api.eka.care` |
+
+Build and certify against the sandbox, then switch the base URL.
+
+## Authentication
+
+Every ABDM Connect API takes an Eka access token for your client.
+
+<Steps>
+  <Step title="Log in">
+    Call [Connect Login](/api-sdk/auth/client-login) with your `client_id` and `client_secret`. It returns an `access_token` and a `refresh_token`.
+  </Step>
+  <Step title="Send the token">
+    Pass it on every request as `Authorization: Bearer <access_token>`.
+  </Step>
+  <Step title="Refresh on 401">
+    A `401` means the access token expired. Get a new one with [Connect Refresh](/api-sdk/auth/refresh-token-v2).
+  </Step>
+</Steps>
+
+```bash
+curl https://api.dev.eka.care/abdm/v1/session/status \
+  --header 'Authorization: Bearer <access_token>' \
+  --header 'X-Pt-Id: <eka user id>'
+```
+
+See [Authorization](/api-sdk/auth/getting-started) to get credentials.
+
+### The patient's ABHA session
+
+Some APIs also act for a specific patient and need their ABHA session with the ABDM gateway. It is separate from your client token:
+
+- ABHA creation, login and [session verify](/api-sdk/hie-cm/session/verify) return the patient's `token`. APIs that need it, such as KYC, take it as `user_x_token` in the body.
+- When the ABHA session expires, these APIs return HTTP `491`. Check it with [Session Status](/api-sdk/hie-cm/session/status) and start a new one with a mobile OTP. See [User Session](/docs/hie-cm/session/getting-started).
+
+## Common Headers
+
+Most ABDM Connect APIs take these headers to say which patient and facility the call is for.
+
+| Header | Value |
+| --- | --- |
+| `X-Pt-Id` | Eka user ID (OID) of the patient |
+| `X-Partner-Pt-Id` | Your own ID for the patient |
+| `X-Hip-Id` | Your HIP ID, for the facility the call is made from |
+
+Each API page lists the headers that call takes.
+
+## Multi-step Flows
+
+OTP and linking flows take more than one call. The first call returns a `txn_id` (or a `request_id`), and every later step in that flow sends it back.
+
+## APIs by Milestone
+
+| Milestone | Who needs it | Start here | Flow |
+| --- | --- | --- | --- |
+| M1: ABHA identity | Every integration | [ABHA creation and login](/docs/hie-cm/registration/intro), [Profile](/docs/hie-cm/profile/getting-started), [Scan & Share](/docs/hie-cm/scan-and-share/getting-started) | [M1 flow](/docs/hie-cm/flows/m1) |
+| M2: Care context linking and data sharing | HIPs | [Care contexts](/docs/hie-cm/care-contexts/getting-started), [Discover and link](/docs/hie-cm/care-contexts/discover/introduction) | [M2 flow](/docs/hie-cm/flows/m2) |
+| M3: Consent and data fetch | HIUs | [Consents](/docs/hie-cm/consents/getting-started) | [M3 flow](/docs/hie-cm/flows/m3) |
+| M4: HPR and HFR | Every HMIS/LMIS | [Registries](/docs/hie-cm/nhpr-abdm/getting-started) | [M4 flow](/docs/hie-cm/flows/m4) |
+| PHR app | Patient-facing apps | [PHR API map](/docs/hie-cm/phr/overview) | |
+| UHI | Discovery and booking | [Blood bank](/docs/uhi/blood-bank/getting-started) | |
+| NHCX | Hospitals raising cashless insurance claims | [NHCX claims](/docs/nhcx/getting-started) | |
+
+{/* Scan & Pay and Physical consultation are hidden for now. Restore them in the UHI row: [Scan & Pay](/docs/uhi/scan-and-pay/getting-started), [Physical consultation](/api-sdk/uhi/phys-cons/search-doctors) */}
+
+## Callbacks
+
+ABDM is asynchronous: many results reach you later as a webhook. Register your endpoint with the [Webhooks API](/api-sdk/webhooks/register-webhook). Every callback is a `POST` with a JSON body that names its `event`, and carries an `Eka-Webhook-Signature` header you should [verify](/docs/webhooks/webhook-signature).
+
+| Event | Sent when |
+| --- | --- |
+| [`abha.created`](/docs/hie-cm/webhooks/abha-created) | An ABHA address is created |
+| [`abha.locker_created`](/docs/hie-cm/webhooks/locker-created) | A health locker is created |
+| [`abha.hip_profile_share`](/docs/hie-cm/webhooks/hip-scan-and-share) | A patient shares their profile by scanning your QR code |
+| [`abha.link_care_context`](/docs/hie-cm/webhooks/link-care-context) | A care context you linked succeeds or fails |
+| [`abha.care_context_discover`](/docs/hie-cm/webhooks/discover-care-context) | A patient searches your facility for their records |
+| [`abha.care_context_discover_link_init`](/docs/hie-cm/webhooks/discover-link-init) | A patient starts linking the records they found |
+| [`abha.context_discover_link_confirm`](/docs/hie-cm/webhooks/discover-link-confirm) | A patient confirms that link with an OTP |
+| [`abha.hip_data_fetch`](/docs/hie-cm/webhooks/hip-data-fetch) | An HIU requests records you hold (only if Eka doesn't store them) |
+| [`abha.hiu_data_push`](/docs/hie-cm/webhooks/hiu-data-push) | Records you requested arrive from a HIP |
+| [`abha.subscription_notify`](/docs/hie-cm/webhooks/subscription-notify) | A provider links a new record for a subscribed patient |
+| [`abha.subscription_modified`](/docs/hie-cm/webhooks/subscription-modify) | A subscription changes |
+| [`abha.consent_update`](/docs/hie-cm/webhooks/consent-update) | A consent request's status changes |
+
+{/* Physical consultation callbacks, hidden for now:
+| [`doctor.search.results`](/docs/uhi/webhooks/search-doctors), [`doctor.slot.search.results`](/docs/uhi/webhooks/search-slots) | UHI doctor and slot search results arrive |
+| [`booking.init`](/docs/uhi/webhooks/booking-init), [`booking.confirm`](/docs/uhi/webhooks/booking-confirm), [`booking.status`](/docs/uhi/webhooks/booking-status), [`booking.cancel`](/docs/uhi/webhooks/booking-cancel) | A UHI booking step completes |
+*/}
+
+## Encryption
+
+Health records travel between HIPs and HIUs encrypted with ECDH on Curve25519. If Eka stores your records, Eka encrypts and decrypts them for you. If you serve records yourself, see [ECDH encryption](/docs/hie-cm/care-contexts/ecdh-encryption).
+
+## Errors
+
+`4XX` codes are request errors and `5XX` are server errors. Error bodies look like this:
+
+```json
+{
+  "code": 400,
+  "error": "Validation failed",
+  "source_error": {
+    "code": "ABDM-1010",
+    "message": "Validation failed"
+  }
+}
+```
+
+`source_error` carries ABDM's own code when the gateway refused the call. See [Errors](/docs/hie-cm/errors) for every code.
+
+## SDKs
+
+<CardGroup cols={2}>
+  <Card title="ABHA Web SDK (M1)" icon="id-card" href="/api-sdk/hie-cm/sdks/web-sdk/abha-sdk/get-started">
+    Drop-in ABHA creation, login, KYC and Scan & Share screens.
+  </Card>
+  <Card title="Consent Management Web SDK (M3)" icon="file-medical" href="/api-sdk/hie-cm/sdks/web-sdk/consent-management/get-started">
+    A UI widget to request, track and act on consents for your patients.
+  </Card>
+  <Card title="NHPR Web SDK (M4)" icon="user-doctor" href="/api-sdk/hie-cm/sdks/web-sdk/nhpr-sdk/get-started">
+    A UI widget to register doctors on the HPR and their clinic on the HFR.
+  </Card>
+  <Card title="Go SDK" icon="code" href="/api-sdk/hie-cm/sdks/backend/go-sdk">
+    Backend client for the ABDM Connect APIs.
+  </Card>
+</CardGroup>

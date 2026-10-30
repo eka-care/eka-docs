@@ -1,0 +1,712 @@
+# Records SDK - Android (Developer Platform)
+
+## SDK Introduction
+
+The **Records SDK** provides a streamlined and flexible way to manage digital records within your Android application. It acts as a unified entry point for storing, retrieving, updating, and deleting record data, allowing developers to easily integrate document workflows, tagging, filtering, and metadata management.
+
+Built with modern Android architecture principles, the SDK is fully coroutine-compatible, supports reactive data flows with `Flow`, and ensures efficient local storage with robust database handling. Whether you're building a document management tool, a compliance platform, or a file organization feature, the Records SDK handles the heavy lifting so you can focus on building great user experiences.
+
+### Key Features
+
+- <Icon icon="file-lines" /> **Record Creation**: Easily add new records with support for metadata and tagging.
+- <Icon icon="magnifying-glass" /> **Filtering & Retrieval**: Retrieve records by owner, filters, document type, and more.
+- <Icon icon="chart-simple" /> **Analytics Support**: Get grouped counts for document types and track record usage.
+- <Icon icon="pen" /> **Metadata Updates**: Update existing records with new document dates or types.
+- <Icon icon="trash" /> **Deletion & Cleanup**: Soft-delete individual records or clear all local data when needed.
+- <Icon icon="gear" /> **Coroutines & Flow**: Built for modern asynchronous Android development.
+
+###
+
+## API Reference
+
+For complete API reference, please refer to the source code documentation in the GitHub repository:
+[https://github.com/eka-care/eka-health-records-android](https://github.com/eka-care/eka-health-records-android)
+
+## Prerequisites
+
+Before using the Eka Health Records SDK, ensure your development environment meets the following requirements:
+
+- Minimum SDK version: 23
+- Kotlin version: 1.5.0 or newer
+- JDK 8 or newer
+- Authentication with Eka platform (tokens required for initialisation)
+
+## **Installing the Library**
+
+Add the repository to your project-level `build.gradle` or `settings.gradle` file:
+
+```kotlin
+repositories {
+		maven { url = uri("https://www.jitpack.io") }
+}
+```
+
+Include the dependency in your app-level `build.gradle.kts` file:
+
+```kotlin
+implementation("com.github.eka-care:eka-health-records-android:2.0.0")
+```
+
+## SDK Initialisation
+
+Initialise the SDK by creating an implementation of the `IOkHttpSetup` interface to provide authentication tokens:
+
+```kotlin
+class OkHttpImpl : IOkHttpSetup {
+    // Provide headers necessary for authentication
+    override fun getDefaultHeaders(url: String): Map<String, String> {
+        val headers = HashMap<String, String>()
+        headers["auth"] = "YOUR_SESSION_TOKEN_HERE"
+        return headers
+    }
+
+    override fun refreshAuthToken(url: String): Map<String, String>? {
+        // Implement token refresh logic
+        return null
+    }
+
+    override fun onSessionExpire() {
+        // Handle session expiration
+    }
+}
+```
+
+Pass the `IOkHttpSetup` implementation to `DocumentConfiguration` and call the init
+
+```kotlin
+Document.init(
+    context = applicationContext,
+    documentConfiguration = DocumentConfiguration(
+        okHttpSetup = OkHttpImpl()
+    )
+)
+```
+
+### RecordModel
+
+A data transfer object representing document records, used for API communication.
+
+```kotlin
+data class RecordModel(
+    val id: String,
+    val thumbnail: String? = null,
+    val status: RecordStatus = RecordStatus.NONE,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val documentDate: Long? = null,
+    val documentType: String = "ot",
+    val isSmart: Boolean = false,
+    val smartReport: String? = null,
+    val files: List<RecordFile> = emptyList(),
+) {
+    data class RecordFile(
+        val id: Long,
+        val filePath: String?,
+        val fileType: String,
+    )
+}
+```
+
+### Document Types
+
+Constants used to specify document categories:
+
+| Type ID | Description |
+| --- | --- |
+| lr | Lab Report |
+| ps | Prescription |
+| ds | Discharge Summary |
+| vc | Vaccine Certificate |
+| in | Insurance |
+| iv | Invoice |
+| sc | Scan |
+| ot | Other |
+| null | All types (default) |
+
+### SortOrder
+
+Enum used for specifying document sort criteria:
+
+```kotlin
+enum class SortOrder(val value: String, val order: String) {
+    CREATED_AT_ASC("created_at", "ASC"),
+    CREATED_AT_DSC("created_at", "DESC"),
+    DOC_DATE_ASC("document_date", "ASC"),
+    DOC_DATE_DSC("document_date", "DESC"),
+    UPDATED_AT_ASC("updated_at", "ASC"),
+    UPDATED_AT_DSC("updated_at", "DESC"),
+}
+```
+
+### Getting the `Records` Instance
+
+To begin using the SDK, you must first obtain an instance of `RecordsManager`. This instance serves as the **single entry point** to the SDK and provides access to all available functionality.
+
+Use the following code to initialize and retrieve the instance:
+
+```kotlin
+val recordsManager = Records.getInstance(
+    context = app.applicationContext
+)
+```
+
+> **Note:** Always pass the application context to ensure proper lifecycle management and avoid memory leaks.
+>
+
+### Creating a New Record
+
+Once you have initialised the `recordsManager` instance, you can use it to create a new record entry using the `addNewRecord` function. This function is a `suspend` function and **must be called from a coroutine**.
+
+### Function Signature
+
+```kotlin
+suspend fun addNewRecord(
+    files: List<File>,
+    ownerId: String,
+    filterId: String? = null,
+    documentType: String = "ot",
+    documentDate: Long? = null,
+    tags: List<String> = emptyList()
+): String?
+```
+
+Here's an example using `viewModelScope` and `Dispatchers.IO`:
+
+```kotlin
+val recordsManager = Records.getInstance(
+    context = app.applicationContext
+)
+
+viewModelScope.launch(Dispatchers.IO) {
+    recordsManager.addNewRecord(
+        files = listOf(file1, file2),         // List of files to be attached
+        ownerId = "user_123",                 // Unique identifier for the owner of the record
+        filterId = "filter_abc",              // Optional filter ID
+        documentType = "ot",                  // Document type, default is "ot"
+        documentDate = 1681234567890,         // Optional epoch timestamp for the document
+        tags = listOf("invoice", "2025")      // Optional tags associated with the record
+    )
+}
+```
+
+### Function Parameters:
+
+- **files**: `List<File>` — (Required). The files you want to associate with the record.
+- **ownerId**: `String` — (Required). Identifier for the owner of the record.
+- **filterId**: `String?` — (Optional). Used to apply a predefined filter or processing rule.
+- **documentType**: `String` — (Optional). Specifies the type of document. Default is `"ot"`.
+- **documentDate**: `Long?` — (Optional). UNIX timestamp representing the date of the document.
+- **tags**: `List<String>` — (Optional). Tags for classifying or grouping records.
+
+> Important: Ensure this function is called from a coroutine scope such as viewModelScope, and ideally off the main thread using Dispatchers.IO to avoid blocking UI operations.
+>
+
+### Retrieving Records
+
+The `getRecords` function allows you to retrieve a list of records for a specific owner. The function returns a `Flow` of `List<RecordModel>`, enabling asynchronous and reactive collection of record data.
+
+### Function Signature
+
+```kotlin
+fun getRecords(
+    ownerId: String,
+    filterIds: List<String>? = null,
+    includeDeleted: Boolean = false,
+    documentType: String? = null,
+    sortOrder: SortOrder,
+): Flow<List<RecordModel>>
+```
+
+### Parameters
+
+- **ownerId**: `String` — *(Required)* The unique identifier for the owner whose records are to be fetched.
+- **filterIds**: `List<String>?` — *(Optional)* A list of filter IDs to apply during retrieval. If `null`, no filters are applied.
+- **includeDeleted**: `Boolean` — *(Optional, default: false)* Whether to include records that have been marked as deleted.
+- **documentType**: `String?` — *(Optional)* Filters records by the specified document type.
+- **sortOrder**: `SortOrder` — *(Required)* Defines the sorting order of the results (e.g., ascending, descending). This must be provided.
+
+### Return Value
+
+Returns a `Flow<List<RecordModel>>` that emits updates to the list of records matching the criteria.
+
+### Example Usage
+
+```kotlin
+lifecycleScope.launch {
+    recordsManager.getRecords(
+        ownerId = "user_123",
+        filterIds = listOf("filter_abc"),
+        includeDeleted = false,
+        documentType = "invoice",
+        sortOrder = SortOrder.DESCENDING
+    ).collect { records ->
+        // Handle the list of records
+    }
+}
+```
+
+> Note: Since this function returns a Flow, it must be collected from a coroutine scope to receive updates.
+>
+
+### Getting Record Counts Grouped by Document Type
+
+The `getRecordsCountGroupByType` function returns the total number of records for a specific owner, **grouped by document type**. This is useful for analytics, reporting, or building UI elements like dashboards or filters.
+
+### Function Signature
+
+```kotlin
+fun getRecordsCountGroupByType(
+    ownerId: String,
+    filterIds: List<String>? = null
+): Flow<List<DocumentTypeCount>>
+
+data class DocumentTypeCount(
+    val documentType: String?,
+    val count: Int?
+)
+```
+
+### Parameters
+
+- **ownerId**: `String` — *(Required)* The unique identifier for the owner whose records are being counted.
+- **filterIds**: `List<String>?` — *(Optional)* A list of filter IDs to narrow down the results. If `null`, all records for the owner are considered.
+
+### Return Value
+
+Returns a `Flow<List<DocumentTypeCount>>`, where each `DocumentTypeCount` represents a document type and the associated count of records.
+
+### Example Usage
+
+```kotlin
+lifecycleScope.launch {
+    recordsManager.getRecordsCountGroupByType(
+        ownerId = "user_123",
+        filterIds = listOf("filter_abc")
+    ).collect { counts ->
+        counts.forEach {
+            Log.d("DocType", "${it.type}: ${it.count}")
+        }
+    }
+}
+```
+
+> Note: This function is reactive and returns a Flow, which should be collected within a coroutine.
+>
+
+### Updating a Record
+
+The `updateRecord` function allows you to update the metadata of an existing record, such as the document date or document type. This is a `suspend` function and must be called from within a coroutine.
+
+### Function Signature
+
+```kotlin
+suspend fun updateRecord(
+    id: String,
+    documentDate: Long? = null,
+    documentType: String? = null,
+): String?
+```
+
+### Parameters
+
+- **id**: `String` — *(Required)* The unique identifier of the record to be updated.
+- **documentDate**: `Long?` — *(Optional)* The new document date, represented as a UNIX timestamp. Pass `null` to leave unchanged.
+- **documentType**: `String?` — *(Optional)* The new type of the document. Pass `null` to keep the existing type.
+
+### Return Value
+
+Returns a `String?` — the ID of the updated record if the operation is successful, or `null` if the update fails.
+
+### Example Usage
+
+```kotlin
+viewModelScope.launch {
+    val updatedId = recordsManager.updateRecord(
+        id = "record_456",
+        documentDate = 1681234567890,
+        documentType = "invoice"
+    )
+
+    if (updatedId != null) {
+        Log.d("RecordUpdate", "Record updated: $updatedId")
+    } else {
+        Log.e("RecordUpdate", "Failed to update record.")
+    }
+}
+```
+
+> Note: Call this function from a coroutine (e.g., viewModelScope) to avoid blocking the main thread.
+>
+
+### Fetching Record Details by ID
+
+The `getRecordDetailsById` function retrieves the full details of a specific record using its unique identifier. This is a `suspend` function and must be called from a coroutine.
+
+### Function Signature
+
+```kotlin
+suspend fun getRecordDetailsById(id: String): RecordModel?
+```
+
+### Parameters
+
+- **id**: `String` — *(Required)* The unique identifier of the record whose details are to be retrieved.
+
+### Return Value
+
+Returns a `RecordModel?` — the complete record object if found, or `null` if the record does not exist.
+
+### Example Usage
+
+```kotlin
+viewModelScope.launch {
+    val record = recordsManager.getRecordDetailsById("record_456")
+    if (record != null) {
+        Log.d("RecordDetails", "Document Type: ${record.documentType}")
+    } else {
+        Log.e("RecordDetails", "Record not found.")
+    }
+}
+```
+
+> Note: Always check for null as the record might not exist or could have been deleted.
+>
+
+### Deleting Records
+
+The `deleteRecords` function allows you to delete one or more records by their unique identifiers. This operation is performed asynchronously and must be called from a coroutine.
+
+### Function Signature
+
+```kotlin
+suspend fun deleteRecords(ids: List<String>)
+```
+
+### Parameters
+
+- **ids**: `List<String>` — *(Required)* A list of unique record IDs to be deleted.
+
+### Example Usage
+
+```kotlin
+viewModelScope.launch {
+    try {
+        recordsManager.deleteRecords(
+            ids = listOf("record_001", "record_002")
+        )
+        Log.d("RecordDelete", "Records deleted successfully.")
+    } catch (e: Exception) {
+        Log.e("RecordDelete", "Failed to delete records: ${e.message}")
+    }
+}
+```
+
+### Clearing All Stored Data
+
+The `clearAllData` function **permanently deletes all local data** stored by the SDK. This includes all records, metadata, and cached information managed by the SDK’s local database.
+
+### Function Signature
+
+```kotlin
+fun clearAllData()
+```
+
+### Behavior
+
+- This function **clears all tables** in the local database.
+- It is **irreversible** — once executed, all local data will be lost.
+- Remote data (if applicable) will remain unaffected unless explicitly synchronised afterward.
+
+### Example Usage
+
+```kotlin
+recordsManager.clearAllData()
+```
+
+> <Icon icon="triangle-exclamation" /> Caution: Use this method only when a full data reset is required, such as during user logout or when resetting the app state. Ensure the user is properly informed before performing this action.
+>
+
+### Syncing Records
+
+The `syncRecords` function triggers the **synchronisation of records** for a specific owner. This ensures that the local records are kept in sync with a remote server or cloud service (if applicable). The sync process is initiated asynchronously.
+
+### Function Signature
+
+```kotlin
+fun syncRecords(ownerId: String)
+```
+
+### Parameters
+
+- **ownerId**: `String` — *(Required)* The unique identifier for the owner whose records need to be synchronised.
+
+### Behavior
+
+- This function **starts an automatic synchronisation** process to ensure that records are up-to-date both locally and remotely.
+- Depending on the implementation, synchronisation may involve uploading local changes, downloading updated records, or both.
+
+### Example Usage
+
+```kotlin
+viewModelScope.launch {
+    recordsManager.syncRecords(ownerId = "user_123")
+    Log.d("Sync", "Sync process started.")
+}
+```
+
+> Note: The synchronisation process is handled asynchronously, and the app may need to listen for completion or errors. Ensure proper handling of network conditions and sync progress.
+>
+
+### Refreshing Records
+
+The `refreshRecords` function triggers a background sync process to refresh records for a specific owner, optionally applying filters. It uses **WorkManager** to ensure the sync task runs reliably in the background, even when the app is closed or the device is restarted. This operation ensures the records are up-to-date based on the latest data from the server or cloud service.
+
+### Function Signature
+
+```kotlin
+fun refreshRecords(
+    context: Context,
+    ownerId: String?,
+    filterIds: List<String>? = null
+)
+```
+
+### Parameters
+
+- **context**: `Context` — *(Required)* The application context used to initialise and enqueue the background task.
+- **ownerId**: `String?` — *(Required)* The unique identifier for the owner whose records should be refreshed. Can be `null` in case there is no specific owner.
+- **filterIds**: `List<String>?` — *(Optional)* A list of filter IDs to apply during the record refresh process. If `null`, no filters will be applied.
+
+### Behavior
+
+- This function creates a background **OneTimeWorkRequest** using **WorkManager** to perform the sync task when the device is connected to the network.
+- The sync task is defined by the `RecordsSync` worker, which processes the record refresh asynchronously.
+- The task will only run if the device is connected to a network.
+
+### Example Usage
+
+```kotlin
+val context: Context = app.applicationContext
+recordsManager.refreshRecords(
+    context = context,
+    ownerId = "user_123",
+    filterIds = listOf("filter_abc", "filter_xyz")
+)
+Log.d("Refresh", "Records refresh process started.")
+```
+
+> Note: This function will enqueue a background task that will run once the device meets the necessary network requirements.
+>
+
+### WorkManager Constraints
+
+- **Network Type**: The task requires an active network connection to run. The task will not run if the device is offline.
+
+### Setting a Custom Log Interceptor
+
+The `setLogInterceptor` function allows you to set a custom log interceptor for capturing and processing log events. This is useful for integrating with external logging systems, monitoring tools, or simply capturing logs in a custom format.
+
+### Function Signature
+
+```kotlin
+fun setLogInterceptor(listener: LogInterceptor)
+```
+
+### Parameters
+
+- **listener**: `LogInterceptor` — *(Required)* A custom listener that implements the `LogInterceptor` interface. This listener will be notified of all log events that occur in the SDK.
+
+### Example Usage
+
+```kotlin
+val logInterceptor = object : LogInterceptor {
+    override fun logEvent(eventLog: EventLog) {
+        // Custom logging logic
+        Log.d("CustomLog", "Event: ${eventLog.message}")
+    }
+}
+
+recordsManager.setLogInterceptor(logInterceptor)
+```
+
+> Note: This function allows developers to implement custom logging behavior that suits their needs, such as sending logs to a server or filtering events based on severity.
+>
+
+---
+
+### `LogInterceptor` Interface
+
+The `LogInterceptor` interface defines a method for logging events. Implement this interface to capture and process log data from the SDK.
+
+### Interface Definition
+
+```kotlin
+interface LogInterceptor {
+    /**
+     * Log the event with the given event log.
+     * @param eventLog The event log to log.
+     */
+    fun logEvent(eventLog: EventLog)
+}
+```
+
+> Note: The logEvent method is called every time an event occurs in the SDK. You can implement custom logic within this method to handle logs as needed.
+>
+
+---
+
+### `EventLog` Data Class
+
+The `EventLog` data class encapsulates the log event data, including any parameters and an optional message. It is used to store the event information that will be passed to the `LogInterceptor`.
+
+### Data Class Definition
+
+```kotlin
+data class EventLog(
+    val params: JSONObject = JSONObject(),
+    val message: String? = null,
+)
+```
+
+### Parameters
+
+- **params**: `JSONObject` — *(Optional)* A `JSONObject` containing key-value pairs of parameters associated with the event. This can be used to include additional metadata with the log event.
+- **message**: `String?` — *(Optional)* A message describing the event. This is the main content of the log.
+
+### Example Usage
+
+```kotlin
+val eventLog = EventLog(
+    params = JSONObject().apply {
+        put("userId", "user_123")
+        put("action", "record_created")
+    },
+    message = "New record has been created successfully."
+)
+
+logInterceptor.logEvent(eventLog)
+
+```
+
+### `RecordStatus` Enum
+
+The `RecordStatus` enum represents the various stages of a record's synchronization lifecycle. It is used internally and externally to track and represent the current state of a record as it moves through the upload and sync pipeline.
+
+### Enum Definition
+
+```kotlin
+enum class RecordStatus(val status: Int) {
+    NONE(0),
+    WAITING_TO_UPLOAD(1),
+    WAITING_FOR_NETWORK(2),
+    SYNCING(3),
+    SYNC_FAILED(4),
+    SYNC_SUCCESS(5)
+}
+```
+
+### Status Values
+
+- **NONE (0)**
+
+    Default or initial state.
+
+- **WAITING_TO_UPLOAD (1)**
+
+    The record is queued and waiting to begin the upload process.
+
+- **WAITING_FOR_NETWORK (2)**
+
+    The record is ready to upload but a required network connection is not yet available.
+
+- **SYNCING (3)**
+
+    The record is currently in the process of being synchronised with the server.
+
+- **SYNC_FAILED (4)**
+
+    The record sync attempt has failed. Retry logic may apply based on implementation.
+
+- **SYNC_SUCCESS (5)**
+
+    The record has been successfully synchronised with the server.
+
+
+### Example Usage
+
+```kotlin
+when (record.status) {
+    RecordStatus.SYNC_SUCCESS -> Log.d("RecordStatus", "Record synced successfully.")
+    RecordStatus.SYNC_FAILED -> Log.e("RecordStatus", "Record sync failed.")
+    else -> Log.d("RecordStatus", "Current status: ${record.status}")
+}
+```
+
+> Note: These statuses are especially useful for building UI indicators (e.g., progress spinners, error states) or managing sync retries in your application.
+>
+
+## Media Picker Integration
+
+The `PhotoPickerHost` interface provides an abstraction layer for handling various media input actions such as taking a photo, picking an image, selecting a PDF, or scanning documents. Implementing this interface allows you to delegate these operations to your app's UI layer using activity or fragment launchers.
+
+### `PhotoPickerHost` Interface
+
+```kotlin
+interface PhotoPickerHost {
+    fun takePhoto(cameraIntent: Intent, uri: Uri)
+    fun pickPhoto(request: PickVisualMediaRequest)
+    fun pickPdf()
+    fun scanDocuments(request: IntentSenderRequest)
+}
+```
+
+### Methods
+
+- **takePhoto(cameraIntent: Intent, uri: Uri)**
+
+    Launches the camera to take a photo and saves it to the specified `Uri`.
+
+- **pickPhoto(request: PickVisualMediaRequest)**
+
+    Opens a system picker for selecting an image from the device.
+
+- **pickPdf()**
+
+    Launches a file picker to select one or more PDF documents.
+
+- **scanDocuments(request: IntentSenderRequest)**
+
+    Starts a document scanning activity (e.g., using a third-party scanner or system service).
+
+
+---
+
+### Setting the Host
+
+Before initiating any media actions, you must set a host implementation using `MediaPickerManager.setHost(...)`. This connects the SDK's internal media operations to your app's UI.
+
+### Example
+
+```kotlin
+MediaPickerManager.setHost(object : PhotoPickerHost {
+    override fun takePhoto(intent: Intent, uri: Uri) {
+        viewModel.updatePhotoUri(uri)
+        cameraLauncher.launch(intent)
+    }
+
+    override fun pickPhoto(request: PickVisualMediaRequest) {
+        mediaPickerLauncher.launch(request)
+    }
+
+    override fun pickPdf() {
+        pdfPickerLauncher.launch(arrayOf("application/pdf"))
+    }
+
+    override fun scanDocuments(request: IntentSenderRequest) {
+        scannerLauncher.launch(request)
+    }
+})
+```
+
+> Note: All launchers (cameraLauncher, mediaPickerLauncher, etc.) should be properly registered using the Activity Result API (registerForActivityResult(...)) in your Activity or Fragment.
+>

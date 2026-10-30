@@ -1,0 +1,74 @@
+Webhook event is sent when processing of PII completes
+### Request
+**Headers:**
+
+- `Eka-Webhook-Signature`: `<Eka Webhook Signature>`  [Refer: Webhook Signature](/docs/webhooks/webhook-signature)
+- `Content-Type`: `application/json`
+
+**Body:**
+
+```json
+{
+  "event": "rec.pii",
+  "service": "rec",
+  "event_time": 1759234802,
+  "transaction_id": "4d39628e-7916-47d7-bc35-a00cb986942b",
+  "data": {
+    "status": "parsing_complete",
+    "document_id": "ed66604d-9d62-4f71-a5fb-b78a490148a0",
+    "data": {
+      "pii": [
+        {
+          "file_index": 0,
+          "page_num": 1,
+          "document_date": 1562697000,
+          "patient": {
+            "age": {
+              "years": 25,
+              "months": 0,
+              "days": 0
+            },
+            "gender": "male",
+            "name": "THREE DUMMY"
+          },
+          "report_info": {
+            "date_sample_collection": "10/07/2019 15:07:00",
+            "date_sample_received": "10/07/2019 15:08:19",
+            "date_report_generated": "10/07/2019 15:44:01",
+            "doctor": "Dr. UNKNWON",
+            "facility": "Dr Lal PathLabs"
+          }
+        }
+      ]
+    }
+  }
+}
+
+```
+### Field Descriptions
+
+- **`data`**: Contains additional details related to the event.
+    - **`status`**: Current parsing state (parsing_complete, parsing_error).
+    - **`document_id`**: ID of the document that was parsed.
+    - **`data`**: Additional Data.
+        - **`pii`**: PII Data.
+            - **`file_index`**: Zero-based index of the source file within the document.
+            - **`page_num`**: One-based page number within that file.
+            - **`document_date`**: Document timestamp (Unix epoch seconds).
+            - **`patient`** : Patient metadata extracted from the page.
+                - `age` Age at document_date.
+                    - `years` Years.
+                    - `months` Months.
+                    - `days` Days.
+                - `gender` gender (male, female, other)
+                - `name` Patient display name as printed on the report.
+            - **`report_info`** : Laboratory/report details.
+                - `date_sample_collection` Sample collection datetime.
+                - `date_sample_received` Sample received datetime.
+                - `date_report_generated` Report generated datetime.
+                - `doctor` Ordering/referring physician.
+                - `facility` Lab or organization name.
+
+Note: The status field is an enum with following possible values:
+ - parsing_complete
+ - parsing_error
