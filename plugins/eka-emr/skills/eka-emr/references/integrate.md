@@ -29,15 +29,10 @@ Headers that some operations require:
 - [Trinity Profiles SDK (TypeScript)](https://developer.eka.care/api-sdk/emr/sdks/patient-directory-sdks/patient-directory-ts-sdk)
 - [Eka Care TS SDK](https://developer.eka.care/api-sdk/sdks/sdks/web-sdk/getting-started)
 - [Python SDK: ekacare](https://developer.eka.care/api-sdk/sdks/sdks/backend/ekapython-sdk)
-- [Webhooks API](https://developer.eka.care/api-sdk/webhooks/getting-started)
-- [Webhook Signature](https://developer.eka.care/docs/webhooks/webhook-signature)
-- [Webhook Samples](https://developer.eka.care/docs/webhooks/webhook-samples)
-- [Glossary](https://developer.eka.care/docs/webhooks/glossary)
-- [EkaCare Webhook SDK](https://developer.eka.care/api-sdk/sdks/sdks/backend/webhook-sdk)
 
 ## Endpoints
 
-79 operations, grouped by tag.
+76 operations, grouped by tag.
 
 ### Patient Registration API
 
@@ -184,14 +179,6 @@ Headers that some operations require:
 | `POST` | [`/registered_url_for_ipd_admissions_estimates_events`](https://developer.eka.care/api-sdk/emr/post_webhooks/ipd-admissions-estimates) | IPD Admission Estimate |
 | `POST` | [`/registered_url_for_ipd_admissions_events`](https://developer.eka.care/api-sdk/emr/post_webhooks/ipd-admissions) | IPD Admission |
 | `POST` | [`/registered_url_for_ipd_admissions_events_events`](https://developer.eka.care/api-sdk/emr/post_webhooks/ipd-admissions-events) | IPD Admission Event |
-
-### Webhooks
-
-| Method | Path | What it does |
-| --- | --- | --- |
-| `GET` | [`/notification/v1/connect/webhook/subscriptions`](https://developer.eka.care/api-sdk/webhooks/get-webhooks) | Get Webhooks |
-| `POST` | [`/notification/v1/connect/webhook/subscriptions`](https://developer.eka.care/api-sdk/webhooks/register-webhook) | Register Webhook |
-| `DELETE` | [`/notification/v1/connect/webhook/subscriptions/{id}`](https://developer.eka.care/api-sdk/webhooks/delete-webhook) | Delete a Webhook |
 
 ## One request in full
 

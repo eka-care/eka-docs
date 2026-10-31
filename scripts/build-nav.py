@@ -181,7 +181,7 @@ ICONS = {
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Eka Labs': 'flask-conical', 'Changelog': 'history',
+    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Eka Labs': 'flask-conical', 'Under the hood': 'activity', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -470,7 +470,8 @@ def split_api(products):
             for it in fam['menu']:
                 if 'pages' in it:
                     it['pages'] = [x for x in (take_pages(e, lambda p: p != API_INDEX)[0] for e in it['pages']) if x is not None]
-        platform = next(f for f in api_families if f['product'] == 'Resources' + API_SUFFIX)
+        # The API index stays live for old links and redirects, but out of the navigation.
+        platform = next(f for f in api_families if f['product'] == ALL_APIS_FAMILY + API_SUFFIX)
         platform['menu'].insert(0, {'item': 'All APIs', 'icon': '/images/icons/products/code.svg',
                                     'description': 'Every Eka API, by product', 'pages': [API_INDEX]})
     products.extend(api_families)
@@ -698,8 +699,9 @@ def tabify(products):
                 menu.append(it)
                 continue
             tabs = []
-            if it.get('pages'):
-                tabs.append({'tab': DOCS_TAB, 'pages': it.pop('pages')})
+            pages = it.pop('pages', None)
+            if pages:
+                tabs.append({'tab': DOCS_TAB, 'pages': pages})
             twin = by_name.pop(it['item'] + API_SUFFIX, None)
             if twin and twin.get('pages'):
                 tabs.append({'tab': API_TAB, 'pages': twin['pages']})
@@ -808,21 +810,24 @@ FAMILIES = [
      ['Medical Scribe', 'Medical Document Parsing', 'Clinical MCP']),
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
-    ('Resources', 'book-open', 'Keys, sign-in, encryption, every API, worked examples and the Eka MCP server.',
-     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']),
+    ('Resources', 'book-open', 'Keys, sign-in, webhooks, encryption, Eka EMR, worked examples and the Eka MCP server.',
+     ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
+      'Eka MCP']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
-     ['Eka Labs', 'Changelog']),
+     ['Eka Labs', 'Under the hood', 'Changelog']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
     ('More from Eka', 'box-archive', 'Products kept out of the navigation. Their pages stay live, listed on /sitemap.',
-     ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
+     ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'All APIs']),
 ]
 HIDDEN_FAMILIES = {'More from Eka'}
+ALL_APIS_FAMILY = 'More from Eka'
 RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medical Document Parsing',
                 'Scribe': 'Medical Scribe', 'Agents': 'Medical Agents', 'Datasets': 'Medical Knowledge',
                 'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR', 'Research': 'Eka Labs', 'Overview': 'Understanding Integrations'}
 NEW_ITEMS = {
     'Cookbook': 'Worked examples that combine Eka products',
     'Eka Labs': 'Open models, datasets and research for AI in Indian healthcare',
+    'Under the hood': 'Monthly notes on reliability and security',
     'Changelog': 'What changed across Eka, week by week',
     'Understanding Integrations': 'Which integration you need, by the Eka product you use',
     'Eka MCP': 'Connect your agent to Eka EMR: patients, appointments and prescriptions',
@@ -843,14 +848,13 @@ COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-e
             'docs/get-started/whats-possible/mcp-connectors',
             'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
             'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
-PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
-# Webhooks and SDKs are not Resources items: each page joins the API tab of the product it serves.
-API_MOVES = {
-    'Eka EMR': ('Webhook setup', ['api-sdk/webhooks/getting-started', 'api-sdk/webhooks/register-webhook',
-                                  'api-sdk/webhooks/get-webhooks', 'api-sdk/webhooks/delete-webhook',
-                                  'docs/webhooks/webhook-signature', 'docs/webhooks/webhook-samples',
-                                  'docs/webhooks/glossary', 'api-sdk/sdks/sdks/backend/webhook-sdk']),
-}
+UNDER_THE_HOOD = 'docs/get-started/under-the-hood'
+PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', UNDER_THE_HOOD]
+# Webhook setup is the same for every product, so it is a Resources item of its own. SDKs are not: each SDK page
+# joins the API tab of the product it serves.
+WEBHOOKS = ['api-sdk/webhooks/getting-started', 'api-sdk/webhooks/register-webhook', 'api-sdk/webhooks/get-webhooks',
+            'api-sdk/webhooks/delete-webhook', 'docs/webhooks/webhook-signature', 'docs/webhooks/webhook-samples',
+            'docs/webhooks/glossary', 'api-sdk/sdks/sdks/backend/webhook-sdk']
 SDK_MOVES = {
     'Medical Scribe': ['api-sdk/sdks/sdks/android/ekascribe'],
     'Health Records': ['api-sdk/sdks/sdks/android/medical-records'],
@@ -991,14 +995,23 @@ def regroup(products):
     # Changelog: the platform-wide feed, which no tab carries any more.
     if not docs('Changelog'):
         items[(False, 'Changelog')] = {'item': 'Changelog', 'pages': list(PLATFORM_FEED)}
-    # Webhooks and SDKs go to the products they serve.
-    for name, (group, pages) in API_MOVES.items():
-        target = api(name)
-        moving = [p for p in pages if p in everything or p in walk_pages(target)]
-        for key in [(False, 'Webhooks'), (True, 'Webhooks')]:
-            if key in items:
-                items[key]['pages'] = remove_pages(items[key].get('pages', []), set(moving))
-        target['pages'] = add_to_group(remove_pages(target['pages'], set(moving)), group, moving)
+    # Under the hood: the monthly platform post is a Newsboard item of its own, as on the landing page's menu.
+    if not docs('Under the hood') and open_ok(UNDER_THE_HOOD):
+        for (is_api, _), it in items.items():
+            if not is_api and it.get('pages'):
+                it['pages'] = remove_pages(it['pages'], {UNDER_THE_HOOD})
+        items[(False, 'Under the hood')] = {'item': 'Under the hood', 'pages': [UNDER_THE_HOOD]}
+    # Webhooks: one Resources item that opens on its API tab, whichever product listed the pages before.
+    moving = {p for p in WEBHOOKS if open_ok(p)}
+    for it in items.values():
+        if it.get('pages'):
+            it['pages'] = remove_pages(it['pages'], moving)
+    items[(False, 'Webhooks')] = {**items.get((False, 'Webhooks'), {}), 'item': 'Webhooks',
+                                  'icon': f"/images/icons/products/{ICONS['Webhooks']}.svg",
+                                  'description': 'Register, receive and verify events'}
+    hooks = items.setdefault((True, 'Webhooks'), {'item': 'Webhooks' + API_SUFFIX})
+    hooks['pages'] = add_to_group(hooks.get('pages', []), 'Webhook setup', [p for p in WEBHOOKS if p in moving])
+    # SDKs go to the products they serve.
     for name, pages in SDK_MOVES.items():
         for key in [(True, 'SDKs')]:
             if key in items:
@@ -1112,9 +1125,12 @@ def tool_targets(products):
                 if page:
                     # An MCP server is known by its own name, which can span products; the others by their product.
                     name = page_meta(page).get('title', it['item']) if title == 'MCP servers' else it['item']
+                    name = 'Eka Webhooks' if (title, name) == ('Webhooks', 'Webhooks') else name
                     tools[title].append((fam['product'], name, it.get('description', ''), page))
     # The Eka MCP server leads its section wherever it sits in the navigation; the rest keep nav order.
     tools['MCP servers'].sort(key=lambda t: t[3] != EKA_MCP[0])
+    # Eka Webhooks, the setup every product shares, leads the Webhooks section.
+    tools['Webhooks'].sort(key=lambda t: t[1] != 'Eka Webhooks')
     return tools
 
 
