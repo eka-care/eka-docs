@@ -1425,7 +1425,8 @@ def main():
     write_link_js(root_groups(new['products']))
     # The API index and Developer tools list only what the navigation shows; /sitemap lists the rest.
     visible = [t for t in targets if t[0] not in HIDDEN_FAMILIES]
-    write_index(visible)
+    # Eka EMR stays out of the navigation, but the API index gives its reference a section of its own.
+    write_index(visible + [('Eka EMR', name, desc, API_HOME[name]) for _, name, desc, _ in targets if name == 'Eka EMR'])
     write_dev_tools(visible, tool_targets(new['products']))
     fold(new['products'])
     write_journey(new['products'])

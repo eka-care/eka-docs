@@ -346,8 +346,13 @@ class VisibleOnly(unittest.TestCase):
     def test_tools_and_api_index_list_only_products_in_the_navigation(self):
         for page in ('developer-tools.mdx', 'api-sdk/index.mdx'):
             src = open(os.path.join(ROOT, page)).read()
-            for hidden in ('Eka EMR', 'Medical Agents', 'Medical Knowledge', 'IPD', 'Billing', 'Health Records'):
+            for hidden in ('Medical Agents', 'Medical Knowledge', 'IPD', 'Billing', 'Health Records'):
                 self.assertNotIn(f'title="{hidden}"', src, page)
+        self.assertNotIn('title="Eka EMR"', open(os.path.join(ROOT, 'developer-tools.mdx')).read())
+
+    def test_api_index_has_an_eka_emr_section(self):
+        index = open(os.path.join(ROOT, 'api-sdk/index.mdx')).read()
+        self.assertIn('## Eka EMR\n\n<CardGroup cols={2}>\n  <Card title="Eka EMR" href="/api-sdk/emr/instructions/before-you-begin">', index)
 
 
 class Sitemap(unittest.TestCase):
