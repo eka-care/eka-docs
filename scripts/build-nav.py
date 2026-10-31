@@ -470,7 +470,8 @@ def split_api(products):
             for it in fam['menu']:
                 if 'pages' in it:
                     it['pages'] = [x for x in (take_pages(e, lambda p: p != API_INDEX)[0] for e in it['pages']) if x is not None]
-        platform = next(f for f in api_families if f['product'] == 'Resources' + API_SUFFIX)
+        # The API index stays live for old links and redirects, but out of the navigation.
+        platform = next(f for f in api_families if f['product'] == ALL_APIS_FAMILY + API_SUFFIX)
         platform['menu'].insert(0, {'item': 'All APIs', 'icon': '/images/icons/products/code.svg',
                                     'description': 'Every Eka API, by product', 'pages': [API_INDEX]})
     products.extend(api_families)
@@ -809,15 +810,17 @@ FAMILIES = [
      ['Medical Scribe', 'Medical Document Parsing', 'Clinical MCP']),
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
-    ('Resources', 'book-open', 'Keys, sign-in, encryption, every API, worked examples and the Eka MCP server.',
-     ['Get started', 'Auth', 'Webhooks', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']),
+    ('Resources', 'book-open', 'Keys, sign-in, webhooks, encryption, Eka EMR, worked examples and the Eka MCP server.',
+     ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
+      'Eka MCP']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
      ['Eka Labs', 'Changelog']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
     ('More from Eka', 'box-archive', 'Products kept out of the navigation. Their pages stay live, listed on /sitemap.',
-     ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']),
+     ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'All APIs']),
 ]
 HIDDEN_FAMILIES = {'More from Eka'}
+ALL_APIS_FAMILY = 'More from Eka'
 RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medical Document Parsing',
                 'Scribe': 'Medical Scribe', 'Agents': 'Medical Agents', 'Datasets': 'Medical Knowledge',
                 'ABDM Connect': 'HIE-CM', 'EMR': 'Eka EMR', 'Research': 'Eka Labs', 'Overview': 'Understanding Integrations'}
@@ -1425,8 +1428,7 @@ def main():
     write_link_js(root_groups(new['products']))
     # The API index and Developer tools list only what the navigation shows; /sitemap lists the rest.
     visible = [t for t in targets if t[0] not in HIDDEN_FAMILIES]
-    # Eka EMR stays out of the navigation, but the API index gives its reference a section of its own.
-    write_index(visible + [('Eka EMR', name, desc, API_HOME[name]) for _, name, desc, _ in targets if name == 'Eka EMR'])
+    write_index(visible)
     write_dev_tools(visible, tool_targets(new['products']))
     fold(new['products'])
     write_journey(new['products'])
