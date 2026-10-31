@@ -181,7 +181,7 @@ ICONS = {
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Eka Labs': 'flask-conical', 'Changelog': 'history',
+    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Eka Labs': 'flask-conical', 'Under the hood': 'activity', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -814,7 +814,7 @@ FAMILIES = [
      ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
       'Eka MCP']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
-     ['Eka Labs', 'Changelog']),
+     ['Eka Labs', 'Under the hood', 'Changelog']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
     ('More from Eka', 'box-archive', 'Products kept out of the navigation. Their pages stay live, listed on /sitemap.',
      ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'All APIs']),
@@ -827,6 +827,7 @@ RENAME_ITEMS = {'Models': 'Medical Document Parsing', 'Document Parsing': 'Medic
 NEW_ITEMS = {
     'Cookbook': 'Worked examples that combine Eka products',
     'Eka Labs': 'Open models, datasets and research for AI in Indian healthcare',
+    'Under the hood': 'Monthly notes on reliability and security',
     'Changelog': 'What changed across Eka, week by week',
     'Understanding Integrations': 'Which integration you need, by the Eka product you use',
     'Eka MCP': 'Connect your agent to Eka EMR: patients, appointments and prescriptions',
@@ -847,7 +848,8 @@ COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-e
             'docs/get-started/whats-possible/mcp-connectors',
             'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
             'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
-PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
+UNDER_THE_HOOD = 'docs/get-started/under-the-hood'
+PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', UNDER_THE_HOOD]
 # Webhook setup is the same for every product, so it is a Resources item of its own. SDKs are not: each SDK page
 # joins the API tab of the product it serves.
 WEBHOOKS = ['api-sdk/webhooks/getting-started', 'api-sdk/webhooks/register-webhook', 'api-sdk/webhooks/get-webhooks',
@@ -993,6 +995,12 @@ def regroup(products):
     # Changelog: the platform-wide feed, which no tab carries any more.
     if not docs('Changelog'):
         items[(False, 'Changelog')] = {'item': 'Changelog', 'pages': list(PLATFORM_FEED)}
+    # Under the hood: the monthly platform post is a Newsboard item of its own, as on the landing page's menu.
+    if not docs('Under the hood') and open_ok(UNDER_THE_HOOD):
+        for (is_api, _), it in items.items():
+            if not is_api and it.get('pages'):
+                it['pages'] = remove_pages(it['pages'], {UNDER_THE_HOOD})
+        items[(False, 'Under the hood')] = {'item': 'Under the hood', 'pages': [UNDER_THE_HOOD]}
     # Webhooks: one Resources item that opens on its API tab, whichever product listed the pages before.
     moving = {p for p in WEBHOOKS if open_ok(p)}
     for it in items.values():

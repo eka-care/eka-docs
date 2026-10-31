@@ -21,7 +21,7 @@ MORE = ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Al
 # IPD, Billing and Health Records are sections of Eka EMR; they show as items only before the fold.
 RESOURCES = ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
              'Eka MCP']
-NEWSBOARD = ['Eka Labs', 'Changelog']
+NEWSBOARD = ['Eka Labs', 'Under the hood', 'Changelog']
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [f'docs/emr/build-with-ai/mcp-server/{p}' for p in
                                                                  ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
 CLINICAL_MCP = ['docs/datasets/build-with-ai/mcp-server/introduction'] + [
@@ -230,8 +230,8 @@ class BuildWithAI(unittest.TestCase):
 
 
 class ProductsGroup(unittest.TestCase):
-    """Get started > Products shows the landing page's three families, each page carding that family's menu items."""
-    PAGES = {'docs/products/clinical-intelligence': ('Solutions', 'Clinical AI'),
+    """Get started > Solutions shows the landing page's solution families, each page carding that family's menu items."""
+    PAGES = {'docs/products/clinical-intelligence': ('Clinical AI', 'Clinical AI'),
              'docs/products/abdm': ('ABDM Connect', 'ABDM Connect'),
              }
 
@@ -241,7 +241,7 @@ class ProductsGroup(unittest.TestCase):
 
     def test_products_group_lists_the_three_families(self):
         gs = item(self.products, 'Resources', 'Get started')['tabs'][0]['pages']
-        found, _ = nav.take_group(gs, 'Products')
+        found, _ = nav.take_group(gs, 'Solutions')
         self.assertEqual(list(nav.walk_pages(found)), list(self.PAGES))
 
     def test_each_page_is_titled_and_carded_like_the_landing(self):
