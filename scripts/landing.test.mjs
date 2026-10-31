@@ -31,7 +31,7 @@ test('nav labels', () => {
 test('resources menu', () => {
   const res = grab(/<div class="mega mega-res"[\s\S]*?<\/div><\/div>\n/, 'mega-res');
   const names = [...res.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
-  assert.deepEqual(names, ['Cookbook', 'Auth', 'Encryption']);
+  assert.deepEqual(names, ['Cookbook', 'Auth', 'Eka Webhooks', 'Encryption']);
 });
 
 test('newsboard menu leads with Eka Labs and ends with Changelog', () => {
