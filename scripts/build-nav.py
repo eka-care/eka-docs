@@ -698,8 +698,9 @@ def tabify(products):
                 menu.append(it)
                 continue
             tabs = []
-            if it.get('pages'):
-                tabs.append({'tab': DOCS_TAB, 'pages': it.pop('pages')})
+            pages = it.pop('pages', None)
+            if pages:
+                tabs.append({'tab': DOCS_TAB, 'pages': pages})
             twin = by_name.pop(it['item'] + API_SUFFIX, None)
             if twin and twin.get('pages'):
                 tabs.append({'tab': API_TAB, 'pages': twin['pages']})
@@ -809,7 +810,7 @@ FAMILIES = [
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
     ('Resources', 'book-open', 'Keys, sign-in, encryption, every API, worked examples and the Eka MCP server.',
-     ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']),
+     ['Get started', 'Auth', 'Webhooks', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
      ['Eka Labs', 'Changelog']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
@@ -844,13 +845,11 @@ COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-e
             'docs/get-started/whats-possible/appointment-management', 'docs/get-started/whats-possible/patient-management',
             'docs/get-started/whats-possible/medicine-lookup', 'docs/get-started/whats-possible/health-assessment']
 PLATFORM_FEED = ['docs/get-started/changelog', 'docs/get-started/weeklyupdates', 'docs/get-started/under-the-hood']
-# Webhooks and SDKs are not Resources items: each page joins the API tab of the product it serves.
-API_MOVES = {
-    'Eka EMR': ('Webhook setup', ['api-sdk/webhooks/getting-started', 'api-sdk/webhooks/register-webhook',
-                                  'api-sdk/webhooks/get-webhooks', 'api-sdk/webhooks/delete-webhook',
-                                  'docs/webhooks/webhook-signature', 'docs/webhooks/webhook-samples',
-                                  'docs/webhooks/glossary', 'api-sdk/sdks/sdks/backend/webhook-sdk']),
-}
+# Webhook setup is the same for every product, so it is a Resources item of its own. SDKs are not: each SDK page
+# joins the API tab of the product it serves.
+WEBHOOKS = ['api-sdk/webhooks/getting-started', 'api-sdk/webhooks/register-webhook', 'api-sdk/webhooks/get-webhooks',
+            'api-sdk/webhooks/delete-webhook', 'docs/webhooks/webhook-signature', 'docs/webhooks/webhook-samples',
+            'docs/webhooks/glossary', 'api-sdk/sdks/sdks/backend/webhook-sdk']
 SDK_MOVES = {
     'Medical Scribe': ['api-sdk/sdks/sdks/android/ekascribe'],
     'Health Records': ['api-sdk/sdks/sdks/android/medical-records'],
@@ -991,14 +990,17 @@ def regroup(products):
     # Changelog: the platform-wide feed, which no tab carries any more.
     if not docs('Changelog'):
         items[(False, 'Changelog')] = {'item': 'Changelog', 'pages': list(PLATFORM_FEED)}
-    # Webhooks and SDKs go to the products they serve.
-    for name, (group, pages) in API_MOVES.items():
-        target = api(name)
-        moving = [p for p in pages if p in everything or p in walk_pages(target)]
-        for key in [(False, 'Webhooks'), (True, 'Webhooks')]:
-            if key in items:
-                items[key]['pages'] = remove_pages(items[key].get('pages', []), set(moving))
-        target['pages'] = add_to_group(remove_pages(target['pages'], set(moving)), group, moving)
+    # Webhooks: one Resources item that opens on its API tab, whichever product listed the pages before.
+    moving = {p for p in WEBHOOKS if open_ok(p)}
+    for it in items.values():
+        if it.get('pages'):
+            it['pages'] = remove_pages(it['pages'], moving)
+    items[(False, 'Webhooks')] = {**items.get((False, 'Webhooks'), {}), 'item': 'Webhooks',
+                                  'icon': f"/images/icons/products/{ICONS['Webhooks']}.svg",
+                                  'description': 'Register, receive and verify events'}
+    hooks = items.setdefault((True, 'Webhooks'), {'item': 'Webhooks' + API_SUFFIX})
+    hooks['pages'] = add_to_group(hooks.get('pages', []), 'Webhook setup', [p for p in WEBHOOKS if p in moving])
+    # SDKs go to the products they serve.
     for name, pages in SDK_MOVES.items():
         for key in [(True, 'SDKs')]:
             if key in items:
@@ -1112,9 +1114,12 @@ def tool_targets(products):
                 if page:
                     # An MCP server is known by its own name, which can span products; the others by their product.
                     name = page_meta(page).get('title', it['item']) if title == 'MCP servers' else it['item']
+                    name = 'Eka Webhooks' if (title, name) == ('Webhooks', 'Webhooks') else name
                     tools[title].append((fam['product'], name, it.get('description', ''), page))
     # The Eka MCP server leads its section wherever it sits in the navigation; the rest keep nav order.
     tools['MCP servers'].sort(key=lambda t: t[3] != EKA_MCP[0])
+    # Eka Webhooks, the setup every product shares, leads the Webhooks section.
+    tools['Webhooks'].sort(key=lambda t: t[1] != 'Eka Webhooks')
     return tools
 
 

@@ -18,7 +18,7 @@ ABDM = ['HIE-CM', 'NHCX', 'UHI']
 # Kept out of the navigation (a hidden product): their pages stay live, and the generated /sitemap lists them.
 HIDDEN = 'More from Eka'
 MORE = ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'Eka EMR', 'IPD', 'Billing', 'Health Records']
-RESOURCES = ['Get started', 'Auth', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']
+RESOURCES = ['Get started', 'Auth', 'Webhooks', 'Encryption', 'All APIs', 'Cookbook', 'Eka MCP']
 NEWSBOARD = ['Eka Labs', 'Changelog']
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [f'docs/emr/build-with-ai/mcp-server/{p}' for p in
                                                                  ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
@@ -104,16 +104,16 @@ class Regroup(unittest.TestCase):
     def test_platform_split(self):
         nav.tabify(self.products)
         res = [i['item'] for i in next(f for f in self.products if f['product'] == 'Resources')['menu']]
-        self.assertNotIn('Webhooks', res)
+        self.assertIn('Webhooks', res)
         self.assertNotIn('SDKs', res)
 
         def api_tab(family, name):
             it = item(self.products, family, name)
             return set(nav.walk_pages(next(t['pages'] for t in it['tabs'] if t['tab'] == nav.API_TAB)))
+        self.assertEqual(api_tab('Resources', 'Webhooks'), set(nav.WEBHOOKS))
         emr = api_tab(HIDDEN, 'Eka EMR')
-        for p in ('api-sdk/webhooks/register-webhook', 'docs/webhooks/webhook-signature',
-                  'api-sdk/sdks/sdks/backend/webhook-sdk', 'api-sdk/sdks/sdks/web-sdk/getting-started',
-                  'api-sdk/sdks/sdks/backend/ekapython-sdk'):
+        self.assertFalse(emr & set(nav.WEBHOOKS))
+        for p in ('api-sdk/sdks/sdks/web-sdk/getting-started', 'api-sdk/sdks/sdks/backend/ekapython-sdk'):
             self.assertIn(p, emr)
         self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Clinical AI', 'Medical Scribe'))
         self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab(HIDDEN, 'Health Records'))
