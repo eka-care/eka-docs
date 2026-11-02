@@ -20,7 +20,7 @@ HIDDEN = 'More from Eka'
 MORE = ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'All APIs']
 # IPD, Billing and Health Records are sections of Eka EMR; they show as items only before the fold.
 RESOURCES = ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
-             'Eka MCP']
+             'Eka MCP', 'Eka Open Source']
 NEWSBOARD = ['Eka Labs', 'Under the hood', 'Changelog']
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [f'docs/emr/build-with-ai/mcp-server/{p}' for p in
                                                                  ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]

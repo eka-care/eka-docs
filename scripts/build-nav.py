@@ -181,7 +181,7 @@ ICONS = {
     'Cookbook': 'chef-hat',
     'Eka EMR': 'clipboard-list', 'IPD': 'bed-double', 'Billing': 'receipt', 'Health Records': 'folder-heart',
     'HIE-CM': 'arrow-left-right', 'NHCX': 'shield-check', 'UHI': 'network',
-    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Eka Labs': 'flask-conical', 'Under the hood': 'activity', 'Changelog': 'history',
+    'Understanding Integrations': 'compass', 'Eka MCP': 'plug', 'Clinical MCP': 'stethoscope', 'Get started': 'rocket', 'Auth': 'key-round', 'Encryption': 'lock', 'Eka Labs': 'flask-conical', 'Under the hood': 'activity', 'Eka Open Source': 'git-branch', 'Changelog': 'history',
     # build() still names the legacy items; regroup() renames them.
     'Models': 'brain-circuit', 'Datasets': 'database', 'EMR': 'clipboard-list',
     'Webhooks': 'webhook', 'SDKs': 'code',
@@ -812,7 +812,7 @@ FAMILIES = [
      ['HIE-CM', 'NHCX', 'UHI']),
     ('Resources', 'book-open', 'Keys, sign-in, webhooks, encryption, Eka EMR, worked examples and the Eka MCP server.',
      ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
-      'Eka MCP']),
+      'Eka MCP', 'Eka Open Source']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
      ['Eka Labs', 'Under the hood', 'Changelog']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
@@ -832,6 +832,7 @@ NEW_ITEMS = {
     'Understanding Integrations': 'Which integration you need, by the Eka product you use',
     'Eka MCP': 'Connect your agent to Eka EMR: patients, appointments and prescriptions',
     'Clinical MCP': 'Ground your agent in Indian drugs, treatment protocols, pharmacology and clinical calculators',
+    'Eka Open Source': 'Agent SDKs, document printing and app building blocks, on GitHub',
 }
 INTEGRATIONS_HOME = 'docs/integrations/overview'
 # The Eka MCP server is the one way into Eka EMR from the navigation, so it is a Resources item of its own; the landing
@@ -842,6 +843,9 @@ EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [
 CLINICAL_MCP = ['docs/datasets/build-with-ai/mcp-server/introduction'] + [
     f'docs/datasets/build-with-ai/mcp-server/{p}' for p in ('quickstart', 'tools', 'authentication')]
 MCP_ITEMS = {'Eka MCP': EKA_MCP, 'Clinical MCP': CLINICAL_MCP}
+# The code Eka publishes, with a link to each GitHub repository: a Resources item of its own.
+OPEN_SOURCE = 'docs/open-source/code'
+OWN_ITEMS = {**MCP_ITEMS, 'Eka Open Source': [OPEN_SOURCE]}
 COOKBOOK = ['docs/get-started/cookbook', 'docs/get-started/whats-possible/abdm-enabled-his',
             'docs/get-started/whats-possible/medical-records-from-any-source',
             'docs/get-started/whats-possible/clinically-intelligent-his', 'docs/products/patient-experiences',
@@ -904,7 +908,7 @@ def place_build_with_ai(entries, contents, home=None):
 
 def allowed_additions():
     """Pages this script may add to the navigation: the indexes and overviews it owns."""
-    return {API_INDEX, DEV_TOOLS, INTEGRATIONS_HOME, *COOKBOOK[:4], 'docs/get-started/whats-possible/mcp-connectors'} | set(BUILD_WITH_AI_HOME.values())
+    return {API_INDEX, DEV_TOOLS, INTEGRATIONS_HOME, OPEN_SOURCE, *COOKBOOK[:4], 'docs/get-started/whats-possible/mcp-connectors'} | set(BUILD_WITH_AI_HOME.values())
 
 
 def page_multiset(tree):
@@ -1035,7 +1039,7 @@ def regroup(products):
         it.pop('href', None)
         it['pages'] = place_build_with_ai(it.get('pages', []), json.loads(json.dumps(contents)), home)
 
-    for name, pages in MCP_ITEMS.items():
+    for name, pages in OWN_ITEMS.items():
         if all(open_ok(p) for p in pages):
             for (is_api, _), it in items.items():
                 if not is_api and it.get('pages'):
