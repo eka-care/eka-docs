@@ -31,7 +31,12 @@ test('nav labels', () => {
 test('resources menu', () => {
   const res = grab(/<div class="mega mega-res"[\s\S]*?<\/div><\/div>\n/, 'mega-res');
   const names = [...res.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
-  assert.deepEqual(names, ['Cookbook', 'Auth', 'Encryption']);
+  assert.deepEqual(names, ['Get started', 'Auth', 'Eka Webhooks', 'Encryption', 'Eka EMR', 'Cookbook', 'Eka MCP', 'Eka Open Source']);
+  // Written by build-nav.py from the docs' Platform and Build items, so the two menus cannot drift apart.
+  const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
+  const items = ['Platform', 'Build'].flatMap((fam) => docs.navigation.products.find((f) => f.product === fam).menu)
+    .map((i) => i.item === 'Webhooks' ? 'Eka Webhooks' : i.item);
+  assert.deepEqual(names, items);
 });
 
 test('newsboard menu leads with Eka Labs and ends with Changelog', () => {
@@ -297,7 +302,9 @@ test('the footer names the portal, follows the nav, and its heart opens the site
   assert.match(footer, /Eka Developer Portal/);
   const heads = [...footer.matchAll(/<h4>([^<]+)<\/h4>/g)].map((m) => m[1]);
   assert.deepEqual(heads, ['Solutions', 'Resources', 'Newsboard', 'Community']);
-  for (const gone of ['Medical Agents', 'Medical Knowledge', 'Integrations', 'Eka EMR', 'IPD']) assert.ok(!footer.includes(gone), gone);
+  for (const gone of ['Medical Agents', 'Medical Knowledge', 'Integrations', 'IPD']) assert.ok(!footer.includes(gone), gone);
+  // Eka EMR is hidden from the docs navigation, but the landing lists its API under Resources.
+  assert.match(footer, /<h4>Resources<\/h4>[^]*?<a href="\/api-sdk\/emr\/instructions\/before-you-begin">Eka EMR<\/a>/);
   assert.match(footer, /Eka Care\. Built in India\.\s*<a class="heart" href="\/sitemap" aria-label="Site map"/);
 });
 
