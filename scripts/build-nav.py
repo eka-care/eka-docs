@@ -810,9 +810,12 @@ FAMILIES = [
      ['Medical Scribe', 'Medical Document Parsing', 'Clinical MCP']),
     ('ABDM Connect', 'hospital', "ABHA, consent and record exchange across India's health stack, plus insurance claims.",
      ['HIE-CM', 'NHCX', 'UHI']),
-    ('Resources', 'book-open', 'Keys, sign-in, webhooks, encryption, Eka EMR, worked examples and the Eka MCP server.',
-     ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
-      'Eka MCP', 'Eka Open Source']),
+    # Resources, in two families as the landing page's Resources menu shows them: what every product shares, and
+    # what you build on.
+    ('Platform', 'key', 'Get started, sign-in, webhooks and encryption, shared by every product.',
+     ['Get started', 'Auth', 'Webhooks', 'Encryption']),
+    ('Build', 'hammer', 'Eka EMR, worked examples, the Eka MCP server and Eka open source.',
+     ['Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook', 'Eka MCP', 'Eka Open Source']),
     ('Newsboard', 'newspaper', 'What changed across Eka, and the research behind it.',
      ['Eka Labs', 'Under the hood', 'Changelog']),
     # Less is more: these stay out of the navigation. Their pages stay live at their URLs, and /sitemap lists them.
@@ -1311,23 +1314,23 @@ def write_journey(products):
 
 
 LANDING_MENUS = ['Clinical AI', 'ABDM Connect']
-# The landing page's Resources menu lists the docs' Resources items in two columns, written into its static HTML.
-# A few read differently there: Webhooks is named as Eka's own, and Eka EMR opens on its API reference.
+# The landing page's Resources menu lists the docs' Platform and Build families, one column each, written into its
+# static HTML. A few read differently there: Webhooks is named as Eka's own, and Eka EMR opens on its API reference.
 RESOURCES_COLUMNS = ['Platform', 'Build']
 LANDING_NAMES = {'Webhooks': 'Eka Webhooks'}
 LANDING_HREFS = {'Eka EMR': '/api-sdk/emr/instructions/before-you-begin'}
 
 
 def write_resources_menu(src, products):
-    fam = next(f for f in products if f['product'] == 'Resources')
-    rows = [(LANDING_NAMES.get(it['item'], it['item']),
-             LANDING_HREFS.get(it['item'], '/' + next(walk_pages(it['tabs'][0]['pages']))),
-             it['icon'].rsplit('/', 1)[-1].removesuffix('.svg'), it.get('description', '')) for it in fam['menu']]
-    half = (len(rows) + 1) // 2
+    def rows(family):
+        fam = next(f for f in products if f['product'] == family)
+        return [(LANDING_NAMES.get(it['item'], it['item']),
+                 LANDING_HREFS.get(it['item'], '/' + next(walk_pages(it['tabs'][0]['pages']))),
+                 it['icon'].rsplit('/', 1)[-1].removesuffix('.svg'), it.get('description', '')) for it in fam['menu']]
     cols = ''.join(f'<div class="mcol"><h4>{head}</h4>' + ''.join(
         f'<a class="mi" role="menuitem" href="{h}"><span class="pi"><i data-lucide="{ic}"></i></span>'
-        f'<div><b>{n}</b><span>{d}</span></div></a>' for n, h, ic, d in part) + '</div>'
-        for head, part in zip(RESOURCES_COLUMNS, (rows[:half], rows[half:])))
+        f'<div><b>{n}</b><span>{d}</span></div></a>' for n, h, ic, d in rows(head)) + '</div>'
+        for head in RESOURCES_COLUMNS)
     start = src.index('<div class="mega mega-res" id="mega-res" role="menu">\n') + len('<div class="mega mega-res" id="mega-res" role="menu">\n')
     end = src.index('\n', start)
     return src[:start] + '      ' + cols + src[end:]
@@ -1409,7 +1412,7 @@ def main():
         if '--check' in sys.argv:
             return
     regroup(new['products'])
-    get_started = next(f for f in new['products'] if f['product'] == 'Resources')['menu'][0]
+    get_started = next(f for f in new['products'] if f['product'] == 'Platform')['menu'][0]
     gs = get_started.get('pages') or get_started.get('groups')
     gs_pages = gs[0]['pages'] if isinstance(gs[0], dict) else gs
     if API_INDEX not in set(walk_pages(new)):
