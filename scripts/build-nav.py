@@ -1311,6 +1311,26 @@ def write_journey(products):
 
 
 LANDING_MENUS = ['Clinical AI', 'ABDM Connect']
+# The landing page's Resources menu lists the docs' Resources items in two columns, written into its static HTML.
+# A few read differently there: Webhooks is named as Eka's own, and Eka EMR opens on its API reference.
+RESOURCES_COLUMNS = ['Platform', 'Build']
+LANDING_NAMES = {'Webhooks': 'Eka Webhooks'}
+LANDING_HREFS = {'Eka EMR': '/api-sdk/emr/instructions/before-you-begin'}
+
+
+def write_resources_menu(src, products):
+    fam = next(f for f in products if f['product'] == 'Resources')
+    rows = [(LANDING_NAMES.get(it['item'], it['item']),
+             LANDING_HREFS.get(it['item'], '/' + next(walk_pages(it['tabs'][0]['pages']))),
+             it['icon'].rsplit('/', 1)[-1].removesuffix('.svg'), it.get('description', '')) for it in fam['menu']]
+    half = (len(rows) + 1) // 2
+    cols = ''.join(f'<div class="mcol"><h4>{head}</h4>' + ''.join(
+        f'<a class="mi" role="menuitem" href="{h}"><span class="pi"><i data-lucide="{ic}"></i></span>'
+        f'<div><b>{n}</b><span>{d}</span></div></a>' for n, h, ic, d in part) + '</div>'
+        for head, part in zip(RESOURCES_COLUMNS, (rows[:half], rows[half:])))
+    start = src.index('<div class="mega mega-res" id="mega-res" role="menu">\n') + len('<div class="mega mega-res" id="mega-res" role="menu">\n')
+    end = src.index('\n', start)
+    return src[:start] + '      ' + cols + src[end:]
 
 
 def write_menus(products):
@@ -1324,7 +1344,7 @@ def write_menus(products):
                  it['icon'].rsplit('/', 1)[-1].removesuffix('.svg'), it.get('description', '')] for it in fam['menu']]
         menus.append([fam['product'], rows])
     line = 'const NAV_MENUS=' + json.dumps(menus, ensure_ascii=False, separators=(',', ':')) + ';\n'
-    src = open(LANDING_HTML).read()
+    src = write_resources_menu(open(LANDING_HTML).read(), products)
     if 'const NAV_MENUS=' in src:
         start = src.index('const NAV_MENUS=')
         src = src[:start] + line + src[src.index('\n', start) + 1:]

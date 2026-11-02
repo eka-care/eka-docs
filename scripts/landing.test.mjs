@@ -31,7 +31,11 @@ test('nav labels', () => {
 test('resources menu', () => {
   const res = grab(/<div class="mega mega-res"[\s\S]*?<\/div><\/div>\n/, 'mega-res');
   const names = [...res.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
-  assert.deepEqual(names, ['Cookbook', 'Auth', 'Eka Webhooks', 'Eka EMR', 'Encryption']);
+  assert.deepEqual(names, ['Get started', 'Auth', 'Eka Webhooks', 'Encryption', 'Eka EMR', 'Cookbook', 'Eka MCP', 'Eka Open Source']);
+  // Written by build-nav.py from the docs' Resources items, so the two menus cannot drift apart.
+  const docs = JSON.parse(fs.readFileSync(new URL('../docs.json', import.meta.url), 'utf8'));
+  const items = docs.navigation.products.find((f) => f.product === 'Resources').menu.map((i) => i.item === 'Webhooks' ? 'Eka Webhooks' : i.item);
+  assert.deepEqual(names, items);
 });
 
 test('newsboard menu leads with Eka Labs and ends with Changelog', () => {
