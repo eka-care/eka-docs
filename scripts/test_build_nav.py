@@ -18,9 +18,9 @@ ABDM = ['HIE-CM', 'NHCX', 'UHI']
 # Kept out of the navigation (a hidden product): their pages stay live, and the generated /sitemap lists them.
 HIDDEN = 'More from Eka'
 MORE = ['Medical Agents', 'Medical Knowledge', 'Understanding Integrations', 'All APIs']
+PLATFORM = ['Get started', 'Auth', 'Webhooks', 'Encryption']
 # IPD, Billing and Health Records are sections of Eka EMR; they show as items only before the fold.
-RESOURCES = ['Get started', 'Auth', 'Webhooks', 'Encryption', 'Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook',
-             'Eka MCP', 'Eka Open Source']
+BUILD = ['Eka EMR', 'IPD', 'Billing', 'Health Records', 'Cookbook', 'Eka MCP', 'Eka Open Source']
 NEWSBOARD = ['Eka Labs', 'Under the hood', 'Changelog']
 EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [f'docs/emr/build-with-ai/mcp-server/{p}' for p in
                                                                  ('remote-mcp', 'local-mcp', 'supported-tools', 'authentication')]
@@ -60,11 +60,12 @@ class Regroup(unittest.TestCase):
     def test_families(self):
         nav.tabify(self.products)
         fams = docs_families(self.products)
-        self.assertEqual([f['product'] for f in fams], ['Clinical AI', 'ABDM Connect', 'Resources', 'Newsboard', HIDDEN])
+        self.assertEqual([f['product'] for f in fams], ['Clinical AI', 'ABDM Connect', 'Platform', 'Build', 'Newsboard', HIDDEN])
         names = {f['product']: [i['item'] for i in f['menu']] for f in fams}
         self.assertEqual(names['Clinical AI'], CLINICAL)
         self.assertEqual(names['ABDM Connect'], ABDM)
-        self.assertEqual(names['Resources'], RESOURCES)
+        self.assertEqual(names['Platform'], PLATFORM)
+        self.assertEqual(names['Build'], BUILD)
         self.assertEqual(names['Newsboard'], NEWSBOARD)
         self.assertEqual(names[HIDDEN], MORE)
         self.assertEqual([f['product'] for f in fams if f.get('hidden')], [HIDDEN])
@@ -90,7 +91,7 @@ class Regroup(unittest.TestCase):
         self.assertNotIn('docs/models/spotlight', parsing)
 
     def test_cookbook(self):
-        cook = list(nav.walk_pages(item(self.products, 'Resources', 'Cookbook')))
+        cook = list(nav.walk_pages(item(self.products, 'Build', 'Cookbook')))
         self.assertEqual(cook, RECIPES)
         elsewhere = [p for f in self.products for i in f['menu'] if i['item'] != 'Cookbook'
                      for p in nav.walk_pages(i) if p in RECIPES]
@@ -105,20 +106,20 @@ class Regroup(unittest.TestCase):
 
     def test_platform_split(self):
         nav.tabify(self.products)
-        res = [i['item'] for i in next(f for f in self.products if f['product'] == 'Resources')['menu']]
+        res = [i['item'] for i in next(f for f in self.products if f['product'] == 'Platform')['menu']]
         self.assertIn('Webhooks', res)
         self.assertNotIn('SDKs', res)
 
         def api_tab(family, name):
             it = item(self.products, family, name)
             return set(nav.walk_pages(next(t['pages'] for t in it['tabs'] if t['tab'] == nav.API_TAB)))
-        self.assertEqual(api_tab('Resources', 'Webhooks'), set(nav.WEBHOOKS))
-        emr = api_tab('Resources', 'Eka EMR')
+        self.assertEqual(api_tab('Platform', 'Webhooks'), set(nav.WEBHOOKS))
+        emr = api_tab('Build', 'Eka EMR')
         self.assertFalse(emr & set(nav.WEBHOOKS))
         for p in ('api-sdk/sdks/sdks/web-sdk/getting-started', 'api-sdk/sdks/sdks/backend/ekapython-sdk'):
             self.assertIn(p, emr)
         self.assertIn('api-sdk/sdks/sdks/android/ekascribe', api_tab('Clinical AI', 'Medical Scribe'))
-        self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Resources', 'Health Records'))
+        self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Build', 'Health Records'))
 
 
 EMR_MCP = ['introduction', 'remote-mcp', 'local-mcp', 'supported-tools', 'authentication']
@@ -150,10 +151,10 @@ class BuildWithAI(unittest.TestCase):
         self.assertEqual(list(nav.walk_pages(clinical['tabs'][0]['pages'])), CLINICAL_MCP)
         self.assertFalse(set(CLINICAL_MCP) & set(nav.walk_pages(item(self.products, HIDDEN, 'Medical Knowledge')['tabs'])))
         # The Eka MCP server, the one way in to Eka EMR from the navigation, is a Resources item.
-        mcp = item(self.products, 'Resources', 'Eka MCP')
+        mcp = item(self.products, 'Build', 'Eka MCP')
         self.assertEqual([t['tab'] for t in mcp['tabs']], [nav.DOCS_TAB])
         self.assertEqual(list(nav.walk_pages(mcp['tabs'][0]['pages'])), EKA_MCP)
-        self.assertFalse(set(EKA_MCP) & set(nav.walk_pages(item(self.products, 'Resources', 'Eka EMR')['tabs'])))
+        self.assertFalse(set(EKA_MCP) & set(nav.walk_pages(item(self.products, 'Build', 'Eka EMR')['tabs'])))
         self.assertIn('docs/scribe/build-with-ai/claude-md', self.group('Clinical AI', 'Medical Scribe'))
         agents = set(nav.walk_pages(item(self.products, HIDDEN, 'Medical Agents')))
         self.assertFalse({p for p in agents if 'mcp-server' in p or 'medai-tools-mcp' in p})
@@ -177,9 +178,9 @@ class BuildWithAI(unittest.TestCase):
         folders = {('Clinical AI', 'Medical Scribe'): 'scribe', ('Clinical AI', 'Medical Document Parsing'): 'models',
                    (HIDDEN, 'Medical Agents'): 'agents', (HIDDEN, 'Medical Knowledge'): 'datasets',
                    ('ABDM Connect', 'HIE-CM'): 'hie-cm', ('ABDM Connect', 'NHCX'): 'nhcx', ('ABDM Connect', 'UHI'): 'uhi',
-                   ('Resources', 'Eka EMR'): 'emr'}
+                   ('Build', 'Eka EMR'): 'emr'}
         # IPD, Billing and Health Records are sections of Eka EMR; their Build with AI pages live in its sidebar.
-        folders = list(folders.items()) + [(('Resources', 'Eka EMR'), f) for f in ('ipd', 'billing', 'health-records')]
+        folders = list(folders.items()) + [(('Build', 'Eka EMR'), f) for f in ('ipd', 'billing', 'health-records')]
         for (family, name), folder in folders:
             it = item(self.products, family, name)
             tab = next((t for t in it['tabs'] if t['tab'] == nav.DOCS_TAB), None)
@@ -203,7 +204,7 @@ class BuildWithAI(unittest.TestCase):
 
     def test_eka_emr_opens_on_its_documentation(self):
         # IPD, whose docs were only Build with AI, used to open on its API. As a section of Eka EMR it opens with it.
-        emr = item(self.products, 'Resources', 'Eka EMR')
+        emr = item(self.products, 'Build', 'Eka EMR')
         self.assertEqual(emr['tabs'][0]['tab'], nav.DOCS_TAB)
 
     def test_no_integrations_family_and_no_scribe_link_item(self):
@@ -240,7 +241,7 @@ class ProductsGroup(unittest.TestCase):
         self.products = self.docs['navigation']['products']
 
     def test_products_group_lists_the_three_families(self):
-        gs = item(self.products, 'Resources', 'Get started')['tabs'][0]['pages']
+        gs = item(self.products, 'Platform', 'Get started')['tabs'][0]['pages']
         found, _ = nav.take_group(gs, 'Solutions')
         self.assertEqual(list(nav.walk_pages(found)), list(self.PAGES))
 
@@ -264,7 +265,7 @@ class EkaEmrFold(unittest.TestCase):
         d = json.load(open(os.path.join(ROOT, 'docs.json')))
         fams = {f['product']: f for f in d['navigation']['products']}
         self.integ = fams[HIDDEN]
-        self.emr = next(i for i in fams['Resources']['menu'] if i['item'] == 'Eka EMR')
+        self.emr = next(i for i in fams['Build']['menu'] if i['item'] == 'Eka EMR')
 
     def tab(self, name):
         return next(t['pages'] for t in self.emr['tabs'] if t['tab'] == name)
@@ -355,7 +356,8 @@ class VisibleOnly(unittest.TestCase):
     def test_the_api_index_is_live_but_out_of_the_navigation(self):
         docs = json.load(open(os.path.join(ROOT, 'docs.json')))
         fams = {f['product']: f for f in docs['navigation']['products']}
-        self.assertNotIn('All APIs', [it['item'] for it in fams['Resources']['menu']])
+        for fam in ('Platform', 'Build'):
+            self.assertNotIn('All APIs', [it['item'] for it in fams[fam]['menu']])
         self.assertIn(nav.API_INDEX, set(nav.walk_pages(fams[HIDDEN])))
 
 
