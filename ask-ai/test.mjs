@@ -11,8 +11,8 @@ await build({
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
                export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport, UNREACHABLE, STALLED} from './src/transport';
-               export {pastHero} from './src/FloatingBar';
-               export {groundOfColor, groundOfScheme, docksAt, PAGE_MIN} from './src/index';
+               export {pastHero, BAR_ROOM} from './src/FloatingBar';
+               export {groundOfColor, groundOfScheme, groundFrom, docksAt, PAGE_MIN} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
@@ -40,7 +40,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, groundOfColor, groundOfScheme, docksAt, PAGE_MIN, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, BAR_ROOM, groundOfColor, groundOfScheme, groundFrom, docksAt, PAGE_MIN, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -245,14 +245,16 @@ assert.equal(after, 0, 'detach stops delivery');
 // No agent id is the mock; an agent id is Synapse, which is not wired yet.
 assert.equal(createTransport({}).isMock, true);
 
-// The bar: shown where there is no hero, and on the landing page only once
-// the hero's bottom edge has left the top of the viewport.
+// The bar: shown where there is no hero, and on the landing page as soon as
+// the hero's bottom edge has risen clear of the bar's own space (BAR_ROOM),
+// so it arrives with the first scroll and never sits on the hero.
 const heroAt = (bottom) => ({getBoundingClientRect: () => ({bottom})});
-assert.equal(pastHero(null), true, 'no hero: the bar shows');
-assert.equal(pastHero(heroAt(600)), false, 'hero on screen: the bar waits');
-assert.equal(pastHero(heroAt(1)), false, 'a sliver of hero still counts');
-assert.equal(pastHero(heroAt(0)), true, 'hero scrolled away: the bar shows');
-assert.equal(pastHero(heroAt(-300)), true);
+assert.equal(BAR_ROOM, 66, 'the bar is 42px tall, 24px above the edge');
+assert.equal(pastHero(null, 900), true, 'no hero: the bar shows');
+assert.equal(pastHero(heroAt(900), 900), false, 'hero filling the screen: the bar waits');
+assert.equal(pastHero(heroAt(900 - 65), 900), false, 'hero still under the bar: it waits');
+assert.equal(pastHero(heroAt(900 - 66), 900), true, 'hero clear of the bar: it shows');
+assert.equal(pastHero(heroAt(-300), 900), true, 'hero scrolled away: it shows');
 
 // Ground: read from the colour actually painted, so the landing page's own
 // light ground wins over the site's or the system's dark.
@@ -269,6 +271,12 @@ assert.equal(groundOfScheme('dark'), 'dark');
 assert.equal(groundOfScheme('normal'), null, 'no declared scheme');
 assert.equal(groundOfScheme('light dark'), null, 'either scheme is no answer');
 assert.equal(groundOfScheme(''), null);
+// The page's declared theme wins over whatever happens to be painted under the bar, so a bright card scrolling
+// past on a dark page does not flip the bar to light. Paint decides only where the page declares nothing.
+assert.equal(groundFrom(['dark', 'normal'], ['rgb(255, 140, 90)'], false), 'dark', 'declared dark beats a light card');
+assert.equal(groundFrom(['light'], ['rgb(10, 10, 10)'], true), 'light', 'declared light beats dark paint and a dark machine');
+assert.equal(groundFrom(['normal', 'normal'], ['rgba(0, 0, 0, 0)', 'rgb(10, 10, 10)'], false), 'dark', 'no declaration: first paint');
+assert.equal(groundFrom(['normal'], ['rgba(0, 0, 0, 0)'], true), 'dark', 'nothing at all: the machine');
 // The panel docks beside the page only where the page keeps room for its own layout; otherwise it covers the page.
 assert.equal(PAGE_MIN, 900);
 assert.ok(docksAt(1440, 416) && docksAt(1316, 416), 'a wide window docks the default panel');
