@@ -12,7 +12,7 @@ await build({
                export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport, UNREACHABLE, STALLED} from './src/transport';
                export {pastHero, BAR_ROOM} from './src/FloatingBar';
-               export {groundOfColor, groundOfScheme, docksAt, PAGE_MIN} from './src/index';
+               export {groundOfColor, groundOfScheme, groundFrom, docksAt, PAGE_MIN} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
                export {ABOUT, isAboutQuestion} from './src/about';
@@ -40,7 +40,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, BAR_ROOM, groundOfColor, groundOfScheme, docksAt, PAGE_MIN, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, BAR_ROOM, groundOfColor, groundOfScheme, groundFrom, docksAt, PAGE_MIN, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -271,6 +271,12 @@ assert.equal(groundOfScheme('dark'), 'dark');
 assert.equal(groundOfScheme('normal'), null, 'no declared scheme');
 assert.equal(groundOfScheme('light dark'), null, 'either scheme is no answer');
 assert.equal(groundOfScheme(''), null);
+// The page's declared theme wins over whatever happens to be painted under the bar, so a bright card scrolling
+// past on a dark page does not flip the bar to light. Paint decides only where the page declares nothing.
+assert.equal(groundFrom(['dark', 'normal'], ['rgb(255, 140, 90)'], false), 'dark', 'declared dark beats a light card');
+assert.equal(groundFrom(['light'], ['rgb(10, 10, 10)'], true), 'light', 'declared light beats dark paint and a dark machine');
+assert.equal(groundFrom(['normal', 'normal'], ['rgba(0, 0, 0, 0)', 'rgb(10, 10, 10)'], false), 'dark', 'no declaration: first paint');
+assert.equal(groundFrom(['normal'], ['rgba(0, 0, 0, 0)'], true), 'dark', 'nothing at all: the machine');
 // The panel docks beside the page only where the page keeps room for its own layout; otherwise it covers the page.
 assert.equal(PAGE_MIN, 900);
 assert.ok(docksAt(1440, 416) && docksAt(1316, 416), 'a wide window docks the default panel');
