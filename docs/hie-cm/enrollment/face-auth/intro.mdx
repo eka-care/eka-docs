@@ -33,17 +33,17 @@ sequenceDiagram
     participant User
     participant ABDM
 
-    Client->>API: POST /face-auth/init
+    Client->>API: POST /abdm/na/v1/registration/aadhaar/face-auth/init
     API-->>Client: Transaction ID + QR Code
     Client->>User: Display QR Code
     User->>ABDM: Scan QR & Complete Face Auth
 
     loop Poll until verified
-        Client->>API: POST /face-auth/capture (Transaction ID)
+        Client->>API: POST /abdm/na/v1/registration/aadhaar/face-auth/capture (Transaction ID)
         API-->>Client: Status (Pending/Verified)
     end
 
-    Client->>API: POST /face-auth/verify (Transaction ID + Aadhaar)
+    Client->>API: POST /abdm/na/v1/registration/aadhaar/face-auth/verify (Transaction ID + Aadhaar)
     API-->>Client: User Information
     Client->>Client: Proceed to ABHA Creation
 ```
