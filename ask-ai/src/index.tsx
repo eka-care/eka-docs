@@ -1172,29 +1172,38 @@ export function groundOfScheme(scheme: string): 'light' | 'dark' | null {
 }
 
 /**
- * Which way the host page's ground runs where the bar sits: the first thing
- * under the foot of the viewport that actually paints a background. Read
- * there, not from body, because a page can paint its own ground over the
- * site's: the landing page has its own light and dark, independent of the
- * site theme. A light page on a machine set to dark is still a light page,
- * and a dark bar dropped into it looks like a bug. Where nothing paints (the
- * docs pages), the scheme the page declares decides, and only then the
- * system preference: a site set to Light on a dark machine is still light.
+ * Which way the host page's ground runs. The theme the page declares comes
+ * first (Mintlify sets color-scheme on the root from its Light, Dark and
+ * System toggle, and the landing page follows it), so a bright card passing
+ * under the bar on a dark page does not flip it. Only where nothing is
+ * declared does the first background actually painted decide, and only then
+ * the machine's preference.
  */
-function groundOf(host: Element): 'light' | 'dark' {
-  const under = document.elementsFromPoint(window.innerWidth / 2, window.innerHeight - 45);
-  for (const el of [...under, document.body, document.documentElement]) {
-    if (!el || el === host) continue;
-    const ground = groundOfColor(getComputedStyle(el).backgroundColor);
-    if (ground) return ground;
-  }
-  for (const el of [document.documentElement, document.body]) {
-    const declared = el && groundOfScheme(getComputedStyle(el).colorScheme);
+export function groundFrom(
+  schemes: string[],
+  backgrounds: string[],
+  prefersDark: boolean,
+): 'light' | 'dark' {
+  for (const scheme of schemes) {
+    const declared = groundOfScheme(scheme);
     if (declared) return declared;
   }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
+  for (const background of backgrounds) {
+    const painted = groundOfColor(background);
+    if (painted) return painted;
+  }
+  return prefersDark ? 'dark' : 'light';
+}
+
+/** The page's ground where the bar sits: read from under the foot of the viewport, then body and root. */
+function groundOf(host: Element): 'light' | 'dark' {
+  const under = document.elementsFromPoint(window.innerWidth / 2, window.innerHeight - 45);
+  const painted = [...under, document.body, document.documentElement].filter((el) => el && el !== host);
+  return groundFrom(
+    [document.documentElement, document.body].map((el) => (el ? getComputedStyle(el).colorScheme : '')),
+    painted.map((el) => getComputedStyle(el).backgroundColor),
+    window.matchMedia('(prefers-color-scheme: dark)').matches,
+  );
 }
 
 // HTMLElement only exists in a browser. A stand-in elsewhere lets a test
