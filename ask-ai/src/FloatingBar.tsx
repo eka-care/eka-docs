@@ -5,8 +5,9 @@
  * It holds only what the reader is typing. The element decides what asking
  * means; this says what was asked and clears itself.
  *
- * On a page with a hero (the landing page), the hero has its own prompt at
- * its foot, so the bar waits until the hero has scrolled away.
+ * On a page with a hero (the landing page), the bar waits while the hero
+ * fills the screen and arrives with the first scroll, once the hero's bottom
+ * edge has risen clear of the bar's own space.
  */
 import {useEffect, useState} from 'preact/hooks';
 import {ArrowUp, Sparkles} from './icons';
@@ -15,15 +16,18 @@ import {isMac} from './search-row';
 /** The host page's hero, by the id the landing page gives it. */
 const HERO_ID = 'hero';
 
-/** True once there is no hero on screen: none on the page, or scrolled past. */
-export function pastHero(hero: {getBoundingClientRect(): {bottom: number}} | null): boolean {
-  return !hero || hero.getBoundingClientRect().bottom <= 0;
+/** The bar's own space at the foot of the viewport: 42px tall, 24px above the edge. */
+export const BAR_ROOM = 66;
+
+/** True once the hero is clear of the bar's space: none on the page, or scrolled up past it. */
+export function pastHero(hero: {getBoundingClientRect(): {bottom: number}} | null, viewport: number): boolean {
+  return !hero || hero.getBoundingClientRect().bottom <= viewport - BAR_ROOM;
 }
 
 function usePastHero(): boolean {
-  const [past, setPast] = useState(() => pastHero(document.getElementById(HERO_ID)));
+  const [past, setPast] = useState(() => pastHero(document.getElementById(HERO_ID), window.innerHeight));
   useEffect(() => {
-    const check = () => setPast(pastHero(document.getElementById(HERO_ID)));
+    const check = () => setPast(pastHero(document.getElementById(HERO_ID), window.innerHeight));
     window.addEventListener('scroll', check, {passive: true});
     window.addEventListener('resize', check);
     // The site navigates without reloading, so the hero can arrive or leave

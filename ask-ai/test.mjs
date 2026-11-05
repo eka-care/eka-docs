@@ -11,7 +11,7 @@ await build({
     contents: `export {toBlocks, absolute, headings} from './src/markdown';
                export {mockTransport, tipsAfter} from './src/mock-transport';
                export {createTransport, UNREACHABLE, STALLED} from './src/transport';
-               export {pastHero} from './src/FloatingBar';
+               export {pastHero, BAR_ROOM} from './src/FloatingBar';
                export {groundOfColor, groundOfScheme, docksAt, PAGE_MIN} from './src/index';
                export {revealStep, THINKING_HOLD, THINKING_BURST, nextFrame, FRAME_FALLBACK} from './src/pacing';
                export {titleOf, remember, whenSaid, forgetOne, resumable, load, save} from './src/history';
@@ -40,7 +40,7 @@ await build({
   outfile: out,
 });
 const {
-  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, groundOfColor, groundOfScheme, docksAt, PAGE_MIN, revealStep, THINKING_HOLD, THINKING_BURST,
+  toBlocks, absolute, headings, mockTransport, tipsAfter, createTransport, UNREACHABLE, STALLED, pastHero, BAR_ROOM, groundOfColor, groundOfScheme, docksAt, PAGE_MIN, revealStep, THINKING_HOLD, THINKING_BURST,
   nextFrame, FRAME_FALLBACK,
   titleOf, remember, whenSaid, forgetOne, resumable, load, save, ABOUT, isAboutQuestion,
   startersFrom, DEFAULT_STARTERS, forModel, parseLlms, parseIndex, searchPages, pageUrl, markdownUrl, isHtmlDocument,
@@ -245,14 +245,16 @@ assert.equal(after, 0, 'detach stops delivery');
 // No agent id is the mock; an agent id is Synapse, which is not wired yet.
 assert.equal(createTransport({}).isMock, true);
 
-// The bar: shown where there is no hero, and on the landing page only once
-// the hero's bottom edge has left the top of the viewport.
+// The bar: shown where there is no hero, and on the landing page as soon as
+// the hero's bottom edge has risen clear of the bar's own space (BAR_ROOM),
+// so it arrives with the first scroll and never sits on the hero.
 const heroAt = (bottom) => ({getBoundingClientRect: () => ({bottom})});
-assert.equal(pastHero(null), true, 'no hero: the bar shows');
-assert.equal(pastHero(heroAt(600)), false, 'hero on screen: the bar waits');
-assert.equal(pastHero(heroAt(1)), false, 'a sliver of hero still counts');
-assert.equal(pastHero(heroAt(0)), true, 'hero scrolled away: the bar shows');
-assert.equal(pastHero(heroAt(-300)), true);
+assert.equal(BAR_ROOM, 66, 'the bar is 42px tall, 24px above the edge');
+assert.equal(pastHero(null, 900), true, 'no hero: the bar shows');
+assert.equal(pastHero(heroAt(900), 900), false, 'hero filling the screen: the bar waits');
+assert.equal(pastHero(heroAt(900 - 65), 900), false, 'hero still under the bar: it waits');
+assert.equal(pastHero(heroAt(900 - 66), 900), true, 'hero clear of the bar: it shows');
+assert.equal(pastHero(heroAt(-300), 900), true, 'hero scrolled away: it shows');
 
 // Ground: read from the colour actually painted, so the landing page's own
 // light ground wins over the site's or the system's dark.
