@@ -6,9 +6,9 @@ type: workflow
 product: abdm-connect
 journey: hip-register-patient-and-link-visit
 operations:
-  - POST /abdm/na/v1/face-auth/init
-  - POST /abdm/na/v1/face-auth/capture
-  - POST /abdm/na/v1/face-auth/verify
+  - POST /abdm/na/v1/registration/aadhaar/face-auth/init
+  - POST /abdm/na/v1/registration/aadhaar/face-auth/capture
+  - POST /abdm/na/v1/registration/aadhaar/face-auth/verify
   - POST /abdm/na/v1/registration/aadhaar/mobile/verify
   - POST /abdm/na/v1/registration/aadhaar/mobile/resend
   - GET /abdm/na/v1/registration/suggest
@@ -51,13 +51,13 @@ sequenceDiagram
   participant App as Your app
   participant Eka
   participant Patient as Patient's device
-  App->>Eka: POST /abdm/na/v1/face-auth/init
+  App->>Eka: POST /abdm/na/v1/registration/aadhaar/face-auth/init
   App-->>Patient: Show the QR code from url
   Patient->>Patient: Scan and complete face authentication
   loop Until status is Verified
-    App->>Eka: POST /abdm/na/v1/face-auth/capture
+    App->>Eka: POST /abdm/na/v1/registration/aadhaar/face-auth/capture
   end
-  App->>Eka: POST /abdm/na/v1/face-auth/verify
+  App->>Eka: POST /abdm/na/v1/registration/aadhaar/face-auth/verify
   opt Mobile not linked with Aadhaar (not yet confirmed for face auth)
     App->>Eka: POST /abdm/na/v1/registration/aadhaar/mobile/verify
     opt OTP did not arrive
