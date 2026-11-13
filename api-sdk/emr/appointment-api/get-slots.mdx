@@ -5,7 +5,7 @@ openapi: get /dr/v1/slots
 
 Replaces [Get Appointment Slots (Legacy)](/api-sdk/emr/appointment-api/get-appointment-slots).
 
-Every schedule mapped against that doctor and clinic: patient, staff or IPD.
+Every schedule mapped against that doctor and clinic: patient, front desk or IPD.
 
 ## Query keys
 
@@ -15,11 +15,11 @@ Every schedule mapped against that doctor and clinic: patient, staff or IPD.
 | `startTime` | yes | Window start, ISO with `Z`: `2026-11-13T18:30:00.000Z` | `400` |
 | `endTime` | yes | Window end, same format | `400` |
 | `cid` | no | Clinic id | Every clinic of the doctor |
-| `bookable_by` | no | `patient`, `staff` or `ipd`. See below | Every schedule |
+| `bookable_by` | no | `patient`, `front_desk` or `ipd`. See below | Every schedule |
 | `schedule_id` | no | Only this schedule's slots | Slots of all schedules |
 | `service_id` | no | Only that service is returned | Every service mapped |
 | `mode` | no | `in-clinic` or `tele` | Both |
-| `duration` | no | Slot length in minutes. eg: [15, 30, 45] returns Duration based schedules only. A length the schedule doesn't have eg [45] the api returns the shortest one by default, see [Slot length in a duration schedule](#slot-length-in-a-duration-schedule) | The schedule's shortest length |
+| `duration` | no | Slot length in minutes. Only duration schedules use it; service schedules ignore it. A length the schedule doesn't have (e.g. `45` when `slot_durations` is `[15, 30, 60]`) falls back to the shortest one, see [Slot length in a duration schedule](#slot-length-in-a-duration-schedule) | The schedule's shortest length |
 | header `time-zone` | no | Time zone of `s` and `e` in the reply | `Asia/Kolkata` |
 
 <Note>
@@ -34,7 +34,7 @@ Every schedule mapped against that doctor and clinic: patient, staff or IPD.
 | Value | Who books | What changes in the reply |
 |---|---|---|
 | `patient` | The slots/schedules you want to expose to the patient for booking: your website, booking page, patient app etc | Services with `allow_patient_booking: false` are hidden, even when you also send `schedule_id`. Duration schedules are skipped; if only those exist, `400`. With `schedule_id`, that schedule is served even if it is a duration schedule |
-| `staff` | Anyone at the clinic: doctor, front desk, staff | Nothing hidden |
+| `front_desk` | Anyone booking from the clinic side: your reception, front desk, doctor, clinic staff, or your own EMR | Nothing hidden |
 | `ipd` | Bookings for admitted (in-patient) patients | Nothing hidden |
 
 Whatever you send, only regular services get slots. Follow-up services (`appointment_type` other than `REGULAR`) and archived services never do.
@@ -45,7 +45,7 @@ Whatever you send, only regular services get slots. Follow-up services (`appoint
 |---|---|
 | `schedule_id` | Only that schedule, whoever can book on it. Not this doctor's or clinic's: `404` |
 | `bookable_by` | Every active schedule that group can book on |
-| Neither | Every active schedule. A schedule that both patients and staff can book on comes once |
+| Neither | Every active schedule. A schedule that both patients and the front desk can book on comes once |
 
 ## Clinic slots (no doctor)
 
@@ -61,7 +61,7 @@ To make one, call [Create Schedule](/api-sdk/emr/appointment-api/create-schedule
 
 ## Service schedules vs duration schedules
 
-A duration schedule has no services. Its slots are plain time cut at one length, so `conf_id` is `null` and there is no `services` list.
+A duration schedule has no services. Its slots are plain time cut at one length, so `conf_id` is `null`, it has no `services` list, and it adds nothing to the top-level `services`. A reply with only duration schedules has `services: []`.
 
 | | Service schedule (`slot_mode: service`) | Duration schedule (`slot_mode: duration`) |
 |---|---|---|
