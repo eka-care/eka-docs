@@ -47,6 +47,8 @@ Whatever you send, only regular services get slots. Follow-up services (`appoint
 | `bookable_by` | Every active schedule that group can book on |
 | Neither | Every active schedule. A schedule that both patients and the front desk can book on comes once |
 
+With `mode`, `service_id` or `bookable_by=patient` (and no `schedule_id`), a service schedule with no matching service between `startTime` and `endTime` is left out. Example: `mode=tele` leaves out a schedule that only has in-clinic services. Duration schedules always stay. If nothing is left: `404`.
+
 ## Clinic slots (no doctor)
 
 <Note>
@@ -106,6 +108,7 @@ A date alone (`2026-11-14`) means 00:00 UTC, which is 05:30 IST, so early-mornin
 | `400` | `INTERNAL_ERROR` | Something failed on our side. Retry |
 | `404` | `Schedule not setup for the doctor` | No active schedule for this doctor and clinic |
 | `404` | `Schedule not found` | `schedule_id` is unknown or not this doctor's |
+| `404` | `No schedule has a matching service between startTime and endTime` | You sent `mode`, `service_id` or `bookable_by=patient`, and no schedule has a matching service in that window |
 
 Every error body carries empty `data`: `{ "schedules": [], "services": [] }`.
 
