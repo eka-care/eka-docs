@@ -1,0 +1,124 @@
+---
+title: "Get Slots"
+openapi: get /dr/v1/slots
+---
+
+Replaces [Get Appointment Slots (Legacy)](/api-sdk/emr/appointment-api/get-appointment-slots).
+
+Every schedule mapped against that doctor and clinic: patient, front desk or IPD.
+
+## Query keys
+
+| Key | Required | What it means | If you leave it out |
+|---|---|---|---|
+| `doc_id` | yes | Doctor id. For clinic slots, use the clinic id in its place | `400 MISSING_DOC_ID` |
+| `startTime` | yes | Window start, ISO with `Z`: `2026-11-13T18:30:00.000Z` | `400` |
+| `endTime` | yes | Window end, same format | `400` |
+| `cid` | no | Clinic id | Every clinic of the doctor |
+| `bookable_by` | no | `patient`, `front_desk` or `ipd`. See below | Every schedule |
+| `schedule_id` | no | Only this schedule's slots | Slots of all schedules |
+| `service_id` | no | Only that service is returned | Every service mapped |
+| `mode` | no | `in-clinic` or `tele` | Both |
+| `duration` | no | Slot length in minutes. Only duration schedules use it; service schedules ignore it. A length the schedule doesn't have (e.g. `45` when `slot_durations` is `[15, 30, 60]`) falls back to the shortest one, see [Slot length in a duration schedule](#slot-length-in-a-duration-schedule) | The schedule's shortest length |
+| header `time-zone` | no | Time zone of `s` and `e` in the reply | `Asia/Kolkata` |
+
+<Note>
+**`mode` is set on each service, not on the schedule.**
+
+- Service schedule: every service is `in-clinic`, `tele`. `mode=tele` gives only the tele services' slots. in service based schedules are mapped on the service
+- Duration schedule: it has no services, so its slots are for both `in-clinic` and `tele`. `mode` is ignored.
+</Note>
+
+## `bookable_by`
+
+| Value | Who books | What changes in the reply |
+|---|---|---|
+| `patient` | The slots/schedules you want to expose to the patient for booking: your website, booking page, patient app, the slots you might send to the patient over whats-app, etc | Services with `allow_patient_booking: false` are hidden, even when you also send `schedule_id`. Duration schedules are skipped; if only those exist, `400`. With `schedule_id`, that schedule is served even if it is a duration schedule |
+| `front_desk` | Anyone booking from the clinic side: your reception, front desk, doctor, clinic staff, or your own EMR | Nothing hidden |
+| `ipd` | Bookings for admitted (in-patient) patients | Nothing hidden |
+
+Whatever you send, only regular services get slots. Follow-up services (`appointment_type` other than `REGULAR`) and archived services never do.
+
+## Which schedules come back
+
+| You send | You get |
+|---|---|
+| `schedule_id` | Only that schedule, whoever can book on it. Not this doctor's or clinic's: `404` |
+| `bookable_by` | Every active schedule that group can book on |
+| Neither | Every active schedule. A schedule that both patients and the front desk can book on comes once |
+
+With `mode`, `service_id` or `bookable_by=patient` (and no `schedule_id`), a service schedule with no matching service between `startTime` and `endTime` is left out. Example: `mode=tele` leaves out a schedule that only has in-clinic services. Duration schedules always stay. If nothing is left: `404`.
+
+## Clinic slots (no doctor)
+
+<Note>
+Put the clinic id in **both** `doc_id` and `cid`:
+
+`?doc_id=c-cc6a93720d7445af890c4cc0&cid=c-cc6a93720d7445af890c4cc0`
+
+You get the clinic's own schedules and services. `doctor_oid` comes back `null`. Clinic schedules are read in IST.
+
+To make one, call [Create Schedule](/api-sdk/emr/appointment-api/create-schedule) with the clinic id in both `entity_id` and `location_id`.
+</Note>
+
+## Service schedules vs duration schedules
+
+A duration schedule has no services. Its slots are plain time cut at one length, so `conf_id` is `null`, it has no `services` list, and it adds nothing to the top-level `services`. A reply with only duration schedules has `services: []`.
+
+| | Service schedule (`slot_mode: service`) | Duration schedule (`slot_mode: duration`) |
+|---|---|---|
+| Slot length | Each service's own `duration` | The `duration` you send if it is in the schedule's `slot_durations`, else the shortest one there |
+| Slots come in | `services[].slots`, one list per service type | `slots` |
+| `conf_id` on a slot | The service it books | `null` |
+| `service_id`, `mode` | Applied | Ignored |
+
+Service slots also follow each service's booking window: none sooner than `book_before_mins` from now, none later than `book_ahead_days` ahead. Past slots never come back.
+
+### Slot length in a duration schedule
+
+A schedule with `slot_durations: [15, 30, 60]`:
+
+| `duration` you send | Slots are cut at | `slot_duration` in the reply |
+|---|---|---|
+| `30` | 30 minutes | `30` |
+| `40`, not in `slot_durations` | 15 minutes, the shortest | `15` |
+| Left out | 15 minutes, the shortest | `15` |
+
+<Warning>
+A `duration` the schedule doesn't have is not an error. You get `200` with slots at the shortest length. Read `slot_duration` before you show or book a slot, so a 15-minute slot is not shown as a 40-minute one.
+</Warning>
+
+## Dates
+
+<Warning>
+Send `startTime` and `endTime` as full ISO with `Z`. One day in India is `startTime=2026-11-13T18:30:00.000Z&endTime=2026-11-14T18:29:59.999Z`.
+
+A date alone (`2026-11-14`) means 00:00 UTC, which is 05:30 IST, so early-morning slots get cut.
+</Warning>
+
+## Errors
+
+| Status | `error` | Why |
+|---|---|---|
+| `400` | `Invalid date input: ...` | `startTime` or `endTime` is bad, or the end is before the start |
+| `400` | `MISSING_DOC_ID` | No `doc_id` |
+| `400` | `Invalid <key>` | Bad value, or the same key sent twice |
+| `400` | `Unpaid doctor account` | The doctor's Eka plan is not active |
+| `400` | `duration-based schedules are not available on this endpoint` | when you send `bookable_by=patient`, but the doctor/clinic has ONLY duration based schedules |
+| `400` | `INTERNAL_ERROR` | Something failed on our side. Retry |
+| `404` | `Schedule not setup for the doctor` | No active schedule for this doctor and clinic |
+| `404` | `Schedule not found` | `schedule_id` is unknown or not this doctor's |
+| `404` | `No schedule has a matching service between startTime and endTime` | You sent `mode`, `service_id` or `bookable_by=patient`, and no schedule has a matching service in that window |
+
+Every error body carries empty `data`: `{ "schedules": [], "services": [] }`.
+
+## Coming from Get Appointment Slots (Legacy)
+
+| | Legacy | Get Slots |
+|---|---|---|
+| Path | `/dr/v1/doctor/{doctor_id}/clinic/{clinic_id}/appointment/slot` | `/dr/v1/slots?doc_id=...&cid=...` |
+| Dates | `start_date`, `end_date` | `startTime`, `endTime` |
+| Schedules | Only the one patients book on | Any. Pick with `bookable_by` or `schedule_id` |
+| Reply shape | Objects keyed by clinic and service | Lists: `schedules[]`, `services[]` |
+| Errors | Empty body, no reason | The reason is in `error` |
+| Unpaid doctor | Slots still come back | `400 Unpaid doctor account` |

@@ -3633,10 +3633,10 @@ paths:
     get:
       tags:
         - Appointment API
-      summary: Get Appointment Slots
+      summary: Get Appointment Slots (Legacy)
       description: >-
-        This API is the first step in booking appointment slot for a patient at
-        a doctor's clinic
+        Legacy, will be deprecated soon. Returns only the schedule patients
+        book on. Use Get Slots (`GET /dr/v1/slots`) for new work.
         
       operationId: GetAppointmentSlots
       parameters:
@@ -4000,6 +4000,320 @@ paths:
                 success: 'false'
                 status_code: 500
                 message: "An unexpected error occurred while processing your request. Please try again later."
+      deprecated: false
+  /dr/v1/slots:
+    get:
+      tags:
+        - Appointment API
+      summary: Get Slots
+      description: >-
+        Bookable slots for a doctor or a clinic, one entry per schedule per
+        clinic.
+      operationId: GetSlots
+      parameters:
+        - name: auth
+          in: header
+          description: ''
+          required: true
+          style: simple
+          schema:
+            type: string
+            example: 'auth'
+        - name: time-zone
+          in: header
+          description: 'Time zone for `s` and `e` in the reply, e.g. `Asia/Dubai`. Defaults to `Asia/Kolkata`.'
+          required: false
+          style: simple
+          schema:
+            type: string
+            example: 'Asia/Kolkata'
+        - name: doc_id
+          in: query
+          description: 'Doctor id. For clinic slots, use the clinic id in its place (send the same id in `cid`).'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '174368482468425'
+        - name: startTime
+          in: query
+          description: 'Window start, ISO-8601 with `Z`. A date alone (`2026-11-14`) means 00:00 UTC, which is 05:30 in India.'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '2026-11-13T18:30:00.000Z'
+        - name: endTime
+          in: query
+          description: 'Window end, same format. Must not be before `startTime`.'
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '2026-11-14T18:29:59.999Z'
+        - name: cid
+          in: query
+          description: 'Clinic id. Leave it out to get every clinic of the doctor.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '67ee84d9087b41001de0cfb1'
+        - name: bookable_by
+          in: query
+          description: 'Only schedules this group can book on: `patient` (patients book by themselves), `front_desk` (anyone booking from the clinic side: your reception, front desk, doctor, clinic staff, or your own EMR) or `ipd` (admitted patients). Leave it out to get every schedule.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum: [patient, front_desk, ipd]
+        - name: schedule_id
+          in: query
+          description: 'Only this schedule, whoever can book on it. `bookable_by=patient` still hides services patients can''t book.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            example: '6a7b046c1cf45d28c2c308b3'
+        - name: service_id
+          in: query
+          description: 'Only services of this service type, e.g. Consultation. A service schedule with none between `startTime` and `endTime` is left out. Duration schedules ignore it.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            example: 444895
+        - name: mode
+          in: query
+          description: 'Only services offered in this mode. A service schedule with none between `startTime` and `endTime` is left out. Duration schedules ignore it.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum: [in-clinic, tele]
+        - name: duration
+          in: query
+          description: 'Slot length in minutes, for duration schedules only. If it is in the schedule''s `slot_durations`, slots are cut at it. If it is not, or you leave it out, slots are cut at the shortest length in `slot_durations` (not an error). `slot_duration` in the reply is the length used.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            example: 15
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      schedules:
+                        type: array
+                        description: 'One entry per schedule per clinic.'
+                        items:
+                          type: object
+                          properties:
+                            schedule_id:
+                              type: string
+                            name:
+                              type: string
+                            doctor_oid:
+                              type: string
+                              nullable: true
+                              description: 'The doctor. `null` for clinic slots.'
+                            clinic_id:
+                              type: string
+                            slot_mode:
+                              type: string
+                              enum: [service, duration]
+                              description: '`service`: slots are grouped under `services`, one list per service type. `duration`: one plain `slots` list.'
+                            services:
+                              type: array
+                              description: 'Only when `slot_mode` is `service`.'
+                              items:
+                                type: object
+                                properties:
+                                  service_id:
+                                    type: integer
+                                    description: 'Service type, e.g. Consultation.'
+                                  slots:
+                                    type: array
+                                    items:
+                                      $ref: '#/components/schemas/GetSlotsSlot'
+                            slot_durations:
+                              type: array
+                              items:
+                                type: integer
+                              description: 'Only when `slot_mode` is `duration`. Lengths this schedule allows, in minutes.'
+                            slot_duration:
+                              type: integer
+                              nullable: true
+                              description: 'Only when `slot_mode` is `duration`. Length the slots are cut at: the `duration` you sent if it is in `slot_durations`, else the shortest one in `slot_durations`. `null`, with empty `slots`, only if the schedule has no `slot_durations` saved.'
+                            slots:
+                              type: array
+                              description: 'Only when `slot_mode` is `duration`.'
+                              items:
+                                $ref: '#/components/schemas/GetSlotsSlot'
+                      services:
+                        type: array
+                        description: 'Every service used in `schedules`, with all its keys: price, length, mode and more. Same object as List Services. Empty when only duration schedules come back.'
+                        items:
+                          type: object
+                          properties:
+                            conf_id:
+                              type: string
+                            service_id:
+                              type: integer
+                            service_name:
+                              type: string
+                            duration:
+                              type: integer
+                            price:
+                              type: number
+                            currency:
+                              type: string
+                            mode:
+                              type: array
+                              items:
+                                type: string
+                            allow_patient_booking:
+                              type: boolean
+                            book_ahead_days:
+                              type: integer
+                            book_before_mins:
+                              type: integer
+                      next:
+                        type: object
+                        description: 'First day after your window with open weekly hours and no block. Service schedules only.'
+                        properties:
+                          av:
+                            type: boolean
+                            description: '`true` when such a day exists.'
+                          av_date:
+                            type: string
+                            description: 'That day as ISO. Missing when `av` is `false`.'
+              example:
+                success: true
+                data:
+                  schedules:
+                    - schedule_id: '6a5073b865b26270f8a5d4a3'
+                      name: 'Morning OPD'
+                      doctor_oid: '174368482468425'
+                      clinic_id: '67ee84d9087b41001de0cfb1'
+                      slot_mode: 'service'
+                      services:
+                        - service_id: 444895
+                          slots:
+                            - s: '2026-11-14T09:00:00+05:30'
+                              e: '2026-11-14T09:15:00+05:30'
+                              available: true
+                              slots_booked: 0
+                              is_calendar_blocked: false
+                              in_schedule: true
+                              conf_id: '3bee28a5c1d94f0e'
+                              slot_duration: 15
+                            - s: '2026-11-14T09:15:00+05:30'
+                              e: '2026-11-14T09:30:00+05:30'
+                              available: false
+                              slots_booked: 1
+                              is_calendar_blocked: false
+                              in_schedule: true
+                              conf_id: '3bee28a5c1d94f0e'
+                              slot_duration: 15
+                    - schedule_id: '6a68f727583a473d68758ab3'
+                      name: 'Front desk walk-ins'
+                      doctor_oid: '174368482468425'
+                      clinic_id: '67ee84d9087b41001de0cfb1'
+                      slot_mode: 'duration'
+                      slot_durations: [15, 30]
+                      slot_duration: 15
+                      slots:
+                        - s: '2026-11-14T17:00:00+05:30'
+                          e: '2026-11-14T17:15:00+05:30'
+                          available: true
+                          slots_booked: 0
+                          is_calendar_blocked: false
+                          in_schedule: true
+                          conf_id: null
+                          slot_duration: 15
+                  services:
+                    - conf_id: '3bee28a5c1d94f0e'
+                      service_id: 444895
+                      service_name: 'Consultation'
+                      duration: 15
+                      price: 500
+                      currency: 'INR'
+                      mode: ['in-clinic']
+                      allow_patient_booking: true
+                      book_ahead_days: 30
+                      book_before_mins: 0
+                  next:
+                    av: true
+                    av_date: '2026-11-15T18:30:00.000Z'
+        '400':
+          description: 'Bad request, or the doctor can''t be served right now. `error` says why; see the Errors table on this page.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      schedules:
+                        type: array
+                        items:
+                          type: object
+                      services:
+                        type: array
+                        items:
+                          type: object
+              example:
+                success: false
+                error: 'Unpaid doctor account'
+                data:
+                  schedules: []
+                  services: []
+        '404':
+          description: 'No schedule found for this doctor and clinic, or `schedule_id` is unknown, or you sent `mode`, `service_id` or `bookable_by=patient` and no schedule has a matching service between `startTime` and `endTime`.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                  data:
+                    type: object
+              example:
+                success: false
+                error: 'Schedule not setup for the doctor'
+                data:
+                  schedules: []
+                  services: []
       deprecated: false
   /dr/v1/appointment:
     post:
@@ -15524,46 +15838,58 @@ paths:
       description: >-
         ### Overview
 
-        Creates a schedule for an `entity_id` in a `location_id` —
-        `entity_id` is your doctor id, `location_id` is your clinic id. A
-        schedule holds booking config (overbooking limit, slot-duration
-        mode) and, optionally, its timebounds (weekly / daily /
-        repeat-weekly / repeat-daily / block rules) and a product assignment
-        map, all in one call. This endpoint is primarily for setting the
-        timebounds — the `s`/`e` windows a doctor is available in, and (for
-        service-based schedules) the `conf_ids` bookable in each window.
+        Creates a schedule for a doctor at a clinic: `entity_id` is the
+        doctor id, `location_id` is the clinic id. For a clinic schedule (no
+        doctor), put the clinic id in both.
 
 
-        ### Duration-based vs. service-based schedules
-
-        `config.schedule_slot_config_enabled` decides how every bound's
-        slots get sliced, and whether that bound may carry `conf_ids`:
-
-
-        - **Duration-based** (`schedule_slot_config_enabled: true`): requires
-        at least one entry in `config.slot_durations`. Slots are sliced at a
-        fixed length picked from `slot_durations`. Bounds in `timebounds`
-        must **not** include `conf_ids` — sending any is rejected with `400`.
-
-        - **Service-based** (`schedule_slot_config_enabled` false or
-        omitted): every bound must include `conf_ids` — the services
-        bookable in that window. Valid ids come from the Service
-        Configuration APIs (`Get Service Conf List`, `Get Service Conf
-        Details`) for the schedule's `entity_id`; an id the entity doesn't
-        own, or an empty list, is rejected with `400`. There is no schedule-
-        level slot duration here — each slot is sliced using the `duration`
-        stored on the attached service (`conf_id`), so different services in
-        the same bound can produce differently-sized slots.
+        The same call can add the schedule's time windows (`timebounds`:
+        weekly, daily, repeat-weekly, repeat-daily, block) and set who can
+        book on it (`bookable_by`).
 
 
-        `product-widget` can only be assigned to one schedule per
-        `(entity_id, location_id)` pair — a second assignment returns `409`.
+        ### Service schedules vs duration schedules
+
+        `config.schedule_slot_config_enabled` decides how slots are cut.
 
 
-        ### Notes & Considerations
+        - **Service schedule** (`false` or left out): each window lists the
+        services bookable in it (`conf_ids`). A slot is as long as its
+        service's `duration`, so two services in one window can give
+        different slot lengths. Get the ids from [List
+        Services](/api-sdk/emr/appointment-api/get-service-conf-list).
+
+        - **Duration schedule** (`true`): needs at least one length in
+        `config.slot_durations`. Slots are cut at the length the caller asks
+        for; a length not in `slot_durations` gets the shortest one. `conf_ids`
+        in its windows are ignored.
 
 
-        Read more : ([API Reference - Get Appointment Slots](/api-sdk/emr/appointment-api/get-appointment-slots)) section — this API returns schedules assigned to `product-widget`.
+        `conf_ids` are not checked when you save. An id that belongs to
+        another doctor or clinic in your business is copied to this doctor
+        (`confs_created`). A window with no valid `conf_ids` gives no slots.
+
+
+        ### Who can book
+
+        `bookable_by` takes `patient` (patients book by themselves: website,
+        booking page, app), `front_desk` (anyone booking from the clinic
+        side: your reception, front desk, doctor, clinic staff, or your own
+        EMR) and `ipd` (bookings for admitted patients).
+
+
+        `productMap` is deprecated and will be removed soon; it still works.
+        Send `bookable_by` instead, never both in one call (`400`).
+
+
+        - Only one schedule per doctor and clinic can be bookable by
+        patients. A second one returns `409`.
+
+        - A duration schedule can't be bookable by patients (`409`).
+
+
+        Get slots for any schedule with [Get
+        Slots](/api-sdk/emr/appointment-api/get-slots).
       operationId: CreateSchedule
       parameters:
         - name: auth
@@ -15588,21 +15914,23 @@ paths:
                   description: 'Schedule name. Required, non-empty.'
                 entity_id:
                   type: string
-                  description: 'Doctor/entity id this schedule is scoped to.'
+                  description: 'Doctor id. For a clinic schedule, the clinic id.'
                 location_id:
                   type: string
-                  description: 'Clinic/location id this schedule is scoped to.'
+                  description: 'Clinic id.'
                 config:
                   type: object
                   properties:
                     overbooking_limit:
                       type: integer
                       minimum: 1
+                      description: 'Most appointments one slot can take. `1` = no overbooking.'
                     block_over_existing_bookings:
                       type: boolean
+                      description: 'Saved with the schedule. Not used when slots are made yet.'
                     schedule_slot_config_enabled:
                       type: boolean
-                      description: 'If true, `slot_durations` must be non-empty.'
+                      description: '`true` = duration schedule, `false` = service schedule. If `true`, `slot_durations` must not be empty.'
                     slot_durations:
                       type: array
                       items:
@@ -15630,15 +15958,15 @@ paths:
                               properties:
                                 s:
                                   type: integer
-                                  description: 'Start time, military format (e.g. `900` = 09:00).'
+                                  description: 'Start time as an HHMM number: `900` = 09:00, `1330` = 13:30.'
                                 e:
                                   type: integer
-                                  description: 'End time, military format (e.g. `1300` = 13:00).'
+                                  description: 'End time as an HHMM number: `1300` = 13:00.'
                                 conf_ids:
                                   type: array
                                   items:
                                     type: string
-                                  description: 'service-conf ids bookable in this window.'
+                                  description: 'Services bookable in this window (`conf_id` from List Services). Ignored in a duration schedule.'
                     daily:
                       type: object
                       description: 'One-off, date-specific bounds. Keyed by ISO date (`YYYY-MM-DD`).'
@@ -15731,9 +16059,23 @@ paths:
                           end_time:
                             type: string
                             description: '`HH:mm`, 24h.'
+                bookable_by:
+                  type: object
+                  description: 'Who can book on this schedule. `true` adds the group, `false` removes it. Needs `entity_id` and `location_id` (`400` without them).'
+                  properties:
+                    patient:
+                      type: boolean
+                      description: 'Patients book by themselves: website, booking page, app. Only one schedule per doctor and clinic.'
+                    front_desk:
+                      type: boolean
+                      description: 'Anyone booking from the clinic side: your reception, front desk, doctor, clinic staff, or your own EMR.'
+                    ipd:
+                      type: boolean
+                      description: 'Bookings for admitted (in-patient) patients.'
                 productMap:
                   type: object
-                  description: 'Assigns/unassigns this schedule to products. Keys are `product-emr` or `product-widget`, values are `true` to assign, `false` to unassign. `product-widget` allows only one active schedule per `(entity_id, location_id)`.'
+                  deprecated: true
+                  description: 'Deprecated, will be removed soon. Use `bookable_by`. Same thing with internal keys: `product-widget` = `patient`, `product-emr` = `front_desk`, `product-ipd` = `ipd`. Sending it with `bookable_by` returns `400`.'
                   additionalProperties:
                     type: boolean
               example:
@@ -15799,8 +16141,8 @@ paths:
                       end_date: "2026-10-22"
                       start_time: "09:00"
                       end_time: "18:00"
-                productMap:
-                  product-emr: true
+                bookable_by:
+                  front_desk: true
       responses:
         '201':
           description: Created
@@ -15846,23 +16188,31 @@ paths:
                         type: string
                       timebounds:
                         type: object
-                        description: 'Report of timebound rows created, keyed by rule type.'
+                        description: 'Time windows saved, per rule type.'
                       assignment:
                         type: object
                         properties:
-                          products:
+                          bookable_by:
                             type: array
                             items:
                               type: string
+                              enum: [patient, front_desk, ipd]
+                            description: 'Groups that can now book on this schedule.'
+                          products:
+                            type: array
+                            deprecated: true
+                            items:
+                              type: string
+                            description: 'Deprecated, will be removed soon. Read `bookable_by`. Same groups as internal ids (`product-widget`, `product-emr`, `product-ipd`).'
                           error:
                             type: string
                       confs_created:
                         type: array
                         items:
                           type: string
-                        description: 'service-conf ids created as part of the product assignment, if any.'
+                        description: 'Services (`conf_id`) copied to this doctor so the schedule can use them.'
         '400':
-          description: Bad Request — validation failure (e.g. missing `name`, invalid `config`/`timebounds`)
+          description: Bad Request — validation failure (e.g. missing `name`, invalid `config`/`timebounds`, invalid `bookable_by`, `bookable_by` without `entity_id` and `location_id`, or `bookable_by` sent with `productMap`)
           content:
             application/json:
               schema:
@@ -15875,7 +16225,7 @@ paths:
                     type: string
                     example: "name is required"
         '409':
-          description: Conflict — `product-widget` already assigned to another schedule for this `(entity_id, location_id)`
+          description: Conflict — another schedule is already bookable by patients for this doctor and clinic, or a duration schedule was made bookable by patients
           content:
             application/json:
               schema:
@@ -15895,16 +16245,20 @@ paths:
       description: >-
         ### Overview
 
-        Edits an existing schedule's config, name, archive state, and/or its
-        timebounds, in one call. Ownership is checked against the caller's
-        business — a schedule belonging to another business returns `401`,
-        and an unknown `scheduleId` returns `404`.
+        Edits a schedule's name, settings (`config`), archive state, time
+        windows and who can book on it, in one call. A schedule from another
+        business returns `401`. An unknown `scheduleId` returns `404`.
 
 
-        Archiving a schedule cannot be combined with timebound
-        additions/deletions or a product assignment in the same request
-        (`409`). Mutating an already-archived schedule also returns `409`.
-        The same `booking_id` cannot appear in both `timebounds` and
+        - Archiving deletes the schedule's time windows, blocks and
+        `bookable_by` groups, the same as Delete Schedule. Unarchiving does
+        not bring them back.
+
+        - Archiving can't be mixed with time-window or `bookable_by` changes
+        in the same call (`409`). Editing an archived schedule returns `409`.
+
+        - `booking_id` is the id of one saved time-window row, not an
+        appointment. The same `booking_id` can't be in both `timebounds` and
         `deleteTimebounds` (`400`).
       operationId: UpdateSchedule
       parameters:
@@ -15936,21 +16290,26 @@ paths:
                   description: 'New schedule name. If provided, must be non-empty.'
                 archive:
                   type: boolean
-                  description: 'Archive/unarchive the schedule. Cannot be combined with `timebounds`, `deleteTimebounds`, or a `productMap` assignment.'
+                  description: 'Archive or unarchive. Archiving deletes the time windows, blocks and `bookable_by` groups. Can''t be mixed with `timebounds`, `deleteTimebounds` or `bookable_by`.'
                 entity_id:
                   type: string
+                  description: 'Doctor id (clinic id for a clinic schedule). Needed with `bookable_by`.'
                 location_id:
                   type: string
+                  description: 'Clinic id. Needed with `bookable_by`.'
                 config:
                   type: object
                   properties:
                     overbooking_limit:
                       type: integer
                       minimum: 1
+                      description: 'Most appointments one slot can take. `1` = no overbooking.'
                     block_over_existing_bookings:
                       type: boolean
+                      description: 'Saved with the schedule. Not used when slots are made yet.'
                     schedule_slot_config_enabled:
                       type: boolean
+                      description: '`true` = duration schedule, `false` = service schedule.'
                     slot_durations:
                       type: array
                       items:
@@ -15960,7 +16319,7 @@ paths:
                       maxItems: 10
                 timebounds:
                   type: object
-                  description: 'Rows to create or update. Same shape as on `POST /schedule`, except `daily`/`repeat-weekly`/`repeat-daily`/`block` entries may include a `booking_id` to update that existing row in place instead of creating a new one.'
+                  description: 'Time windows to add or change. Same shape as on Create Schedule. A `daily`, `repeat-weekly`, `repeat-daily` or `block` entry with a `booking_id` changes that saved row instead of adding a new one.'
                   properties:
                     weekly:
                       type: object
@@ -16074,7 +16433,7 @@ paths:
                             type: string
                 deleteTimebounds:
                   type: object
-                  description: 'booking_ids to delete, keyed by rule type. A booking_id used here cannot also appear in `timebounds` in the same request.'
+                  description: 'Saved rows to delete, as `booking_id`s per rule type. A `booking_id` here can''t also be in `timebounds` in the same call.'
                   properties:
                     daily:
                       type: array
@@ -16092,9 +16451,23 @@ paths:
                       type: array
                       items:
                         type: string
+                bookable_by:
+                  type: object
+                  description: 'Who can book on this schedule. `true` adds the group, `false` removes it. Needs `entity_id` and `location_id` in the same call.'
+                  properties:
+                    patient:
+                      type: boolean
+                      description: 'Patients book by themselves: website, booking page, app. Only one schedule per doctor and clinic.'
+                    front_desk:
+                      type: boolean
+                      description: 'Anyone booking from the clinic side: your reception, front desk, doctor, clinic staff, or your own EMR.'
+                    ipd:
+                      type: boolean
+                      description: 'Bookings for admitted (in-patient) patients.'
                 productMap:
                   type: object
-                  description: 'Assigns/unassigns this schedule to products. Keys are `product-emr` or `product-widget`, values are `true`/`false`. Requires `entity_id` and `location_id` to also be present in the request.'
+                  deprecated: true
+                  description: 'Deprecated, will be removed soon. Use `bookable_by`. Same thing with internal keys: `product-widget` = `patient`, `product-emr` = `front_desk`, `product-ipd` = `ipd`. Sending it with `bookable_by` returns `400`.'
                   additionalProperties:
                     type: boolean
               example:
@@ -16148,30 +16521,39 @@ paths:
                               type: integer
                       timebounds:
                         type: object
-                        description: 'Report of timebound rows created/updated, keyed by rule type.'
+                        description: 'Time windows added or changed, per rule type.'
                       deleted:
                         type: object
-                        description: 'Report of timebound rows deleted, keyed by rule type.'
+                        description: 'Time windows deleted, per rule type.'
                       assignment:
                         type: object
                         properties:
-                          products:
+                          bookable_by:
                             type: array
                             items:
                               type: string
+                              enum: [patient, front_desk, ipd]
+                            description: 'Groups that can book on this schedule after this call.'
+                          products:
+                            type: array
+                            deprecated: true
+                            items:
+                              type: string
+                            description: 'Deprecated, will be removed soon. Read `bookable_by`. Same groups as internal ids (`product-widget`, `product-emr`, `product-ipd`).'
                           error:
                             type: string
                       confs_created:
                         type: array
                         items:
                           type: string
+                        description: 'Services (`conf_id`) copied to this doctor so the schedule can use them.'
                       failed_tasks:
                         type: array
                         items:
                           type: string
                         description: 'Present only if a sub-task (e.g. one timebound write) failed. The overall request still returns 200 — this reports partial failure.'
         '400':
-          description: Bad Request — nothing to update, or invalid/conflicting fields
+          description: Bad Request — nothing to update, invalid/conflicting fields, invalid `bookable_by`, `bookable_by` without `entity_id` and `location_id`, or `bookable_by` sent with `productMap`
           content:
             application/json:
               schema:
@@ -16209,7 +16591,7 @@ paths:
                     type: string
                     example: "schedule not found"
         '409':
-          description: Conflict — archiving combined with other mutations, mutating an archived schedule, duration-mode vs product-widget conflict, or widget already assigned elsewhere
+          description: Conflict — archiving mixed with other changes, editing an archived schedule, making a duration schedule bookable by patients, or another schedule is already bookable by patients for this doctor and clinic
           content:
             application/json:
               schema:
@@ -16228,15 +16610,12 @@ paths:
       description: >-
         ### Overview
 
-        Tears down a schedule: hard-deletes the schedule head, its config
-        document, every product assignment row, and all v2 timebounds/blocks
-        (weekly, daily, repeat-weekly, repeat-daily) for it. Any
-        widget-assigned targets are cleaned up on the axon side
-        fire-and-forget.
+        Deletes a schedule: its settings, all its time windows and blocks,
+        and its `bookable_by` groups. If patients could book on it, the
+        doctor's profile page stops showing these timings.
 
 
-        This is irreversible. Ownership is checked the same way as
-        `PATCH /schedule/{scheduleId}`.
+        Can't be undone. A schedule from another business returns `401`.
       operationId: DeleteSchedule
       parameters:
         - name: auth
@@ -16353,15 +16732,25 @@ paths:
           schema:
             type: string
             example: 'c-98765'
-        - name: product_id
+        - name: bookable_by
           in: query
-          description: 'One of `product-emr`, `product-widget`. Defaults to `product-emr`.'
+          description: 'Which schedules: `patient` (patients book by themselves), `front_desk` (anyone booking from the clinic side: your reception, front desk, doctor, clinic staff, or your own EMR) or `ipd` (admitted patients). Defaults to `front_desk`.'
           required: false
           style: form
           explode: true
           schema:
             type: string
-            enum: [product-emr, product-widget]
+            enum: [patient, front_desk, ipd]
+        - name: product_id
+          in: query
+          deprecated: true
+          description: 'Deprecated, will be removed soon. Use `bookable_by`: `product-widget` = `patient`, `product-emr` = `front_desk`, `product-ipd` = `ipd`. Sending both returns `400`.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum: [product-emr, product-widget, product-ipd]
         - name: startTime
           in: query
           description: 'Range start, ISO datetime. Must be before `endTime`; range capped at 400 days.'
@@ -16414,7 +16803,7 @@ paths:
                     example: 200
                   data:
                     type: object
-                    description: 'Keyed by `entity_id`; each value is a list because an entity may resolve to more than one schedule (e.g. across products).'
+                    description: 'Keyed by `entity_id`. Each value is a list, because one doctor can have many schedules (e.g. morning and evening).'
                     additionalProperties:
                       type: array
                       items:
@@ -16521,7 +16910,7 @@ paths:
                         repeat-daily: []
                         block: []
         '400':
-          description: Bad Request — missing/invalid `entity_id`, `location_id`, `product_id`, date range, or range exceeding 400 days
+          description: Bad Request — missing/invalid `entity_id`, `location_id`, `bookable_by`, date range, or range over 400 days
           content:
             application/json:
               schema:
@@ -16550,12 +16939,23 @@ paths:
     get:
       tags:
         - Appointment API
-      summary: Get Service Conf List
+      summary: List Services
       description: >-
         ### Overview
 
-        Lists the non-archived service configurations (`service-conf`) for
-        an entity. `entityId` accepts either a doctor id or a clinic id.
+        Lists the services of a doctor or a clinic. Archived services are
+        left out.
+
+
+        - A **service** is one thing the doctor offers, with its own length,
+        mode and price. Example: *Consultation · 15 min · in-clinic · ₹500*.
+        Its id is `conf_id`. Put it in a schedule's `conf_ids` to make it
+        bookable in that time window.
+
+        - A **service type** is the catalog name, e.g. *Consultation*. Its id
+        is `service_id`. One type can have many services: *Consultation · 15
+        min · in-clinic* and *Consultation · 30 min · tele* share one
+        `service_id` but have different `conf_id`s.
       operationId: GetServiceConfList
       parameters:
         - name: auth
@@ -16568,7 +16968,7 @@ paths:
             example: 'auth'
         - name: entityId
           in: path
-          description: 'Doctor id or clinic id to list service-conf for.'
+          description: 'Doctor id or clinic id.'
           required: true
           style: simple
           schema:
@@ -16595,10 +16995,13 @@ paths:
                           type: string
                         conf_id:
                           type: string
+                          description: 'Id of this service. Goes into a schedule''s `conf_ids`.'
                         service_id:
                           type: integer
+                          description: 'Service type id, e.g. Consultation. Many services can share it.'
                         duration:
                           type: integer
+                          description: 'Slot length in minutes.'
                         price:
                           type: number
                         eka_fee:
@@ -16616,10 +17019,13 @@ paths:
                           type: boolean
                         service_name:
                           type: string
+                          description: 'Service type name, e.g. Consultation.'
                         book_ahead_days:
                           type: integer
+                          description: 'Patients can book at most this many days ahead.'
                         allow_patient_booking:
                           type: boolean
+                          description: '`false` = only clinic staff can book it. Hidden from `bookable_by=patient` slots.'
                         nickname:
                           type: string
                         followup_validity:
@@ -16634,6 +17040,7 @@ paths:
                             enum: ['in-clinic', 'tele']
                         book_before_mins:
                           type: integer
+                          description: 'No slot starts sooner than this many minutes from now.'
                         discount:
                           type: number
                         c_at:
@@ -16650,13 +17057,12 @@ paths:
     get:
       tags:
         - Appointment API
-      summary: Get Service Conf Details
+      summary: Get Service
       description: >-
         ### Overview
 
-        Fetches a single service configuration by id. `entityId` accepts
-        either a doctor id or a clinic id. Unlike the list endpoint, this
-        does not filter out archived records.
+        One service by its `conf_id`, for a doctor or a clinic. Returns
+        archived services too (List Services leaves them out).
       operationId: GetServiceConfDetails
       parameters:
         - name: auth
@@ -16669,14 +17075,14 @@ paths:
             example: 'auth'
         - name: entityId
           in: path
-          description: 'Doctor id or clinic id the conf belongs to.'
+          description: 'Doctor id or clinic id.'
           required: true
           style: simple
           schema:
             type: string
         - name: conf_id
           in: path
-          description: 'Id of the service configuration to fetch.'
+          description: 'Id of the service.'
           required: true
           style: simple
           schema:
@@ -16701,10 +17107,13 @@ paths:
                         type: string
                       conf_id:
                         type: string
+                        description: 'Id of this service. Goes into a schedule''s `conf_ids`.'
                       service_id:
                         type: integer
+                        description: 'Service type id, e.g. Consultation. Many services can share it.'
                       duration:
                         type: integer
+                        description: 'Slot length in minutes.'
                       price:
                         type: number
                       eka_fee:
@@ -16745,7 +17154,7 @@ paths:
                       c_at:
                         type: string
         '404':
-          description: Not Found — no service-conf with this id for this entity
+          description: Not Found — no service with this `conf_id` for this doctor or clinic
           content:
             application/json:
               schema:
@@ -16758,6 +17167,35 @@ paths:
 
 components:
   schemas:
+    GetSlotsSlot:
+      title: GetSlotsSlot
+      type: object
+      properties:
+        s:
+          type: string
+          description: 'Slot start, ISO, in the `time-zone` header zone.'
+        e:
+          type: string
+          description: 'Slot end.'
+        available:
+          type: boolean
+          description: '`true` = can be booked: not blocked, and fewer bookings than the schedule''s `overbooking_limit`.'
+        slots_booked:
+          type: integer
+          description: 'Appointments already in this slot.'
+        is_calendar_blocked:
+          type: boolean
+          description: '`true` = a block covers this time (leave, holiday).'
+        in_schedule:
+          type: boolean
+          description: 'Always `true`. Ignore it.'
+        conf_id:
+          type: string
+          nullable: true
+          description: 'The service this slot books. `null` in a duration schedule.'
+        slot_duration:
+          type: integer
+          description: 'Slot length in minutes.'
     IpdCategory:
       title: IpdCategory
       type: object
