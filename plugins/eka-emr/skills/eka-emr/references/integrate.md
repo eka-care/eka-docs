@@ -32,7 +32,7 @@ Headers that some operations require:
 
 ## Endpoints
 
-76 operations, grouped by tag.
+77 operations, grouped by tag.
 
 ### Patient Registration API
 
@@ -114,12 +114,13 @@ Headers that some operations require:
 | `POST` | [`/dr/v1/appointment/{appointment_id}/complete`](https://developer.eka.care/api-sdk/emr/appointment-api/complete-appointment) | Complete Appointment |
 | `PUT` | [`/dr/v1/appointment/{appointment_id}/follow-up/confirm`](https://developer.eka.care/api-sdk/emr/appointment-api/confirm-follow-up-appointment) | Confirm Follow-Up Appointment |
 | `POST` | [`/dr/v1/appointment/{appointment_id}/parked`](https://developer.eka.care/api-sdk/emr/appointment-api/parked-appointment) | Parked Appointment |
-| `GET` | [`/dr/v1/doctor/{doctor_id}/clinic/{clinic_id}/appointment/slot`](https://developer.eka.care/api-sdk/emr/appointment-api/get-appointment-slots) | Get Appointment Slots |
+| `GET` | [`/dr/v1/doctor/{doctor_id}/clinic/{clinic_id}/appointment/slot`](https://developer.eka.care/api-sdk/emr/appointment-api/get-appointment-slots) | Get Appointment Slots (Legacy) |
+| `GET` | [`/dr/v1/slots`](https://developer.eka.care/api-sdk/emr/appointment-api/get-slots) | Get Slots |
 | `PATCH` | [`/dr/v2/appointment/{appointment_id}`](https://developer.eka.care/api-sdk/emr/appointment-api/update-appointment-v2) | Update Appointment V2 |
 | `POST` | [`/schedule`](https://developer.eka.care/api-sdk/emr/appointment-api/create-schedule) | Create Schedule |
 | `GET` | [`/schedule/resolved`](https://developer.eka.care/api-sdk/emr/appointment-api/get-business-resolved-schedule) | Get Resolved Schedule |
-| `GET` | [`/schedule/service-conf/{entityId}`](https://developer.eka.care/api-sdk/emr/appointment-api/get-service-conf-list) | Get Service Conf List |
-| `GET` | [`/schedule/service-conf/{entityId}/{conf_id}`](https://developer.eka.care/api-sdk/emr/appointment-api/get-service-conf-details) | Get Service Conf Details |
+| `GET` | [`/schedule/service-conf/{entityId}`](https://developer.eka.care/api-sdk/emr/appointment-api/get-service-conf-list) | List Services |
+| `GET` | [`/schedule/service-conf/{entityId}/{conf_id}`](https://developer.eka.care/api-sdk/emr/appointment-api/get-service-conf-details) | Get Service |
 | `DELETE` | [`/schedule/{scheduleId}`](https://developer.eka.care/api-sdk/emr/appointment-api/delete-schedule) | Delete Schedule |
 | `PATCH` | [`/schedule/{scheduleId}`](https://developer.eka.care/api-sdk/emr/appointment-api/update-schedule) | Update Schedule |
 
