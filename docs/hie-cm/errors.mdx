@@ -112,6 +112,8 @@ Belongs to: the wait-for-status step of [Link a care context as a HIP](/docs/hie
 
 ## By code
 
+Codes that start with `EKA-` come from Eka's own service and arrive in `source_error.code`. Codes that start with `ABDM-` or `MIS-` come from NHA.
+
 | code | message | abdm-code | abdm-message |
 | --- | --- | --- | --- |
 | 500 | Something went wrong | ABDM-1000 | Unable to connect the database |
@@ -196,4 +198,24 @@ Belongs to: the wait-for-status step of [Link a care context as a HIP](/docs/hie
 | 400 | The OTP that you have entered is incorrect. Please try again. | MIS-1013 | OTP(One Time Password) is invalid, Please enter the correct OTP. |
 | 500 | Transaction not found for UUID. | MIS-1026 | Transaction is not found for UUID. |
 | 400 | This account has already been claimed by the mobile number: `mobile_number` | EKA-1001 | This account has already been claimed by the mobile number: `mobile_number` |
-| 400 | This mobile number has already been claimed by another account. | EKA-1002 | Mobile number `mobile_number` has already been claimed by another account. |
+| 400 | This account has already been claimed by another mobile number: `mobile_number` | EKA-1002 | This ABHA belongs to a different mobile number, shown in the message (last 10 digits). Use that mobile number. |
+| 400 | Session expired. Please try again. | EKA-1003 | The transaction was not found or has expired. Start the flow again with a new OTP or a new session. |
+| 400 | Some details are missing or not valid. Please check and try again. | EKA-1004 | A field in the request is missing, malformed or not accepted. Check the request body. |
+| 400 | Please enter at least 3 letters to search. | EKA-1004 | The search name is too short. Send at least 3 letters. |
+| 404 | We could not find this ABHA. Please check the details and try again. | EKA-1005 | Check the ABHA number or address sent. If it is correct, the ABHA does not exist. If the user has no ABHA linked, see EKA-1015. |
+| 500 | Something went wrong. Please try again. | EKA-1006 | A problem on Eka's side, such as a store or search failure. Retry later. If it continues, contact support. |
+| 400 | Invalid aadhaar number | EKA-1007 | The Aadhaar number failed validation before ABDM was called. Ask the user to re-enter it. Do not retry the same value. |
+| 400 | Invalid mobile number | EKA-1008 | Ask the user to re-enter a valid 10-digit mobile number. |
+| 400 | An ABHA `health_id` already exists for your profile | EKA-1009 | This profile already has an ABHA, shown in the message. Use it. Do not create another. |
+| 400 | You have reached the maximum number of ABHA that can be created for this mobile | EKA-1010 | Do not retry. This mobile has reached its limit for creating ABHA. Contact support. |
+| 400 | Please enter a valid date of birth. | EKA-1011 | Ask the user to enter a real date of birth. |
+| 400 | Invalid ABHA number | EKA-1012 | Ask the user to re-enter the 14-digit ABHA number. |
+| 403 | ABHA search is turned off for your workspace. | EKA-1013 | Do not retry. ABHA search is off for this workspace. Contact support to turn it on. |
+| 429 | Too many requests. Please try again later. | EKA-1014 | Wait, then retry. Slow down the request rate. |
+| 400 | No ABHA is linked to your profile. Please link one and try again. | EKA-1015 | Ask the user to create or link an ABHA first. |
+| 400 | We could not find your workspace. Please sign in again, or contact support if this continues. | EKA-1016 | Ask the user to sign in again. If it continues, contact support. |
+| 404 | We could not find this consent request. Please check the request ID and try again. | EKA-1017 | Check the consent request ID and health ID sent. If they are correct, the consent request does not exist. |
+| 403 | Not authorised to access this profile | EKA-1018 | Do not retry. This profile is not linked to the caller's clinics. Contact support. |
+| 400 | Your healthcare facility is not onboarded on HMIS yet. Please reach out to our support team. | EKA-1019 | Do not retry. The clinic is not onboarded on HMIS. Contact support. |
+| 400 | This HIP ID is not linked to your workspace. Check the ID, or link it in Eka Console. | EKA-1020 | Check the HIP ID sent. If it is correct, link the facility to the workspace in Eka Console (ABDM Connect). If it is already linked, contact support. |
+| 404 | We could not find this facility. Please check the facility ID and try again. | EKA-1021 | Check the facility ID sent. If it is correct, the facility does not exist in the HFR. |
