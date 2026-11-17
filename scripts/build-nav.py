@@ -846,6 +846,11 @@ EKA_MCP = ['docs/emr/build-with-ai/mcp-server/introduction'] + [
 CLINICAL_MCP = ['docs/datasets/build-with-ai/mcp-server/introduction'] + [
     f'docs/datasets/build-with-ai/mcp-server/{p}' for p in ('quickstart', 'tools', 'authentication')]
 MCP_ITEMS = {'Eka MCP': EKA_MCP, 'Clinical MCP': CLINICAL_MCP}
+# The medical database (MDB): drug, lab, symptom and diagnosis search. A group of Eka EMR, in its sidebar and API tab,
+# rather than of the hidden Medical Knowledge product. URLs do not change.
+MDB_DOCS = ['docs/datasets/medical-db']
+MDB_APIS = ['api-sdk/datasets/medical-db/drugs-and-labs', 'api-sdk/datasets/medical-db/symptoms-and-diagnosis']
+MDB_GROUP = 'Medical Data Base (MDB)'
 # The code Eka publishes, with a link to each GitHub repository: a Resources item of its own.
 OPEN_SOURCE = 'docs/open-source/code'
 OWN_ITEMS = {**MCP_ITEMS, 'Eka Open Source': [OPEN_SOURCE]}
@@ -1018,6 +1023,15 @@ def regroup(products):
                                   'description': 'Register, receive and verify events'}
     hooks = items.setdefault((True, 'Webhooks'), {'item': 'Webhooks' + API_SUFFIX})
     hooks['pages'] = add_to_group(hooks.get('pages', []), 'Webhook setup', [p for p in WEBHOOKS if p in moving])
+    # MDB: the medical database leaves Medical Knowledge for a group of its own in Eka EMR.
+    mdb = {p for p in MDB_DOCS + MDB_APIS if open_ok(p)}
+    for it in items.values():
+        if it.get('pages'):
+            it['pages'] = remove_pages(it['pages'], mdb)
+    for is_api, pages in ((False, MDB_DOCS), (True, MDB_APIS)):
+        host = items.get((is_api, 'Eka EMR'))
+        if host is not None:
+            host['pages'] = add_to_group(host.get('pages', []), MDB_GROUP, [p for p in pages if p in mdb])
     # SDKs go to the products they serve.
     for name, pages in SDK_MOVES.items():
         for key in [(True, 'SDKs')]:
