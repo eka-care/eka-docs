@@ -122,6 +122,23 @@ class Regroup(unittest.TestCase):
         self.assertIn('api-sdk/sdks/sdks/android/medical-records', api_tab('Build', 'Health Records'))
 
 
+    def test_mdb_under_emr(self):
+        # The medical database (MDB): its guide and its two search APIs are a group of Eka EMR, not of Medical Knowledge.
+        nav.tabify(self.products)
+
+        def tab_groups(family, name, tab):
+            it = item(self.products, family, name)
+            pages = next(t['pages'] for t in it['tabs'] if t['tab'] == tab)
+            return {g['group']: list(nav.walk_pages(g['pages'])) for g in pages if isinstance(g, dict)}, set(nav.walk_pages(pages))
+        docs, _ = tab_groups('Build', 'Eka EMR', 'Documentation')
+        apis, _ = tab_groups('Build', 'Eka EMR', nav.API_TAB)
+        self.assertEqual(docs.get(nav.MDB_GROUP), nav.MDB_DOCS)
+        self.assertEqual(apis.get(nav.MDB_GROUP), nav.MDB_APIS)
+        self.assertEqual(nav.MDB_GROUP, 'Medical Data Base (MDB)')
+        knowledge = item(self.products, HIDDEN, 'Medical Knowledge')
+        left = set(nav.walk_pages([t['pages'] for t in knowledge['tabs']]))
+        self.assertFalse(left & set(nav.MDB_DOCS + nav.MDB_APIS), 'Medical Knowledge no longer lists them')
+
 EMR_MCP = ['introduction', 'remote-mcp', 'local-mcp', 'supported-tools', 'authentication']
 MEDAI_MCP = ['introduction', 'quickstart', 'tools', 'authentication']
 MOVES = {**{f'docs/agents/mcp-server/{p}': f'docs/emr/build-with-ai/mcp-server/{p}' for p in EMR_MCP},
