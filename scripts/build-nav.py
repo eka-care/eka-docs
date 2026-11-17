@@ -1183,9 +1183,53 @@ NAVBAR_LINKS = [
 SITEMAP = 'sitemap'
 
 
+_SUMMARIES = None
+
+
+def operation_summaries():
+    """'METHOD /path' -> {spec file: summary}, across every OpenAPI spec in the repo, read once."""
+    global _SUMMARIES
+    if _SUMMARIES is None:
+        import subprocess
+        import yaml
+        _SUMMARIES = {}
+        files = subprocess.run(['git', 'ls-files', '*.yaml', '*.yml', '*.json'], capture_output=True, text=True).stdout.split()
+        for f in files:
+            if f.startswith(('node_modules/', 'changelog-data/', '.')) or f in ('docs.json', 'package.json', 'package-lock.json'):
+                continue
+            try:
+                with open(f) as fh:
+                    head = fh.read(400)
+                    if 'openapi' not in head:
+                        continue
+                    fh.seek(0)
+                    spec = yaml.safe_load(fh)
+            except Exception:
+                continue
+            for path, item in (spec or {}).get('paths', {}).items():
+                for method, op in (item or {}).items():
+                    if isinstance(op, dict) and op.get('summary'):
+                        _SUMMARIES.setdefault(f'{method.upper()} {path}', {})[f] = op['summary'].strip()
+    return _SUMMARIES
+
+
+def api_summary(openapi):
+    """The summary Mintlify shows for a page's operation: from the spec the page names, or the only spec that has it."""
+    toks = openapi.split()
+    if len(toks) < 2:
+        return None
+    found = operation_summaries().get(f'{toks[-2].upper()} {toks[-1]}', {})
+    if len(toks) > 2:
+        named = toks[0].lstrip('/')
+        return found.get(named) or next((v for k, v in found.items() if k.endswith(named)), None)
+    return next(iter(found.values())) if len(set(found.values())) == 1 else None
+
+
 def page_title(page):
     meta = page_meta(page)
     title = meta.get('sidebarTitle') or meta.get('title')
+    if not title and meta.get('openapi'):
+        title = api_summary(meta['openapi'])
     if not title and meta.get('openapi'):
         title = meta['openapi'].split()[-1] if ' ' in meta['openapi'] else meta['openapi']
     title = title or page.rsplit('/', 1)[-1].replace('-', ' ').replace('_', ' ').capitalize()
@@ -1205,28 +1249,142 @@ def sitemap_lines(entries, depth):
     return out
 
 
+def sitemap_anchor(name):
+    """The id Mintlify gives a heading: lower case, spaces as hyphens, other punctuation dropped."""
+    return re.sub(r'[^a-z0-9-]', '', name.lower().replace(' ', '-'))
+
+
+def sitemap_pages(it):
+    """Every page a product lists, across its tabs, once each."""
+    return list(dict.fromkeys(walk_pages(it.get('tabs', [])) if it.get('tabs') else walk_pages(it.get('pages', []))))
+
+
+def counted(n):
+    return f'{n} page' + ('' if n == 1 else 's')
+
+
+def sitemap_unwrap(pages):
+    """A tab wrapped in one group named for the product says nothing the heading above it does not: open it."""
+    while len(pages) == 1 and isinstance(pages[0], dict) and 'group' in pages[0] and not pages[0].get('root'):
+        pages = pages[0].get('pages', [])
+    return pages
+
+
+def sitemap_api_folds(pages):
+    """An API tab as one folded section per group, so endpoints sit one level below the product."""
+    pages = sitemap_unwrap(pages)
+    out, loose = [], []
+    for e in pages:
+        if isinstance(e, dict) and 'group' in e:
+            if loose:
+                out += sitemap_lines(loose, 0) + ['']
+                loose = []
+            out += [f'<Accordion title="{e["group"]} · {counted(len(list(walk_pages([e]))))}">', '']
+            out += sitemap_lines(([e['root']] if e.get('root') else []) + e.get('pages', []), 0) + ['', '</Accordion>', '']
+        else:
+            loose.append(e)
+    return out + (sitemap_lines(loose, 0) + [''] if loose else [])
+
+
+def sitemap_search_index(products):
+    """[title, url, where] for every page the site map lists, for the filter box."""
+    rows = []
+    for fam in products:
+        for it in fam['menu']:
+            for t in it.get('tabs', []):
+                def walk(entries, trail):
+                    for e in entries:
+                        if isinstance(e, str):
+                            rows.append([page_title(e), '/' + e, ' › '.join(trail)])
+                        elif isinstance(e, dict) and 'group' in e:
+                            if e.get('root'):
+                                rows.append([e['group'], '/' + e['root'], ' › '.join(trail)])
+                            same = e['group'] in (it['item'], it['item'] + API_SUFFIX)
+                            walk(e.get('pages', []), trail + ([] if same else [e['group']]))
+                walk(sitemap_unwrap(t['pages']), [it['item'], t['tab']])
+    seen, out = set(), []
+    for r in rows:
+        if r[1] not in seen:
+            seen.add(r[1])
+            out.append(r)
+    return out
+
+
+SITEMAP_FILTER = 'snippets/sitemap-filter.jsx'
+
+
+def write_sitemap_filter(products):
+    """The filter box: a snippet holding every page's title and trail, matched as the reader types. It renders only
+    in the browser; the lists below it are the page itself and work without it."""
+    index = json.dumps(sitemap_search_index(products), ensure_ascii=False, separators=(',', ':'))
+    open(SITEMAP_FILTER, 'w').write(
+        '// Generated by scripts/build-nav.py from docs.json. Do not edit by hand.\n'
+        'import { useState } from "react";\n\n'
+        'export const SitemapFilter = () => {\n'
+        f'  const PAGES = {index};\n'
+        '  const [q, setQ] = useState("");\n'
+        '  const words = q.toLowerCase().split(/\\s+/).filter(Boolean);\n'
+        '  // Pages whose name has every word come first, then those found by product or section, then by address.\n'
+        '  const rank = (p) => { const t = p[0].toLowerCase(), w = (p[0] + " " + p[2]).toLowerCase(), a = (w + " " + p[1]).toLowerCase(); '
+        'return words.every((x) => t.includes(x)) ? 0 : words.every((x) => w.includes(x)) ? 1 : words.every((x) => a.includes(x)) ? 2 : 3; };\n'
+        '  const hits = words.length ? PAGES.map((p) => [rank(p), p]).filter((r) => r[0] < 3).sort((a, b) => a[0] - b[0]).map((r) => r[1]) : [];\n'
+        '  return (\n'
+        '    <div className="eka-sitemap-filter not-prose">\n'
+        '      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={"Filter " + PAGES.length + " pages by name or product"} '
+        'aria-label="Filter pages" aria-controls="eka-sitemap-hits" />\n'
+        '      {words.length > 0 && (\n'
+        '        <div id="eka-sitemap-hits" role="status" aria-live="polite">\n'
+        '          <p className="eka-sitemap-count">{hits.length === 0 ? "No pages match. Try a product name or fewer words." : hits.length + (hits.length === 1 ? " page" : " pages")}</p>\n'
+        '          <ul>{hits.slice(0, 200).map((p) => (<li key={p[1]}><a href={p[1]}>{p[0]}</a><span>{p[2]}</span></li>))}</ul>\n'
+        '          {hits.length > 200 && <p className="eka-sitemap-count">Showing the first 200. Add a word to narrow it.</p>}\n'
+        '        </div>\n'
+        '      )}\n'
+        '    </div>\n'
+        '  );\n'
+        '};\n')
+
+
 def write_sitemap(products):
-    """Every page in docs.json, by family, product and tab, including the products kept out of the navigation.
-    Hidden itself: reachable from the footer's heart, not from the navigation or search."""
+    """Every page in docs.json, including the products kept out of the navigation. It opens with a directory, one row
+    per product with its page count; each product's pages follow in folded sections, API endpoints one level deeper,
+    and a filter box finds any page by name. Hidden itself: reachable from the footer's heart, not from the
+    navigation or search."""
+    docs_fams = [f for f in products if not is_api_family(f)]
     lines = ['---', 'title: "Site map"',
              'description: "Every page on developer.eka.care, including products kept out of the navigation."',
              'hidden: true', '---', '',
+             'import { SitemapFilter } from "/snippets/sitemap-filter.jsx";', '',
              '{/* Generated by scripts/build-nav.py from docs.json. Do not edit by hand. */}', '',
-             'Every product, guide and API reference page, in the order the navigation keeps them. '
-             'Products under More from Eka are not in the navigation; their pages stay live at these links.', '']
-    for fam in products:
+             'Every product, guide and API reference page. Type to find a page, or pick a product below.', '',
+             '<SitemapFilter />', '']
+    for fam in docs_fams:
+        rows = [(it, len(sitemap_pages(it))) for it in fam['menu']]
+        rows = [(it, n) for it, n in rows if n]
+        if not rows:
+            continue
         lines += [f'## {fam["product"]}', '']
         if fam.get('hidden'):
             lines += ['<Note>Not in the navigation. These pages stay live; link to them directly.</Note>', '']
+        lines += ['| Product | What it covers | Pages |', '| --- | --- | --- |']
+        lines += [f'| [{it["item"]}](#{sitemap_anchor(it["item"])}) | {it.get("description", "")} | {n} |' for it, n in rows]
+        lines += ['']
+    lines += ['<div className="eka-sitemap-products">', '', '## All pages, by product', '']
+    for fam in docs_fams:
         for it in fam['menu']:
+            n = len(sitemap_pages(it))
+            if not n and not it.get('href'):
+                continue
             lines += [f'### {it["item"]}', '']
-            if it.get('description'):
-                lines += [it['description'], '']
-            if it.get('href'):
+            lines += [f'{fam["product"]}' + (' (not in the navigation)' if fam.get('hidden') else '') + f' · {counted(n)}', '']
+            if it.get('href') and not it.get('tabs'):
                 lines += [f'- [{it["item"]}]({it["href"]})', '']
             for t in it.get('tabs', []):
-                lines += [f'<Accordion title="{t["tab"]}">', ''] + sitemap_lines(t['pages'], 0) + ['', '</Accordion>', '']
+                title = f'{t["tab"]} · {counted(len(list(walk_pages(t["pages"]))))}'
+                body = sitemap_api_folds(t['pages']) if t['tab'] == API_TAB else sitemap_lines(sitemap_unwrap(t['pages']), 0) + ['']
+                lines += [f'<Accordion title="{title}">', ''] + body + ['</Accordion>', '']
+    lines += ['</div>', '']
     open(SITEMAP + '.mdx', 'w').write('\n'.join(lines))
+    write_sitemap_filter(products)
 
 # ---------- Landing page developer journey ----------
 # The landing page's journey (landing/source.html, const J) follows each product's docs

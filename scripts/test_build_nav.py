@@ -395,6 +395,33 @@ class Sitemap(unittest.TestCase):
         self.assertIn('## More from Eka', self.page)
         self.assertIn('Not in the navigation', self.page)
 
+    def test_opens_with_a_directory_of_products_with_counts(self):
+        # Before any page list: one table row per product, linking to its section, with its page count.
+        directory = self.page.split('<div className="eka-sitemap-products">')[0]
+        self.assertNotIn('<Accordion', directory)
+        for fam in self.docs['navigation']['products']:
+            if nav.is_api_family(fam):
+                continue
+            for it in fam['menu']:
+                n = len(nav.sitemap_pages(it))
+                if not n:
+                    continue
+                row = f'| [{it["item"]}](#{nav.sitemap_anchor(it["item"])}) |'
+                self.assertIn(row, directory, it['item'])
+                self.assertRegex(directory, re.escape(row) + r'[^\n]*\| ' + str(n) + r' \|', it['item'])
+
+    def test_api_groups_fold_one_level_deeper(self):
+        # API endpoints sit in a folded section per group, inside the product's API section.
+        self.assertRegex(self.page, r'<Accordion title="APIs & SDKs · \d+ pages">\s*\n\s*<Accordion title="[^"]+ · \d+ pages?">')
+
+    def test_filter_box_searches_every_page(self):
+        self.assertIn('import { SitemapFilter } from "/snippets/sitemap-filter.jsx";', self.page)
+        self.assertIn('<SitemapFilter />', self.page)
+        index = open(os.path.join(ROOT, 'snippets', 'sitemap-filter.jsx')).read()
+        listed = set(re.findall(r'\]\(/([^)#]+)\)', self.page))
+        missing = sorted(p for p in listed if f'"/{p}"' not in index)
+        self.assertEqual(missing, [])
+
 
 if __name__ == '__main__':
     unittest.main()
