@@ -32,7 +32,7 @@ Headers that some operations require:
 
 ## Endpoints
 
-77 operations, grouped by tag.
+72 operations, grouped by tag.
 
 ### Patient Registration API
 
@@ -92,11 +92,6 @@ Headers that some operations require:
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| `GET` | [`/cdr/v1/ekauser/`](https://developer.eka.care/api-sdk/emr/onboarding-apis/list-ekausers) | List Eka Users |
-| `POST` | [`/cdr/v1/ekauser/`](https://developer.eka.care/api-sdk/emr/onboarding-apis/onboard-ekauser) | Create Eka User |
-| `DELETE` | [`/cdr/v1/ekauser/{user_id}/`](https://developer.eka.care/api-sdk/emr/onboarding-apis/delete-ekauser) | Delete Eka User |
-| `GET` | [`/cdr/v1/ekauser/{user_id}/`](https://developer.eka.care/api-sdk/emr/onboarding-apis/get-ekauser) | Get Eka User by ID |
-| `PATCH` | [`/cdr/v1/ekauser/{user_id}/`](https://developer.eka.care/api-sdk/emr/onboarding-apis/update-ekauser) | Update Eka User |
 | `GET` | [`/cdr/v1/hipusers/`](https://developer.eka.care/api-sdk/emr/user-apis/get-all-users) | Get All HIP Users of a Business |
 | `GET` | [`/cdr/v1/hipusers/{hip_user_id}`](https://developer.eka.care/api-sdk/emr/user-apis/get-user-by-id) | Get HIP User Details by ID |
 
